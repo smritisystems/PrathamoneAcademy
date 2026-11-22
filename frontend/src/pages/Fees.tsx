@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-23
  *
  * @description Flagship Fees & Payments workspace featuring overview analytics, fee register, payments, and receipts.
  */
@@ -3002,11 +3002,29 @@ function FeesContent() {
                     <div className="pointer-events-none absolute -bottom-28 right-28 h-48 w-48 rounded-full border-[18px] border-amber-300/10" />
                     <div className="fee-invoice-brand-row relative grid gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                       <div className="flex min-w-0 items-center gap-4">
-                        <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-xl bg-white p-2.5 shadow-lg shadow-black/20">
+                        <div
+                          className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-xl bg-white p-2.5 shadow-lg shadow-black/20 receipt-logo-container"
+                          style={{
+                            width: '68px',
+                            height: '68px',
+                            minWidth: '68px',
+                            minHeight: '68px',
+                            maxWidth: '68px',
+                            maxHeight: '68px',
+                            overflow: 'hidden',
+                            flexShrink: 0,
+                          }}
+                        >
                           <img
                             src={branding.assets.logoUrl}
                             alt={`${branding.academyName} logo`}
-                            className="max-h-full max-w-full object-contain"
+                            className="max-h-full max-w-full object-contain receipt-logo-img"
+                            style={{
+                              maxWidth: '48px',
+                              maxHeight: '48px',
+                              objectFit: 'contain',
+                              display: 'block',
+                            }}
                           />
                         </div>
                         <div className="min-w-0">

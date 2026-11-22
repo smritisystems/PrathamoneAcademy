@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-16
+ * @updated     2026-11-23
  *
  * @description Isolated student and staff ID card printing utility for high-fidelity CR80 PVC and A4 sheet generation.
  */
@@ -108,6 +108,19 @@ export function printIDCardElement(
     clonedContainer.style.boxShadow = 'none'
     clonedContainer.style.padding = '0'
     clonedContainer.style.margin = '0 auto'
+
+    // Enforce strict software bounding on all images inside cloned print tree (RULE 014 Print Hygiene)
+    clonedContainer.querySelectorAll('img').forEach((img) => {
+      img.style.objectFit = 'contain'
+      if (img.classList.contains('id-card-photo')) {
+        img.style.maxWidth = '64px'
+        img.style.maxHeight = '80px'
+        img.style.objectFit = 'cover'
+      } else {
+        img.style.maxWidth = '100%'
+        img.style.maxHeight = '100%'
+      }
+    })
 
     // 4. Collect stylesheets from parent head
     const parentStyles = Array.from(document.head.querySelectorAll('link[rel="stylesheet"], style'))

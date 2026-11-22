@@ -1114,6 +1114,98 @@ function ReportsWorkspace() {
     enabled: activeReportId === 'summary',
   })
 
+  // Fees Sleek Telemetry Metrics (Rule 014 Sleek Design System)
+  const collectionMetrics = useMemo(() => {
+    if (!collectionReport || !collectionReport.length) return null
+    const totalCommitment = collectionReport.reduce((acc: number, r: any) => acc + Number(r.total_fees || 0), 0)
+    const totalPaid = collectionReport.reduce((acc: number, r: any) => acc + Number(r.paid || 0), 0)
+    const totalOutstanding = collectionReport.reduce((acc: number, r: any) => acc + Number(r.outstanding || 0), 0)
+    const collectionRate = totalCommitment > 0 ? (totalPaid / totalCommitment) * 100 : 0
+    const settledCount = collectionReport.filter((r: any) => Number(r.outstanding || 0) <= 0).length
+    const pendingCount = collectionReport.length - settledCount
+    return {
+      totalCommitment,
+      totalPaid,
+      totalOutstanding,
+      collectionRate,
+      settledCount,
+      pendingCount,
+      totalStudents: collectionReport.length,
+    }
+  }, [collectionReport])
+
+  const outstandingMetrics = useMemo(() => {
+    if (!outstandingReport || !outstandingReport.length) return null
+    const totalInvoiced = outstandingReport.reduce((acc: number, r: any) => acc + Number(r.net_amount || 0), 0)
+    const totalRecovered = outstandingReport.reduce((acc: number, r: any) => acc + Number(r.paid_amount || 0), 0)
+    const totalDeficit = outstandingReport.reduce((acc: number, r: any) => acc + Number(r.outstanding || 0), 0)
+    const recoveryRate = totalInvoiced > 0 ? (totalRecovered / totalInvoiced) * 100 : 0
+    const avgArrears = outstandingReport.length > 0 ? Math.round(totalDeficit / outstandingReport.length) : 0
+    const overdueCount = outstandingReport.filter((r: any) => r.status === 'overdue' || (r.due_date && new Date(r.due_date) < new Date())).length
+    return {
+      totalInvoices: outstandingReport.length,
+      totalInvoiced,
+      totalRecovered,
+      totalDeficit,
+      recoveryRate,
+      avgArrears,
+      overdueCount,
+    }
+  }, [outstandingReport])
+
+  const feeDefaultersMetrics = useMemo(() => {
+    if (!feeDefaultersData) return null
+    const totalOverdue = feeDefaultersData.reduce((acc: number, r: any) => acc + Number(r.overdue_amount || 0), 0)
+    const totalOutstanding = feeDefaultersData.reduce((acc: number, r: any) => acc + Number(r.total_outstanding || 0), 0)
+    const criticalOverdueCount = feeDefaultersData.filter((r: any) => Number(r.days_overdue || 0) >= 30).length
+    const avgDaysOverdue = feeDefaultersData.length > 0 ? Math.round(feeDefaultersData.reduce((acc: number, r: any) => acc + Number(r.days_overdue || 0), 0) / feeDefaultersData.length) : 0
+    const contactableCount = feeDefaultersData.filter((r: any) => !!r.guardian_phone && r.guardian_phone !== '—').length
+    return {
+      defaulterCount: feeDefaultersData.length,
+      totalOverdue,
+      totalOutstanding,
+      criticalOverdueCount,
+      avgDaysOverdue,
+      contactableCount,
+    }
+  }, [feeDefaultersData])
+
+  const dailyCollectionMetrics = useMemo(() => {
+    if (!dailyCollectionData || !dailyCollectionData.length) return null
+    const totalAmount = dailyCollectionData.reduce((acc: number, r: any) => acc + Number(r.amount || 0), 0)
+    const issuedReceipts = dailyCollectionData.filter((r: any) => r.receipt_status === 'valid' || !!r.receipt_number).length
+    const uniqueStudents = new Set(dailyCollectionData.map((r: any) => r.admission_number).filter(Boolean)).size
+    const uniqueCashiers = new Set(dailyCollectionData.map((r: any) => r.collector_name).filter(Boolean)).size
+    const avgReceiptAmount = dailyCollectionData.length > 0 ? Math.round(totalAmount / dailyCollectionData.length) : 0
+    return {
+      transactionCount: dailyCollectionData.length,
+      totalAmount,
+      issuedReceipts,
+      uniqueStudents,
+      uniqueCashiers,
+      avgReceiptAmount,
+    }
+  }, [dailyCollectionData])
+
+  const summaryMetrics = useMemo(() => {
+    if (!summaryReport || !summaryReport.length) return null
+    const totalVolume = summaryReport.reduce((acc: number, r: any) => acc + Number(r.total || 0), 0)
+    const totalTransactions = summaryReport.reduce((acc: number, r: any) => acc + Number(r.count || 0), 0)
+    const sorted = [...summaryReport].sort((a: any, b: any) => Number(b.total || 0) - Number(a.total || 0))
+    const topMethod = sorted[0]?.payment_method || '—'
+    const topMethodVolume = Number(sorted[0]?.total || 0)
+    const channelsCount = summaryReport.length
+    const avgPerTxn = totalTransactions > 0 ? Math.round(totalVolume / totalTransactions) : 0
+    return {
+      totalVolume,
+      totalTransactions,
+      topMethod,
+      topMethodVolume,
+      channelsCount,
+      avgPerTxn,
+    }
+  }, [summaryReport])
+
   // 14. Fees: Financial Reconciliation
   const { data: overviewData, isLoading: loadingOverview, refetch: refetchOverview } = useQuery({
     queryKey: ['report-fee-overview', selectedAcademicYearId],
@@ -2147,91 +2239,267 @@ function ReportsWorkspace() {
 
           {/* 3. Fee Collection Register */}
           {activeReportId === 'collection' && (
-            <ExcelReportGrid
-              title="Fee Collection Register"
-              subtitle="Total student fee assessments, realized banking collections, and outstanding deficits"
-              columns={collectionColumns}
-              data={collectionReport}
-              loading={loadingCollection}
-              exportFilename="fee_collection_register"
-              sheetName="Collections"
-              showSummaryRow={true}
-              summaryCalculations={{
-                admission_number: (rows) => <span className="font-extrabold text-slate-900">Total: {rows.length}</span>,
-                total_fees: (rows) => <span className="font-extrabold text-slate-900">₹{rows.reduce((acc, r) => acc + Number(r.total_fees || 0), 0).toLocaleString('en-IN')}</span>,
-                paid: (rows) => <span className="font-extrabold text-emerald-800">₹{rows.reduce((acc, r) => acc + Number(r.paid || 0), 0).toLocaleString('en-IN')}</span>,
-                outstanding: (rows) => <span className="font-extrabold text-rose-700">₹{rows.reduce((acc, r) => acc + Number(r.outstanding || 0), 0).toLocaleString('en-IN')}</span>,
-              }}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {collectionMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Billed</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">₹{collectionMetrics.totalCommitment.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Realized Inflow</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">₹{collectionMetrics.totalPaid.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-rose-50/50 border border-rose-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Outstanding Deficit</p>
+                    <p className="text-base font-black font-mono text-rose-700 mt-0.5">₹{collectionMetrics.totalOutstanding.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Realization Rate</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <p className="text-base font-black font-mono text-indigo-800">{collectionMetrics.collectionRate.toFixed(1)}%</p>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${collectionMetrics.collectionRate >= 80 ? 'bg-emerald-100 text-emerald-800' : collectionMetrics.collectionRate >= 50 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'}`}>
+                        {collectionMetrics.collectionRate >= 80 ? 'Healthy' : collectionMetrics.collectionRate >= 50 ? 'Moderate' : 'Low'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Settled Accounts</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">{collectionMetrics.settledCount} / {collectionMetrics.totalStudents}</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Accounts in Deficit</p>
+                    <p className="text-base font-black font-mono text-amber-800 mt-0.5">{collectionMetrics.pendingCount} Accounts</p>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title="Fee Collection Register"
+                subtitle="Total student fee assessments, realized banking collections, and outstanding deficits"
+                columns={collectionColumns}
+                data={collectionReport}
+                loading={loadingCollection}
+                exportFilename="fee_collection_register"
+                sheetName="Collections"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  admission_number: (rows) => <span className="font-extrabold text-slate-900 font-mono">Total: {rows.length}</span>,
+                  total_fees: (rows) => <span className="font-extrabold text-slate-900 font-mono">₹{rows.reduce((acc, r) => acc + Number(r.total_fees || 0), 0).toLocaleString('en-IN')}</span>,
+                  paid: (rows) => <span className="font-extrabold text-emerald-800 font-mono">₹{rows.reduce((acc, r) => acc + Number(r.paid || 0), 0).toLocaleString('en-IN')}</span>,
+                  outstanding: (rows) => <span className="font-extrabold text-rose-700 font-mono">₹{rows.reduce((acc, r) => acc + Number(r.outstanding || 0), 0).toLocaleString('en-IN')}</span>,
+                }}
+              />
+            </div>
           )}
 
           {/* 4. Outstanding Dues */}
           {activeReportId === 'outstanding' && (
-            <ExcelReportGrid
-              title="Outstanding Receivables & Due Dates"
-              subtitle="Detailed invoice receivables categorized by due dates and student commitments"
-              columns={[
-                { id: 'invoice_number', header: 'Invoice #', accessorKey: 'invoice_number', type: 'text', width: 130, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
-                { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 120 },
-                { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 180, sortable: true },
-                { id: 'due_date', header: 'Due Date', accessorKey: 'due_date', type: 'date', width: 110, sortable: true },
-                { id: 'net_amount', header: 'Total Invoiced (₹)', accessorKey: 'net_amount', type: 'currency', width: 140, align: 'right', render: (val) => <span>₹{Number(val || 0).toLocaleString('en-IN')}</span> },
-                { id: 'paid_amount', header: 'Paid Amount (₹)', accessorKey: 'paid_amount', type: 'currency', width: 140, align: 'right', render: (val) => <span className="text-emerald-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
-                { id: 'outstanding', header: 'Outstanding Due (₹)', accessorKey: 'outstanding', type: 'currency', width: 150, align: 'right', render: (val) => <span className="font-bold text-rose-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
-                { id: 'status', header: 'Status', accessorKey: 'status', type: 'text', width: 110, render: (val) => <InvoiceStatusBadge status={val} /> },
-              ]}
-              data={outstandingReport}
-              loading={loadingOutstanding}
-              exportFilename="outstanding_dues_report"
-              sheetName="Outstanding"
-              showSummaryRow={true}
-              summaryCalculations={{
-                invoice_number: (rows) => <span className="font-extrabold text-slate-900">Total: {rows.length}</span>,
-                outstanding: (rows) => <span className="font-extrabold text-rose-700">₹{rows.reduce((acc, r) => acc + Number(r.outstanding || 0), 0).toLocaleString('en-IN')}</span>,
-              }}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {outstandingMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Invoices</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{outstandingMetrics.totalInvoices}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Gross Invoiced</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">₹{outstandingMetrics.totalInvoiced.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Recovered Inflow</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">₹{outstandingMetrics.totalRecovered.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-rose-50/50 border border-rose-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Pending Deficit</p>
+                    <p className="text-base font-black font-mono text-rose-700 mt-0.5">₹{outstandingMetrics.totalDeficit.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Recovery Rate</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">{outstandingMetrics.recoveryRate.toFixed(1)}%</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Overdue Invoices</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <p className="text-base font-black font-mono text-amber-800">{outstandingMetrics.overdueCount}</p>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${outstandingMetrics.overdueCount > 0 ? 'bg-amber-200/80 text-amber-900' : 'bg-emerald-100 text-emerald-800'}`}>
+                        {outstandingMetrics.overdueCount > 0 ? 'Action' : 'Current'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title="Outstanding Receivables & Due Dates"
+                subtitle="Detailed invoice receivables categorized by due dates and student commitments"
+                columns={[
+                  { id: 'invoice_number', header: 'Invoice #', accessorKey: 'invoice_number', type: 'text', width: 130, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
+                  { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 120 },
+                  { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 180, sortable: true },
+                  { id: 'due_date', header: 'Due Date', accessorKey: 'due_date', type: 'date', width: 110, sortable: true },
+                  { id: 'net_amount', header: 'Total Invoiced (₹)', accessorKey: 'net_amount', type: 'currency', width: 140, align: 'right', render: (val) => <span>₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                  { id: 'paid_amount', header: 'Paid Amount (₹)', accessorKey: 'paid_amount', type: 'currency', width: 140, align: 'right', render: (val) => <span className="text-emerald-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                  { id: 'outstanding', header: 'Outstanding Due (₹)', accessorKey: 'outstanding', type: 'currency', width: 150, align: 'right', render: (val) => <span className="font-bold text-rose-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                  { id: 'status', header: 'Status', accessorKey: 'status', type: 'text', width: 110, render: (val) => <InvoiceStatusBadge status={val} /> },
+                ]}
+                data={outstandingReport}
+                loading={loadingOutstanding}
+                exportFilename="outstanding_dues_report"
+                sheetName="Outstanding"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  invoice_number: (rows) => <span className="font-extrabold text-slate-900 font-mono">Total: {rows.length}</span>,
+                  net_amount: (rows) => <span className="font-extrabold text-slate-900 font-mono">₹{rows.reduce((acc, r) => acc + Number(r.net_amount || 0), 0).toLocaleString('en-IN')}</span>,
+                  paid_amount: (rows) => <span className="font-extrabold text-emerald-800 font-mono">₹{rows.reduce((acc, r) => acc + Number(r.paid_amount || 0), 0).toLocaleString('en-IN')}</span>,
+                  outstanding: (rows) => <span className="font-extrabold text-rose-700 font-mono">₹{rows.reduce((acc, r) => acc + Number(r.outstanding || 0), 0).toLocaleString('en-IN')}</span>,
+                }}
+              />
+            </div>
           )}
 
           {/* 5. Fee Defaulters Aging */}
           {activeReportId === 'fee-defaulters' && (
-            <ExcelReportGrid
-              title="Consolidated Fee Defaulters Aging Roster"
-              subtitle="Overdue installment ledgers with days overdue, guardian contacts, and recovery escalation"
-              columns={feeDefaultersColumns}
-              data={feeDefaultersData}
-              loading={loadingFeeDefaulters}
-              exportFilename="fee_defaulters_aging_report"
-              sheetName="Defaulters"
-              showSummaryRow={true}
-              summaryCalculations={{
-                admission_number: (rows) => <span className="font-extrabold text-rose-900">Defaulters: {rows.length}</span>,
-                overdue_amount: (rows) => <span className="font-extrabold text-rose-700">₹{rows.reduce((acc, r) => acc + Number(r.overdue_amount || 0), 0).toLocaleString('en-IN')}</span>,
-              }}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {feeDefaultersMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-rose-50/50 border border-rose-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Defaulter Students</p>
+                    <p className="text-base font-black font-mono text-rose-700 mt-0.5">{feeDefaultersMetrics.defaulterCount}</p>
+                  </div>
+                  <div className="bg-rose-50/50 border border-rose-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Immediate Overdue</p>
+                    <p className="text-base font-black font-mono text-rose-700 mt-0.5">₹{feeDefaultersMetrics.totalOverdue.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Deficit Balance</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">₹{feeDefaultersMetrics.totalOutstanding.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Chronic Overdue (&gt;30d)</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <p className="text-base font-black font-mono text-amber-800">{feeDefaultersMetrics.criticalOverdueCount}</p>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${feeDefaultersMetrics.criticalOverdueCount > 0 ? 'bg-amber-200/80 text-amber-900' : 'bg-emerald-100 text-emerald-800'}`}>
+                        {feeDefaultersMetrics.criticalOverdueCount > 0 ? 'Escalate' : 'Normal'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Average Aging</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{feeDefaultersMetrics.avgDaysOverdue} Days</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Contactable Phone</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">{feeDefaultersMetrics.contactableCount} / {feeDefaultersMetrics.defaulterCount}</p>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title="Consolidated Fee Defaulters Aging Roster"
+                subtitle="Overdue installment ledgers with days overdue, guardian contacts, and recovery escalation"
+                columns={feeDefaultersColumns}
+                data={feeDefaultersData}
+                loading={loadingFeeDefaulters}
+                exportFilename="fee_defaulters_aging_report"
+                sheetName="Defaulters"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  admission_number: (rows) => <span className="font-extrabold text-rose-900 font-mono">Defaulters: {rows.length}</span>,
+                  overdue_amount: (rows) => <span className="font-extrabold text-rose-700 font-mono">₹{rows.reduce((acc, r) => acc + Number(r.overdue_amount || 0), 0).toLocaleString('en-IN')}</span>,
+                  total_outstanding: (rows) => <span className="font-extrabold text-slate-900 font-mono">₹{rows.reduce((acc, r) => acc + Number(r.total_outstanding || 0), 0).toLocaleString('en-IN')}</span>,
+                }}
+              />
+            </div>
           )}
 
           {/* 6. Daily Collection */}
           {activeReportId === 'daily-collection' && (
-            <ExcelReportGrid
-              title="Daily Payment Collection & Cashier Register"
-              subtitle="Day-wise realized payment receipts, cash desk collections, and gateway transactions"
-              columns={dailyCollectionColumns}
-              data={dailyCollectionData}
-              loading={loadingDailyCollection}
-              exportFilename="daily_payment_collection"
-              sheetName="Daily Inflow"
-              showSummaryRow={true}
-              summaryCalculations={{
-                receipt_number: (rows) => <span className="font-extrabold text-slate-900">Transactions: {rows.length}</span>,
-                amount: (rows) => <span className="font-extrabold text-emerald-800">₹{rows.reduce((acc, r) => acc + Number(r.amount || 0), 0).toLocaleString('en-IN')}</span>,
-              }}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {dailyCollectionMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Transactions</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{dailyCollectionMetrics.transactionCount}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Realized Inflow</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">₹{dailyCollectionMetrics.totalAmount.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Issued Receipts</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">{dailyCollectionMetrics.issuedReceipts}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Students Serviced</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{dailyCollectionMetrics.uniqueStudents}</p>
+                  </div>
+                  <div className="bg-violet-50/50 border border-violet-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600">Active Cashiers</p>
+                    <p className="text-base font-black font-mono text-violet-800 mt-0.5">{dailyCollectionMetrics.uniqueCashiers}</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Avg Ticket Value</p>
+                    <p className="text-base font-black font-mono text-amber-800 mt-0.5">₹{dailyCollectionMetrics.avgReceiptAmount.toLocaleString('en-IN')}</p>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title="Daily Payment Collection & Cashier Register"
+                subtitle="Day-wise realized payment receipts, cash desk collections, and gateway transactions"
+                columns={dailyCollectionColumns}
+                data={dailyCollectionData}
+                loading={loadingDailyCollection}
+                exportFilename="daily_payment_collection"
+                sheetName="Daily Inflow"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  receipt_number: (rows) => <span className="font-extrabold text-slate-900 font-mono">Transactions: {rows.length}</span>,
+                  amount: (rows) => <span className="font-extrabold text-emerald-800 font-mono">₹{rows.reduce((acc, r) => acc + Number(r.amount || 0), 0).toLocaleString('en-IN')}</span>,
+                }}
+              />
+            </div>
           )}
 
           {/* 7. Payment Methods Breakdown */}
           {activeReportId === 'summary' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {summaryMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Volume</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">₹{summaryMetrics.totalVolume.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Total Transactions</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">{summaryMetrics.totalTransactions}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Primary Instrument</p>
+                    <p className="text-sm font-black font-mono text-indigo-800 uppercase mt-1 truncate">{summaryMetrics.topMethod}</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Lead Volume</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">₹{summaryMetrics.topMethodVolume.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-violet-50/50 border border-violet-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600">Active Channels</p>
+                    <p className="text-base font-black font-mono text-violet-800 mt-0.5">{summaryMetrics.channelsCount}</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Avg / Transaction</p>
+                    <p className="text-base font-black font-mono text-amber-800 mt-0.5">₹{summaryMetrics.avgPerTxn.toLocaleString('en-IN')}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
                   <h3 className="font-bold text-slate-900 text-sm mb-4">Payment Methods Volume Distribution</h3>
                   <div className="h-64">
@@ -2289,19 +2557,37 @@ function ReportsWorkspace() {
 
           {/* 8. Financial Reconciliation */}
           {activeReportId === 'fee-reconciliation' && overviewData && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-white p-4 rounded-xl border border-slate-200">
-                  <div className="text-xs text-slate-500 font-semibold uppercase">Total Invoiced Commitment</div>
-                  <div className="text-xl font-bold text-slate-900 mt-1">₹{Number(overviewData.summary?.total_obligation || 0).toLocaleString('en-IN')}</div>
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Invoiced</p>
+                  <p className="text-base font-black font-mono text-slate-900 mt-0.5">₹{Number(overviewData.summary?.total_obligation || 0).toLocaleString('en-IN')}</p>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200">
-                  <div className="text-xs text-slate-500 font-semibold uppercase">Realized Banking Inflow</div>
-                  <div className="text-xl font-bold text-emerald-700 mt-1">₹{Number(overviewData.summary?.total_collected || 0).toLocaleString('en-IN')}</div>
+                <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Realized Collections</p>
+                  <p className="text-base font-black font-mono text-emerald-700 mt-0.5">₹{Number(overviewData.summary?.total_collected || 0).toLocaleString('en-IN')}</p>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200">
-                  <div className="text-xs text-slate-500 font-semibold uppercase">Outstanding Deficit</div>
-                  <div className="text-xl font-bold text-rose-600 mt-1">₹{Number(overviewData.summary?.total_outstanding || 0).toLocaleString('en-IN')}</div>
+                <div className="bg-rose-50/50 border border-rose-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Outstanding Deficit</p>
+                  <p className="text-base font-black font-mono text-rose-700 mt-0.5">₹{Number(overviewData.summary?.total_outstanding || 0).toLocaleString('en-IN')}</p>
+                </div>
+                <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Reconciliation Rate</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="text-base font-black font-mono text-indigo-800">{Number(overviewData.summary?.collection_rate || 0).toFixed(1)}%</p>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${Number(overviewData.summary?.collection_rate || 0) >= 80 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                      {Number(overviewData.summary?.collection_rate || 0) >= 80 ? 'Balanced' : 'Review'}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Batches Audited</p>
+                  <p className="text-base font-black font-mono text-sky-700 mt-0.5">{overviewData.batch_breakdown?.length || 0}</p>
+                </div>
+                <div className="bg-violet-50/50 border border-violet-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600">Total Enrolled</p>
+                  <p className="text-base font-black font-mono text-violet-800 mt-0.5">{overviewData.batch_breakdown?.reduce((acc: number, b: any) => acc + (b.student_count || 0), 0) || 0}</p>
                 </div>
               </div>
 
@@ -2321,6 +2607,13 @@ function ReportsWorkspace() {
                 exportFilename="financial_reconciliation_report"
                 sheetName="Reconciliation"
                 showSummaryRow={true}
+                summaryCalculations={{
+                  batch_name: (rows) => <span className="font-extrabold text-slate-900 font-mono">Total Batches: {rows.length}</span>,
+                  student_count: (rows) => <span className="font-extrabold font-mono text-slate-900">{rows.reduce((acc, r) => acc + (r.student_count || 0), 0)}</span>,
+                  total_fees: (rows) => <span className="font-extrabold font-mono text-slate-900">₹{rows.reduce((acc, r) => acc + Number(r.total_fees || 0), 0).toLocaleString('en-IN')}</span>,
+                  collected: (rows) => <span className="font-extrabold font-mono text-emerald-700">₹{rows.reduce((acc, r) => acc + Number(r.collected || 0), 0).toLocaleString('en-IN')}</span>,
+                  outstanding: (rows) => <span className="font-extrabold font-mono text-rose-600">₹{rows.reduce((acc, r) => acc + Number(r.outstanding || 0), 0).toLocaleString('en-IN')}</span>,
+                }}
               />
             </div>
           )}

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-23
  *
  * @description Global application stylesheet defining Tailwind directives, typography, and print vouchers.
  */
@@ -1042,7 +1042,7 @@
   }
 
   /* ────────────────────────────────────────────────────────────────────────── */
-  /* RECEIPT-ONLY PRINTING RULES (#receipt-print-area)                         */
+  /* RECEIPT & FEE INVOICE PRINTING RULES                                      */
   /* Hide application shell and modal chrome while preserving receipt contents  */
   /* ────────────────────────────────────────────────────────────────────────── */
   body:has(#receipt-print-area) > *:not(.fixed):not(#root):not(#print-root),
@@ -1052,6 +1052,13 @@
   body:has(#receipt-print-area) #root > footer,
   body:has(#receipt-print-area) #root main > *:not(.fixed),
   body:has(#receipt-print-area) .modal-backdrop,
+  body:has(#fee-invoice-print-area) > *:not(.fixed):not(#root):not(#print-root),
+  body:has(#fee-invoice-print-area) #root > aside,
+  body:has(#fee-invoice-print-area) #root > header,
+  body:has(#fee-invoice-print-area) #root > nav,
+  body:has(#fee-invoice-print-area) #root > footer,
+  body:has(#fee-invoice-print-area) #root main > *:not(.fixed),
+  body:has(#fee-invoice-print-area) .modal-backdrop,
   body.printing-receipt > *:not(.fixed):not(#root):not(#print-root),
   body.printing-receipt #root > aside,
   body.printing-receipt #root > header,
@@ -1061,9 +1068,10 @@
     display: none !important;
   }
 
-  /* When body has .printing-receipt or printing modal with #receipt-print-area */
+  /* When body has .printing-receipt or printing modal with #receipt-print-area or #fee-invoice-print-area */
   body.printing-receipt #root,
-  body:has(#receipt-print-area) .fixed.inset-0 {
+  body:has(#receipt-print-area) .fixed.inset-0,
+  body:has(#fee-invoice-print-area) .fixed.inset-0 {
     position: static !important;
     display: block !important;
     background: transparent !important;
@@ -1074,7 +1082,9 @@
   }
 
   body:has(#receipt-print-area) [role="dialog"],
-  body:has(#receipt-print-area) .bg-white.rounded-xl {
+  body:has(#receipt-print-area) .bg-white.rounded-xl,
+  body:has(#fee-invoice-print-area) [role="dialog"],
+  body:has(#fee-invoice-print-area) .bg-white.rounded-2xl {
     box-shadow: none !important;
     border: none !important;
     padding: 0 !important;
@@ -1086,8 +1096,9 @@
     background: transparent !important;
   }
 
-  /* Hide modal header bar with close button when printing receipt */
-  body:has(#receipt-print-area) .fixed.inset-0 > div > div:first-child:has(button) {
+  /* Hide modal header bar with close button when printing receipt or invoice */
+  body:has(#receipt-print-area) .fixed.inset-0 > div > div:first-child:has(button),
+  body:has(#fee-invoice-print-area) .fixed.inset-0 > div > div:first-child:has(button) {
     display: none !important;
   }
 
@@ -1390,12 +1401,43 @@
   display: block !important;
 }
 
-.receipt-logo-img,
-.print-document-logo {
-  max-width: 100% !important;
-  max-height: 100% !important;
+.receipt-logo-container {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  max-width: 48px !important;
+  max-height: 48px !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+}
+
+.receipt-logo-img {
+  width: 44px !important;
+  height: 44px !important;
+  max-width: 44px !important;
+  max-height: 44px !important;
   object-fit: contain !important;
   display: block !important;
+}
+
+.print-document-logo {
+  max-width: 56px !important;
+  max-height: 56px !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  display: block !important;
+}
+
+/* Guard against raw unconstrained images in printable sheets and preview modals */
+[id^="printable-"] img,
+[id$="-print-area"] img,
+.print-sheet img,
+.fee-invoice-sheet img,
+.tt-cert-frame img {
+  max-width: 100% !important;
+  object-fit: contain !important;
 }
 
 /* Timetable Docket Screen Preview Enhancements */

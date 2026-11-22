@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-04
- * @updated     2026-11-22
+ * @updated     2026-11-23
  *
  * @description Isolated receipt printing utility for high-fidelity A5 portrait voucher generation.
  */
@@ -107,6 +107,25 @@ export function printReceiptElement(
       el.parentNode?.removeChild(el);
     });
     sanitizeDomSubtree(clonedReceipt);
+
+    // Enforce strict software bounding on all images inside cloned print tree (RULE 014 Print Hygiene)
+    clonedReceipt.querySelectorAll('img').forEach((img) => {
+      img.style.objectFit = 'contain'
+      if (img.classList.contains('receipt-logo-img') || img.classList.contains('print-document-logo') || img.classList.contains('tt-logo-img')) {
+        img.style.maxHeight = '48px'
+        img.style.maxWidth = '48px'
+        img.style.width = 'auto'
+        img.style.height = 'auto'
+      } else if (img.getAttribute('alt')?.toLowerCase().includes('logo')) {
+        img.style.maxHeight = '48px'
+        img.style.maxWidth = '48px'
+        img.style.width = 'auto'
+        img.style.height = 'auto'
+      } else if (!img.style.maxHeight && !img.style.height) {
+        img.style.maxHeight = '100px'
+        img.style.maxWidth = '100%'
+      }
+    })
 
     // Collect parent stylesheets and Tailwind styles to ensure styling parity
     const parentStyles = Array.from(document.head.querySelectorAll('link[rel="stylesheet"], style'))
