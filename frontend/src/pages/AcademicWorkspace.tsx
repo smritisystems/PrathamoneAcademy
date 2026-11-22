@@ -3588,9 +3588,9 @@ export default function AcademicWorkspace() {
                             { start_time: '12:45', end_time: '13:30', slot_key: '12:45-13:30' },
                           ]
                         ).map((slot, sIdx) => (
-                          <th key={slot.slot_key} className="py-2 px-3 text-center border-r border-slate-200 min-w-[140px]">
+                          <th key={slot.slot_key} className="py-2.5 px-3 text-center border-r border-slate-200 min-w-[155px] bg-slate-50/80">
                             <span className="block text-[11px] font-bold text-slate-900">Period {sIdx + 1}</span>
-                            <span className="block text-[10px] font-normal text-slate-400 font-mono">
+                            <span className="block text-[10px] font-medium text-slate-500 font-mono mt-0.5">
                               {slot.start_time} - {slot.end_time}
                             </span>
                           </th>
@@ -3666,18 +3666,22 @@ export default function AcademicWorkspace() {
                                             <User className="w-3 h-3 text-slate-400" />
                                             {session.teacher_name || 'Unassigned'}
                                           </p>
-                                          <div className="flex items-center justify-between text-[10px] text-slate-600 pt-1 border-t border-slate-200/50">
-                                            <span className="font-bold text-slate-800 bg-white px-1.5 py-0.5 rounded shadow-2xs border border-slate-200 text-[9px]">
-                                              {session.room_number || 'Room 101'}
+                                          <div className="flex items-center justify-between text-[10px] text-slate-600 pt-1 border-t border-slate-200/50 gap-1.5">
+                                            <span className="inline-flex items-center gap-1 font-semibold text-slate-700 bg-white/95 px-1.5 py-0.5 rounded shadow-2xs border border-slate-200/80 text-[9px] truncate max-w-[90px]" title={session.room_number || 'Room 101'}>
+                                              <MapPin className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                                              <span className="truncate">{session.room_number || 'Room 101'}</span>
                                             </span>
-                                            <span className="text-slate-400 text-[9px] font-mono">{slot.start_time} - {slot.end_time}</span>
+                                            <span className="text-slate-400 text-[9px] font-mono shrink-0 font-medium">
+                                              {slot.start_time}
+                                            </span>
                                           </div>
                                         </div>
                                       )
                                     })()
                                   ) : (
                                     <div className={`h-16 rounded-lg border ${daySessionsCount === 0 ? 'border-dashed border-slate-100 bg-slate-50/20' : 'border-dashed border-slate-200/70'
-                                      } flex flex-col items-center justify-center p-1 text-center text-slate-300 group hover:border-primary-300 hover:bg-primary-50/20 transition-all`}>
+                                      } flex flex-col items-center justify-center p-1 text-center text-slate-300 group hover:border-primary-300 hover:bg-primary-50/20 transition-all relative`}>
+                                      <span className="text-xs font-mono text-slate-300/80 group-hover:opacity-0 transition-opacity select-none">—</span>
                                       {isEditMode ? (
                                         <button
                                           type="button"

@@ -863,17 +863,19 @@
    GLOBAL ULTRA-SLEEK SCROLLBAR ARCHITECTURE (Linear / Raycast / macOS Grade)
    ========================================================================== */
 
-/* Standard CSS for modern browsers (Chromium 121+, Firefox, Safari 18+) */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+/* Standard CSS ONLY for browsers lacking ::-webkit-scrollbar support (e.g. Firefox) */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+  }
+  :root.dark * {
+    scrollbar-color: rgba(100, 116, 139, 0.4) transparent;
+  }
 }
 
-:root.dark * {
-  scrollbar-color: rgba(100, 116, 139, 0.4) transparent;
-}
-
-/* WebKit / Chromium scrollbar styling across the entire DOM tree */
+/* WebKit / Chromium / Edge / Safari / Electron / OS Engine Scrollbars
+   Strictly overrides Windows native OS scrollbar and arrow buttons */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -883,18 +885,19 @@
   background: transparent;
 }
 
-/* Hide native Windows arrow buttons completely */
+/* Completely suppress native Windows triangle arrow buttons */
 ::-webkit-scrollbar-button {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
+  -webkit-appearance: none !important;
 }
 
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
 
-/* Smooth rounded thumb with subtle padding border */
+/* Smooth rounded thumb with subtle padding border (macOS / Linear aesthetic) */
 ::-webkit-scrollbar-thumb {
   background-color: rgba(148, 163, 184, 0.35);
   border-radius: 9999px;
@@ -925,14 +928,22 @@
 }
 
 /* Enhanced high-density custom scrollbar utility */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+@supports not selector(::-webkit-scrollbar) {
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+  }
 }
 
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
   height: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -949,15 +960,17 @@
 }
 
 /* Ultra-minimal auto-hide scrollbar (appears only on hover/scroll) */
-.scrollbar-hover-only {
-  scrollbar-width: none;
+@supports not selector(::-webkit-scrollbar) {
+  .scrollbar-hover-only {
+    scrollbar-width: none;
+  }
+  .scrollbar-hover-only:hover {
+    scrollbar-width: thin;
+  }
 }
 .scrollbar-hover-only::-webkit-scrollbar {
   width: 0px;
   height: 0px;
-}
-.scrollbar-hover-only:hover {
-  scrollbar-width: thin;
 }
 .scrollbar-hover-only:hover::-webkit-scrollbar {
   width: 5px;
