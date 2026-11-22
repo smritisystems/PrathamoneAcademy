@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.1.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-16
+#  * @updated     2026-11-23
 #  *
 #  * @description REST API endpoints for Homework & Assignment Management, Recipient Previews & Late-Joiner Policies, Secure File Attachments, Digital Submissions with Version History, Evaluations, Notifications, Dashboards, and Institute Analytics.
 #  */
@@ -1749,15 +1749,21 @@ async def get_daily_homework_register(
     inst_id = current_user.institution_id or 1
     query_date = target_date or date.today()
 
+    # Defensive parameter extraction to handle direct Python calls as well as FastAPI HTTP calls
+    real_target_date = target_date if (target_date and not hasattr(target_date, 'default')) else None
+    real_division_id = division_id if (division_id and not hasattr(division_id, 'default')) else None
+    real_standard_id = standard_id if (standard_id and not hasattr(standard_id, 'default')) else None
+
     conditions = [
         HomeworkAssignment.institution_id == inst_id,
-        HomeworkAssignment.assigned_date == query_date,
         HomeworkAssignment.status != "draft",
     ]
-    if division_id:
-        conditions.append(HomeworkAssignment.division_id == division_id)
-    if standard_id:
-        conditions.append(HomeworkAssignment.standard_id == standard_id)
+    if real_target_date:
+        conditions.append(HomeworkAssignment.assigned_date == real_target_date)
+    if real_division_id:
+        conditions.append(HomeworkAssignment.division_id == real_division_id)
+    if real_standard_id:
+        conditions.append(HomeworkAssignment.standard_id == real_standard_id)
 
     stmt = (
         select(

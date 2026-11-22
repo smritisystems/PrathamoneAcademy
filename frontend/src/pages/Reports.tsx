@@ -1179,6 +1179,25 @@ function ReportsWorkspace() {
     enabled: activeReportId === 'homework-register',
   })
 
+  const homeworkRegisterMetrics = useMemo(() => {
+    const items = homeworkRegisterData?.items || []
+    if (!items.length) return null
+    const totalAssignments = items.length
+    const totalAssigned = items.reduce((sum, r) => sum + (Number(r.total_students) || 0), 0)
+    const totalCompleted = items.reduce((sum, r) => sum + (Number(r.completed) || 0), 0)
+    const totalPending = items.reduce((sum, r) => sum + (Number(r.pending) || 0), 0)
+    const turnaroundRate = totalAssigned > 0 ? ((totalCompleted / totalAssigned) * 100).toFixed(1) : '0'
+    const uniqueTeachers = new Set(items.map((r) => r.teacher).filter(Boolean)).size
+    return {
+      totalAssignments,
+      totalAssigned,
+      totalCompleted,
+      totalPending,
+      turnaroundRate,
+      uniqueTeachers,
+    }
+  }, [homeworkRegisterData])
+
   // 22b. Academics: EduBoard Usage Summary
   const { data: eduboardSummaryData, isLoading: loadingEduBoardSummary, refetch: refetchEduBoardSummary } = useQuery({
     queryKey: ['report-eduboard-summary', selectedAcademicYearId],
@@ -1186,12 +1205,49 @@ function ReportsWorkspace() {
     enabled: activeReportId === 'eduboard-summary',
   })
 
+  const eduboardSummaryMetrics = useMemo(() => {
+    if (!eduboardSummaryData) return null
+    const totalBoards = eduboardSummaryData.total_boards ?? 0
+    const publishedBoards = eduboardSummaryData.published_boards ?? 0
+    const totalPages = eduboardSummaryData.total_pages ?? 0
+    const pdfAttachments = eduboardSummaryData.total_pdf_attachments ?? 0
+    const templatesCount = eduboardSummaryData.templates_count ?? 0
+    const avgPagesPerBoard = totalBoards > 0 ? (totalPages / totalBoards).toFixed(1) : '0'
+    return {
+      totalBoards,
+      publishedBoards,
+      totalPages,
+      pdfAttachments,
+      templatesCount,
+      avgPagesPerBoard,
+    }
+  }, [eduboardSummaryData])
+
   // 23. Students: CRM Enquiries & Conversion Pipeline
   const { data: crmReportsData, isLoading: loadingCrmReports, refetch: refetchCrmReports } = useQuery({
     queryKey: ['report-crm-enquiries', selectedAcademicYearId],
     queryFn: () => leadsApi.getReportsAnalytics().then((r: any) => r.data),
     enabled: activeReportId === 'crm-enquiries',
   })
+
+  const crmEnquiriesMetrics = useMemo(() => {
+    const matrix = crmReportsData?.counsellors_matrix || []
+    if (!matrix.length) return null
+    const totalCounsellors = matrix.length
+    const totalLeads = matrix.reduce((sum: number, r: any) => sum + (Number(r.assigned_leads) || 0), 0)
+    const totalFollowUps = matrix.reduce((sum: number, r: any) => sum + (Number(r.follow_ups_logged) || 0), 0)
+    const totalConversions = matrix.reduce((sum: number, r: any) => sum + (Number(r.conversions) || 0), 0)
+    const conversionRate = totalLeads > 0 ? ((totalConversions / totalLeads) * 100).toFixed(1) : '0'
+    const avgFollowUpsPerLead = totalLeads > 0 ? (totalFollowUps / totalLeads).toFixed(1) : '0'
+    return {
+      totalCounsellors,
+      totalLeads,
+      totalFollowUps,
+      totalConversions,
+      conversionRate,
+      avgFollowUpsPerLead,
+    }
+  }, [crmReportsData])
 
   // 24. Concessions, Waivers & Scholarships (20 Phase 5 Governed Reports)
   const isConcessionReportActive = activeReport.category === 'concessions'
@@ -3079,55 +3135,101 @@ function ReportsWorkspace() {
 
           {/* 22. Academics: Daily Homework Register */}
           {activeReportId === 'homework-register' && (
-            <ExcelReportGrid
-              title="Daily Homework Checking Register"
-              subtitle="Daily assignment issuance, submission turnaround, checking status, and completion rate"
-              columns={[
-                { id: 'assignment_code', header: 'Code', accessorKey: 'assignment_code', type: 'text', width: 110, render: (val) => <span className="font-mono font-bold text-slate-800">{val}</span> },
-                { id: 'title', header: 'Assignment Title', accessorKey: 'title', type: 'text', width: 180, sortable: true },
-                { id: 'standard', header: 'Standard', accessorKey: 'standard', type: 'text', width: 120 },
-                { id: 'batch', header: 'Batch', accessorKey: 'batch', type: 'text', width: 120 },
-                { id: 'subject', header: 'Subject', accessorKey: 'subject', type: 'text', width: 130 },
-                { id: 'teacher', header: 'Teacher', accessorKey: 'teacher', type: 'text', width: 150 },
-                { id: 'due_date', header: 'Due Date', accessorKey: 'due_date', type: 'date', width: 110 },
-                { id: 'total_students', header: 'Assigned', accessorKey: 'total_students', type: 'number', width: 90, align: 'right' },
-                { id: 'completed', header: 'Done', accessorKey: 'completed', type: 'number', width: 80, align: 'right', render: (val) => <span className="font-bold text-emerald-700">{val}</span> },
-                { id: 'pending', header: 'Pending', accessorKey: 'pending', type: 'number', width: 80, align: 'right', render: (val) => <span className="font-bold text-amber-700">{val}</span> },
-                { id: 'completion_rate', header: 'Completion %', accessorKey: 'completion_rate', type: 'text', width: 110, align: 'right', render: (val) => <span className="font-extrabold text-indigo-700">{val}</span> },
-              ]}
-              data={homeworkRegisterData?.items || []}
-              loading={loadingHomeworkRegister}
-              exportFilename="homework_daily_register"
-              sheetName="Homework"
-              showSummaryRow={true}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {homeworkRegisterMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Tasks</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{homeworkRegisterMetrics.totalAssignments}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Total Submissions</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{homeworkRegisterMetrics.totalAssigned}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Completed Work</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">{homeworkRegisterMetrics.totalCompleted}</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Pending Review</p>
+                    <p className="text-base font-black font-mono text-amber-700 mt-0.5">{homeworkRegisterMetrics.totalPending}</p>
+                  </div>
+                  <div className="bg-violet-50/50 border border-violet-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600">Turnaround Rate</p>
+                    <p className="text-base font-black font-mono text-violet-800 mt-0.5">{homeworkRegisterMetrics.turnaroundRate}%</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Active Teachers</p>
+                    <p className="text-base font-black font-mono text-sky-800 mt-0.5">{homeworkRegisterMetrics.uniqueTeachers}</p>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title="Daily Homework Checking Register"
+                subtitle="Daily assignment issuance, submission turnaround, checking status, and completion rate"
+                columns={[
+                  { id: 'assignment_code', header: 'Code', accessorKey: 'assignment_code', type: 'text', width: 110, render: (val) => <span className="font-mono font-bold text-slate-800">{val}</span> },
+                  { id: 'title', header: 'Assignment Title', accessorKey: 'title', type: 'text', width: 180, sortable: true },
+                  { id: 'standard', header: 'Standard', accessorKey: 'standard', type: 'text', width: 120 },
+                  { id: 'batch', header: 'Batch', accessorKey: 'batch', type: 'text', width: 120 },
+                  { id: 'subject', header: 'Subject', accessorKey: 'subject', type: 'text', width: 130 },
+                  { id: 'teacher', header: 'Teacher', accessorKey: 'teacher', type: 'text', width: 150 },
+                  { id: 'due_date', header: 'Due Date', accessorKey: 'due_date', type: 'date', width: 110 },
+                  { id: 'total_students', header: 'Assigned', accessorKey: 'total_students', type: 'number', width: 90, align: 'right' },
+                  { id: 'completed', header: 'Done', accessorKey: 'completed', type: 'number', width: 80, align: 'right', render: (val) => <span className="font-bold text-emerald-700">{val}</span> },
+                  { id: 'pending', header: 'Pending', accessorKey: 'pending', type: 'number', width: 80, align: 'right', render: (val) => <span className="font-bold text-amber-700">{val}</span> },
+                  { id: 'completion_rate', header: 'Completion %', accessorKey: 'completion_rate', type: 'text', width: 110, align: 'right', render: (val) => <span className="font-extrabold text-indigo-700">{val}</span> },
+                ]}
+                data={homeworkRegisterData?.items || []}
+                loading={loadingHomeworkRegister}
+                exportFilename="homework_daily_register"
+                sheetName="Homework"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  assignment_code: (rows) => <span className="font-black text-slate-900 font-mono">Tasks: {rows.length}</span>,
+                  total_students: (rows) => <span className="font-black text-slate-900 font-mono">{rows.reduce((sum, r) => sum + (Number(r.total_students) || 0), 0)}</span>,
+                  completed: (rows) => <span className="font-black text-emerald-700 font-mono">{rows.reduce((sum, r) => sum + (Number(r.completed) || 0), 0)}</span>,
+                  pending: (rows) => <span className="font-black text-amber-700 font-mono">{rows.reduce((sum, r) => sum + (Number(r.pending) || 0), 0)}</span>,
+                }}
+              />
+            </div>
           )}
 
           {/* 22b. Academics: EduBoard Digital Classroom Usage */}
           {activeReportId === 'eduboard-summary' && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <div className="bg-white border border-slate-200 rounded-xl p-3">
-                  <p className="text-[11px] text-slate-500 uppercase font-semibold">Total Boards</p>
-                  <p className="text-xl font-bold text-slate-900 mt-1">{eduboardSummaryData?.total_boards ?? 0}</p>
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {eduboardSummaryMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Boards</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{eduboardSummaryMetrics.totalBoards}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Published Live</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">{eduboardSummaryMetrics.publishedBoards}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Total Pages</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{eduboardSummaryMetrics.totalPages}</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">PDF Attachments</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">{eduboardSummaryMetrics.pdfAttachments}</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Saved Templates</p>
+                    <p className="text-base font-black font-mono text-amber-800 mt-0.5">{eduboardSummaryMetrics.templatesCount}</p>
+                  </div>
+                  <div className="bg-violet-50/50 border border-violet-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600">Avg Pages / Board</p>
+                    <p className="text-base font-black font-mono text-violet-800 mt-0.5">{eduboardSummaryMetrics.avgPagesPerBoard}</p>
+                  </div>
                 </div>
-                <div className="bg-white border border-slate-200 rounded-xl p-3">
-                  <p className="text-[11px] text-slate-500 uppercase font-semibold">Published</p>
-                  <p className="text-xl font-bold text-emerald-700 mt-1">{eduboardSummaryData?.published_boards ?? 0}</p>
-                </div>
-                <div className="bg-white border border-slate-200 rounded-xl p-3">
-                  <p className="text-[11px] text-slate-500 uppercase font-semibold">Total Pages</p>
-                  <p className="text-xl font-bold text-indigo-700 mt-1">{eduboardSummaryData?.total_pages ?? 0}</p>
-                </div>
-                <div className="bg-white border border-slate-200 rounded-xl p-3">
-                  <p className="text-[11px] text-slate-500 uppercase font-semibold">PDF Attachments</p>
-                  <p className="text-xl font-bold text-slate-900 mt-1">{eduboardSummaryData?.total_pdf_attachments ?? 0}</p>
-                </div>
-                <div className="bg-white border border-slate-200 rounded-xl p-3">
-                  <p className="text-[11px] text-slate-500 uppercase font-semibold">Templates</p>
-                  <p className="text-xl font-bold text-amber-700 mt-1">{eduboardSummaryData?.templates_count ?? 0}</p>
-                </div>
-              </div>
+              )}
+
               <ExcelReportGrid
                 title="Recent EduBoard Classroom Boards"
                 subtitle="Published and draft teaching boards across Classic, Whiteboard, and PDF Presentation modes"
@@ -3143,14 +3245,48 @@ function ReportsWorkspace() {
                 exportFilename="eduboard_usage_summary"
                 sheetName="EduBoard"
                 showSummaryRow={true}
+                summaryCalculations={{
+                  board_code: (rows) => <span className="font-black text-slate-900 font-mono">Boards: {rows.length}</span>,
+                  page_count: (rows) => <span className="font-black text-indigo-700 font-mono">{rows.reduce((sum, r) => sum + (Number(r.page_count) || 0), 0)}</span>,
+                }}
               />
             </div>
           )}
 
           {/* 23. Students: CRM Enquiries & Pipeline */}
           {activeReportId === 'crm-enquiries' && (
-            <div className="space-y-6">
-                <ExcelReportGrid
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {crmEnquiriesMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Counsellors</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{crmEnquiriesMetrics.totalCounsellors}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Assigned Leads</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{crmEnquiriesMetrics.totalLeads}</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Follow-ups Logged</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">{crmEnquiriesMetrics.totalFollowUps}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Total Admissions</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">{crmEnquiriesMetrics.totalConversions}</p>
+                  </div>
+                  <div className="bg-violet-50/50 border border-violet-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600">Conversion Rate</p>
+                    <p className="text-base font-black font-mono text-violet-800 mt-0.5">{crmEnquiriesMetrics.conversionRate}%</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Follow-ups / Lead</p>
+                    <p className="text-base font-black font-mono text-amber-800 mt-0.5">{crmEnquiriesMetrics.avgFollowUpsPerLead}</p>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
                 title="Counsellor Conversion Matrix"
                 subtitle="Counsellor lead allocation, follow-ups logged, admissions secured, and conversion percentages"
                 columns={[
@@ -3165,6 +3301,12 @@ function ReportsWorkspace() {
                 exportFilename="crm_counsellor_conversions"
                 sheetName="Counsellors"
                 showSummaryRow={true}
+                summaryCalculations={{
+                  name: (rows) => <span className="font-black text-slate-900 font-mono">Staff: {rows.length}</span>,
+                  assigned_leads: (rows) => <span className="font-black text-slate-900 font-mono">{rows.reduce((sum, r) => sum + (Number(r.assigned_leads) || 0), 0)}</span>,
+                  follow_ups_logged: (rows) => <span className="font-black text-sky-700 font-mono">{rows.reduce((sum, r) => sum + (Number(r.follow_ups_logged) || 0), 0)}</span>,
+                  conversions: (rows) => <span className="font-black text-emerald-700 font-mono">{rows.reduce((sum, r) => sum + (Number(r.conversions) || 0), 0)}</span>,
+                }}
               />
             </div>
           )}
