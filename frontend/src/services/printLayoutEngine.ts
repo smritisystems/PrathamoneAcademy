@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Intelligent scaling, physical dimension translation, readability protection, and print execution service.
  */
@@ -351,6 +351,30 @@ export function generateUniversalPrintCss(
       display: none !important;
     }
 
+    /* ── Software-Governed Image Bounding Rules (RULE 014 Print Hygiene) ── */
+    img {
+      max-width: 100% !important;
+      object-fit: contain !important;
+    }
+    .print-header img,
+    .receipt-header img,
+    [data-testid="print-document-header"] img,
+    .tt-logo-img,
+    .receipt-logo-img {
+      max-height: 56px !important;
+      max-width: 160px !important;
+      width: auto !important;
+      height: auto !important;
+      object-fit: contain !important;
+    }
+    .tt-logo-box {
+      width: 38px !important;
+      height: 38px !important;
+      max-width: 38px !important;
+      max-height: 38px !important;
+      overflow: hidden !important;
+    }
+
     /* ── Canonical Two-Row Global Print Footer Standard ── */
     body {
       counter-reset: page;
@@ -486,6 +510,17 @@ export async function executeUniversalPrint(
         el.parentNode?.removeChild(el)
       })
       sanitizeDomSubtree(clonedContent)
+
+      // Enforce strict software bounding on all images inside cloned print tree (RULE 014 Print Hygiene)
+      clonedContent.querySelectorAll('img').forEach((img) => {
+        img.style.objectFit = 'contain'
+        if (img.classList.contains('print-document-logo') || img.classList.contains('receipt-logo-img') || img.classList.contains('tt-logo-img')) {
+          img.style.maxHeight = '56px'
+          img.style.maxWidth = '160px'
+        } else if (!img.style.maxHeight && !img.style.height) {
+          img.style.maxHeight = '120px'
+        }
+      })
 
       // Automatically enforce canonical PrintFooter if not already present in cloned node
       if (!clonedContent.querySelector('.pratham-global-print-footer')) {

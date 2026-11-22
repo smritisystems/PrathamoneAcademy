@@ -1300,5 +1300,119 @@
     display: block !important;
     visibility: visible !important;
   }
+
+  /* ────────────────────────────────────────────────────────────────────────── */
+  /* GLOBAL INSTITUTIONAL LOGO BOUNDING (Software Controls Sizing, Never Raw Img) */
+  /* ────────────────────────────────────────────────────────────────────────── */
+  img {
+    max-width: 100% !important;
+    object-fit: contain !important;
+  }
+  .tt-logo-box {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    max-width: 38px !important;
+    max-height: 38px !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+  }
+  .tt-logo-img {
+    width: 34px !important;
+    height: 34px !important;
+    max-width: 34px !important;
+    max-height: 34px !important;
+    object-fit: contain !important;
+    display: block !important;
+  }
+  #receipt-print-area img,
+  .receipt-header img,
+  .receipt-logo-img {
+    max-width: 48px !important;
+    max-height: 48px !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+  }
+  [data-testid="print-document-header"] img,
+  header.print-header img,
+  .print-document-logo {
+    max-height: 56px !important;
+    max-width: 160px !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+  }
+  .print-branding-footer img,
+  [data-testid="print-footer-row-2"] img {
+    max-height: 12px !important;
+    max-width: 60px !important;
+    object-fit: contain !important;
+  }
+}
+
+/* ==========================================================================
+   GLOBAL INSTITUTION LOGO BOUNDING & DOCKET PREVIEW ARCHITECTURE
+   Guarantees software-governed logo sizing on screen and in modals.
+   Raw image pixel dimensions NEVER blow up modals, vouchers, or dockets.
+   ========================================================================== */
+.tt-logo-box,
+.print-logo-container,
+.receipt-logo-container,
+.brand-logo-plate {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+}
+
+.tt-logo-box {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  max-width: 38px !important;
+  max-height: 38px !important;
+  border: 1.5px solid #d4af37 !important;
+  border-radius: 4px !important;
+  background: #0b1e36 !important;
+  padding: 1.5px !important;
+}
+
+.tt-logo-img {
+  width: 34px !important;
+  height: 34px !important;
+  max-width: 34px !important;
+  max-height: 34px !important;
+  object-fit: contain !important;
+  display: block !important;
+}
+
+.receipt-logo-img,
+.print-document-logo {
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  display: block !important;
+}
+
+/* Timetable Docket Screen Preview Enhancements */
+#printable-timetable-docket .tt-logo-box {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  max-width: 38px !important;
+  max-height: 38px !important;
+}
+
+#printable-timetable-docket .tt-logo-img {
+  width: 34px !important;
+  height: 34px !important;
+  max-width: 34px !important;
+  max-height: 34px !important;
+  object-fit: contain !important;
 }
 

@@ -1653,47 +1653,7 @@ export default function AcademicWorkspace() {
   }
 
   const handlePrintIsolatedDocket = () => {
-    const docketEl = document.getElementById('printable-timetable-docket')
-    if (!docketEl) {
-      window.print()
-      return
-    }
-    const iframe = document.createElement('iframe')
-    iframe.style.position = 'fixed'
-    iframe.style.right = '0'
-    iframe.style.bottom = '0'
-    iframe.style.width = '0'
-    iframe.style.height = '0'
-    iframe.style.border = '0'
-    document.body.appendChild(iframe)
-    const doc = iframe.contentWindow?.document
-    if (doc) {
-      doc.open()
-      doc.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Official Timetable Docket — Prashant Academy</title>
-          <script src="https://cdn.tailwindcss.com"></script>
-          <style>
-            @page { size: A4 landscape; margin: 8mm; }
-            body { font-family: system-ui, -apple-system, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 12px; background: white; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #cbd5e1; }
-          </style>
-        </head>
-        <body>
-          ${docketEl.outerHTML}
-        </body>
-        </html>
-      `)
-      doc.close()
-      iframe.contentWindow?.focus()
-      setTimeout(() => {
-        iframe.contentWindow?.print()
-        setTimeout(() => iframe.remove(), 1200)
-      }, 500)
-    }
+    printTimetableDocketElement('printable-timetable-docket', 'Official Academic Timetable Docket — Prashant Academy')
   }
 
   const handleOpenTransfer = (enr: EnrollmentRecord) => {
@@ -5499,6 +5459,7 @@ export default function AcademicWorkspace() {
         size="5xl"
       >
         <div className="space-y-4 max-h-[85vh] overflow-y-auto custom-scrollbar p-1">
+          <style>{getTimetableDocketPrintStyles()}</style>
           {timetableDocketData && (
             <div id="printable-timetable-docket" className="tt-cert-frame">
               {/* Top Gold Foil Bar */}
@@ -5507,12 +5468,39 @@ export default function AcademicWorkspace() {
               {/* Institution Header */}
               <div className="tt-header">
                 <div className="tt-header-left">
-                  <div className="tt-logo-box">
+                  <div
+                    className="tt-logo-box"
+                    style={{
+                      width: '38px',
+                      height: '38px',
+                      minWidth: '38px',
+                      minHeight: '38px',
+                      maxWidth: '38px',
+                      maxHeight: '38px',
+                      border: '1.5px solid #d4af37',
+                      borderRadius: '4px',
+                      background: '#0b1e36',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                      padding: '1.5px',
+                      flexShrink: 0,
+                    }}
+                  >
                     {timetableDocketData.institution.logo_url ? (
                       <img
                         src={timetableDocketData.institution.logo_url}
                         alt="Logo"
                         className="tt-logo-img"
+                        style={{
+                          width: '34px',
+                          height: '34px',
+                          maxWidth: '34px',
+                          maxHeight: '34px',
+                          objectFit: 'contain',
+                          display: 'block',
+                        }}
                       />
                     ) : (
                       <School className="w-5 h-5 text-amber-300" />

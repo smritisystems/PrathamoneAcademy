@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-05
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Official A5 portrait fee receipt document featuring compact header, transaction metadata,
  */
@@ -581,16 +581,34 @@ export default function PaymentReceiptView({
           <div className="flex items-center gap-3 min-w-0">
             {/* PA Royal Blue Monogram Emblem or Custom Uploaded Logo */}
             {branding.assets.logoUrl && branding.assets.logoUrl !== '/logo.svg' ? (
-              <img
-                src={branding.assets.logoUrl}
-                alt={academyName}
-                className="w-12 h-12 object-contain rounded-2xl shrink-0"
-                onError={(e) => {
-                  (e.currentTarget as HTMLElement).style.display = 'none'
-                  const next = e.currentTarget.nextElementSibling as HTMLElement
-                  if (next) next.style.display = 'flex'
+              <div
+                className="w-12 h-12 max-w-[48px] max-h-[48px] rounded-2xl bg-white border border-slate-200/80 p-0.5 flex items-center justify-center shrink-0 overflow-hidden shadow-xs receipt-logo-container"
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  maxWidth: '48px',
+                  maxHeight: '48px',
                 }}
-              />
+              >
+                <img
+                  src={branding.assets.logoUrl}
+                  alt={academyName}
+                  className="w-full h-full max-w-full max-h-full object-contain shrink-0 block receipt-logo-img"
+                  style={{
+                    width: 'auto',
+                    height: 'auto',
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    objectFit: 'contain',
+                  }}
+                  onError={(e) => {
+                    const parent = e.currentTarget.parentElement
+                    if (parent) parent.style.display = 'none'
+                    const next = parent?.nextElementSibling as HTMLElement
+                    if (next) next.style.display = 'flex'
+                  }}
+                />
+              </div>
             ) : null}
             {/* Executive Dual-Ring Collegiate Crest */}
             <div

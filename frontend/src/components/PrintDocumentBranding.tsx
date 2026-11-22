@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Canonical document branding header, statutory compliance notices, and authorized signatory layout for printable documents.
  */
@@ -94,14 +94,31 @@ export function PrintDocumentHeader({
         <div className="flex items-center gap-3.5">
           {/* Official Emblem Monogram or Academy Logo */}
           {hasValidLogo ? (
-            <img
-              src={logoUrl}
-              alt={academyName}
-              onError={() => setLogoError(true)}
-              className={`rounded-xl object-contain shadow-xs shrink-0 border border-slate-200 bg-white p-0.5 ${
-                compact ? 'w-11 h-11' : 'w-14 h-14'
+            <div
+              className={`rounded-xl border border-slate-200 bg-white p-0.5 shadow-xs shrink-0 flex items-center justify-center overflow-hidden ${
+                compact ? 'w-11 h-11 max-w-[44px] max-h-[44px]' : 'w-14 h-14 max-w-[56px] max-h-[56px]'
               }`}
-            />
+              style={{
+                width: compact ? '44px' : '56px',
+                height: compact ? '44px' : '56px',
+                maxWidth: compact ? '44px' : '56px',
+                maxHeight: compact ? '44px' : '56px',
+              }}
+            >
+              <img
+                src={logoUrl}
+                alt={academyName}
+                onError={() => setLogoError(true)}
+                className="w-full h-full max-w-full max-h-full object-contain shrink-0 block print-document-logo"
+                style={{
+                  width: 'auto',
+                  height: 'auto',
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain',
+                }}
+              />
+            </div>
           ) : (
             <div
               className={`rounded-xl bg-gradient-to-tr from-blue-900 via-indigo-900 to-slate-900 text-white font-black font-serif flex items-center justify-center shadow-sm shrink-0 border border-slate-800 ${
