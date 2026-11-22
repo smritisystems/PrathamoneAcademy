@@ -933,6 +933,24 @@ function ReportsWorkspace() {
     enabled: activeReportId === 'withdrawal-analytics',
   })
 
+  const withdrawalsMetrics = useMemo(() => {
+    if (!withdrawalsReport) return null
+    const totalWithdrawn = withdrawalsReport.length
+    const totalGrossPaid = withdrawalsReport.reduce((acc: number, r: any) => acc + Number(r.gross_paid || 0), 0)
+    const totalRefunded = withdrawalsReport.reduce((acc: number, r: any) => acc + Number(r.refund_amount || 0), 0)
+    const netRetained = withdrawalsReport.reduce((acc: number, r: any) => acc + Number(r.net_retained || 0), 0)
+    const retentionRate = totalGrossPaid > 0 ? ((netRetained / totalGrossPaid) * 100).toFixed(1) : '100.0'
+    const uniqueStandards = new Set(withdrawalsReport.map((r: any) => r.standard_name).filter(Boolean)).size
+    return {
+      totalWithdrawn,
+      totalGrossPaid,
+      totalRefunded,
+      netRetained,
+      retentionRate,
+      uniqueStandards,
+    }
+  }, [withdrawalsReport])
+
   // 5. Academics: Batch Capacity
   const { data: batchCapacityData = [], isLoading: loadingBatchCapacity, refetch: refetchBatchCapacity } = useQuery({
     queryKey: ['report-batch-capacity', selectedBoardId, selectedStandardId],
@@ -964,6 +982,24 @@ function ReportsWorkspace() {
     queryFn: () => academicReportsApi.getDistribution().then((r) => r.data),
     enabled: activeReportId === 'academic-distribution',
   })
+
+  const distributionMetrics = useMemo(() => {
+    if (!distributionData || !distributionData.length) return null
+    const uniqueBoards = new Set(distributionData.map((r: any) => r.board_name).filter(Boolean)).size
+    const uniqueStandards = new Set(distributionData.map((r: any) => r.standard_name).filter(Boolean)).size
+    const totalBatches = distributionData.reduce((acc: number, r: any) => acc + (Number(r.batches_count) || 0), 0)
+    const totalCapacity = distributionData.reduce((acc: number, r: any) => acc + (Number(r.total_capacity) || 0), 0)
+    const totalEnrolled = distributionData.reduce((acc: number, r: any) => acc + (Number(r.enrolled_count) || 0), 0)
+    const avgOccupancy = totalCapacity > 0 ? ((totalEnrolled / totalCapacity) * 100).toFixed(1) : '0'
+    return {
+      uniqueBoards,
+      uniqueStandards,
+      totalBatches,
+      totalCapacity,
+      totalEnrolled,
+      avgOccupancy,
+    }
+  }, [distributionData])
 
   // 7. Academics: Curriculum Matrix
   const { data: curriculumMatrixData = [], isLoading: loadingCurriculum, refetch: refetchCurriculum } = useQuery({
@@ -1296,6 +1332,82 @@ function ReportsWorkspace() {
     queryFn: () => importExportApi.getHistory().then((r) => (r.data as any)?.items || []),
     enabled: activeReportId === 'import-history',
   })
+
+  // Examinations & System Sleek Telemetry Metrics (Rule 014 Sleek Design System)
+  const examMeritMetrics = useMemo(() => {
+    if (!examMeritData) return null
+    const totalCandidates = examMeritData.length
+    const passedCount = examMeritData.filter((r: any) => (r.status || '').toLowerCase() === 'pass').length
+    const failedCount = totalCandidates - passedCount
+    const passRate = totalCandidates > 0 ? ((passedCount / totalCandidates) * 100).toFixed(1) : '0'
+    const topScore = examMeritData.length > 0 ? Math.max(...examMeritData.map((r: any) => Number(r.marks_obtained) || 0)) : 0
+    const totalMarks = examMeritData.reduce((acc: number, r: any) => acc + (Number(r.percentage) || 0), 0)
+    const classAvgPct = totalCandidates > 0 ? (totalMarks / totalCandidates).toFixed(1) : '0'
+    return {
+      totalCandidates,
+      passedCount,
+      failedCount,
+      passRate,
+      topScore,
+      classAvgPct,
+    }
+  }, [examMeritData])
+
+  const auditLogsMetrics = useMemo(() => {
+    if (!auditLogsData) return null
+    const totalEvents = auditLogsData.length
+    const uniqueUsers = new Set(auditLogsData.map((r: any) => r.actor_name || r.user_id).filter(Boolean)).size
+    const criticalEvents = auditLogsData.filter((r: any) => (r.severity || '').toLowerCase() === 'critical').length
+    const warningEvents = auditLogsData.filter((r: any) => (r.severity || '').toLowerCase() === 'warning').length
+    const securityActions = auditLogsData.filter((r: any) => (r.resource_type || '').toLowerCase().includes('auth') || (r.action || '').toLowerCase().includes('login')).length
+    const adminActions = totalEvents - securityActions
+    return {
+      totalEvents,
+      uniqueUsers,
+      criticalEvents,
+      warningEvents,
+      securityActions,
+      adminActions,
+    }
+  }, [auditLogsData])
+
+  const commLogsMetrics = useMemo(() => {
+    if (!commLogsData) return null
+    const totalDispatches = commLogsData.length
+    const deliveredCount = commLogsData.filter((r: any) => (r.status || '').toLowerCase() === 'delivered' || (r.status || '').toLowerCase() === 'sent').length
+    const failedCount = totalDispatches - deliveredCount
+    const deliveryRate = totalDispatches > 0 ? ((deliveredCount / totalDispatches) * 100).toFixed(1) : '100.0'
+    const smsCount = commLogsData.filter((r: any) => (r.channel || '').toLowerCase() === 'sms').length
+    const whatsappCount = commLogsData.filter((r: any) => (r.channel || '').toLowerCase() === 'whatsapp').length
+    const emailCount = commLogsData.filter((r: any) => (r.channel || '').toLowerCase() === 'email').length
+    return {
+      totalDispatches,
+      deliveredCount,
+      failedCount,
+      deliveryRate,
+      smsCount,
+      whatsappCount,
+      emailCount,
+    }
+  }, [commLogsData])
+
+  const importHistoryMetrics = useMemo(() => {
+    if (!importHistoryData) return null
+    const totalMigrations = importHistoryData.length
+    const totalRows = importHistoryData.reduce((acc: number, r: any) => acc + (Number(r.total_rows) || 0), 0)
+    const successRows = importHistoryData.reduce((acc: number, r: any) => acc + (Number(r.successful_rows) || 0), 0)
+    const failedRows = importHistoryData.reduce((acc: number, r: any) => acc + (Number(r.failed_rows) || 0), 0)
+    const successRate = totalRows > 0 ? ((successRows / totalRows) * 100).toFixed(1) : '100.0'
+    const completedMigrations = importHistoryData.filter((r: any) => (r.status || '').toLowerCase() === 'completed' || (r.status || '').toLowerCase() === 'success').length
+    return {
+      totalMigrations,
+      totalRows,
+      successRows,
+      failedRows,
+      successRate,
+      completedMigrations,
+    }
+  }, [importHistoryData])
 
   // 22. Academics: Daily Homework Register
   const { data: homeworkRegisterData, isLoading: loadingHomeworkRegister, refetch: refetchHomeworkRegister } = useQuery({
@@ -2691,7 +2803,42 @@ function ReportsWorkspace() {
 
           {/* 10. Board Distribution */}
           {activeReportId === 'academic-distribution' && (
-            <div className="space-y-6">
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {distributionMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Boards</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{distributionMetrics.uniqueBoards}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Standards Mapped</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{distributionMetrics.uniqueStandards}</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Total Batches</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">{distributionMetrics.totalBatches}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Intake Capacity</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">{distributionMetrics.totalCapacity.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-violet-50/50 border border-violet-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600">Enrolled Students</p>
+                    <p className="text-base font-black font-mono text-violet-800 mt-0.5">{distributionMetrics.totalEnrolled.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Average Occupancy</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <p className="text-base font-black font-mono text-amber-800">{distributionMetrics.avgOccupancy}%</p>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${Number(distributionMetrics.avgOccupancy) >= 80 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>
+                        {Number(distributionMetrics.avgOccupancy) >= 80 ? 'High' : 'Normal'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
                 <h3 className="font-bold text-slate-900 text-sm mb-4">Board Enrollment Distribution</h3>
                 <div className="h-64">
@@ -2725,6 +2872,18 @@ function ReportsWorkspace() {
                 exportFilename="board_distribution_report"
                 sheetName="Distribution"
                 showSummaryRow={true}
+                summaryCalculations={{
+                  board_name: (rows) => <span className="font-extrabold text-slate-900 font-mono">Total Rows: {rows.length}</span>,
+                  batches_count: (rows) => <span className="font-extrabold font-mono text-slate-900">{rows.reduce((sum, r) => sum + (Number(r.batches_count) || 0), 0)}</span>,
+                  total_capacity: (rows) => <span className="font-extrabold font-mono text-slate-900">{rows.reduce((sum, r) => sum + (Number(r.total_capacity) || 0), 0)}</span>,
+                  enrolled_count: (rows) => <span className="font-extrabold font-mono text-emerald-700">{rows.reduce((sum, r) => sum + (Number(r.enrolled_count) || 0), 0)}</span>,
+                  occupancy_percentage: (rows) => {
+                    const totalCap = rows.reduce((sum, r) => sum + (Number(r.total_capacity) || 0), 0)
+                    const totalEnr = rows.reduce((sum, r) => sum + (Number(r.enrolled_count) || 0), 0)
+                    const pct = totalCap > 0 ? ((totalEnr / totalCap) * 100).toFixed(1) : '0'
+                    return <span className="font-extrabold font-mono text-primary-800">{pct}%</span>
+                  },
+                }}
               />
             </div>
           )}
@@ -3339,40 +3498,98 @@ function ReportsWorkspace() {
 
           {/* 15. Exam Merit Register */}
           {activeReportId === 'exam-merit' && (
-            <ExcelReportGrid
-              title="Consolidated Exam Marks & Merit Roster"
-              subtitle="Ranked cohort performance register with total score, percentage, and letter grade"
-              columns={examMeritColumns}
-              data={examMeritData}
-              loading={loadingExamMerit}
-              exportFilename="exam_merit_roster"
-              sheetName="Merit Roster"
-              showSummaryRow={true}
-              summaryCalculations={{
-                admission_number: (rows) => <span className="font-extrabold text-slate-900">Total: {rows.length}</span>,
-              }}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {examMeritMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Candidates</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{examMeritMetrics.totalCandidates}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Passed</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">{examMeritMetrics.passedCount}</p>
+                  </div>
+                  <div className="bg-rose-50/50 border border-rose-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Failed / Backlog</p>
+                    <p className="text-base font-black font-mono text-rose-700 mt-0.5">{examMeritMetrics.failedCount}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Pass Rate</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{examMeritMetrics.passRate}%</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Top Score</p>
+                    <p className="text-base font-black font-mono text-amber-700 mt-0.5">{examMeritMetrics.topScore}</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Class Average</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">{examMeritMetrics.classAvgPct}%</p>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title="Consolidated Exam Marks & Merit Roster"
+                subtitle="Ranked cohort performance register with total score, percentage, and letter grade"
+                columns={examMeritColumns}
+                data={examMeritData}
+                loading={loadingExamMerit}
+                exportFilename="exam_merit_roster"
+                sheetName="Merit Roster"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  admission_number: (rows) => <span className="font-black text-slate-900 font-mono">Total: {rows.length}</span>,
+                  marks_obtained: (rows) => (
+                    <span className="font-black text-slate-900 font-mono">
+                      Avg: {rows.length > 0 ? (rows.reduce((sum, r) => sum + (Number(r.marks_obtained) || 0), 0) / rows.length).toFixed(1) : 0}
+                    </span>
+                  ),
+                  percentage: (rows) => (
+                    <span className="font-black text-indigo-700 font-mono">
+                      {rows.length > 0 ? (rows.reduce((sum, r) => sum + (Number(r.percentage) || 0), 0) / rows.length).toFixed(1) : 0}%
+                    </span>
+                  ),
+                  status: (rows) => {
+                    const pass = rows.filter((r) => (r.status || '').toLowerCase() === 'pass').length
+                    return <span className="font-black text-emerald-700 font-mono">Pass: {pass}/{rows.length}</span>
+                  },
+                }}
+              />
+            </div>
           )}
 
           {/* 16. Exam Analytics */}
           {activeReportId === 'exam-analytics' && examAnalyticsData && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div className="bg-white p-4 rounded-xl border border-slate-200">
-                  <div className="text-xs text-slate-500 font-semibold uppercase">Exam Name</div>
-                  <div className="text-base font-bold text-slate-900 mt-1">{examAnalyticsData.exam_name}</div>
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Exam Title</p>
+                  <p className="text-sm font-black text-slate-900 mt-0.5 truncate" title={examAnalyticsData.exam_name}>{examAnalyticsData.exam_name}</p>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200">
-                  <div className="text-xs text-slate-500 font-semibold uppercase">Appeared Students</div>
-                  <div className="text-xl font-bold text-primary-700 mt-1">{examAnalyticsData.appeared_candidates}</div>
+                <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Candidates</p>
+                  <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{examAnalyticsData.appeared_candidates}</p>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200">
-                  <div className="text-xs text-slate-500 font-semibold uppercase">Class Average</div>
-                  <div className="text-xl font-bold text-emerald-700 mt-1">{examAnalyticsData.class_average}%</div>
+                <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Class Average</p>
+                  <p className="text-base font-black font-mono text-emerald-700 mt-0.5">{examAnalyticsData.class_average}%</p>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200">
-                  <div className="text-xs text-slate-500 font-semibold uppercase">Overall Pass %</div>
-                  <div className="text-xl font-bold text-primary-700 mt-1">{examAnalyticsData.pass_percentage}%</div>
+                <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Overall Pass %</p>
+                  <p className="text-base font-black font-mono text-sky-700 mt-0.5">{examAnalyticsData.pass_percentage}%</p>
+                </div>
+                <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Subjects Tested</p>
+                  <p className="text-base font-black font-mono text-amber-700 mt-0.5">{(examAnalyticsData.subject_analytics || []).length}</p>
+                </div>
+                <div className="bg-teal-50/50 border border-teal-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-teal-600">Status</p>
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-teal-800 mt-0.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
+                    Sealed
+                  </span>
                 </div>
               </div>
 
@@ -3382,133 +3599,361 @@ function ReportsWorkspace() {
                 columns={[
                   { id: 'subject_name', header: 'Subject', accessorKey: 'subject_name', type: 'text', width: 200, sortable: true, render: (val) => <span className="font-bold text-slate-900">{val}</span> },
                   { id: 'candidates_count', header: 'Candidates', accessorKey: 'candidates_count', type: 'number', width: 120, align: 'center', sortable: true },
-                  { id: 'average_marks', header: 'Average Score', accessorKey: 'average_marks', type: 'number', width: 140, align: 'center', sortable: true, render: (val) => <span className="font-bold text-slate-800">{val}</span> },
-                  { id: 'highest_marks', header: 'Highest', accessorKey: 'highest_marks', type: 'number', width: 120, align: 'center', render: (val) => <span className="font-bold text-emerald-700">{val}</span> },
-                  { id: 'lowest_marks', header: 'Lowest', accessorKey: 'lowest_marks', type: 'number', width: 120, align: 'center', render: (val) => <span className="font-bold text-rose-700">{val}</span> },
+                  { id: 'average_marks', header: 'Average Score', accessorKey: 'average_marks', type: 'number', width: 140, align: 'center', sortable: true, render: (val) => <span className="font-bold font-mono text-slate-800">{val}</span> },
+                  { id: 'highest_marks', header: 'Highest', accessorKey: 'highest_marks', type: 'number', width: 120, align: 'center', render: (val) => <span className="font-bold font-mono text-emerald-700">{val}</span> },
+                  { id: 'lowest_marks', header: 'Lowest', accessorKey: 'lowest_marks', type: 'number', width: 120, align: 'center', render: (val) => <span className="font-bold font-mono text-rose-700">{val}</span> },
                 ]}
                 data={examAnalyticsData.subject_analytics || []}
                 loading={loadingExamAnalytics}
                 exportFilename="exam_subject_analytics"
                 sheetName="Subject Analytics"
                 showSummaryRow={true}
+                summaryCalculations={{
+                  subject_name: (rows) => <span className="font-black text-slate-900 font-mono">Subjects: {rows.length}</span>,
+                  candidates_count: (rows) => (
+                    <span className="font-black text-slate-900 font-mono">
+                      {rows.reduce((sum, r) => Math.max(sum, Number(r.candidates_count) || 0), 0)} max
+                    </span>
+                  ),
+                  average_marks: (rows) => (
+                    <span className="font-black text-slate-900 font-mono">
+                      {rows.length > 0 ? (rows.reduce((sum, r) => sum + (Number(r.average_marks) || 0), 0) / rows.length).toFixed(1) : 0}
+                    </span>
+                  ),
+                  highest_marks: (rows) => (
+                    <span className="font-black text-emerald-700 font-mono">
+                      {rows.length > 0 ? Math.max(...rows.map((r) => Number(r.highest_marks) || 0)) : 0}
+                    </span>
+                  ),
+                  lowest_marks: (rows) => (
+                    <span className="font-black text-rose-700 font-mono">
+                      {rows.length > 0 ? Math.min(...rows.map((r) => Number(r.lowest_marks) || 0)) : 0}
+                    </span>
+                  ),
+                }}
               />
             </div>
           )}
 
           {/* 17. Security Audit Trail */}
           {activeReportId === 'audit-logs' && (
-            <ExcelReportGrid
-              title="Security & System Access Audit Trail"
-              subtitle="Immutable log of user authentication, permission elevation, and administrative events"
-              columns={auditColumns}
-              data={auditLogsData}
-              loading={loadingAuditLogs}
-              exportFilename="security_audit_logs"
-              sheetName="Security Logs"
-              showSummaryRow={true}
-              summaryCalculations={{
-                timestamp: (rows) => <span className="font-extrabold text-slate-900">Total Events: {rows.length}</span>,
-              }}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {auditLogsMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Audit Events</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{auditLogsMetrics.totalEvents}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Active Actors</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{auditLogsMetrics.uniqueUsers}</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Auth & Security</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">{auditLogsMetrics.securityActions}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Admin Operations</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">{auditLogsMetrics.adminActions}</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Warnings</p>
+                    <p className="text-base font-black font-mono text-amber-700 mt-0.5">{auditLogsMetrics.warningEvents}</p>
+                  </div>
+                  <div className="bg-rose-50/50 border border-rose-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Critical Incidents</p>
+                    <p className="text-base font-black font-mono text-rose-700 mt-0.5">
+                      {auditLogsMetrics.criticalEvents > 0 ? (
+                        <span className="text-rose-700">{auditLogsMetrics.criticalEvents}</span>
+                      ) : (
+                        <span className="text-emerald-700">0 (Clean)</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title="Security & System Access Audit Trail"
+                subtitle="Immutable log of user authentication, permission elevation, and administrative events"
+                columns={auditColumns}
+                data={auditLogsData}
+                loading={loadingAuditLogs}
+                exportFilename="security_audit_logs"
+                sheetName="Security Logs"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  timestamp: (rows) => <span className="font-black text-slate-900 font-mono">Total Events: {rows.length}</span>,
+                  action: (rows) => {
+                    const uniqueActions = new Set(rows.map((r) => r.action).filter(Boolean)).size
+                    return <span className="font-black text-slate-900 font-mono">{uniqueActions} Actions</span>
+                  },
+                  actor_name: (rows) => {
+                    const uniqueActors = new Set(rows.map((r) => r.actor_name || r.user_id).filter(Boolean)).size
+                    return <span className="font-black text-indigo-700 font-mono">{uniqueActors} Actors</span>
+                  },
+                }}
+              />
+            </div>
           )}
 
           {/* 18. Communication Logs */}
           {activeReportId === 'comm-logs' && (
-            <ExcelReportGrid
-              title="Communication & Notification Dispatch Logs"
-              subtitle="Delivery records for institutional SMS, WhatsApp, and email messages"
-              columns={[
-                { id: 'created_at', header: 'Sent At', accessorKey: 'created_at', type: 'date', width: 150, sortable: true, render: (val) => <span className="font-mono text-xs">{val ? new Date(val).toLocaleString('en-IN') : 'N/A'}</span> },
-                { id: 'recipient_name', header: 'Recipient', accessorKey: 'recipient_name', type: 'text', width: 160 },
-                { id: 'recipient_destination', header: 'Contact #', accessorKey: 'recipient_destination', type: 'text', width: 150 },
-                { id: 'channel', header: 'Channel', accessorKey: 'channel', type: 'text', width: 100, render: (val) => <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-bold uppercase">{val}</span> },
-                { id: 'template_code', header: 'Message Type', accessorKey: 'template_code', type: 'text', width: 160 },
-                { id: 'subject', header: 'Subject', accessorKey: 'subject', type: 'text', width: 200 },
-                { id: 'status', header: 'Status', accessorKey: 'status', type: 'text', width: 110, render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold ${val === 'delivered' || val === 'sent' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>{val}</span> },
-              ]}
-              data={commLogsData}
-              loading={loadingCommLogs}
-              exportFilename="communication_logs"
-              sheetName="Communications"
-              showSummaryRow={true}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {commLogsMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Dispatches</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{commLogsMetrics.totalDispatches}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Delivered</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">{commLogsMetrics.deliveredCount}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Delivery Rate</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{commLogsMetrics.deliveryRate}%</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">SMS Outbound</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">{commLogsMetrics.smsCount}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">WhatsApp</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">{commLogsMetrics.whatsappCount}</p>
+                  </div>
+                  <div className="bg-purple-50/50 border border-purple-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Email Dispatches</p>
+                    <p className="text-base font-black font-mono text-purple-700 mt-0.5">{commLogsMetrics.emailCount}</p>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title="Communication & Notification Dispatch Logs"
+                subtitle="Delivery records for institutional SMS, WhatsApp, and email messages"
+                columns={[
+                  { id: 'created_at', header: 'Sent At', accessorKey: 'created_at', type: 'date', width: 150, sortable: true, render: (val) => <span className="font-mono text-xs">{val ? new Date(val).toLocaleString('en-IN') : 'N/A'}</span> },
+                  { id: 'recipient_name', header: 'Recipient', accessorKey: 'recipient_name', type: 'text', width: 160 },
+                  { id: 'recipient_destination', header: 'Contact #', accessorKey: 'recipient_destination', type: 'text', width: 150 },
+                  { id: 'channel', header: 'Channel', accessorKey: 'channel', type: 'text', width: 100, render: (val) => <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-bold uppercase font-mono">{val}</span> },
+                  { id: 'template_code', header: 'Message Type', accessorKey: 'template_code', type: 'text', width: 160 },
+                  { id: 'subject', header: 'Subject', accessorKey: 'subject', type: 'text', width: 200 },
+                  { id: 'status', header: 'Status', accessorKey: 'status', type: 'text', width: 110, render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold font-mono ${val === 'delivered' || val === 'sent' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>{val}</span> },
+                ]}
+                data={commLogsData}
+                loading={loadingCommLogs}
+                exportFilename="communication_logs"
+                sheetName="Communications"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  created_at: (rows) => <span className="font-black text-slate-900 font-mono">Total: {rows.length}</span>,
+                  channel: (rows) => {
+                    const sms = rows.filter((r) => (r.channel || '').toLowerCase() === 'sms').length
+                    const wa = rows.filter((r) => (r.channel || '').toLowerCase() === 'whatsapp').length
+                    return <span className="font-black text-slate-900 font-mono">SMS:{sms} WA:{wa}</span>
+                  },
+                  status: (rows) => {
+                    const delivered = rows.filter((r) => (r.status || '').toLowerCase() === 'delivered' || (r.status || '').toLowerCase() === 'sent').length
+                    return <span className="font-black text-emerald-700 font-mono">Delivered: {delivered}/{rows.length}</span>
+                  },
+                }}
+              />
+            </div>
           )}
 
           {/* 19. Import/Export Migration History */}
           {activeReportId === 'import-history' && (
-            <ExcelReportGrid
-              title="Data Import & Migration History"
-              subtitle="Historical records of bulk spreadsheet uploads and data migrations"
-              columns={[
-                { id: 'created_at', header: 'Import Date', accessorKey: 'created_at', type: 'date', width: 150, sortable: true, render: (val) => <span className="font-mono text-xs">{val ? new Date(val).toLocaleString('en-IN') : 'N/A'}</span> },
-                { id: 'file_name', header: 'File Name', accessorKey: 'file_name', type: 'text', width: 200 },
-                { id: 'entity_type', header: 'Target Entity', accessorKey: 'entity_type', type: 'text', width: 140, render: (val) => <span className="font-bold text-primary-700 capitalize">{val}</span> },
-                { id: 'total_rows', header: 'Rows', accessorKey: 'total_rows', type: 'number', width: 100, align: 'center' },
-                { id: 'successful_rows', header: 'Imported', accessorKey: 'successful_rows', type: 'number', width: 110, align: 'center', render: (val) => <span className="font-bold text-emerald-700">{val}</span> },
-                { id: 'failed_rows', header: 'Errors', accessorKey: 'failed_rows', type: 'number', width: 100, align: 'center', render: (val) => <span className={`font-bold ${val > 0 ? 'text-rose-600' : 'text-slate-400'}`}>{val}</span> },
-                { id: 'status', header: 'Status', accessorKey: 'status', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-bold uppercase">{val}</span> },
-              ]}
-              data={importHistoryData}
-              loading={loadingImportHistory}
-              exportFilename="data_import_history"
-              sheetName="Imports"
-              showSummaryRow={true}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {importHistoryMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Migrations</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{importHistoryMetrics.totalMigrations}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Rows Ingested</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{importHistoryMetrics.totalRows.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Successfully Imported</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">{importHistoryMetrics.successRows.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-rose-50/50 border border-rose-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Failed Records</p>
+                    <p className="text-base font-black font-mono text-rose-700 mt-0.5">{importHistoryMetrics.failedRows.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Ingestion Rate</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">{importHistoryMetrics.successRate}%</p>
+                  </div>
+                  <div className="bg-teal-50/50 border border-teal-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-teal-600">Completed Batches</p>
+                    <p className="text-base font-black font-mono text-teal-700 mt-0.5">{importHistoryMetrics.completedMigrations}</p>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title="Data Import & Migration History"
+                subtitle="Historical records of bulk spreadsheet uploads and data migrations"
+                columns={[
+                  { id: 'created_at', header: 'Import Date', accessorKey: 'created_at', type: 'date', width: 150, sortable: true, render: (val) => <span className="font-mono text-xs">{val ? new Date(val).toLocaleString('en-IN') : 'N/A'}</span> },
+                  { id: 'file_name', header: 'File Name', accessorKey: 'file_name', type: 'text', width: 200 },
+                  { id: 'entity_type', header: 'Target Entity', accessorKey: 'entity_type', type: 'text', width: 140, render: (val) => <span className="font-bold text-primary-700 capitalize">{val}</span> },
+                  { id: 'total_rows', header: 'Rows', accessorKey: 'total_rows', type: 'number', width: 100, align: 'center' },
+                  { id: 'successful_rows', header: 'Imported', accessorKey: 'successful_rows', type: 'number', width: 110, align: 'center', render: (val) => <span className="font-bold font-mono text-emerald-700">{val}</span> },
+                  { id: 'failed_rows', header: 'Errors', accessorKey: 'failed_rows', type: 'number', width: 100, align: 'center', render: (val) => <span className={`font-bold font-mono ${val > 0 ? 'text-rose-600' : 'text-slate-400'}`}>{val}</span> },
+                  { id: 'status', header: 'Status', accessorKey: 'status', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-bold uppercase font-mono">{val}</span> },
+                ]}
+                data={importHistoryData}
+                loading={loadingImportHistory}
+                exportFilename="data_import_history"
+                sheetName="Imports"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  file_name: (rows) => <span className="font-black text-slate-900 font-mono">Batches: {rows.length}</span>,
+                  total_rows: (rows) => (
+                    <span className="font-black text-slate-900 font-mono">
+                      {rows.reduce((sum, r) => sum + (Number(r.total_rows) || 0), 0).toLocaleString('en-IN')}
+                    </span>
+                  ),
+                  successful_rows: (rows) => (
+                    <span className="font-black text-emerald-700 font-mono">
+                      {rows.reduce((sum, r) => sum + (Number(r.successful_rows) || 0), 0).toLocaleString('en-IN')}
+                    </span>
+                  ),
+                  failed_rows: (rows) => (
+                    <span className="font-black text-rose-700 font-mono">
+                      {rows.reduce((sum, r) => sum + (Number(r.failed_rows) || 0), 0).toLocaleString('en-IN')}
+                    </span>
+                  ),
+                }}
+              />
+            </div>
           )}
 
           {/* 20. Student Withdrawals Ledger */}
           {activeReportId === 'withdrawals' && (
-            <ExcelReportGrid
-              title="Student Withdrawals Ledger"
-              subtitle="Comprehensive record of exited students, retained fees, and refunded amounts"
-              columns={[
-                { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, render: (val) => <span className="font-mono font-bold text-slate-800">{val}</span> },
-                { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 180, sortable: true },
-                { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 120 },
-                { id: 'division_name', header: 'Batch', accessorKey: 'division_name', type: 'text', width: 130 },
-                { id: 'exit_date', header: 'Exit Date', accessorKey: 'exit_date', type: 'date', width: 110, sortable: true },
-                { id: 'exit_reason', header: 'Reason', accessorKey: 'exit_reason', type: 'text', width: 150 },
-                { id: 'gross_paid', header: 'Gross Paid (₹)', accessorKey: 'gross_paid', type: 'currency', width: 140, align: 'right', render: (val) => <span className="font-bold text-emerald-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
-                { id: 'refund_amount', header: 'Refunded (₹)', accessorKey: 'refund_amount', type: 'currency', width: 140, align: 'right', render: (val) => <span className="font-bold text-amber-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
-                { id: 'net_retained', header: 'Net Retained (₹)', accessorKey: 'net_retained', type: 'currency', width: 150, align: 'right', render: (val) => <span className="font-bold text-primary-800">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
-              ]}
-              data={withdrawalsReport}
-              loading={loadingWithdrawals}
-              exportFilename="student_withdrawals_report"
-              sheetName="Withdrawals"
-              showSummaryRow={true}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {withdrawalsMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Withdrawn Students</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{withdrawalsMetrics.totalWithdrawn}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Gross Paid</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">₹{withdrawalsMetrics.totalGrossPaid.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Refund Disbursed</p>
+                    <p className="text-base font-black font-mono text-amber-700 mt-0.5">₹{withdrawalsMetrics.totalRefunded.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Net Retained</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">₹{withdrawalsMetrics.netRetained.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Retention Rate</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">{withdrawalsMetrics.retentionRate}%</p>
+                  </div>
+                  <div className="bg-purple-50/50 border border-purple-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Standards Affected</p>
+                    <p className="text-base font-black font-mono text-purple-700 mt-0.5">{withdrawalsMetrics.uniqueStandards}</p>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title="Student Withdrawals Ledger"
+                subtitle="Comprehensive record of exited students, retained fees, and refunded amounts"
+                columns={[
+                  { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, render: (val) => <span className="font-mono font-bold text-slate-800">{val}</span> },
+                  { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 180, sortable: true },
+                  { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 120 },
+                  { id: 'division_name', header: 'Batch', accessorKey: 'division_name', type: 'text', width: 130 },
+                  { id: 'exit_date', header: 'Exit Date', accessorKey: 'exit_date', type: 'date', width: 110, sortable: true },
+                  { id: 'exit_reason', header: 'Reason', accessorKey: 'exit_reason', type: 'text', width: 150 },
+                  { id: 'gross_paid', header: 'Gross Paid (₹)', accessorKey: 'gross_paid', type: 'currency', width: 140, align: 'right', render: (val) => <span className="font-bold font-mono text-emerald-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                  { id: 'refund_amount', header: 'Refunded (₹)', accessorKey: 'refund_amount', type: 'currency', width: 140, align: 'right', render: (val) => <span className="font-bold font-mono text-amber-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                  { id: 'net_retained', header: 'Net Retained (₹)', accessorKey: 'net_retained', type: 'currency', width: 150, align: 'right', render: (val) => <span className="font-bold font-mono text-primary-800">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                ]}
+                data={withdrawalsReport}
+                loading={loadingWithdrawals}
+                exportFilename="student_withdrawals_report"
+                sheetName="Withdrawals"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  admission_number: (rows) => <span className="font-black text-slate-900 font-mono">Total: {rows.length}</span>,
+                  gross_paid: (rows) => (
+                    <span className="font-black text-emerald-700 font-mono">
+                      ₹{rows.reduce((sum, r) => sum + (Number(r.gross_paid) || 0), 0).toLocaleString('en-IN')}
+                    </span>
+                  ),
+                  refund_amount: (rows) => (
+                    <span className="font-black text-amber-700 font-mono">
+                      ₹{rows.reduce((sum, r) => sum + (Number(r.refund_amount) || 0), 0).toLocaleString('en-IN')}
+                    </span>
+                  ),
+                  net_retained: (rows) => (
+                    <span className="font-black text-primary-800 font-mono">
+                      ₹{rows.reduce((sum, r) => sum + (Number(r.net_retained) || 0), 0).toLocaleString('en-IN')}
+                    </span>
+                  ),
+                }}
+              />
+            </div>
           )}
 
           {/* 21. Student Attrition Analytics */}
           {activeReportId === 'withdrawal-analytics' && analyticsData && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div className="bg-white p-4 rounded-xl border border-slate-200">
-                  <div className="text-xs text-slate-500 font-semibold uppercase">Total Exits</div>
-                  <div className="text-2xl font-black text-rose-700 mt-1">{analyticsData.summary?.total_withdrawn || 0}</div>
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Exits</p>
+                  <p className="text-base font-black font-mono text-rose-700 mt-0.5">{analyticsData.summary?.total_withdrawn || 0}</p>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200">
-                  <div className="text-xs text-slate-500 font-semibold uppercase">Total Paid at Exit</div>
-                  <div className="text-xl font-bold text-slate-900 mt-1">₹{Number(analyticsData.summary?.total_gross_paid || 0).toLocaleString('en-IN')}</div>
+                <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Gross Paid at Exit</p>
+                  <p className="text-base font-black font-mono text-emerald-700 mt-0.5">₹{Number(analyticsData.summary?.total_gross_paid || 0).toLocaleString('en-IN')}</p>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200">
-                  <div className="text-xs text-slate-500 font-semibold uppercase">Total Refunded</div>
-                  <div className="text-xl font-bold text-amber-700 mt-1">₹{Number(analyticsData.summary?.total_refunds || 0).toLocaleString('en-IN')}</div>
+                <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Total Refunded</p>
+                  <p className="text-base font-black font-mono text-amber-700 mt-0.5">₹{Number(analyticsData.summary?.total_refunds || 0).toLocaleString('en-IN')}</p>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200">
-                  <div className="text-xs text-slate-500 font-semibold uppercase">Net Retained</div>
-                  <div className="text-xl font-bold text-primary-700 mt-1">₹{Number(analyticsData.summary?.total_net_retained || 0).toLocaleString('en-IN')}</div>
+                <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Net Retained</p>
+                  <p className="text-base font-black font-mono text-indigo-800 mt-0.5">₹{Number(analyticsData.summary?.total_net_retained || 0).toLocaleString('en-IN')}</p>
+                </div>
+                <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Retention %</p>
+                  <p className="text-base font-black font-mono text-sky-700 mt-0.5">
+                    {Number(analyticsData.summary?.total_gross_paid || 0) > 0
+                      ? ((Number(analyticsData.summary?.total_net_retained || 0) / Number(analyticsData.summary?.total_gross_paid || 0)) * 100).toFixed(1)
+                      : '100.0'}%
+                  </p>
+                </div>
+                <div className="bg-purple-50/50 border border-purple-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Primary Reason</p>
+                  <p className="text-xs font-bold text-purple-800 mt-1 truncate" title={(analyticsData.by_reason && analyticsData.by_reason[0]?.reason) || 'None'}>
+                    {(analyticsData.by_reason && analyticsData.by_reason[0]?.reason) || 'None'}
+                  </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-                  <h3 className="font-bold text-slate-900 text-sm mb-4">Exits by Reason</h3>
-                  <div className="h-64">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
+                  <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-3">Exits by Reason</h3>
+                  <div className="h-56">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
-                        <Pie data={analyticsData.by_reason || []} dataKey="count" nameKey="reason" cx="50%" cy="50%" outerRadius={80} label>
+                        <Pie data={analyticsData.by_reason || []} dataKey="count" nameKey="reason" cx="50%" cy="50%" outerRadius={70} label>
                           {(analyticsData.by_reason || []).map((_: any, idx: number) => (
                             <Cell key={`cell-${idx}`} fill={['#f43f5e', '#f59e0b', '#06b6d4', '#6366f1', '#8b5cf6'][idx % 5]} />
                           ))}
@@ -3520,14 +3965,14 @@ function ReportsWorkspace() {
                   </div>
                 </div>
 
-                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-                  <h3 className="font-bold text-slate-900 text-sm mb-4">Monthly Attrition Trend</h3>
-                  <div className="h-64">
+                <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
+                  <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-3">Monthly Attrition Trend</h3>
+                  <div className="h-56">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={analyticsData.trends_monthly || []}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
+                        <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} />
                         <RechartsTooltip />
                         <Line type="monotone" dataKey="count" stroke="#e11d48" strokeWidth={2} dot={{ r: 4 }} />
                       </LineChart>
@@ -3759,15 +4204,15 @@ function ReportsWorkspace() {
 
               {/* Report Summary Cards */}
               {concessionReportData?.summary && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
                   {Object.entries(concessionReportData.summary).map(([key, val]) => {
                     const isCurrency = !key.includes('count') && !key.includes('students') && !key.includes('percentage') && !key.includes('rate')
                     return (
-                      <div key={key} className="bg-white border border-slate-200 rounded-xl p-3">
-                        <p className="text-[10px] font-bold uppercase text-slate-500">
+                      <div key={key} className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                           {key.replace(/_/g, ' ')}
                         </p>
-                        <p className="text-sm font-extrabold text-slate-900 mt-0.5">
+                        <p className="text-base font-black font-mono text-slate-900 mt-0.5">
                           {isCurrency
                             ? `${concessionReportData.currency?.symbol || '₹'}${Number(val || 0).toLocaleString('en-IN')}`
                             : Number(val || 0).toLocaleString('en-IN')}

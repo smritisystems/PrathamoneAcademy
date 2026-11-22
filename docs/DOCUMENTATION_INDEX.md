@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-23 04:48:39<br>
-**Total Indexed Items:** 737<br>
+**Last Reindexed:** 2026-11-23 05:12:22<br>
+**Total Indexed Items:** 738<br>
 
 ---
 
@@ -25,7 +25,7 @@
 | `08` | [08_EXAMINATION](#08_examination) | **8** | Examinations, Tests & Grading |
 | `09` | [09_FEES_PAYMENTS](#09_fees_payments) | **53** | Fee Structures, Payments & Receipts |
 | `10` | [10_FINANCE_ACCOUNTING](#10_finance_accounting) | **3** | Finance, Accounting & Ledgers |
-| `11` | [11_REPORTS_EXPORTS](#11_reports_exports) | **16** | Reports, Analytics & Data Grids |
+| `11` | [11_REPORTS_EXPORTS](#11_reports_exports) | **17** | Reports, Analytics & Data Grids |
 | `12` | [12_RBAC_SECURITY](#12_rbac_security) | **17** | RBAC, Security & Permissions |
 | `13` | [13_SYSADMIN_SETTINGS](#13_sysadmin_settings) | **20** | Sysadmin Center & System Settings |
 | `14` | [14_PRINTING_DOCUMENTS](#14_printing_documents) | **15** | Document Generation & Print Engine |
@@ -315,6 +315,7 @@
 
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
+| **Academic, Examinations, System Audit & Student Attrition Sleek Reports Verification Report** | `REPORT` | `1.0` | 2026-11-23 | `Approved` | [2026-11-23_REPORTS-EXPORTS_VERIFICATION-REPORT_ACADEMIC-EXAMS-SYSTEM-SLEEK-RIBBONS_V1.md](11_REPORTS_EXPORTS/2026-11-23_REPORTS-EXPORTS_VERIFICATION-REPORT_ACADEMIC-EXAMS-SYSTEM-SLEEK-RIBBONS_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 08_EXAMINATION, 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS |
 | **Excel-Like Report Grids & Export Engine Implementation Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_REPORTS_EXPORTS_IMPLEMENTATION-REPORT_EXCEL-REPORT-GRIDS-REPORT_V1.md](11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_IMPLEMENTATION-REPORT_EXCEL-REPORT-GRIDS-REPORT_V1.md) | - |
 | **Institutional Books Source-to-Report Mapping** | `MAPPING` | `1.0` | 2026-11-14 | `Pending Review` | [2026-11-14_REPORTS-EXPORTS_SOURCE-MAPPING_INSTITUTIONAL-BOOKS_V1.md](11_REPORTS_EXPORTS/2026-11-14_REPORTS-EXPORTS_SOURCE-MAPPING_INSTITUTIONAL-BOOKS_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 08_EXAMINATION, 09_FEES_PAYMENTS, 10_FINANCE_ACCOUNTING, 12_RBAC_SECURITY, 14_PRINTING_DOCUMENTS |
 | **PrathamOne EduOS — Enterprise KPI Strategy & Metrics Specification** | `REPORT` | `1.0` | 2026-11-18 | `Approved` | [2026-11-18_REPORTS-EXPORTS_STRATEGY-REPORT_KPI-METRICS-FRAMEWORK_V1.md](11_REPORTS_EXPORTS/2026-11-18_REPORTS-EXPORTS_STRATEGY-REPORT_KPI-METRICS-FRAMEWORK_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 08_EXAMINATION, 09_FEES_PAYMENTS, 10_FINANCE_ACCOUNTING, 11_REPORTS_EXPORTS, 12_RBAC_SECURITY |
