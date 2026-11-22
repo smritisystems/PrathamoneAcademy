@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Complete Lead Management & CRM workspace featuring KPI metrics, Kanban pipeline,
  */
@@ -102,10 +102,11 @@ export default function LeadManagement() {
       const res = await leadsApi.getMetrics()
       return res.data
     },
-    staleTime: 30000,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
-  // 2. Kanban Pipeline
+  // 2. Kanban Pipeline (Scoped to pipeline view)
   const { data: kanbanData, isLoading: isKanbanLoading, refetch: refetchKanban } = useQuery({
     queryKey: ['crm', 'kanban', selectedSource, selectedCounsellorId],
     queryFn: async () => {
@@ -115,10 +116,12 @@ export default function LeadManagement() {
       })
       return res.data
     },
-    staleTime: 15000,
+    enabled: viewMode === 'pipeline' || isConvertModalOpen,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
-  // 3. Leads Table
+  // 3. Leads Table (Scoped to list / non-pipeline view)
   const { data: leadsListData, isLoading: isTableLoading, refetch: refetchTable } = useQuery({
     queryKey: ['crm', 'list', tableFilter, searchQuery, selectedSource, selectedCounsellorId],
     queryFn: async () => {
@@ -139,7 +142,9 @@ export default function LeadManagement() {
       })
       return res.data
     },
-    staleTime: 15000,
+    enabled: viewMode === 'list' || viewMode === 'followups' || isConvertModalOpen,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const LEAD_SORT_OPTIONS: TableSortOption[] = [
@@ -165,14 +170,18 @@ export default function LeadManagement() {
     initialDirection: 'desc',
   })
 
-  // 4. Standards, Boards, Counsellors, Academic Years
+  // 4. Standards, Boards, Counsellors, Academic Years (Cached Masters)
   const { data: standards = [] } = useQuery({
     queryKey: ['standards'],
     queryFn: async () => (await standardsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const { data: boards = [] } = useQuery({
     queryKey: ['boards'],
     queryFn: async () => (await boardsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const { data: counsellors = [] } = useQuery({
     queryKey: ['counsellors'],
@@ -180,10 +189,14 @@ export default function LeadManagement() {
       const res = await usersApi.list()
       return res.data.items || []
     },
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const { data: academicYears = [] } = useQuery({
     queryKey: ['academic-years'],
     queryFn: async () => (await academicYearsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 5. Selected Lead Dossier
@@ -209,7 +222,8 @@ export default function LeadManagement() {
       if (error?.response?.status === 404) return false
       return failureCount < 2
     },
-    staleTime: 10000,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Auto-select first lead if none selected or if currently selected lead is no longer in the list

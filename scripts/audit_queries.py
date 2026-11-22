@@ -25,8 +25,28 @@ results = []
 
 for file_path in sorted(pages_dir.rglob("*.tsx")):
     content = file_path.read_text(encoding="utf-8", errors="ignore")
-    # Find all useQuery calls
-    query_blocks = re.findall(r"useQuery\s*(?:<[^>]*>)?\s*\(\{([\s\S]*?)\}\)", content)
+    # Parse useQuery calls using brace matching
+    query_blocks = []
+    idx = 0
+    while True:
+        pos = content.find("useQuery", idx)
+        if pos == -1:
+            break
+        open_brace = content.find("{", pos)
+        if open_brace == -1 or open_brace > pos + 80:
+            idx = pos + 8
+            continue
+        depth = 1
+        curr = open_brace + 1
+        while curr < len(content) and depth > 0:
+            if content[curr] == "{":
+                depth += 1
+            elif content[curr] == "}":
+                depth -= 1
+            curr += 1
+        query_blocks.append(content[open_brace:curr])
+        idx = curr
+    
     if not query_blocks:
         continue
     
@@ -42,7 +62,6 @@ for file_path in sorted(pages_dir.rglob("*.tsx")):
         "enabled": has_enabled,
         "staleTime": has_staletime,
         "placeholder": has_placeholder,
-        "needs_optimization": (total - has_staletime > 0) or (total > 3 and has_enabled == 0)
     })
 
 print(f"{'FILE':<40} {'TOTAL':<7} {'ENABLED':<9} {'STALETIME':<11} {'PLACEHOLDER':<13}")

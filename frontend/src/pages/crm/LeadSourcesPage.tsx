@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Dedicated Lead Sources & Marketing Acquisition Channels workspace analyzing channel volumes, conversion efficiencies, and ROI metrics.
  */
@@ -37,16 +37,21 @@ export default function LeadSourcesPage() {
   const { data: sourcesData, isLoading, refetch } = useQuery({
     queryKey: ['crm', 'sources-summary'],
     queryFn: async () => (await leadsApi.getSourcesSummary()).data,
-    staleTime: 30000,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: standards = [] } = useQuery({
     queryKey: ['standards'],
     queryFn: async () => (await standardsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const { data: academicYears = [] } = useQuery({
     queryKey: ['academic-years'],
     queryFn: async () => (await academicYearsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const totalLeads = sourcesData?.total_leads || 0

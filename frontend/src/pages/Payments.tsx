@@ -186,6 +186,8 @@ export default function Payments() {
       })
       return res.data
     },
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
   })
 
   const PAYMENT_SORT_OPTIONS: TableSortOption[] = [
@@ -218,6 +220,8 @@ export default function Payments() {
       const res = await paymentsApi.listRefunds({ limit: 50 })
       return res.data
     },
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
   })
 
   // Query: Audit Trail for selected payment

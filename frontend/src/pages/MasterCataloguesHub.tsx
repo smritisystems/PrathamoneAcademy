@@ -105,7 +105,8 @@ export default function MasterCataloguesHub() {
       const res = await catalogueApi.getOverview()
       return res.data
     },
-    staleTime: 30000,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Quick Registration State
@@ -120,13 +121,16 @@ export default function MasterCataloguesHub() {
   const [selectedMasterTab, setSelectedMasterTab] = useState<'boards' | 'standards' | 'batches' | 'subjects' | 'years'>('boards')
   const [explorerSearch, setExplorerSearch] = useState('')
 
-  // Live Master Explorer Queries
+  // Live Master Explorer Queries (Scoped & Cached)
   const { data: boardsList = [], isLoading: loadingBoards } = useQuery<Board[]>({
     queryKey: ['boards-catalogue-list', user?.institution_id],
     queryFn: async () => {
       const res = await boardsApi.list(user?.institution_id || 1)
       return Array.isArray(res.data) ? res.data : []
     },
+    enabled: selectedMasterTab === 'boards' || showQuickRegisterModal,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: standardsList = [], isLoading: loadingStandards } = useQuery<Standard[]>({
@@ -135,6 +139,9 @@ export default function MasterCataloguesHub() {
       const res = await standardsApi.list({ institution_id: user?.institution_id || 1 })
       return Array.isArray(res.data) ? res.data : []
     },
+    enabled: selectedMasterTab === 'standards' || showQuickRegisterModal,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: batchesList = [], isLoading: loadingBatches } = useQuery<Division[]>({
@@ -143,6 +150,9 @@ export default function MasterCataloguesHub() {
       const res = await divisionsApi.list()
       return Array.isArray(res.data) ? res.data : []
     },
+    enabled: selectedMasterTab === 'batches',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: subjectsList = [], isLoading: loadingSubjects } = useQuery<CanonicalSubject[]>({
@@ -151,6 +161,9 @@ export default function MasterCataloguesHub() {
       const res = await subjectsApi.listCanonical()
       return Array.isArray(res.data) ? res.data : []
     },
+    enabled: selectedMasterTab === 'subjects',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: yearsList = [], isLoading: loadingYears } = useQuery<AcademicYear[]>({
@@ -159,6 +172,9 @@ export default function MasterCataloguesHub() {
       const res = await academicYearsApi.list(user?.institution_id || 1)
       return Array.isArray(res.data) ? res.data : []
     },
+    enabled: selectedMasterTab === 'years',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Mutations for Quick Entity Creation

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-16
- * @updated     2026-11-21
+ * @updated     2026-11-22
  *
  * @description Unified, responsive planning workspace with calendar, Kanban, agenda, and timeline views.
  */
@@ -602,18 +602,22 @@ export default function PlanningWorkspace() {
     queryKey: ['planning-assignees'],
     queryFn: () => planningApi.getAssignees(),
     enabled: isEditMode,
+    staleTime: 300_000,
+    placeholderData: (prev) => prev,
   })
   const { data: academicYearsResponse, isLoading: isAcademicYearsLoading, isError: isAcademicYearsError } = useQuery({
     queryKey: ['planning-academic-years', selectedInstitutionId],
     queryFn: () => academicYearsApi.list(selectedInstitutionId ?? undefined),
     enabled: formOpen,
     staleTime: 300_000,
+    placeholderData: (prev) => prev,
   })
   const { data: standardsResponse, isLoading: areStandardsLoading, isError: areStandardsError } = useQuery({
     queryKey: ['planning-standards', selectedInstitutionId],
     queryFn: () => standardsApi.list({ institution_id: selectedInstitutionId ?? undefined }),
     enabled: formOpen,
     staleTime: 300_000,
+    placeholderData: (prev) => prev,
   })
   const standards = standardsResponse?.data || []
   const standardIds = useMemo(() => new Set(standards.map((standard) => standard.id)), [standards])
@@ -622,6 +626,7 @@ export default function PlanningWorkspace() {
     queryFn: () => divisionsApi.list(),
     enabled: formOpen,
     staleTime: 300_000,
+    placeholderData: (prev) => prev,
   })
   const divisions = (divisionsResponse?.data || []).filter((division) => standardIds.has(division.standard_id))
   const selectedDivision = divisions.find((division) => division.id === form.division_id)
@@ -630,6 +635,7 @@ export default function PlanningWorkspace() {
     queryFn: () => subjectsApi.list({ standard_id: selectedDivision!.standard_id }),
     enabled: formOpen && !!selectedDivision,
     staleTime: 300_000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: studentSearchResults, isFetching: isSearchingStudents } = useQuery({
@@ -744,6 +750,8 @@ const { data: taskSummary } = useQuery({
     return res.data
   },
   enabled: !!selectedInstitutionId,
+  staleTime: 5 * 60 * 1000,
+  placeholderData: (prev) => prev,
 })
 
 const syncAllMutation = useMutation({

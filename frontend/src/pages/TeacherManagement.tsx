@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Dedicated Teachers & Faculty Management Centre with 8 first-class workspaces:
  */
@@ -251,18 +251,25 @@ function TeacherManagementContent() {
   } = useQuery({
     queryKey: ['teacher-workforce-dashboard', selectedAcademicYearId],
     queryFn: () => staffApi.getTeacherDashboard(selectedAcademicYearId).then((r) => r.data),
+    enabled: activeTab === 'overview',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 2. Academic Years query
   const { data: academicYears = [] } = useQuery({
     queryKey: ['academic-years'],
     queryFn: () => academicYearsApi.list().then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 3. Dependent queries for Assignments modal
   const { data: boards = [] } = useQuery({
     queryKey: ['boards'],
     queryFn: () => boardsApi.list().then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: standards = [] } = useQuery({
@@ -287,6 +294,9 @@ function TeacherManagementContent() {
   const { data: assignmentsData = [], refetch: refetchAssignments } = useQuery({
     queryKey: ['all-teacher-assignments'],
     queryFn: () => staffApi.assignmentsList().then((r) => r.data),
+    enabled: activeTab === 'allocations' || activeTab === 'overview' || showAssignModal,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const allAssignments = Array.isArray(assignmentsData) ? assignmentsData : []
 
@@ -294,7 +304,9 @@ function TeacherManagementContent() {
   const { data: recentSessionsData, refetch: refetchSessions } = useQuery({
     queryKey: ['recent-teaching-sessions', sessionStatusFilter],
     queryFn: () => teacherPayrollApi.getSessions({ limit: 50, approval_status: sessionStatusFilter || undefined }).then((r) => r.data),
-    enabled: activeTab === 'performance' || activeTab === 'overview',
+    enabled: activeTab === 'performance',
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const recentSessions = Array.isArray(recentSessionsData)
     ? recentSessionsData
@@ -308,7 +320,9 @@ function TeacherManagementContent() {
       if (payrollStatusFilter) params.status = payrollStatusFilter
       return (await teacherPayrollApi.getMonthlyPayrolls(params)).data
     },
-    enabled: activeTab === 'payroll' || activeTab === 'overview',
+    enabled: activeTab === 'payroll',
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 7. Faculty Daily Attendance query
@@ -316,6 +330,8 @@ function TeacherManagementContent() {
     queryKey: ['staff-daily-attendance', attendanceDate],
     queryFn: () => staffApi.dailyAttendance({ attendance_date: attendanceDate }).then((r) => r.data),
     enabled: activeTab === 'attendance',
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 8. Faculty Leaves query
@@ -323,6 +339,8 @@ function TeacherManagementContent() {
     queryKey: ['staff-leaves-list'],
     queryFn: () => staffApi.leavesList().then((r) => r.data),
     enabled: activeTab === 'attendance',
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Populate faculty attendance rows when data changes

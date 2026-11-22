@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Dedicated Marketing Campaigns workspace tracking intake campaign performance, inquiry attribution, and admissions conversion ROI.
  */
@@ -46,16 +46,21 @@ export default function CampaignsPage() {
   const { data: campaignsData, isLoading, refetch } = useQuery({
     queryKey: ['crm', 'campaigns-summary'],
     queryFn: async () => (await leadsApi.getCampaignsSummary()).data,
-    staleTime: 30000,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: standards = [] } = useQuery({
     queryKey: ['standards'],
     queryFn: async () => (await standardsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const { data: academicYears = [] } = useQuery({
     queryKey: ['academic-years'],
     queryFn: async () => (await academicYearsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const items: CampaignSummaryItem[] = campaignsData?.items || []

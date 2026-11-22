@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Complete Teacher Payroll & Payment Management workspace:
  */
@@ -121,16 +121,22 @@ export default function TeacherPayroll() {
   const { data: teachers = [] } = useQuery({
     queryKey: ['teacher-payroll-teachers'],
     queryFn: async () => (await teacherPayrollApi.getTeachers()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: divisions = [] } = useQuery({
     queryKey: ['divisions-list'],
     queryFn: async () => (await divisionsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: subjects = [] } = useQuery({
     queryKey: ['subjects-list'],
     queryFn: async () => (await subjectsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Monthly Payroll Query
@@ -142,6 +148,9 @@ export default function TeacherPayroll() {
       if (selectedTeacherId) params.teacher_id = selectedTeacherId
       return (await teacherPayrollApi.getMonthlyPayrolls(params)).data
     },
+    enabled: activeTab === 'monthly',
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const PAYROLL_SORT_OPTIONS: TableSortOption[] = [
@@ -175,6 +184,9 @@ export default function TeacherPayroll() {
       if (selectedStatus) params.approval_status = selectedStatus
       return (await teacherPayrollApi.getSessions(params)).data
     },
+    enabled: activeTab === 'sessions',
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const sessions = sessionsResponse?.items || []
 
@@ -182,6 +194,9 @@ export default function TeacherPayroll() {
   const { data: profiles = [], isLoading: isLoadingProfiles, error: profilesError, refetch: refetchProfiles } = useQuery({
     queryKey: ['teacher-payment-profiles'],
     queryFn: async () => (await teacherPayrollApi.getProfiles()).data,
+    enabled: activeTab === 'profiles',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const filteredProfiles = useMemo(() => {
@@ -204,6 +219,9 @@ export default function TeacherPayroll() {
       if (selectedTeacherId) params.teacher_id = selectedTeacherId
       return (await teacherPayrollApi.getVouchers(params)).data
     },
+    enabled: activeTab === 'vouchers',
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Active Report Query

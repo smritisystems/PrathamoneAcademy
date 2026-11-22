@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-21
+ * @updated     2026-11-22
  *
  * @description Comprehensive student profile workspace with multi-tab master record editing for administrators.
  */
@@ -83,6 +83,8 @@ export default function StudentDetailPage() {
     queryKey: ['student-lifecycle-history', studentId],
     queryFn: () => studentsApi.lifecycleHistory(studentId).then((r) => r.data),
     enabled: !!studentId,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const handleLifecycleSuccess = () => {
@@ -287,6 +289,8 @@ export default function StudentDetailPage() {
     queryKey: ['student-admin-profile', studentId],
     queryFn: () => studentsApi.getProfile(studentId).then((r) => r.data),
     enabled: !!studentId,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // ── Unified Academic Activity Register Query ──
@@ -298,14 +302,18 @@ export default function StudentDetailPage() {
         activity_type: registerFilter !== 'all' ? registerFilter : undefined,
       }).then((r) => r.data),
     enabled: activeTab === 'Academic Register' && !!studentId,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const activityItems: AcademicActivityRegisterItem[] = activityRegisterData?.activities || activityRegisterData?.items || []
 
-  // Standards and Divisions queries for editing
+  // Standards and Divisions queries for editing (Cached Masters)
   const { data: standardsList } = useQuery({
     queryKey: ['standards'],
     queryFn: () => standardsApi.list().then((r) => r.data),
     enabled: showEditModal,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: divisionsList } = useQuery({
@@ -313,6 +321,8 @@ export default function StudentDetailPage() {
     queryFn: () =>
       divisionsApi.list(profileForm.standard_id ? { standard_id: profileForm.standard_id } : undefined).then((r) => r.data),
     enabled: showEditModal && !!profileForm.standard_id,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Full Profile Update Mutation

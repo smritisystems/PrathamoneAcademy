@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-19
+ * @updated     2026-11-22
  *
  * @description Dedicated student portal dashboard presenting enrolled courses, timetable, and exam results.
  */
@@ -129,6 +129,9 @@ export default function StudentDashboardPage() {
   const { data: dashboard, isLoading: isDashboardLoading, refetch: refetchDashboard } = useQuery({
     queryKey: ['student-portal-dashboard', effectiveId],
     queryFn: () => studentPortalApi.getDashboard(effectiveId).then((r) => r.data),
+    enabled: activeTab === 'home',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 3. Fetch Classes
@@ -136,6 +139,8 @@ export default function StudentDashboardPage() {
     queryKey: ['student-portal-classes', effectiveId],
     queryFn: () => studentPortalApi.getClasses(effectiveId).then((r) => r.data),
     enabled: activeTab === 'classes',
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 4. Fetch Timetable
@@ -143,6 +148,8 @@ export default function StudentDashboardPage() {
     queryKey: ['student-portal-timetable', effectiveId],
     queryFn: () => studentPortalApi.getTimetable(effectiveId).then((r) => r.data),
     enabled: activeTab === 'timetable',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Attendance date navigation
@@ -161,6 +168,8 @@ export default function StudentDashboardPage() {
         })
         .then((r) => r.data),
     enabled: activeTab === 'attendance',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 6. Fetch Tests & Results + Multi-Curriculum Report Cards
@@ -168,6 +177,8 @@ export default function StudentDashboardPage() {
     queryKey: ['student-portal-tests', effectiveId],
     queryFn: () => studentPortalApi.getTests(effectiveId).then((r) => r.data),
     enabled: activeTab === 'tests',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const [selectedReportCardExamId, setSelectedReportCardExamId] = useState<number | null>(null)
@@ -177,6 +188,8 @@ export default function StudentDashboardPage() {
     queryKey: ['student-portal-report-cards', effectiveId, reportCardScale],
     queryFn: () => studentPortalApi.getReportCards(effectiveId, reportCardScale).then((r) => r.data),
     enabled: activeTab === 'tests',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: activeReportCardDetail, isLoading: loadingReportCardDetail } = useQuery({
@@ -186,6 +199,8 @@ export default function StudentDashboardPage() {
         ? studentPortalApi.getReportCard(selectedReportCardExamId, effectiveId, reportCardScale).then((r) => r.data)
         : null,
     enabled: !!selectedReportCardExamId,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 7. Fetch Fees, Online Checkout & Receipt Voucher
@@ -193,6 +208,8 @@ export default function StudentDashboardPage() {
     queryKey: ['student-portal-fees', effectiveId],
     queryFn: () => studentPortalApi.getFees(effectiveId).then((r) => r.data),
     enabled: activeTab === 'fees',
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<any | null>(null)
@@ -232,6 +249,8 @@ export default function StudentDashboardPage() {
     queryKey: ['student-portal-materials', effectiveId],
     queryFn: () => studentPortalApi.getStudyMaterials({ student_id: effectiveId }).then((r) => r.data),
     enabled: activeTab === 'materials',
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: studentEduBoardsData } = useQuery({

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Student fee collection terminal for recording payments against outstanding installments.
  */
@@ -68,18 +68,24 @@ export default function FeeCollection() {
     queryKey: ['student', studentId],
     queryFn: () => getStudent(studentId!),
     enabled: !!studentId,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const { data: invoicesData } = useQuery({
     queryKey: ['student-invoices', studentId],
     queryFn: () => getStudentInvoices(studentId!),
     enabled: !!studentId,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const { data: receipt } = useQuery({
     queryKey: ['receipt', lastReceiptNumber],
     queryFn: () => getPaymentReceipt(lastReceiptNumber),
     enabled: !!lastReceiptNumber && showReceiptModal,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const invoices: FeeInvoice[] = Array.isArray(invoicesData)

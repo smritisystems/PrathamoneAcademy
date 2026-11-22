@@ -751,11 +751,15 @@ function ReportsWorkspace() {
   const { data: boards = [] } = useQuery({
     queryKey: ['reports-boards', selectedInstitutionId],
     queryFn: () => boardsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: standards = [] } = useQuery({
     queryKey: ['reports-standards', selectedInstitutionId],
     queryFn: () => standardsApi.list().then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: divisions = [] } = useQuery({
@@ -764,11 +768,15 @@ function ReportsWorkspace() {
       standard_id: selectedStandardId ? Number(selectedStandardId) : undefined,
       board_id: selectedBoardId ? Number(selectedBoardId) : undefined,
     }).then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: examinations = [] } = useQuery({
     queryKey: ['reports-examinations', selectedAcademicYearId],
     queryFn: () => examinationsApi.list({ academic_year_id: selectedAcademicYearId || undefined }).then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Auto-select latest exam if none selected

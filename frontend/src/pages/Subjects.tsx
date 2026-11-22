@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Academic Subject Management with Canonical Master Catalogue, Standard/Board Applicability Mappings, and Duplicate Prevention.
  */
@@ -91,16 +91,20 @@ export default function SubjectsPage() {
   const [selectedCanonical, setSelectedCanonical] = useState<CanonicalSubject | null>(null)
   const searchBoxRef = useRef<HTMLDivElement>(null)
 
-  // Fetch standards
+  // Fetch standards (Cached Master)
   const { data: standards = [] } = useQuery({
     queryKey: ['standards', selectedInstitutionId],
     queryFn: () => standardsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
-  // Fetch boards
+  // Fetch boards (Cached Master)
   const { data: boards = [] } = useQuery({
     queryKey: ['boards', selectedInstitutionId],
     queryFn: () => boardsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Fetch canonical subjects
@@ -116,6 +120,8 @@ export default function SubjectsPage() {
           search: canonicalSearch.trim() || undefined,
         })
         .then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Fetch subject mappings
@@ -132,6 +138,8 @@ export default function SubjectsPage() {
           search: mappingSearch.trim() || undefined,
         })
         .then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Live duplicate check on canonical subject name input

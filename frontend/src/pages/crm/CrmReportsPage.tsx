@@ -38,7 +38,8 @@ export default function CrmReportsPage() {
   const { data: analytics, isLoading, refetch } = useQuery({
     queryKey: ['crm', 'reports-analytics'],
     queryFn: async () => (await leadsApi.getReportsAnalytics()).data,
-    staleTime: 30000,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Export CSV

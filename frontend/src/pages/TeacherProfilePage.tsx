@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-18
+ * @updated     2026-11-22
  *
  * @description Dedicated full-page Teacher Profile & Employee Dossier workspace with persistent hero banner, 13 specialized tabs, multi-address/bank/contact management, timetable matrix, payroll configuration, and activity timeline.
  */
@@ -247,6 +247,8 @@ export default function TeacherProfilePage() {
     queryKey: ['staff-profile', teacherId],
     queryFn: () => staffApi.get(teacherId).then((r) => r.data),
     enabled: !!teacherId,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 2. Fetch Payment Profile & Rates
@@ -254,6 +256,8 @@ export default function TeacherProfilePage() {
     queryKey: ['teacher-pay-profile', teacherId],
     queryFn: () => teacherPayrollApi.getProfileDetails(teacherId).then((r) => r.data),
     enabled: !!teacherId,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 3. Fetch Teacher Timetable Entries
@@ -261,6 +265,8 @@ export default function TeacherProfilePage() {
     queryKey: ['teacher-timetable', teacherId],
     queryFn: () => timetableApi.list({ teacher_id: teacherId }).then((r) => r.data),
     enabled: !!teacherId && activeTab === 'timetable',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 4. Fetch Teaching Sessions
@@ -272,13 +278,17 @@ export default function TeacherProfilePage() {
         return Array.isArray(d) ? d : d?.items || []
       }),
     enabled: !!teacherId,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 5. Fetch Leave Records
   const { data: leavesData } = useQuery({
     queryKey: ['teacher-leaves', teacherId],
     queryFn: () => staffApi.leavesList({ user_id: teacherId }).then((r) => r.data),
-    enabled: !!teacherId,
+    enabled: !!teacherId && (activeTab === 'leave' || activeTab === 'attendance' || activeTab === 'overview'),
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 6. Fetch Payroll History
@@ -290,6 +300,8 @@ export default function TeacherProfilePage() {
         return Array.isArray(d) ? d : d?.items || []
       }),
     enabled: !!teacherId && activeTab === 'payroll',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 7. Fetch Activity History Timeline
@@ -297,6 +309,8 @@ export default function TeacherProfilePage() {
     queryKey: ['teacher-activity-history', teacherId],
     queryFn: () => staffApi.getActivityHistory(teacherId, 50).then((r) => r.data),
     enabled: !!teacherId && activeTab === 'activity',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Mutations

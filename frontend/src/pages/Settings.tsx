@@ -168,15 +168,14 @@ export default function Settings() {
   const logoInputRef = useRef<HTMLInputElement>(null)
   const faviconInputRef = useRef<HTMLInputElement>(null)
 
-  // Initial Data Load
+  // Initial Data Load (Ultra-fast parallel fetch without unnecessary audit payload)
   const fetchAllData = async () => {
     try {
       setLoading(true)
-      const [profRes, setRes, lkpRes, auditRes] = await Promise.all([
+      const [profRes, setRes, lkpRes] = await Promise.all([
         settingsApi.getProfile(),
         settingsApi.getAll(),
         settingsApi.getLookups(),
-        settingsApi.getAuditLogs({ limit: 50 }),
       ])
 
       const profileData = {
@@ -191,8 +190,6 @@ export default function Settings() {
 
       setLookups(lkpRes.data.items || [])
       setLookupCategories(lkpRes.data.categories || [])
-
-      setAuditLogs(auditRes.data || [])
     } catch (err: any) {
       console.error('Failed to load institute settings:', err)
       showNotification('error', 'Failed to load institute settings. Using system baseline defaults.')
@@ -200,6 +197,15 @@ export default function Settings() {
       setLoading(false)
     }
   }
+
+  // Lazy-load audit logs only when maintenance tab is active
+  useEffect(() => {
+    if (activeCategory === 'maintenance' && auditLogs.length === 0) {
+      settingsApi.getAuditLogs({ limit: 50 }).then((res) => {
+        setAuditLogs(res.data || [])
+      }).catch((e) => console.error('Failed to load audit logs:', e))
+    }
+  }, [activeCategory, auditLogs.length])
 
   const originalProfileRef = useRef<InstituteProfile | null>(null)
   useEffect(() => {

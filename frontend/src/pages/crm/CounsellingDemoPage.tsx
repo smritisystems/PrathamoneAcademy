@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Dedicated Counselling & Demo Class Centre workspace managing trial lectures, faculty assignments, attendance rating capture, and direct admission conversion.
  */
@@ -72,17 +72,22 @@ export default function CounsellingDemoPage() {
       })
       return res.data
     },
-    staleTime: 15000,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
-  // Lookups
+  // Lookups (Cached Masters)
   const { data: standards = [] } = useQuery({
     queryKey: ['standards'],
     queryFn: async () => (await standardsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const { data: usersData } = useQuery({
     queryKey: ['users'],
     queryFn: async () => (await usersApi.list({ limit: 100 })).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const teachers: UserType[] = ((usersData?.items || usersData || []) as UserType[]).filter(
     (u: UserType) => u.role === 'teacher' || u.role === 'faculty'
@@ -91,6 +96,8 @@ export default function CounsellingDemoPage() {
   const { data: academicYears = [] } = useQuery({
     queryKey: ['academic-years'],
     queryFn: async () => (await academicYearsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Update Demo Class Mutation

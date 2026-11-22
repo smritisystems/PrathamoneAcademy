@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Dedicated CRM Configuration workspace managing pipeline stage workflows, follow-up SLA thresholds, lost reasons catalog, and isolated Training Mode reset controls.
  */
@@ -54,7 +54,8 @@ export default function CrmSettingsPage() {
   const { data: crmConfig, isLoading, refetch } = useQuery({
     queryKey: ['crm', 'settings-config'],
     queryFn: async () => (await leadsApi.getCrmConfig()).data,
-    staleTime: 30000,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   useEffect(() => {

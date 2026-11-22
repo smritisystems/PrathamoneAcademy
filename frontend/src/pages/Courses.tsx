@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-19
+ * @updated     2026-11-22
  *
  * @description Enterprise Study Materials & Digital Content management hub comprising 8 dedicated workspaces, live database persistence, and Rule 010 View-First governance.
  */
@@ -203,7 +203,8 @@ function CoursesContent() {
   const { data: statsData } = useQuery({
     queryKey: ['study-materials', 'stats', selectedInstitutionId],
     queryFn: async () => (await studyMaterialsApi.getStats()).data,
-    staleTime: 30000,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 2. Study Materials List
@@ -227,7 +228,8 @@ function CoursesContent() {
       })
       return res.data
     },
-    staleTime: 15000,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const MATERIAL_SORT_OPTIONS: TableSortOption[] = [
@@ -253,26 +255,34 @@ function CoursesContent() {
     initialType: 'date',
   })
 
-  // 3. Standards, Subjects, Divisions
+  // 3. Standards, Subjects, Divisions (Cached Masters)
   const { data: standards = [] } = useQuery({
     queryKey: ['standards', selectedInstitutionId],
     queryFn: async () => (await standardsApi.list(selectedInstitutionId ?? undefined)).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: subjects = [] } = useQuery({
     queryKey: ['subjects', selectedInstitutionId],
     queryFn: async () => (await subjectsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: divisions = [] } = useQuery({
     queryKey: ['divisions', selectedInstitutionId],
     queryFn: async () => (await divisionsApi.list(selectedInstitutionId ?? undefined)).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: formStandardSubjects = [] } = useQuery({
     queryKey: ['subjects-by-standard', formStandardId],
     queryFn: async () => formStandardId ? (await subjectsApi.list({ standard_id: formStandardId })).data : [],
     enabled: Boolean(formStandardId),
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const filteredFormSubjects = useMemo(() => {

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Dedicated full-page Non-Teaching Staff Profile workspace with hero banner, 12 specialized administrative tabs, reporting manager hierarchy, duties checklist, and activity history.
  */
@@ -112,6 +112,8 @@ export default function StaffProfilePage() {
     queryKey: ['staff-profile', staffId],
     queryFn: () => staffApi.get(staffId).then((r) => r.data),
     enabled: !!staffId,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 2. Fetch Activity Timeline
@@ -119,6 +121,8 @@ export default function StaffProfilePage() {
     queryKey: ['staff-activity-history', staffId],
     queryFn: () => staffApi.getActivityHistory(staffId, 50).then((r) => r.data),
     enabled: !!staffId && activeTab === 'activity',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 3. Fetch Leaves
@@ -126,6 +130,8 @@ export default function StaffProfilePage() {
     queryKey: ['staff-leaves', staffId],
     queryFn: () => staffApi.leavesList({ user_id: staffId }).then((r) => r.data),
     enabled: !!staffId && ['overview', 'leave'].includes(activeTab),
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   if (isProfileLoading) {

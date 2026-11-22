@@ -141,6 +141,8 @@ export default function DashboardPage() {
           status: statusFilter,
         })
         .then((r) => r.data),
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
   })
 
   const {
@@ -172,6 +174,8 @@ export default function DashboardPage() {
         })
         .then((r) => r.data),
     enabled: activeTab === 'overview',
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
   })
 
   // Fetch Comprehensive Multi-Tab Analytics
@@ -194,6 +198,8 @@ export default function DashboardPage() {
           division_id: filters.divisionId ?? undefined,
         })
         .then((r) => r.data),
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
   })
 
   const handleRefreshAll = () => {

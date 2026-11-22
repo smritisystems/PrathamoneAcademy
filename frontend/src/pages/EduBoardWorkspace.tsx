@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-12
- * @updated     2026-11-19
+ * @updated     2026-11-22
  *
  * @description Main interactive PrathamOne EduBoard workspace for Classic Chalk/Greenboard, Digital Whiteboard, and PDF Presentation teaching, with View-First governance, scoped IndexedDB crash recovery, debounced revision sync, conflict resolution, templates, and PDF export.
  */
@@ -222,6 +222,8 @@ export default function EduBoardWorkspace() {
   const { data: contextData } = useQuery({
     queryKey: ['eduboard-context', dataEnv],
     queryFn: async () => (await eduboardApi.getContext()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Selected batch in modal
@@ -288,6 +290,8 @@ export default function EduBoardWorkspace() {
   const { data: settingsData, refetch: refetchSettings } = useQuery({
     queryKey: ['eduboard-settings', dataEnv],
     queryFn: async () => (await eduboardApi.getSettings()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: boardsData, refetch: refetchBoards, isLoading: loadingList } = useQuery({
@@ -299,24 +303,32 @@ export default function EduBoardWorkspace() {
           status: statusFilter || undefined,
         })
       ).data,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: fetchedBoardDetail, refetch: refetchBoardDetail } = useQuery({
     queryKey: ['eduboard-detail', selectedBoardId, dataEnv],
     queryFn: async () => (await eduboardApi.getBoard(selectedBoardId!)).data,
     enabled: !!selectedBoardId,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: revisionsData, refetch: refetchRevisions } = useQuery({
     queryKey: ['eduboard-revisions', selectedBoardId, dataEnv],
     queryFn: async () => (await eduboardApi.getRevisions(selectedBoardId!)).data,
     enabled: !!selectedBoardId && showRevisionsModal,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: prefsData, refetch: refetchPrefs } = useQuery({
     queryKey: ['eduboard-preferences', dataEnv, user?.id],
     queryFn: async () => (eduboardApi.getPreferences ? (await eduboardApi.getPreferences()).data : null),
     enabled: !!user,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   useEffect(() => {

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Dedicated full-width interactive Kanban Pipeline workspace with stage progression, counsellor filtering, priority tags, and slide-over dossier inspection.
  */
@@ -63,25 +63,34 @@ export default function LeadPipelinePage() {
       })
       return res.data
     },
-    staleTime: 15000,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
-  // Lookups
+  // Lookups (Cached Masters)
   const { data: standards = [] } = useQuery({
     queryKey: ['standards'],
     queryFn: async () => (await standardsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const { data: boards = [] } = useQuery({
     queryKey: ['boards'],
     queryFn: async () => (await boardsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const { data: academicYears = [] } = useQuery({
     queryKey: ['academic-years'],
     queryFn: async () => (await academicYearsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const { data: usersData } = useQuery({
     queryKey: ['users'],
     queryFn: async () => (await usersApi.list({ limit: 100 })).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const counsellors: User[] = (usersData?.items || usersData || []) as User[]
 

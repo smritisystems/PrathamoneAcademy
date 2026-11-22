@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-18
+ * @updated     2026-11-22
  *
  * @description Attendance management workspace transforming daily batch roll call, QR terminals, registers, and absenteeism into dedicated functional views.
  */
@@ -288,6 +288,8 @@ function AttendanceContent() {
       return res.data
     },
     enabled: !!selectedInstitutionId,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Auto-select standard if available
@@ -306,6 +308,8 @@ function AttendanceContent() {
       return res.data
     },
     enabled: !!selectedStandardId,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Students roster query
@@ -327,6 +331,8 @@ function AttendanceContent() {
       return res.data
     },
     enabled: !!selectedStandardId,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   useEffect(() => {

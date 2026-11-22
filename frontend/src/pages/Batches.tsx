@@ -39,16 +39,20 @@ export default function BatchesPage() {
     room_number: '',
   })
 
-  // Fetch standards
+  // Fetch standards (Cached Master)
   const { data: standards = [] } = useQuery({
     queryKey: ['standards', selectedInstitutionId],
     queryFn: () => standardsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
-  // Fetch boards
+  // Fetch boards (Cached Master)
   const { data: boards = [] } = useQuery({
     queryKey: ['boards', selectedInstitutionId],
     queryFn: () => boardsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Set default selected standard when loaded
@@ -62,6 +66,8 @@ export default function BatchesPage() {
         ? divisionsApi.list(currentStandardId).then((r) => r.data)
         : Promise.resolve([]),
     enabled: !!currentStandardId,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const batchMutation = useMutation({

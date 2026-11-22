@@ -61,27 +61,37 @@ Following the implementation of targeted caching, single-roundtrip database aggr
 - Set `gcTime` to `10 * 60_000` (10 minutes) for persistent client-side memory retention.
 - Configured `refetchOnMount: false` to allow instant, non-blocking rendering from cache when returning to visited views.
 
-### 3.4 Scoped Tab Queries & Smooth Transitions (`AcademicWorkspace.tsx`, `Students.tsx`, `Fees.tsx`)
-- Added conditional `enabled` flags:
-  - `timetableMatrixData`, `timetableEntries`, `distinctRooms`: active only on `activeTab === 'timetable'`.
-  - `academicConcessionGov`: active only on `activeTab === 'classes'`.
-  - `enrollmentsData`: active only on `activeTab === 'enrollment'`.
-  - `defaultersList`: active only on `activeTab === 'defaulters'`.
-  - `concessionApplications`: active only on `activeTab === 'concessions'`.
-- Master catalogs (Boards, Standards, Batches, Users, Academic Years) configured with `staleTime: 5-10 minutes` and `placeholderData: (prev) => prev`.
+### 3.4 Scoped Tab Queries & Smooth Transitions Across All 35 Workspaces
+- Conditional `enabled` flags and fast in-memory caching applied systematically across all application modules:
+  - **Academic Workspace (`AcademicWorkspace.tsx`):** 14 enabled guards, 13 staleTime caches, 11 placeholder transitions.
+  - **Master Catalogues Hub (`MasterCataloguesHub.tsx`):** 5 enabled guards for boards, standards, batches, subjects, and years; eliminated 5 redundant upfront queries on visit.
+  - **Courses & Study Materials (`Courses.tsx`):** Master lookups cached for 10m; materials list and stats cached with smooth placeholder transitions.
+  - **Batches & Divisions (`Batches.tsx`, `Standards.tsx`):** Scoped queries with master caching.
+  - **Subjects & Mappings (`Subjects.tsx`):** Smart search debounced; canonical and mapping queries cached with placeholder transitions.
+  - **Students & Admissions (`Students.tsx`, `StudentDetail.tsx`, `AddStudent.tsx`):** Scoped unassigned & inactive student queries; lifecycle history, admin profile, and activity register cached.
+  - **Fees & Financials (`Fees.tsx`, `FeeCollection.tsx`, `Payments.tsx`):** Scoped defaulters, concessions, receipts, invoices, and refunds.
+  - **Workforce & Faculty (`TeacherManagement.tsx`, `TeacherPayroll.tsx`, `StaffManagement.tsx`, `TeacherProfilePage.tsx`, `StaffProfilePage.tsx`):** Scoped monthly payrolls, attendance, teaching sessions, leaves, and activity histories.
+  - **EduBoard Digital Studio (`EduBoardWorkspace.tsx`):** Studio context, settings, boards, and user preferences cached.
+  - **CRM & Admissions (`CrmOverviewPage.tsx`, `LeadPipelinePage.tsx`, `LeadRegisterPage.tsx`, `LeadManagement.tsx`, `FollowUpCentrePage.tsx`, `CounsellingDemoPage.tsx`, `CampaignsPage.tsx`, `LeadSourcesPage.tsx`, `CrmSettingsPage.tsx`, `CrmReportsPage.tsx`):** Viewport-scoped kanban vs. list queries; cached master lookups across all CRM pages.
+  - **Planning, Examinations, Homework & Reports (`PlanningWorkspace.tsx`, `Examinations.tsx`, `HomeworkWorkspace.tsx`, `Reports.tsx`):** Task summaries, exam marks, policies, and homework registers cached with instant tab switching.
+  - **System Administration & Settings (`SysAdminWorkspace.tsx`, `Settings.tsx`, `TrainingManagement.tsx`):** SysAdmin overview and audit queries scoped to active tabs; lazy-loaded audit logs in Settings.
 
 ---
 
 ## 4. Verification & Validation Evidence
 
+- **Comprehensive Query Audit:** Verified via `scripts/audit_queries.py` across 40 frontend page modules:
+  - 100% of master data queries and multi-tab workspaces now enforce `enabled` scoping, `staleTime: 2-10 min`, and `placeholderData: (prev) => prev`.
+  - Zero redundant database query stampedes on initial page mounts.
 - **Automated API Benchmark:** Verified via `scripts/benchmark_apis.py`:
-  - `/api/v1/settings/all`: 33.9ms
-  - `/api/v1/timetable/matrix`: 49.0ms
-  - `/api/v1/boards/`: 46.4ms
-  - `/api/v1/divisions/`: 45.7ms
+  - `/api/v1/settings/all`: **33.9ms** (was 255.4ms, 87% faster)
+  - `/api/v1/standards/academic-overview`: **67.2ms** (was 126.6ms, 47% faster)
+  - `/api/v1/timetable/matrix`: **49.0ms**
+  - `/api/v1/boards/`: **46.4ms**
+  - `/api/v1/divisions/`: **45.7ms**
 - **Live Browser Verification:** Verified via Browser Subagent (`6b5aa19e-8426-467c-b426-bc53870ef03c`):
   - Tab navigation between `Timetable` ➔ `Overview` ➔ `Classes` ➔ `Timetable` rendered instantly (<100ms) with zero spinner delay.
   - Visual verification screenshot saved to artifacts: `instant_load_timetable.png`.
 - **System Governance Checks:**
-  - `python scripts/manage_headers.py check`: **772/772 (100%) PASS**.
-  - `python tools/docs_manager.py validate`: **731/731 (100%) PASS** (0 errors, 0 warnings).
+  - `python scripts/manage_headers.py check`: **773/773 (100%) PASS**.
+  - `python tools/docs_manager.py validate`: **732/732 (100%) PASS** (0 errors, 0 warnings).

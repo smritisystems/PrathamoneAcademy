@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Central Administrator Control Center for Global Training & Demo Environment: policy configuration, session monitor, and atomic reset engine.
  */
@@ -60,6 +60,8 @@ export default function TrainingManagement() {
     queryKey: ['training-status'],
     queryFn: () => trainingApi.getStatus().then((r) => r.data),
     refetchInterval: 15000,
+    staleTime: 10000,
+    placeholderData: (prev) => prev,
   })
 
   // 2. Fetch Reset Audit Logs
@@ -70,6 +72,8 @@ export default function TrainingManagement() {
   } = useQuery({
     queryKey: ['training-reset-logs'],
     queryFn: () => trainingApi.getResetLogs(20).then((r) => r.data),
+    staleTime: 30000,
+    placeholderData: (prev) => prev,
   })
 
   // 3. Reset Environment Mutation

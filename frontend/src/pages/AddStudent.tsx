@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Multi-step student admission form capturing personal details, parent info, and initial enrollment.
  */
@@ -99,11 +99,15 @@ export default function AddStudent() {
     queryKey: ['standards', selectedInstitutionId],
     queryFn: () => getStandards(selectedInstitutionId!),
     enabled: !!selectedInstitutionId,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
   const { data: divisionsData } = useQuery({
     queryKey: ['divisions', form.standard_id],
     queryFn: () => getDivisions(form.standard_id),
     enabled: !!form.standard_id,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const standards = Array.isArray(standardsData) ? standardsData : (standardsData as any)?.items || [];

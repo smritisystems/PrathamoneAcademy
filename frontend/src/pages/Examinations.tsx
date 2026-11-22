@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-18
+ * @updated     2026-11-22
  *
  * @description Examinations flagship workspace featuring 7 dedicated submenus: overview, schedules, marks entry, analytics, report cards, question papers, and settings.
  */
@@ -150,12 +150,16 @@ function ExaminationsContent() {
   const { data: standards = [] } = useQuery({
     queryKey: ['standards', selectedInstitutionId],
     queryFn: () => standardsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Fetch academic years
   const { data: academicYears = [] } = useQuery({
     queryKey: ['academic-years', selectedInstitutionId],
     queryFn: () => academicYearsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const currentStandardId = selectedStandardId || (standards[0]?.id ? String(standards[0].id) : '')
@@ -170,7 +174,8 @@ function ExaminationsContent() {
           standard_id: currentStandardId ? Number(currentStandardId) : undefined,
         })
         .then((r) => r.data),
-    enabled: true,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const EXAM_SORT_OPTIONS: TableSortOption[] = [
@@ -210,7 +215,9 @@ function ExaminationsContent() {
   } = useQuery({
     queryKey: ['exam-marks', effectiveMarksExamId],
     queryFn: () => examinationsApi.getMarks(effectiveMarksExamId!).then((r) => r.data),
-    enabled: !!effectiveMarksExamId,
+    enabled: !!effectiveMarksExamId && (activeTab === 'marks-entry' || activeTab === 'report-cards'),
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Populate local marks grid when marks sheet arrives
@@ -309,7 +316,9 @@ function ExaminationsContent() {
   const { data: analytics, isLoading: isLoadingAnalytics } = useQuery({
     queryKey: ['exam-analytics', effectiveAnalyticsExamId],
     queryFn: () => examinationsApi.getAnalytics(effectiveAnalyticsExamId!).then((r) => r.data),
-    enabled: !!effectiveAnalyticsExamId,
+    enabled: !!effectiveAnalyticsExamId && (activeTab === 'analytics' || activeTab === 'overview'),
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const leaderboardList = analytics?.leaderboard ?? []
@@ -334,6 +343,9 @@ function ExaminationsContent() {
       const res = await examinationsApi.getPolicies()
       return res.data
     },
+    enabled: activeTab === 'settings' || activeTab === 'overview',
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const [policyForm, setPolicyForm] = useState({

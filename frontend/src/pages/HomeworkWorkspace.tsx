@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Flagship Homework & Assignment Management workspace featuring Overview, Unified Assignment Creation, Physical Checking Register, Digital Submissions, Templates, and Daily Reports.
  */
@@ -118,24 +118,32 @@ export default function HomeworkWorkspace() {
   const { data: standardsResp } = useQuery({
     queryKey: ['hw-standards'],
     queryFn: () => standardsApi.list({ institution_id: selectedInstitutionId || 1 }),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const standards = standardsResp?.data || []
 
   const { data: divisionsResp } = useQuery({
     queryKey: ['hw-divisions', selectedStandardId],
     queryFn: () => divisionsApi.list({ standard_id: selectedStandardId ? Number(selectedStandardId) : undefined }),
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const divisions = divisionsResp?.data || []
 
   const { data: subjectsResp } = useQuery({
     queryKey: ['hw-subjects'],
     queryFn: () => subjectsApi.list({}),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const subjects = subjectsResp?.data || []
 
   const { data: teachersResp } = useQuery({
     queryKey: ['hw-teachers'],
     queryFn: () => usersApi.list({ role: 'teacher', limit: 100 }),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const teachers = teachersResp?.data?.items || []
 
@@ -146,6 +154,8 @@ export default function HomeworkWorkspace() {
       typeof homeworkApi.getSettings === 'function'
         ? homeworkApi.getSettings({ institution_id: selectedInstitutionId || 1 }).then((r) => r.data)
         : Promise.resolve(undefined),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const hwSettings: HomeworkSettingsConfig | undefined = hwSettingsResp
 
@@ -153,6 +163,9 @@ export default function HomeworkWorkspace() {
   const { data: teacherDashResp } = useQuery({
     queryKey: ['hw-teacher-dashboard', user?.id],
     queryFn: () => homeworkApi.getTeacherDashboard({ teacher_id: user?.role === 'teacher' ? user.id : undefined }).then((r) => r.data),
+    enabled: activeTab === 'overview',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const dashboardStats: Partial<TeacherHomeworkDashboard> & {
     total_assigned: number
@@ -190,6 +203,8 @@ export default function HomeworkWorkspace() {
         limit: 50,
       }).then((r) => r.data),
     enabled: ['overview', 'checking', 'submissions', 'reports'].includes(activeTab),
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const assignments: HomeworkAssignmentItem[] = assignmentsResp?.items || []
 
@@ -209,6 +224,8 @@ export default function HomeworkWorkspace() {
         review_status: checkingReviewFilter !== 'all' ? checkingReviewFilter : undefined,
       }).then((r) => r.data),
     enabled: activeTab === 'checking' && checkingAssignmentId !== null,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const checkingStudents: CheckingRegisterStudent[] = checkingRegisterResp?.students || []
 

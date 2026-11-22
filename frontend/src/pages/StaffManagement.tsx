@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-18
+ * @updated     2026-11-22
  *
  * @description Dedicated multi-workspace hub for Staff & HR Directory comprising HR Analytics, Staff Register, Onboarding, Roles & Duties, Daily Attendance, Leave Requests, HR Documents Studio, and HR Policies.
  */
@@ -193,6 +193,9 @@ function StaffManagementContent() {
           limit: 15,
         })
         .then((r) => r.data),
+    enabled: activeTab === 'directory' || activeTab === 'overview',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const staffItems = staffData?.items ?? []
@@ -203,26 +206,35 @@ function StaffManagementContent() {
     queryKey: ['staff-detail', selectedUserId],
     queryFn: () => staffApi.get(selectedUserId!).then((r) => r.data),
     enabled: !!selectedUserId,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 3. Daily Attendance Query
   const { data: dailyAtt, isLoading: isAttLoading, refetch: refetchAttendance } = useQuery({
     queryKey: ['staff-daily-attendance', attendanceDate],
     queryFn: () => staffApi.dailyAttendance({ attendance_date: attendanceDate }).then((r) => r.data),
-    enabled: activeTab === 'attendance' || activeTab === 'overview',
+    enabled: activeTab === 'attendance',
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 4. Leaves Query
   const { data: leaves = [], refetch: refetchLeaves } = useQuery({
     queryKey: ['staff-leaves'],
     queryFn: () => staffApi.leavesList().then((r) => r.data),
-    enabled: activeTab === 'leaves' || activeTab === 'overview',
+    enabled: activeTab === 'leaves',
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 5. Non-Teaching Staff Dashboard Stats
   const { data: staffDashboard } = useQuery({
     queryKey: ['staff-workforce-dashboard'],
     queryFn: () => staffApi.getStaffDashboard().then((r) => r.data),
+    enabled: activeTab === 'overview',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 6. Documents Catalogue Query
@@ -230,6 +242,8 @@ function StaffManagementContent() {
     queryKey: ['staff-doc-catalogue', docCategoryFilter],
     queryFn: () => staffApi.documentCatalogue({ category: docCategoryFilter || undefined }).then((r) => r.data),
     enabled: activeTab === 'documents',
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 7. Document Render Query

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-18
+ * @updated     2026-11-22
  *
  * @description Source component for Sysadminworkspace in the src.pages module.
  */
@@ -133,6 +133,9 @@ export default function SysAdminWorkspace() {
   const { data: overview, isLoading: isOverviewLoading, refetch: refetchOverview } = useQuery({
     queryKey: ['sysadmin-overview'],
     queryFn: () => sysadminApi.getOverview().then((r) => r.data),
+    enabled: activeTab === 'overview',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 2. Protected Security Audit Logs Query
@@ -149,6 +152,8 @@ export default function SysAdminWorkspace() {
         })
         .then((r) => r.data),
     enabled: activeTab === 'audits',
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 3. System Settings Query
@@ -156,6 +161,8 @@ export default function SysAdminWorkspace() {
     queryKey: ['sysadmin-system-settings'],
     queryFn: () => sysadminApi.getSystemSettings().then((r) => r.data),
     enabled: activeTab === 'settings',
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   React.useEffect(() => {

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Standards page redirected to Academic Workspace classes management tab.
  */
@@ -39,12 +39,16 @@ export default function Standards() {
     queryKey: ['standards', selectedInstitutionId],
     queryFn: () => getStandards(selectedInstitutionId!),
     enabled: !!selectedInstitutionId,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const { data: divisionsData } = useQuery({
     queryKey: ['divisions', selectedStdId],
     queryFn: () => getDivisions(selectedStdId!),
     enabled: !!selectedStdId,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const standards = Array.isArray(standardsData) ? standardsData : (standardsData as any)?.items || [];

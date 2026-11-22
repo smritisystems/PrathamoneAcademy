@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-18
+ * @updated     2026-11-22
  *
  * @description Dedicated CRM Overview workspace featuring top KPI metrics, live enquiry funnel, overdue follow-up queues, source distribution, and counsellor leaderboard.
  */
@@ -56,39 +56,50 @@ export default function CrmOverviewPage() {
   const { data: metrics, isLoading: isMetricsLoading, refetch: refetchMetrics } = useQuery({
     queryKey: ['crm', 'metrics'],
     queryFn: async () => (await leadsApi.getMetrics()).data,
-    staleTime: 30000,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 2. Recent Leads
   const { data: recentLeads, refetch: refetchLeads } = useQuery({
     queryKey: ['crm', 'recent-leads'],
     queryFn: async () => (await leadsApi.getLeads({ limit: 8, page: 1 })).data,
-    staleTime: 30000,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 3. Overdue Follow-ups Queue
   const { data: overdueQueue, refetch: refetchOverdue } = useQuery({
     queryKey: ['crm', 'overdue-queue'],
     queryFn: async () => (await leadsApi.getFollowUps({ status: 'overdue', limit: 5 })).data,
-    staleTime: 30000,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
-  // Lookups
+  // Lookups (Cached Masters)
   const { data: standards = [] } = useQuery({
     queryKey: ['standards'],
     queryFn: async () => (await standardsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const { data: boards = [] } = useQuery({
     queryKey: ['boards'],
     queryFn: async () => (await boardsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const { data: academicYears = [] } = useQuery({
     queryKey: ['academic-years'],
     queryFn: async () => (await academicYearsApi.list()).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const { data: usersData } = useQuery({
     queryKey: ['users'],
     queryFn: async () => (await usersApi.list({ limit: 100 })).data,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const counsellors: User[] = (usersData?.items || usersData || []) as User[]
 
