@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Official Digital Student ID Card modal with CR80 thermal/PVC dimensions and SVG QR code rendering.
  */
@@ -215,6 +215,7 @@ export default function StudentIDCardModal({
                           src={cardData.photo_url}
                           alt={cardData.full_name}
                           className="w-full h-full object-cover"
+                          style={{ maxWidth: '64px', maxHeight: '80px', width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                       ) : (
                         <div className="text-center">

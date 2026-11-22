@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-04
- * @updated     2026-11-18
+ * @updated     2026-11-22
  *
  * @description Isolated receipt printing utility for high-fidelity A5 portrait voucher generation.
  */
@@ -239,6 +239,32 @@ export function printReceiptElement(
               align-items: flex-end !important;
               text-align: right !important;
             }
+          }
+
+          /* Software-Governed Logo & Image Bounding Architecture (RULE 014 Print Hygiene) */
+          img {
+            max-width: 100% !important;
+            object-fit: contain !important;
+          }
+          .receipt-logo-container {
+            width: 48px !important;
+            height: 48px !important;
+            max-width: 48px !important;
+            max-height: 48px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            overflow: hidden !important;
+            flex-shrink: 0 !important;
+          }
+          .receipt-logo-img,
+          .print-document-logo {
+            max-width: 44px !important;
+            max-height: 44px !important;
+            width: auto !important;
+            height: auto !important;
+            object-fit: contain !important;
+            display: block !important;
           }
 
           /* Global Print & Share Branding & Canonical Footer */
