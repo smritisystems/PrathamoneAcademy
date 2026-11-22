@@ -11,7 +11,7 @@
  *
  * @version     1.6.0
  * @created     2026-11-03
- * @updated     2026-11-19
+ * @updated     2026-11-22
  *
  * @description Premium enterprise authentication portal featuring organic curved wave architecture, original PrathamOne navy/saffron theme colors, single unified Zero-Tab authentication, server-enforced role routing, and comprehensive academic curriculum spectrum overlays.
  */
@@ -50,6 +50,7 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import Modal from '../components/Modal'
+import { NepRoadmapModal } from '../components/common'
 import { authApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useBranding } from '../config/branding'
@@ -122,6 +123,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [showLoginHelp, setShowLoginHelp] = useState(false)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [showNepModal, setShowNepModal] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [logoLoadFailed, setLogoLoadFailed] = useState(false)
 
@@ -456,6 +458,37 @@ export default function LoginPage() {
                 <span className="truncate">Commerce &amp; CA Foundation</span>
               </div>
             </div>
+          </div>
+
+          {/* NEP 2020 Aligned Trust Banner & Upcoming Features Trigger */}
+          <div className="bg-[#051632]/85 border border-sky-400/25 rounded-2xl p-3 sm:p-3.5 backdrop-blur-md shadow-inner flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-3">
+            <div className="flex items-start gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-amber-400/15 border border-amber-400/30 text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-400 text-slate-950">
+                    NEP 2020 Aligned
+                  </span>
+                  <h4 className="text-xs font-bold text-white truncate">
+                    Built for the Future of Coaching — NEP 2020 Ready
+                  </h4>
+                </div>
+                <p className="text-[11px] text-blue-200/80 leading-snug mt-1">
+                  Supporting competency-based testing, flexible subject batches, and APAAR standards as your institute transitions.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowNepModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold tracking-tight transition-all shrink-0 self-start sm:self-center cursor-pointer shadow-xs"
+            >
+              <span>Upcoming Features</span>
+              <ArrowRight className="w-3.5 h-3.5 text-cyan-300" />
+            </button>
           </div>
         </div>
 
@@ -931,6 +964,9 @@ export default function LoginPage() {
             </div>
           </div>
         </Modal>
+
+        {/* NEP 2020 Upcoming Features Milestone Modal */}
+        <NepRoadmapModal isOpen={showNepModal} onClose={() => setShowNepModal(false)} />
       </div>
     </div>
   )

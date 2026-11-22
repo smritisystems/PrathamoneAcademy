@@ -27,9 +27,11 @@ import {
   ChevronRight, UserCheck, UserX, ArrowUpRight, AlertTriangle,
   HelpCircle, ShieldCheck, UserPlus, PhoneCall, Video, Check,
   LayoutDashboard, Award, Activity, Target, GraduationCap,
-  FileSpreadsheet, Sparkles, Building2, School, BarChart3, PieChart as PieChartIcon
+  FileSpreadsheet, Sparkles, Building2, School, BarChart3, PieChart as PieChartIcon,
+  Bell, X
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { downloadBlob, downloadCsvRows } from '../utils/reportExport'
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
@@ -43,7 +45,7 @@ import { useBranding } from '../config/branding'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { encodeCodexNumber } from '../utils/codexFormatter'
 import QuickDecoderModal from '../components/codex/QuickDecoderModal'
-import { ConcessionTraceModal, ContextualHelpButton } from '../components/common'
+import { ConcessionTraceModal, ContextualHelpButton, NepRoadmapModal } from '../components/common'
 import type {
   OutstandingDrilldownRecord,
   DashboardAnalyticsData,
@@ -216,6 +218,29 @@ export default function DashboardPage() {
     type: 'application' | 'allocation' | 'invoice' | 'student'
     id: number
   } | null>(null)
+
+  // NEP 2020 Roadmap & Banner States
+  const [showNepModal, setShowNepModal] = useState(false)
+  const [isNepBannerDismissed, setIsNepBannerDismissed] = useState<boolean>(() => {
+    return localStorage.getItem('prathamone_nep2020_dashboard_dismissed') === 'true'
+  })
+  const [isNepNotified, setIsNepNotified] = useState<boolean>(() => {
+    return localStorage.getItem('prathamone_nep2020_notified') === 'true'
+  })
+
+  const handleNotifyNepLive = () => {
+    localStorage.setItem('prathamone_nep2020_notified', 'true')
+    setIsNepNotified(true)
+    toast.success("You're on the priority list for NEP 2020 updates!", {
+      icon: '🎉',
+      duration: 4000,
+    })
+  }
+
+  const handleDismissNepBanner = () => {
+    localStorage.setItem('prathamone_nep2020_dashboard_dismissed', 'true')
+    setIsNepBannerDismissed(true)
+  }
 
   // Query CodeX user status
   const { data: codexStatus } = useQuery({
@@ -593,6 +618,73 @@ export default function DashboardPage() {
           </button>
         </div>
       </div>
+
+      {/* NEP 2020 Rollout Roadmap Announcement Banner (Option B) */}
+      {!isNepBannerDismissed && (
+        <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-xs border border-blue-800/60 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/30 text-amber-300 flex items-center justify-center shrink-0 mt-0.5 shadow-inner">
+              <Sparkles className="w-5 h-5 text-amber-400" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-400 text-slate-950">
+                  NEP 2020 Aligned
+                </span>
+                <h3 className="text-sm sm:text-base font-bold text-white tracking-tight truncate">
+                  NEP 2020 Rollout Roadmap Enabled
+                </h3>
+              </div>
+              <p className="text-xs text-blue-100/90 leading-relaxed mt-1 max-w-2xl">
+                Your platform is being updated in phases for NEP 2020—including competency-based test analytics, cross-stream batching, and APAAR ID support. No action is needed from your team right now.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0 self-start md:self-center">
+            <button
+              type="button"
+              onClick={() => setShowNepModal(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-xs font-bold transition-all shadow-xs cursor-pointer"
+            >
+              <span>View Roadmap</span>
+              <ArrowRight className="w-3.5 h-3.5 text-blue-600" />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleNotifyNepLive}
+              disabled={isNepNotified}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs border ${
+                isNepNotified
+                  ? 'bg-emerald-500/20 text-emerald-200 border-emerald-400/40 cursor-default'
+                  : 'bg-white/10 hover:bg-white/20 text-white border-white/20 cursor-pointer'
+              }`}
+            >
+              {isNepNotified ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>Subscribed ✓</span>
+                </>
+              ) : (
+                <>
+                  <Bell className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Notify Me When Live</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDismissNepBanner}
+              className="p-1.5 rounded-lg text-blue-200 hover:text-white hover:bg-white/10 transition-colors ml-1 cursor-pointer"
+              title="Dismiss announcement"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Unified Cascading Filter Bar */}
       <div className="space-y-2">
@@ -3015,6 +3107,9 @@ export default function DashboardPage() {
         onClose={() => setTraceTarget(null)}
         onNavigateStudent={(sid) => navigate(`/students/${sid}`)}
       />
+
+      {/* NEP 2020 Rollout Roadmap Modal */}
+      <NepRoadmapModal isOpen={showNepModal} onClose={() => setShowNepModal(false)} />
     </div>
   )
 }

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-18
+ * @updated     2026-11-22
  *
  * @description Central export index for shared common components including View-First Edit Mode governance tools.
  */
@@ -57,6 +57,9 @@ export type {
 } from './AgingReceivablesStackedBar'
 
 export { default as AdmissionsFunnelChart } from './AdmissionsFunnelChart'
+export { default as NepRoadmapModal } from './NepRoadmapModal'
+export type { NepMilestone } from './NepRoadmapModal'
+
 export type {
   AdmissionsFunnelChartProps,
   FunnelStageConfig,

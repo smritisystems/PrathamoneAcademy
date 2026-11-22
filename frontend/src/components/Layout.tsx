@@ -19,7 +19,7 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronDown, Menu, PanelLeft, PanelLeftOpen, Download, Search, Sliders } from 'lucide-react'
+import { ChevronDown, Menu, PanelLeft, PanelLeftOpen, Download, Search, Sliders, Sparkles } from 'lucide-react'
 import Sidebar from './Sidebar'
 import Footer from './Footer'
 import { RouteErrorBoundary } from './RouteErrorBoundary'
@@ -42,6 +42,7 @@ import TrainingModeBanner from './common/TrainingModeBanner'
 import LicenseModeBanner from './common/LicenseModeBanner'
 import EnvironmentSwitchModal from './common/EnvironmentSwitchModal'
 import ContextualHelpButton from './common/ContextualHelpButton'
+import NepRoadmapModal from './common/NepRoadmapModal'
 import { BottomBarDrawer } from './common/BottomBarDrawer'
 import { FlaskConical, ShieldCheck } from 'lucide-react'
 
@@ -57,6 +58,7 @@ export default function Layout() {
   const appContentRef = useRef<HTMLDivElement>(null)
   const { dataEnvironment, isTrainingMode } = useEnvironmentStore()
   const [switchTarget, setSwitchTarget] = useState<DataEnvironment | null>(null)
+  const [showNepModal, setShowNepModal] = useState(false)
   useDocumentTitle()
   useNavigationTracker()
 
@@ -367,6 +369,18 @@ export default function Layout() {
               <ContextualHelpButton variant="pill" label="Help" />
             </div>
 
+            {/* NEP 2020 Updates Pill Button */}
+            <button
+              type="button"
+              onClick={() => setShowNepModal(true)}
+              title="View NEP 2020 Platform Alignment & Rollout Roadmap"
+              className="hidden md:inline-flex items-center gap-1.5 px-2 sm:px-2.5 h-7.5 sm:h-8 rounded-lg text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100/90 border border-amber-300/80 shadow-2xs transition-all cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <span className="hidden lg:inline">NEP 2020 Updates</span>
+              <span className="lg:hidden">NEP 2020</span>
+            </button>
+
             {/* Global Search Command Button */}
             <button
               type="button"
@@ -451,6 +465,9 @@ export default function Layout() {
 
       {/* Mandatory First-Run Master Password Change Modal */}
       <ForcePasswordChangeModal isOpen={Boolean(user?.must_change_password)} />
+
+      {/* NEP 2020 Platform Alignment Roadmap Modal */}
+      <NepRoadmapModal isOpen={showNepModal} onClose={() => setShowNepModal(false)} />
     </div>
   )
 }
