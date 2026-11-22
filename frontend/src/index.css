@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-18
+ * @updated     2026-11-22
  *
  * @description Global application stylesheet defining Tailwind directives, typography, and print vouchers.
  */
@@ -859,31 +859,109 @@
   border-color: rgba(255,255,255,0.08) !important;
 }
 
-/* --- Scrollbar in dark mode — premium thin style --- */
-:root.dark ::-webkit-scrollbar { width: 6px; height: 6px; }
-:root.dark ::-webkit-scrollbar-track { background: transparent; }
-:root.dark ::-webkit-scrollbar-thumb {
-  background: rgba(26, 47, 71, 0.9);
-  border-radius: 9999px;
-}
-:root.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(42, 70, 105, 1);
+/* ==========================================================================
+   GLOBAL ULTRA-SLEEK SCROLLBAR ARCHITECTURE (Linear / Raycast / macOS Grade)
+   ========================================================================== */
+
+/* Standard CSS for modern browsers (Chromium 121+, Firefox, Safari 18+) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
 }
 
-/* Custom discreet scrollbars */
-.custom-scrollbar::-webkit-scrollbar {
+:root.dark * {
+  scrollbar-color: rgba(100, 116, 139, 0.4) transparent;
+}
+
+/* WebKit / Chromium scrollbar styling across the entire DOM tree */
+::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Hide native Windows arrow buttons completely */
+::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Smooth rounded thumb with subtle padding border */
+::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.15s ease-in-out;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.65);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: rgba(71, 85, 105, 0.85);
+}
+
+/* Dark mode thumb */
+:root.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.35);
+}
+
+:root.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 0.6);
+}
+
+:root.dark ::-webkit-scrollbar-thumb:active {
+  background-color: rgba(203, 213, 225, 0.8);
+}
+
+/* Enhanced high-density custom scrollbar utility */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.4);
+  background-color: rgba(148, 163, 184, 0.35);
   border-radius: 9999px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.6);
+  background-color: rgba(100, 116, 139, 0.65);
+}
+
+/* Ultra-minimal auto-hide scrollbar (appears only on hover/scroll) */
+.scrollbar-hover-only {
+  scrollbar-width: none;
+}
+.scrollbar-hover-only::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+.scrollbar-hover-only:hover {
+  scrollbar-width: thin;
+}
+.scrollbar-hover-only:hover::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
 }
 
 @media print {

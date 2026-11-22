@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-18
+#  * @updated     2026-11-22
 #  *
 #  * @description Domain service for database backup, SHA-256 verification, GFS retention pruning,
 #  */
@@ -396,6 +396,16 @@ def read_history_events(limit: int = 50) -> List[Dict[str, Any]]:
 
 class HousekeepingService:
     """Authoritative backend governance service for database backups, restore, vacuum & schedules."""
+
+    _cached_backups: Optional[List[Dict[str, Any]]] = None
+    _cached_backups_time: float = 0.0
+    _CACHE_TTL_SECONDS: float = 60.0
+
+    @classmethod
+    def invalidate_backups_cache(cls) -> None:
+        """Invalidates in-memory backups cache so subsequent calls reflect filesystem changes immediately."""
+        cls._cached_backups = None
+        cls._cached_backups_time = 0.0
 
     @classmethod
     def validate_mirror_dir(cls, mirror_dir: str) -> Path:
@@ -966,7 +976,11 @@ class HousekeepingService:
                 ))
 
     @classmethod
-    def list_backups(cls) -> List[Dict[str, Any]]:
+    def list_backups(cls, force_refresh: bool = False) -> List[Dict[str, Any]]:
+        now = datetime.now(timezone.utc).timestamp()
+        if not force_refresh and cls._cached_backups is not None and (now - cls._cached_backups_time < cls._CACHE_TTL_SECONDS):
+            return cls._cached_backups
+
         results_with_timestamp: List[Tuple[float, Dict[str, Any]]] = []
         for source, directory in (("backups", resolve_backups_dir()), ("legacy_data", resolve_legacy_backups_dir())):
             try:
@@ -1046,12 +1060,16 @@ class HousekeepingService:
                 results_with_timestamp.append((sort_timestamp, result))
 
         try:
-            return [
+            final_results = [
                 item
                 for _, item in sorted(results_with_timestamp, key=lambda entry: entry[0], reverse=True)
             ]
         except Exception:
-            return [item for _, item in results_with_timestamp]
+            final_results = [item for _, item in results_with_timestamp]
+
+        cls._cached_backups = final_results
+        cls._cached_backups_time = datetime.now(timezone.utc).timestamp()
+        return final_results
 
     @classmethod
     async def _verify_raw_payload(cls, payload_path: Path, pg: Dict[str, str]) -> Tuple[bool, int, str]:
@@ -1152,6 +1170,7 @@ class HousekeepingService:
             "actor": user.username if user else "system",
             "details": detail_msg,
         })
+        cls.invalidate_backups_cache()
         return {
             "filename": filename,
             "source": source,
@@ -1326,6 +1345,7 @@ class HousekeepingService:
             "mirror_copied": mirror_copied,
             "destinations_dispatched": len(destinations_dispatched),
         })
+        cls.invalidate_backups_cache()
         return {
             "filename": filename,
             "source": "backups",
@@ -1392,6 +1412,7 @@ class HousekeepingService:
             "actor": user.username,
             "size_bytes": len(raw_bytes),
         })
+        cls.invalidate_backups_cache()
         return verify_res
 
     @classmethod
@@ -1493,6 +1514,7 @@ class HousekeepingService:
             "freed_bytes": freed_bytes,
             "kept_count": len(keep_paths),
         })
+        cls.invalidate_backups_cache()
         return {"deleted": deleted, "kept_count": len(keep_paths), "freed_bytes": freed_bytes}
 
     @classmethod
@@ -1767,6 +1789,7 @@ class HousekeepingService:
             "reason": reason.strip(),
             "variance": rec["ledger_audit"]["variance"],
         })
+        cls.invalidate_backups_cache()
         return {
             "restored_from": filename,
             "source": source,

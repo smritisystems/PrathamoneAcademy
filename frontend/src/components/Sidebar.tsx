@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-18
+ * @updated     2026-11-22
  *
  * @description Collapsible multi-state sidebar navigation supporting expanded, icon-rail, and mobile drawer modes.
  */
@@ -19,7 +19,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard, Users, UserPlus, ClipboardList, Award, CreditCard, CalendarDays,
+  LayoutDashboard, FolderTree, Users, UserPlus, ClipboardList, Award, CreditCard, CalendarDays,
   BookOpen, BarChart2, Shield, LogOut, GraduationCap, ChevronDown, ChevronRight,
   Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer, Download,
   Briefcase, Terminal, MessageSquare, GitBranch, DollarSign, Layers, FlaskConical,
@@ -41,6 +41,7 @@ interface NavItem {
 
 const mainNavItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/catalogue', label: 'Master Catalogues', icon: FolderTree },
 ]
 
 const getSubItemsForModule = (moduleId: string) => {
@@ -1115,8 +1116,8 @@ const isStaffActive = location.pathname.startsWith('/staff')
             </div>
           ) : (
             <>
-          {/* Dashboard Item */}
-          {mainNavItems.slice(0, 1).map((item) => (
+          {/* Main Navigation Items (Dashboard & Master Catalogues Hub) */}
+          {mainNavItems.map((item) => (
             <div key={item.to} className={`relative group ${isCollapsed ? 'w-full flex justify-center' : ''}`}>
               <NavLink
                 to={item.to}

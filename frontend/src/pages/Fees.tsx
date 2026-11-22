@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-21
+ * @updated     2026-11-22
  *
  * @description Flagship Fees & Payments workspace featuring overview analytics, fee register, payments, and receipts.
  */
@@ -234,6 +234,9 @@ function FeesContent() {
   const queryClient = useQueryClient()
   const { isTrainingMode } = useEnvironmentStore()
 
+  const isDefaultersActive = location.pathname.includes('/fees/defaulters') || searchParams.get('tab') === 'defaulters'
+  const isConcessionsActive = location.pathname.includes('/fees/concessions') || searchParams.get('tab') === 'concessions'
+
   // ─────────────────────────────────────────────────────────────────────────────
   // WORKSPACE 5: DEFAULTERS & DUES STATE
   // ─────────────────────────────────────────────────────────────────────────────
@@ -252,6 +255,9 @@ function FeesContent() {
       })
       return Array.isArray(res.data) ? res.data : []
     },
+    enabled: isDefaultersActive,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const defaultersList = useMemo(() => {
@@ -333,6 +339,9 @@ function FeesContent() {
   const { data: concessionTypes = [] } = useQuery({
     queryKey: ['concession-types'],
     queryFn: () => concessionsApi.getTypes().then((r) => r.data),
+    enabled: isConcessionsActive,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Sub-tab navigation for Concessions workspace: 'applications' vs 'schemes'
@@ -381,6 +390,9 @@ function FeesContent() {
           search: concessionSearchQuery.trim() || undefined,
         })
         .then((r) => r.data),
+    enabled: isConcessionsActive,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: concessionAnalytics, refetch: refetchConcessionAnalytics } = useQuery({
@@ -389,6 +401,9 @@ function FeesContent() {
       concessionsApi
         .getAnalytics(selectedAcademicYearId ?? undefined)
         .then((r) => r.data),
+    enabled: isConcessionsActive,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Single student search for concession modal
@@ -1110,11 +1125,15 @@ function FeesContent() {
       const fallback = await academicYearsApi.list()
       return fallback.data
     },
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: boards = [] } = useQuery({
     queryKey: ['filter-boards', selectedInstitutionId],
     queryFn: () => boardsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: standards = [] } = useQuery({
@@ -1126,6 +1145,8 @@ function FeesContent() {
           board_id: selectedBoard ?? undefined,
         })
         .then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const { data: divisions = [] } = useQuery({
@@ -1137,6 +1158,8 @@ function FeesContent() {
           board_id: selectedBoard ?? undefined,
         })
         .then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const handleApplyFilters = () => {

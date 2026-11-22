@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-21
+ * @updated     2026-11-22
  *
  * @description Centralized Reporting & Analytics Centre uniting module-wise reports across Students, Academics, Fees, Workforce Payroll, Examinations, and System Audit.
  */
@@ -30,6 +30,7 @@ import {
   importExportApi,
   standardsApi,
   divisionsApi,
+  boardsApi,
   academicYearsApi,
   homeworkApi,
   leadsApi,
@@ -747,14 +748,22 @@ function ReportsWorkspace() {
   }, [user, activeReport])
 
   // ── Reference Dropdown Queries ──
+  const { data: boards = [] } = useQuery({
+    queryKey: ['reports-boards', selectedInstitutionId],
+    queryFn: () => boardsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+  })
+
   const { data: standards = [] } = useQuery({
     queryKey: ['reports-standards', selectedInstitutionId],
     queryFn: () => standardsApi.list().then((r) => r.data),
   })
 
   const { data: divisions = [] } = useQuery({
-    queryKey: ['reports-divisions', selectedStandardId],
-    queryFn: () => divisionsApi.list(selectedStandardId ? Number(selectedStandardId) : undefined).then((r) => r.data),
+    queryKey: ['reports-divisions', selectedStandardId, selectedBoardId],
+    queryFn: () => divisionsApi.list({
+      standard_id: selectedStandardId ? Number(selectedStandardId) : undefined,
+      board_id: selectedBoardId ? Number(selectedBoardId) : undefined,
+    }).then((r) => r.data),
   })
 
   const { data: examinations = [] } = useQuery({
@@ -1493,9 +1502,40 @@ function ReportsWorkspace() {
 
         {/* Granular Context Filters */}
         <div className="flex flex-wrap items-center gap-3 text-xs">
+          {/* Board Selector */}
+          {(isConcessionReportActive ||
+            activeReportId === 'student-master' ||
+            activeReportId === 'flexible-student-matrix' ||
+            activeReportId === 'batch-capacity' ||
+            activeReportId === 'curriculum-matrix' ||
+            activeReportId === 'timetable-utilization' ||
+            activeReportId === 'fee-defaulters' ||
+            activeReportId === 'withdrawals') && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-500 font-semibold">Board:</span>
+              <select
+                value={selectedBoardId}
+                onChange={(e) => {
+                  setSelectedBoardId(e.target.value)
+                  setSelectedStandardId('')
+                  setSelectedDivisionId('')
+                }}
+                className="px-2.5 py-1 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium"
+              >
+                <option value="">All Boards</option>
+                {boards.map((b: any) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name} ({b.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Standard Selector */}
           {(isConcessionReportActive ||
             activeReportId === 'student-master' ||
+            activeReportId === 'flexible-student-matrix' ||
             activeReportId === 'student-attendance' ||
             activeReportId === 'withdrawals' ||
             activeReportId === 'batch-capacity' ||

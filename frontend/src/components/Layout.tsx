@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-21
+ * @updated     2026-11-22
  *
  * @description Master application shell component providing header navigation, collapsible sidebar, and main view outlet.
  */
@@ -238,7 +238,7 @@ export default function Layout() {
       >
         {/* Top Header */}
         {!hideHeaderShell && (
-        <header className="bg-white border-b border-gray-200 px-2.5 sm:px-4 md:px-6 py-2.5 md:py-3 flex items-center justify-between gap-1.5 sm:gap-3 md:gap-4 shrink-0 z-30 shadow-xs print:hidden min-w-0 max-w-full overflow-hidden">
+        <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-4 h-12 flex items-center justify-between gap-2 shrink-0 z-30 shadow-2xs print:hidden min-w-0 max-w-full">
           {/* Mobile Navigation Drawer Toggle */}
           <button
             type="button"
@@ -247,9 +247,9 @@ export default function Layout() {
             aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
             aria-expanded={mobileOpen}
             aria-controls="app-sidebar"
-            className="h-11 w-11 flex items-center justify-center -ml-1 sm:-ml-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 md:hidden transition-colors shrink-0"
+            className="h-8 w-8 flex items-center justify-center -ml-1 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-1.5 focus:ring-primary-500 md:hidden transition-colors shrink-0"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-4 h-4" />
           </button>
 
           {/* Desktop Sidebar Toggle / Reopen Button */}
@@ -259,10 +259,10 @@ export default function Layout() {
               onClick={expandSidebar}
               aria-label="Show sidebar (Ctrl+B)"
               title="Show sidebar (Ctrl+B)"
-              className="hidden md:flex items-center gap-2 p-1.5 -ml-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all shadow-xs"
+              className="hidden md:flex items-center gap-1.5 px-2 py-1 -ml-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-1.5 focus:ring-primary-500 transition-all shadow-2xs"
             >
-              <PanelLeftOpen className="w-4 h-4 text-primary-600" />
-              <span className="text-xs font-semibold pr-1">Show Sidebar</span>
+              <PanelLeftOpen className="w-3.5 h-3.5 text-primary-600" />
+              <span className="text-[11px] font-semibold pr-0.5">Show Sidebar</span>
             </button>
           ) : (
             <button
@@ -270,35 +270,35 @@ export default function Layout() {
               onClick={toggleCollapse}
               aria-label={desktopState === 'collapsed' ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar (Ctrl+B)'}
               title={desktopState === 'collapsed' ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar (Ctrl+B)'}
-              className="hidden md:flex p-1.5 -ml-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
+              className="hidden md:flex p-1.5 -ml-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-1.5 focus:ring-primary-500 transition-colors"
             >
-              <PanelLeft className="w-5 h-5" />
+              <PanelLeft className="w-4 h-4" />
             </button>
           )}
 
           {/* Active Institution Badge with Logo & Selectors */}
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 sm:flex-initial">
-            <div className="brand-logo-plate w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white border border-slate-200/90 p-0.5 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden" title={currentInst?.name || branding.academyName}>
+            <div className="brand-logo-plate w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-white border border-slate-200/90 p-0.5 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden" title={currentInst?.name || branding.academyName}>
               {effectiveHeaderLogo && !headerLogoFailed ? (
                 <img
                   src={effectiveHeaderLogo}
                   alt={currentInst?.name || branding.academyName}
                   onError={() => setHeaderLogoFailed(true)}
-                  className="w-full h-full object-contain rounded-md [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.12))]"
+                  className="w-full h-full object-contain rounded-sm [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.12))]"
                 />
               ) : (
-                <div className="w-full h-full bg-primary-600 rounded-md flex items-center justify-center font-bold text-[11px] text-white">
+                <div className="w-full h-full bg-primary-600 rounded-sm flex items-center justify-center font-bold text-[10px] text-white">
                   {currentInst?.short_name || branding.monogram}
                 </div>
               )}
             </div>
 
             {/* Institution Selector */}
-            <div className="relative min-w-0 max-w-[125px] xs:max-w-[155px] sm:max-w-none flex-1 sm:flex-initial">
+            <div className="relative min-w-0 max-w-[130px] xs:max-w-[160px] sm:max-w-[210px] flex-1 sm:flex-initial">
               <select
                 value={selectedInstitutionId ?? (institutions[0]?.id ?? '')}
                 onChange={(e) => setSelectedInstitution(Number(e.target.value))}
-                className="appearance-none text-xs sm:text-sm border border-gray-300 rounded-lg pl-2 sm:pl-3 pr-6 sm:pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white w-full sm:min-w-[140px] font-medium text-slate-800 truncate"
+                className="appearance-none text-xs font-semibold border border-slate-200 hover:border-slate-300 dark:border-slate-700 rounded-lg pl-2 sm:pl-2.5 pr-6 py-1 h-7.5 sm:h-8 focus:outline-none focus:ring-1.5 focus:ring-primary-500 bg-slate-50 hover:bg-slate-100/70 dark:bg-slate-800 text-slate-800 dark:text-slate-100 w-full truncate transition-colors cursor-pointer shadow-2xs"
                 title="Switch active institution"
               >
                 {institutions.length === 0 ? (
@@ -311,15 +311,15 @@ export default function Layout() {
                   ))
                 )}
               </select>
-              <ChevronDown className="absolute right-1.5 sm:right-2 top-2 sm:top-2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
             </div>
 
             {/* Academic Year Selector */}
-            <div className="relative shrink-0 max-w-[95px] xs:max-w-[115px] sm:max-w-none">
+            <div className="relative shrink-0 max-w-[105px] xs:max-w-[125px] sm:max-w-[170px]">
               <select
                 value={effectiveYearId}
                 onChange={(e) => setSelectedAcademicYear(Number(e.target.value))}
-                className="appearance-none text-xs sm:text-sm border border-gray-300 rounded-lg pl-2 sm:pl-3 pr-5 sm:pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white w-full sm:min-w-[140px] font-medium text-gray-800"
+                className="appearance-none text-xs font-semibold border border-slate-200 hover:border-slate-300 dark:border-slate-700 rounded-lg pl-2 sm:pl-2.5 pr-6 py-1 h-7.5 sm:h-8 focus:outline-none focus:ring-1.5 focus:ring-primary-500 bg-slate-50 hover:bg-slate-100/70 dark:bg-slate-800 text-slate-800 dark:text-slate-100 w-full truncate transition-colors cursor-pointer shadow-2xs"
                 title="Select academic session"
               >
                 {displayYears.map((year) => (
@@ -328,7 +328,7 @@ export default function Layout() {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-1.5 sm:right-2 top-2 sm:top-2.5 w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 pointer-events-none" />
+              <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
             </div>
           </div>
 
@@ -343,10 +343,10 @@ export default function Layout() {
                   ? 'Currently in Training Mode with sample data. Click to switch to Live Mode.'
                   : 'Currently in Live Production Mode. Click to explore Training Mode.'
               }
-              className={`inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-2xs ${
+              className={`inline-flex items-center gap-1.5 px-2 sm:px-2.5 h-7.5 sm:h-8 rounded-lg text-xs font-semibold transition-all border shadow-2xs ${
                 isTrainingMode
                   ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 animate-pulse'
-                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300'
+                  : 'bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border-emerald-300/80'
               }`}
             >
               {isTrainingMode ? (
@@ -356,8 +356,8 @@ export default function Layout() {
                 </>
               ) : (
                 <>
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                  <span className="hidden xs:inline">Live</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <span className="hidden xs:inline text-xs font-medium">Live</span>
                 </>
               )}
             </button>
@@ -372,11 +372,11 @@ export default function Layout() {
               type="button"
               onClick={() => useNavigationStore.getState().openSearch()}
               title="Search modules, workspaces, reports (Ctrl+K)"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-colors shadow-2xs font-medium"
+              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 h-7.5 sm:h-8 text-xs text-slate-500 hover:text-slate-900 bg-slate-100/80 hover:bg-slate-100 border border-slate-200/80 rounded-lg transition-colors shadow-2xs font-medium"
             >
               <Search className="w-3.5 h-3.5 text-slate-400" />
               <span>Search</span>
-              <kbd className="hidden lg:inline-flex text-[10px] px-1.5 py-0.2 bg-white text-slate-500 border rounded font-mono">
+              <kbd className="hidden lg:inline-flex text-[10px] px-1 py-0.5 bg-white text-slate-500 border border-slate-200 rounded font-mono leading-none">
                 Ctrl+K
               </kbd>
             </button>
@@ -386,25 +386,21 @@ export default function Layout() {
               onClick={() => useNavigationStore.getState().openSearch()}
               aria-label="Search navigation"
               title="Search modules, workspaces, reports"
-              className="inline-flex sm:hidden h-11 w-11 items-center justify-center rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="inline-flex sm:hidden h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-1.5 focus:ring-primary-500"
             >
-              <Search className="w-5 h-5" aria-hidden="true" />
+              <Search className="w-4 h-4" aria-hidden="true" />
             </button>
 
             {!isInstalled && (
               <Link
                 to="/install"
                 title="Install PrathamOne EduOS Desktop & Mobile App"
-                className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary-700 bg-primary-50 hover:bg-primary-100 border border-blue-200 rounded-xl transition-colors shadow-2xs"
+                className="hidden lg:inline-flex items-center gap-1.5 px-2.5 h-7.5 sm:h-8 text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200/80 rounded-lg transition-colors shadow-2xs"
               >
                 <Download className="w-3.5 h-3.5 text-primary-600" />
-                <span>Install App</span>
+                <span>Install</span>
               </Link>
             )}
-
-            <p className="text-sm font-medium text-gray-600 hidden sm:block">
-              {branding.academyName} {branding.tagline}
-            </p>
           </div>
         </header>
         )}

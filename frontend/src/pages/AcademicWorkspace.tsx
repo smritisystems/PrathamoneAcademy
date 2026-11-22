@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-21
+ * @updated     2026-11-22
  *
  * @description Flagship Academic Structure & Batch Management workspace featuring 9 tabs, tree view, and batch cards.
  */
@@ -318,6 +318,9 @@ export default function AcademicWorkspace() {
   const { data: overviewData, isLoading: isOverviewLoading } = useQuery({
     queryKey: ['academic-overview', selectedInstitutionId, selectedAcademicYearId],
     queryFn: () => standardsApi.getOverview().then((r) => r.data),
+    enabled: activeTab === 'overview',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Phase 4E: Class-wise & Division-wise Concession & Scholarship Distribution (SSOT)
@@ -334,30 +337,40 @@ export default function AcademicWorkspace() {
         return null
       }
     },
+    enabled: activeTab === 'classes',
+    staleTime: 5 * 60 * 1000,
   })
 
   // 2. Boards with live counts
   const { data: boards = [] } = useQuery({
     queryKey: ['boards', selectedInstitutionId],
     queryFn: () => boardsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 3. Standards / Classes with live counts
   const { data: standards = [] } = useQuery({
     queryKey: ['standards', selectedInstitutionId],
     queryFn: () => standardsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 4. Batches / Divisions
   const { data: batches = [] } = useQuery({
     queryKey: ['divisions', selectedInstitutionId],
     queryFn: () => divisionsApi.list().then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 5. Teachers (Users)
   const { data: usersData } = useQuery({
     queryKey: ['users', selectedInstitutionId],
     queryFn: () => usersApi.list().then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
   const teachers = useMemo(() => {
     if (!usersData?.items) return []
@@ -376,6 +389,9 @@ export default function AcademicWorkspace() {
           search: searchQuery || undefined,
         })
         .then((r) => r.data),
+    enabled: activeTab === 'subjects' || activeTab === 'timetable' || activeTab === 'classes' || showAddSubjectModal,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Canonical catalog lookup for "Select Existing Subject" when Add Subject modal is open
@@ -464,6 +480,9 @@ export default function AcademicWorkspace() {
           standard_id: selectedStandardId !== 'all' ? selectedStandardId : undefined,
         })
         .then((r) => r.data),
+    enabled: activeTab === 'timetable',
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 7b. Weekly Timetable Matrix Query
@@ -478,18 +497,27 @@ export default function AcademicWorkspace() {
           standard_id: selectedStandardId !== 'all' ? selectedStandardId : undefined,
         })
         .then((r) => r.data),
+    enabled: activeTab === 'timetable',
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Distinct rooms for timetable
   const { data: distinctRooms = [] } = useQuery({
     queryKey: ['timetable-rooms'],
     queryFn: () => timetableApi.getRooms().then((r) => r.data),
+    enabled: activeTab === 'timetable',
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // 8. Enrollments & Stats Query
   const { data: enrollmentStats } = useQuery({
     queryKey: ['enrollments-stats'],
     queryFn: () => enrollmentsApi.getStats().then((r) => r.data),
+    enabled: activeTab === 'enrollment' || activeTab === 'overview',
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   const [enrollmentPage, setEnrollmentPage] = useState(1)
@@ -515,6 +543,9 @@ export default function AcademicWorkspace() {
           limit: 20,
         })
         .then((r) => r.data),
+    enabled: activeTab === 'enrollment',
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Unassigned Students for Enroll Modal
@@ -984,6 +1015,22 @@ export default function AcademicWorkspace() {
     })
   }, [batches, selectedTreeBoardId, selectedTreeStandardId, searchQuery])
 
+  // Batches filtered by global top filter bar for Directory tab
+  const directoryFilteredBatches = useMemo(() => {
+    if (!batches.length) return []
+    return batches.filter((b) => {
+      const matchBoard = selectedBoardId !== 'all' ? String(b.board_id) === String(selectedBoardId) : true
+      const matchStandard = selectedStandardId !== 'all' ? String(b.standard_id) === String(selectedStandardId) : true
+      const matchSearch = searchQuery.trim()
+        ? b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.room_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.class_teacher_name?.toLowerCase().includes(searchQuery.toLowerCase())
+        : true
+      return matchBoard && matchStandard && matchSearch
+    })
+  }, [batches, selectedBoardId, selectedStandardId, searchQuery])
+
   // Subjects for the currently selected standard
   const currentStandardSubjects = useMemo(() => {
     if (!currentTreeStandard) return []
@@ -1408,50 +1455,50 @@ export default function AcademicWorkspace() {
     }
   }
 
-  // Ultra-Premium Subject Theme Palette (Notion/Linear style left-accent borders)
+  // Ultra-Premium Subject Theme Palette (Sleek Linear/Vercel modern cards)
   const getSubjectTheme = (subjectName: string = '') => {
     const s = subjectName.toLowerCase()
     if (s.includes('math') || s.includes('algebra') || s.includes('calc') || s.includes('stat')) {
       return {
-        border: 'border-l-indigo-600 border-indigo-200/80',
-        bg: 'bg-indigo-50/50 hover:bg-indigo-50/80',
+        border: 'border-indigo-200/90',
+        bg: 'bg-indigo-50/70 hover:bg-indigo-50/90',
         badge: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-        text: 'text-indigo-950 font-black',
+        text: 'text-indigo-950 font-bold',
         chip: 'text-indigo-700 bg-indigo-50',
       }
     }
     if (s.includes('sci') || s.includes('phy') || s.includes('chem') || s.includes('bio')) {
       return {
-        border: 'border-l-emerald-600 border-emerald-200/80',
-        bg: 'bg-emerald-50/50 hover:bg-emerald-50/80',
+        border: 'border-emerald-200/90',
+        bg: 'bg-emerald-50/70 hover:bg-emerald-50/90',
         badge: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-        text: 'text-emerald-950 font-black',
+        text: 'text-emerald-950 font-bold',
         chip: 'text-emerald-700 bg-emerald-50',
       }
     }
     if (s.includes('eng') || s.includes('hindi') || s.includes('marathi') || s.includes('sans') || s.includes('lang') || s.includes('lit')) {
       return {
-        border: 'border-l-amber-500 border-amber-200/80',
-        bg: 'bg-amber-50/50 hover:bg-amber-50/80',
+        border: 'border-amber-200/90',
+        bg: 'bg-amber-50/70 hover:bg-amber-50/90',
         badge: 'bg-amber-100 text-amber-800 border-amber-200',
-        text: 'text-amber-950 font-black',
+        text: 'text-amber-950 font-bold',
         chip: 'text-amber-700 bg-amber-50',
       }
     }
     if (s.includes('soc') || s.includes('hist') || s.includes('geo') || s.includes('civic') || s.includes('sst')) {
       return {
-        border: 'border-l-rose-500 border-rose-200/80',
-        bg: 'bg-rose-50/50 hover:bg-rose-50/80',
+        border: 'border-rose-200/90',
+        bg: 'bg-rose-50/70 hover:bg-rose-50/90',
         badge: 'bg-rose-100 text-rose-800 border-rose-200',
-        text: 'text-rose-950 font-black',
+        text: 'text-rose-950 font-bold',
         chip: 'text-rose-700 bg-rose-50',
       }
     }
     return {
-      border: 'border-l-sky-500 border-sky-200/80',
-      bg: 'bg-sky-50/50 hover:bg-sky-50/80',
+      border: 'border-sky-200/90',
+      bg: 'bg-sky-50/70 hover:bg-sky-50/90',
       badge: 'bg-sky-100 text-sky-800 border-sky-200',
-      text: 'text-sky-950 font-black',
+      text: 'text-sky-950 font-bold',
       chip: 'text-sky-700 bg-sky-50',
     }
   }
@@ -1889,7 +1936,7 @@ export default function AcademicWorkspace() {
       </div>
 
       {/* ── 2. Top Navigation Tabs Bar ── */}
-      <div className="bg-white rounded-2xl p-1.5 shadow-sm border border-gray-200/80 flex items-center gap-1 overflow-x-auto custom-scrollbar">
+      <div className="bg-white rounded-xl p-1 shadow-2xs border border-slate-200/80 flex items-center gap-1 overflow-x-auto custom-scrollbar">
         {[
           { id: 'overview', label: 'Overview', icon: Grid },
           { id: 'boards', label: 'Boards', icon: Layers },
@@ -1907,20 +1954,20 @@ export default function AcademicWorkspace() {
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${isActive
-                ? 'bg-primary-600 text-white shadow-sm shadow-primary-500/20'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${isActive
+                ? 'bg-slate-900 text-white shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
                 }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5" />
               {tab.label}
             </button>
           )
         })}
       </div>
 
-      {/* ── 3. Filters Bar (Visible across relevant tabs) ── */}
-      {['overview', 'classes', 'subjects', 'batches', 'timetable', 'enrollment'].includes(activeTab) && (
+      {/* ── 3. Filters Bar (Visible across relevant tabs, excluded on Timetable which has its dedicated Studio Deck) ── */}
+      {['overview', 'classes', 'subjects', 'batches', 'enrollment'].includes(activeTab) && (
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200/80 flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3 flex-1">
             {/* Academic Year Filter */}
@@ -3004,7 +3051,7 @@ export default function AcademicWorkspace() {
             <div>
               <h2 className="text-lg font-bold text-gray-900">All Batches Directory</h2>
               <p className="text-xs text-gray-500">
-                {batches.length} total batches configured across classrooms and shifts
+                Showing {directoryFilteredBatches.length} of {batches.length} total batches configured across classrooms and shifts
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -3037,7 +3084,7 @@ export default function AcademicWorkspace() {
 
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {batches.map((batch) => (
+              {directoryFilteredBatches.map((batch) => (
                 <div
                   key={batch.id}
                   className="bg-white rounded-2xl p-5 border border-gray-200/90 shadow-sm flex flex-col justify-between hover:border-blue-300 transition-all"
@@ -3125,7 +3172,7 @@ export default function AcademicWorkspace() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 font-medium">
-                    {batches.map((b) => (
+                    {directoryFilteredBatches.map((b) => (
                       <tr key={b.id} className="hover:bg-gray-50 transition-colors">
                         <td className="py-3 px-4">
                           <p className="font-bold text-gray-900">{b.name}</p>
@@ -3236,328 +3283,300 @@ export default function AcademicWorkspace() {
         const avgHoursPerDay = (totalHours / activeDaysCount).toFixed(1)
 
         return (
-          <div className="space-y-4">
-            {/* Studio Control Header */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="p-1.5 rounded-lg bg-primary-50 text-primary-600">
-                    <CalendarDays className="w-5 h-5" />
-                  </span>
-                  <h2 className="text-lg font-bold text-gray-900">Institute Timetable &amp; Scheduling Studio</h2>
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
-                    {timetableMatrixData?.summary?.total_sessions || timetableEntries.length} Active Sessions
-                  </span>
+          <div className="space-y-3.5">
+            {/* Ultra Pro Max Studio Control Deck */}
+            <div className="bg-white rounded-xl p-3 sm:p-4 shadow-2xs border border-slate-200/90 space-y-3">
+              {/* Top Header Row */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 shadow-2xs">
+                    <CalendarDays className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-base font-bold text-slate-900 leading-tight">
+                        Timetable &amp; Schedule Studio
+                      </h2>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                        {timetableMatrixData?.summary?.total_sessions || timetableEntries.length} Sessions Active
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                        <ShieldCheck className="w-3 h-3 text-blue-600" />
+                        Conflict-Free
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Multi-stream schedule grid with automated collision prevention across divisions and faculty
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Multi-stream weekly schedule grid with real-time room, division &amp; faculty collision prevention
-                </p>
 
-                {/* Scope & Stream Badges */}
-                <div className="flex flex-wrap items-center gap-2 mt-2.5">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                    <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                    Scope: {scopeLabel}
-                  </span>
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold ${isMWFPattern
-                    ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                    : 'bg-indigo-50 text-indigo-800 border border-indigo-200'
-                    }`}>
-                    <Zap className="w-3.5 h-3.5 text-amber-600" />
-                    {streamPatternLabel}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    Zero Collisions • 100% Conflict-Free
-                  </span>
+                {/* Right Segmented View Switcher & Action Buttons */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Segmented View Switcher */}
+                  <div className="inline-flex rounded-lg bg-slate-100 p-0.5 border border-slate-200/80 text-xs font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => setTimetableLayoutView('matrix')}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all ${
+                        timetableLayoutView === 'matrix' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Grid className="w-3.5 h-3.5" /> Weekly Grid
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTimetableLayoutView('daily')}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all ${
+                        timetableLayoutView === 'daily' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5" /> Day Cards
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTimetableLayoutView('faculty')}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all ${
+                        timetableLayoutView === 'faculty' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <UserCheck className="w-3.5 h-3.5" /> Faculty
+                    </button>
+                  </div>
+
+                  {/* WhatsApp Briefing Action */}
+                  <button
+                    type="button"
+                    onClick={() => handleShareWhatsAppSchedule(currentDayName)}
+                    className="h-7.5 px-2.5 border border-emerald-300 bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-2xs"
+                    title="Share daily schedule via WhatsApp"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>WhatsApp</span>
+                  </button>
+
+                  {/* Print Docket Action */}
+                  <button
+                    type="button"
+                    onClick={() => handleOpenTimetableDocket()}
+                    disabled={isLoadingDocket}
+                    className="h-7.5 px-2.5 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-2xs"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-slate-500" />
+                    <span>{isLoadingDocket ? 'Loading...' : 'Print'}</span>
+                  </button>
+
+                  {/* Auto-Generate */}
+                  <LockedButton
+                    isEditMode={isEditMode}
+                    onClick={() => {
+                      setBatchSlotForm({
+                        division_id: batches[0]?.id ? String(batches[0].id) : '',
+                        subject_id: subjects[0]?.id ? String(subjects[0].id) : '',
+                        teacher_id: teachers[0]?.id ? String(teachers[0].id) : '',
+                        room_number: 'Room 101',
+                        period_duration_mins: 45,
+                        start_time: '08:30',
+                        number_of_periods: 6,
+                        break_after_period: 3,
+                        break_duration_mins: 20,
+                        days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+                      })
+                      setShowBatchGenerateSlotsModal(true)
+                    }}
+                    className="h-7.5 px-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors"
+                    viewModeTooltip="Enable Edit Mode to auto-generate period schedules"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Auto-Gen</span>
+                  </LockedButton>
+
+                  {/* Add Session */}
+                  <LockedButton
+                    isEditMode={isEditMode}
+                    onClick={() => {
+                      setSessionForm({
+                        division_id: batches[0]?.id ? String(batches[0].id) : '',
+                        subject_id: subjects[0]?.id ? String(subjects[0].id) : '',
+                        teacher_id: '',
+                        day_of_week: 'Monday',
+                        start_time: '08:30',
+                        end_time: '09:15',
+                        room_number: 'Room 101',
+                      })
+                      setConflictWarning(null)
+                      setShowAddSessionModal(true)
+                    }}
+                    className="h-7.5 px-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors"
+                    viewModeTooltip="Enable Edit Mode to schedule new timetable session"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Session</span>
+                  </LockedButton>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2.5">
-                {/* Layout Switcher */}
-                <div className="inline-flex rounded-xl bg-gray-100 p-1 border border-gray-200 text-xs font-semibold">
-                  <button
-                    type="button"
-                    onClick={() => setTimetableLayoutView('matrix')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${timetableLayoutView === 'matrix' ? 'bg-white text-primary-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900'
-                      }`}
+              {/* Integrated Filter Bar */}
+              <div className="pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+                <div className="flex flex-wrap items-center gap-2 flex-1">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Filter by:</span>
+
+                  {/* Standard / Class Filter */}
+                  <select
+                    value={selectedStandardId}
+                    onChange={(e) => setSelectedStandardId(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-lg pl-2 pr-6 py-1 text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-1.5 focus:ring-primary-500 cursor-pointer h-7.5"
                   >
-                    <Grid className="w-3.5 h-3.5" /> Weekly Grid
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTimetableLayoutView('daily')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${timetableLayoutView === 'daily' ? 'bg-white text-primary-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900'
-                      }`}
+                    <option value="all">All Standards</option>
+                    {standards.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+
+                  {/* Batch Filter */}
+                  <select
+                    value={timetableBatchFilter}
+                    onChange={(e) => setTimetableBatchFilter(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-lg pl-2 pr-6 py-1 text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-1.5 focus:ring-primary-500 cursor-pointer h-7.5"
                   >
-                    <LayoutGrid className="w-3.5 h-3.5" /> Day Cards
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTimetableLayoutView('faculty')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${timetableLayoutView === 'faculty' ? 'bg-white text-primary-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900'
-                      }`}
+                    <option value="all">All Batches</option>
+                    {batches.map((b) => (
+                      <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
+                    ))}
+                  </select>
+
+                  {/* Faculty Filter */}
+                  <select
+                    value={timetableTeacherFilter}
+                    onChange={(e) => setTimetableTeacherFilter(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-lg pl-2 pr-6 py-1 text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-1.5 focus:ring-primary-500 cursor-pointer h-7.5"
                   >
-                    <UserCheck className="w-3.5 h-3.5" /> Faculty
-                  </button>
+                    <option value="all">All Faculty</option>
+                    {teachers.map((t: any) => (
+                      <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
+                    ))}
+                  </select>
+
+                  {/* Room Filter */}
+                  <select
+                    value={timetableRoomFilter}
+                    onChange={(e) => setTimetableRoomFilter(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-lg pl-2 pr-6 py-1 text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-1.5 focus:ring-primary-500 cursor-pointer h-7.5"
+                  >
+                    <option value="all">All Rooms</option>
+                    {distinctRooms.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+
+                  {(timetableBatchFilter !== 'all' || timetableTeacherFilter !== 'all' || timetableRoomFilter !== 'all' || selectedStandardId !== 'all') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTimetableBatchFilter('all')
+                        setTimetableTeacherFilter('all')
+                        setTimetableRoomFilter('all')
+                        setSelectedStandardId('all')
+                      }}
+                      className="text-xs text-primary-600 hover:underline font-semibold ml-1"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
                 </div>
 
-                {/* Filters */}
-                <select
-                  value={timetableBatchFilter}
-                  onChange={(e) => setTimetableBatchFilter(e.target.value)}
-                  className="bg-gray-50 border rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-800 shadow-2xs"
-                >
-                  <option value="all">All Batches</option>
-                  {batches.map((b) => (
-                    <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
-                  ))}
-                </select>
-
-                <select
-                  value={timetableTeacherFilter}
-                  onChange={(e) => setTimetableTeacherFilter(e.target.value)}
-                  className="bg-gray-50 border rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-800 shadow-2xs"
-                >
-                  <option value="all">All Faculty</option>
-                  {teachers.map((t: any) => (
-                    <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
-                  ))}
-                </select>
-
-                <select
-                  value={timetableRoomFilter}
-                  onChange={(e) => setTimetableRoomFilter(e.target.value)}
-                  className="bg-gray-50 border rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-800 shadow-2xs"
-                >
-                  <option value="all">All Rooms</option>
-                  {distinctRooms.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-
-                {/* Actions */}
-                <button
-                  type="button"
-                  onClick={() => handleShareWhatsAppSchedule()}
-                  className="px-3 py-1.5 border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
-                  title="Copy today's schedule for WhatsApp"
-                >
-                  <MessageSquare className="w-3.5 h-3.5 text-emerald-600" /> WhatsApp Schedule
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleOpenTimetableDocket()}
-                  disabled={isLoadingDocket}
-                  className="px-3 py-1.5 border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
-                >
-                  <Printer className="w-3.5 h-3.5" /> {isLoadingDocket ? 'Loading...' : 'Print Docket'}
-                </button>
-
-                <LockedButton
-                  isEditMode={isEditMode}
-                  onClick={() => {
-                    setBatchSlotForm({
-                      division_id: batches[0]?.id ? String(batches[0].id) : '',
-                      subject_id: subjects[0]?.id ? String(subjects[0].id) : '',
-                      teacher_id: teachers[0]?.id ? String(teachers[0].id) : '',
-                      room_number: 'Room 101',
-                      period_duration_mins: 45,
-                      start_time: '08:30',
-                      number_of_periods: 6,
-                      break_after_period: 3,
-                      break_duration_mins: 20,
-                      days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-                    })
-                    setShowBatchGenerateSlotsModal(true)
-                  }}
-                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm"
-                  viewModeTooltip="Enable Edit Mode to auto-generate period schedules"
-                >
-                  <Sparkles className="w-3.5 h-3.5" /> Auto-Generate
-                </LockedButton>
-
-                <LockedButton
-                  isEditMode={isEditMode}
-                  onClick={() => {
-                    setSessionForm({
-                      division_id: batches[0]?.id ? String(batches[0].id) : '',
-                      subject_id: subjects[0]?.id ? String(subjects[0].id) : '',
-                      teacher_id: '',
-                      day_of_week: 'Monday',
-                      start_time: '08:30',
-                      end_time: '09:15',
-                      room_number: 'Room 101',
-                    })
-                    setConflictWarning(null)
-                    setShowAddSessionModal(true)
-                  }}
-                  className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm"
-                  viewModeTooltip="Enable Edit Mode to schedule new timetable session"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Add Session
-                </LockedButton>
+                <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
+                    <MapPin className="w-3 h-3 text-slate-400" />
+                    {scopeLabel}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/60">
+                    <Zap className="w-3 h-3 text-amber-600" />
+                    {streamPatternLabel}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Live Operational Command Strip (Radar Pulse) */}
-            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-4 shadow-md border border-indigo-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3.5">
-                {activeLiveSession ? (
-                  <div className="relative flex items-center justify-center flex-shrink-0">
-                    <span className="animate-ping absolute inline-flex h-4 w-4 rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 shadow-sm"></span>
-                  </div>
-                ) : (
-                  <div className="w-3 h-3 rounded-full bg-indigo-400/80 flex-shrink-0"></div>
-                )}
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] uppercase font-black tracking-widest text-indigo-300">
-                      {activeLiveSession ? '● LIVE OPERATIONAL PULSE' : 'UPCOMING SESSION RADAR'}
-                    </span>
-                    <span className="text-[11px] font-medium text-slate-300">
-                      ({currentDayName}, {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
-                    </span>
-                  </div>
-                  {activeLiveSession ? (
-                    <p className="text-xs sm:text-sm font-bold text-white mt-0.5">
-                      <span className="text-emerald-400 font-extrabold">{activeLiveSession.subject_name}</span> in{' '}
-                      <span className="text-indigo-200 underline decoration-indigo-400/50 font-extrabold">{activeLiveSession.room_number || 'Room 101'}</span> •{' '}
-                      <span className="text-slate-200">{activeLiveSession.division_name}</span> with{' '}
-                      <span className="text-slate-100 font-semibold">{activeLiveSession.teacher_name || 'Assigned Faculty'}</span>{' '}
-                      <span className="text-[11px] font-semibold text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-800">
-                        {activeLiveSession.remainingMins} mins left
-                      </span>
-                    </p>
-                  ) : nextUpcomingSession ? (
-                    <p className="text-xs sm:text-sm font-medium text-slate-200 mt-0.5">
-                      Next: <span className="font-bold text-white">{nextUpcomingSession.subject_name}</span> ({nextUpcomingSession.division_name}) at{' '}
-                      <span className="text-indigo-300 font-mono font-bold">{nextUpcomingSession.start_time}</span> in {nextUpcomingSession.room_number || 'Room 1'} • Starts in {nextUpcomingSession.startsInMins} mins
-                    </p>
-                  ) : (
-                    <p className="text-xs text-slate-300 mt-0.5">
-                      All scheduled sessions for {currentDayName} are concluded. Academic roster in standby mode.
-                    </p>
-                  )}
+            {/* Ultra Pro Max High-Density KPI & Live Operational Pulse Ribbon */}
+            <div className="bg-slate-950 text-white rounded-xl px-4 py-2.5 shadow-2xs border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+              {/* Left Telemetry Strip */}
+              <div className="flex items-center gap-3 sm:gap-4 flex-wrap text-slate-300">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-primary-400" />
+                  <span className="text-white font-bold">{timetableMatrixData?.summary?.total_sessions || timetableEntries.length}</span>
+                  <span className="text-slate-400 text-[11px]">Sessions</span>
+                </div>
+                <span className="text-slate-700">•</span>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                  <span className="text-white font-bold">{totalHours} hrs</span>
+                  <span className="text-slate-400 text-[11px]">(~{avgHoursPerDay}h/day)</span>
+                </div>
+                <span className="text-slate-700">•</span>
+                <div className="flex items-center gap-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-white font-bold">{timetableMatrixData?.summary?.unique_teachers || teachers.length}</span>
+                  <span className="text-slate-400 text-[11px]">Faculty (100%)</span>
+                </div>
+                <span className="text-slate-700">•</span>
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-purple-400" />
+                  <span className="text-white font-bold">{timetableMatrixData?.summary?.rooms_used || distinctRooms.length}</span>
+                  <span className="text-slate-400 text-[11px]">Rooms Active</span>
+                </div>
+                <span className="text-slate-700">•</span>
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-400 font-bold">0 Overlaps</span>
+                  <span className="text-slate-400 text-[11px]">Conflict-Free</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 self-end sm:self-center">
+              {/* Right Operational Pulse */}
+              <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-1.5">
+                  {activeLiveSession ? (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                      <span className="text-xs text-emerald-300 font-bold">
+                        LIVE: {activeLiveSession.subject_name} ({activeLiveSession.room_number || 'Room 101'}, {activeLiveSession.remainingMins}m left)
+                      </span>
+                    </>
+                  ) : nextUpcomingSession ? (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-indigo-400" />
+                      <span className="text-xs text-indigo-200">
+                        Next: <strong className="text-white">{nextUpcomingSession.subject_name}</strong> at {nextUpcomingSession.start_time}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-slate-500" />
+                      <span className="text-xs text-slate-400">Roster Standby · All sessions concluded</span>
+                    </>
+                  )}
+                </div>
+
                 <button
                   type="button"
                   onClick={() => handleShareWhatsAppSchedule(currentDayName)}
-                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-sm border border-emerald-500/40"
-                  title="Copy today's schedule formatted for WhatsApp"
+                  className="h-6 px-2 text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-md transition-colors border border-slate-700"
+                  title="Copy day's briefing"
                 >
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span>Copy Daily Briefing</span>
+                  Briefing
                 </button>
-              </div>
-            </div>
-
-            {/* View Mode Helper Notice */}
-            {!isEditMode && (
-              <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl px-4 py-2 flex items-center justify-between text-xs text-amber-900">
-                <div className="flex items-center gap-2">
-                  <Lock className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-                  <span>
-                    <strong>View Mode Active:</strong> Timetable is in safe read-only browsing mode to prevent accidental rescheduling.
-                  </span>
-                </div>
-                <span className="hidden sm:inline text-[11px] font-semibold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-md border border-amber-300/60">
-                  Switch to Edit Mode in top header to edit
-                </span>
-              </div>
-            )}
-
-            {/* 5 Executive Glassmorphism KPI Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              <div className="bg-white p-3.5 rounded-2xl border border-gray-200/80 shadow-sm flex items-center justify-between hover:border-primary-200 transition">
-                <div>
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Weekly Sessions</p>
-                  <p className="text-2xl font-black text-gray-900 mt-0.5">
-                    {timetableMatrixData?.summary?.total_sessions || timetableEntries.length}
-                  </p>
-                  <p className="text-[10px] text-gray-500 font-medium mt-0.5">
-                    {daysWithSessions.length} active schedule days
-                  </p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center font-bold">
-                  <Calendar className="w-5 h-5" />
-                </div>
-              </div>
-
-              <div className="bg-white p-3.5 rounded-2xl border border-gray-200/80 shadow-sm flex items-center justify-between hover:border-indigo-200 transition">
-                <div>
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Instruction Hours</p>
-                  <p className="text-2xl font-black text-indigo-700 mt-0.5">
-                    {totalHours} hrs
-                  </p>
-                  <p className="text-[10px] text-indigo-600 font-medium mt-0.5">
-                    ~{avgHoursPerDay} hrs / day average
-                  </p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-                  <Clock className="w-5 h-5" />
-                </div>
-              </div>
-
-              <div className="bg-white p-3.5 rounded-2xl border border-gray-200/80 shadow-sm flex items-center justify-between hover:border-emerald-200 transition">
-                <div>
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Assigned Faculty</p>
-                  <p className="text-2xl font-black text-emerald-700 mt-0.5">
-                    {timetableMatrixData?.summary?.unique_teachers || teachers.length}
-                  </p>
-                  <p className="text-[10px] text-emerald-600 font-medium mt-0.5">
-                    100% capacity deployed
-                  </p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                  <UserCheck className="w-5 h-5" />
-                </div>
-              </div>
-
-              <div className="bg-white p-3.5 rounded-2xl border border-gray-200/80 shadow-sm flex items-center justify-between hover:border-purple-200 transition">
-                <div>
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Classrooms Active</p>
-                  <p className="text-2xl font-black text-purple-700 mt-0.5">
-                    {timetableMatrixData?.summary?.rooms_used || distinctRooms.length}
-                  </p>
-                  <p className="text-[10px] text-purple-600 font-medium mt-0.5">
-                    83% space occupancy
-                  </p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
-                  <MapPin className="w-5 h-5" />
-                </div>
-              </div>
-
-              <div className="bg-white p-3.5 rounded-2xl border border-gray-200/80 shadow-sm flex items-center justify-between hover:border-emerald-200 transition col-span-2 sm:col-span-1">
-                <div>
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Collision Shield</p>
-                  <p className="text-xl font-black text-emerald-600 mt-0.5 flex items-center gap-1">
-                    <span>0 Overlaps</span>
-                  </p>
-                  <p className="text-[10px] text-emerald-700 font-bold mt-0.5 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" /> 100% Conflict-Free
-                  </p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
               </div>
             </div>
 
             {/* VIEW 1: Weekly Matrix Grid */}
             {timetableLayoutView === 'matrix' && (
-              <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200/80 overflow-hidden">
-                <div className="overflow-x-auto">
+              <div className="bg-white rounded-xl shadow-2xs border border-slate-200/90 overflow-hidden">
+                <div className="overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200 text-gray-700 uppercase font-black tracking-wider">
-                        <th className="py-3 px-3 w-32 border-r border-gray-200">Day / Period</th>
+                      <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-700 uppercase font-bold tracking-wider">
+                        <th className="py-2.5 px-3 w-32 border-r border-slate-200 text-xs">Day / Period</th>
                         {(timetableMatrixData?.slots && timetableMatrixData.slots.length > 0
                           ? timetableMatrixData.slots
                           : [
@@ -3569,16 +3588,16 @@ export default function AcademicWorkspace() {
                             { start_time: '12:45', end_time: '13:30', slot_key: '12:45-13:30' },
                           ]
                         ).map((slot, sIdx) => (
-                          <th key={slot.slot_key} className="py-3 px-3 text-center border-r border-gray-200 min-w-[150px]">
-                            <span className="block text-[11px] font-bold text-gray-900">Period {sIdx + 1}</span>
-                            <span className="block text-[10px] font-normal text-gray-500 font-mono">
+                          <th key={slot.slot_key} className="py-2 px-3 text-center border-r border-slate-200 min-w-[140px]">
+                            <span className="block text-[11px] font-bold text-slate-900">Period {sIdx + 1}</span>
+                            <span className="block text-[10px] font-normal text-slate-400 font-mono">
                               {slot.start_time} - {slot.end_time}
                             </span>
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-slate-100">
                       {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => {
                         const daySlots = timetableMatrixData?.slots && timetableMatrixData.slots.length > 0
                           ? timetableMatrixData.slots
@@ -3592,31 +3611,31 @@ export default function AcademicWorkspace() {
                           ]
                         const daySessionsCount = Object.keys(timetableMatrixData?.matrix?.[day] || {}).length
                         return (
-                          <tr key={day} className="hover:bg-gray-50/50 transition">
-                            <td className={`py-3 px-3 font-extrabold border-r border-gray-200 ${daySessionsCount === 0 ? 'bg-gray-50/30 text-gray-400' : 'bg-gray-50/60 text-gray-900'
+                          <tr key={day} className="hover:bg-slate-50/40 transition">
+                            <td className={`py-2 px-3 font-bold border-r border-slate-200 ${daySessionsCount === 0 ? 'bg-slate-50/40 text-slate-400' : 'bg-slate-50/80 text-slate-900'
                               }`}>
                               <div className="flex items-center justify-between">
-                                <span>{day}</span>
-                                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${daySessionsCount > 0 ? 'bg-primary-100 text-primary-800' : 'bg-gray-200 text-gray-500'
+                                <span className="text-xs font-bold">{day}</span>
+                                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${daySessionsCount > 0 ? 'bg-primary-100 text-primary-800' : 'bg-slate-200 text-slate-500'
                                   }`}>
                                   {daySessionsCount}
                                 </span>
                               </div>
                               {daySessionsCount === 0 && (
-                                <span className="block text-[9px] font-normal text-gray-400 mt-0.5">Non-MWF Stream</span>
+                                <span className="block text-[9px] font-normal text-slate-400 mt-0.5">Non-MWF</span>
                               )}
                             </td>
                             {daySlots.map((slot) => {
                               const session = timetableMatrixData?.matrix?.[day]?.[slot.slot_key]
                               return (
-                                <td key={slot.slot_key} className="p-2 border-r border-gray-200 align-top">
+                                <td key={slot.slot_key} className="p-1.5 border-r border-slate-200/80 align-top">
                                   {session ? (
                                     (() => {
                                       const theme = getSubjectTheme(session.subject_name)
                                       return (
-                                        <div className={`p-2.5 rounded-xl border border-l-4 ${theme.border} ${theme.bg} transition-all text-xs space-y-1 relative group shadow-2xs hover:shadow-sm`}>
+                                        <div className={`p-2 rounded-lg border ${theme.border} ${theme.bg} transition-all text-xs space-y-1 relative group shadow-2xs hover:shadow-xs`}>
                                           <div className="flex items-center justify-between">
-                                            <span className={`font-extrabold text-[11px] truncate ${theme.text}`}>
+                                            <span className={`font-bold text-[11px] truncate ${theme.text}`}>
                                               {session.subject_name}
                                             </span>
                                             <LockedIconButton
@@ -3636,29 +3655,29 @@ export default function AcademicWorkspace() {
                                             />
                                           </div>
                                           <div className="flex items-center justify-between">
-                                            <p className="text-[10px] font-bold text-gray-700 truncate">
+                                            <p className="text-[10px] font-semibold text-slate-700 truncate">
                                               {session.division_name}
                                             </p>
-                                            <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${theme.badge}`}>
+                                            <span className={`text-[9px] font-bold px-1 py-0.2 rounded bg-white/90 border border-slate-200/60 ${theme.text}`}>
                                               {session.subject_code}
                                             </span>
                                           </div>
-                                          <p className="text-[10px] text-gray-600 truncate flex items-center gap-1">
-                                            <User className="w-3 h-3 text-gray-400" />
+                                          <p className="text-[10px] text-slate-500 truncate flex items-center gap-1">
+                                            <User className="w-3 h-3 text-slate-400" />
                                             {session.teacher_name || 'Unassigned'}
                                           </p>
-                                          <div className="flex items-center justify-between text-[10px] text-gray-600 pt-1 border-t border-black/5">
-                                            <span className="font-extrabold text-gray-800 bg-white/90 px-1.5 py-0.5 rounded shadow-2xs border border-gray-200">
+                                          <div className="flex items-center justify-between text-[10px] text-slate-600 pt-1 border-t border-slate-200/50">
+                                            <span className="font-bold text-slate-800 bg-white px-1.5 py-0.5 rounded shadow-2xs border border-slate-200 text-[9px]">
                                               {session.room_number || 'Room 101'}
                                             </span>
-                                            <span className="text-gray-400 text-[9px] font-mono">{slot.start_time} - {slot.end_time}</span>
+                                            <span className="text-slate-400 text-[9px] font-mono">{slot.start_time} - {slot.end_time}</span>
                                           </div>
                                         </div>
                                       )
                                     })()
                                   ) : (
-                                    <div className={`h-20 rounded-xl border ${daySessionsCount === 0 ? 'border-dashed border-gray-100 bg-gray-50/20' : 'border-dashed border-gray-200'
-                                      } flex flex-col items-center justify-center p-2 text-center text-gray-400 group hover:border-primary-300 transition`}>
+                                    <div className={`h-16 rounded-lg border ${daySessionsCount === 0 ? 'border-dashed border-slate-100 bg-slate-50/20' : 'border-dashed border-slate-200/70'
+                                      } flex flex-col items-center justify-center p-1 text-center text-slate-300 group hover:border-primary-300 hover:bg-primary-50/20 transition-all`}>
                                       {isEditMode ? (
                                         <button
                                           type="button"
@@ -3675,15 +3694,13 @@ export default function AcademicWorkspace() {
                                             setConflictWarning(null)
                                             setShowAddSessionModal(true)
                                           }}
-                                          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg bg-primary-50 text-primary-600 hover:bg-primary-100 transition"
+                                          className="opacity-0 group-hover:opacity-100 p-1 rounded-md bg-primary-50 text-primary-600 hover:bg-primary-100 transition"
                                           title={`Add session on ${day} (${slot.start_time}-${slot.end_time})`}
                                         >
-                                          <Plus className="w-4 h-4" />
+                                          <Plus className="w-3.5 h-3.5" />
                                         </button>
                                       ) : (
-                                        <span className="text-[10px] text-gray-300 italic">
-                                          {daySessionsCount === 0 ? 'TTS Slot' : 'Free'}
-                                        </span>
+                                        <span className="text-[10px] text-slate-300 font-mono">—</span>
                                       )}
                                     </div>
                                   )}

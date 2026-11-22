@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Dedicated multi-workspace hub for Students & Admissions Centre comprising Overview, Master Register, KYC Admissions, Batch Allocations, ID Cards, Activity History, Reactivation, and Admission Policies.
  */
@@ -155,6 +155,8 @@ function StudentsContent() {
   const { data: standards = [] } = useQuery({
     queryKey: ['standards', selectedInstitutionId],
     queryFn: () => standardsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Divisions for selected Standard
@@ -162,6 +164,8 @@ function StudentsContent() {
     queryKey: ['divisions', standardId],
     queryFn: () => (standardId ? divisionsApi.list(standardId).then((r) => r.data) : Promise.resolve([])),
     enabled: !!standardId,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Students Master Query
@@ -193,6 +197,7 @@ function StudentsContent() {
           page_size: 20,
         })
         .then((r) => r.data),
+    placeholderData: (prev) => prev,
   })
 
   const students = studentsData?.data ?? []
@@ -225,6 +230,8 @@ function StudentsContent() {
   const { data: enrollStats } = useQuery({
     queryKey: ['enrollments', 'stats', selectedAcademicYearId],
     queryFn: () => enrollmentsApi.getStats(selectedAcademicYearId ?? undefined).then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })
 
   // Unassigned Students Queue for Allocations
@@ -237,7 +244,8 @@ function StudentsContent() {
           search: search || undefined,
         })
         .then((r) => r.data),
-    enabled: activeTab === 'allocations' || activeTab === 'overview',
+    enabled: activeTab === 'allocations',
+    staleTime: 2 * 60 * 1000,
   })
 
   // All Inactive / Withdrawn Students for Reactivation Workspace
@@ -252,7 +260,8 @@ function StudentsContent() {
           institution_id: selectedInstitutionId ?? undefined,
         })
         .then((r) => r.data),
-    enabled: activeTab === 'reactivation' || activeTab === 'overview',
+    enabled: activeTab === 'reactivation',
+    staleTime: 5 * 60 * 1000,
   })
 
   const inactiveStudents = (inactiveStudentsData?.data ?? []).filter((s) => !s.is_active)

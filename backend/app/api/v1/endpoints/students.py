@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-18
+#  * @updated     2026-11-22
 #  *
 #  * @description API endpoints for student CRUD, profile editing, guardian details, and identity documents.
 #  */
@@ -216,6 +216,7 @@ def _authorize_student_read(student_id: int, student_inst_id: Optional[int], cur
 async def list_students(
     standard_id: Optional[int] = None,
     division_id: Optional[int] = None,
+    board_id: Optional[int] = None,
     academic_year_id: Optional[int] = None,
     search: Optional[str] = None,
     include_inactive: Optional[bool] = Query(default=None),
@@ -278,10 +279,14 @@ async def list_students(
             )
         )
 
-    if standard_id or division_id or academic_year_id:
+    if standard_id or division_id or board_id or academic_year_id:
         query = query.join(
             StudentEnrollment, Student.id == StudentEnrollment.student_id
         )
+        if board_id:
+            query = query.join(Division, StudentEnrollment.division_id == Division.id).where(
+                Division.board_id == board_id
+            )
         if standard_id:
             query = query.where(StudentEnrollment.standard_id == standard_id)
         if division_id:
@@ -290,6 +295,9 @@ async def list_students(
             query = query.where(
                 StudentEnrollment.academic_year_id == academic_year_id
             )
+        # Enforce active enrollment unless user specifically requested a different status or include_inactive
+        if not status and include_inactive is not True:
+            query = query.where(StudentEnrollment.status == "active")
 
     count_q = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_q)).scalar() or 0

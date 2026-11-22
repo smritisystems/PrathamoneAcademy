@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-18
+ * @updated     2026-11-22
  *
  * @description Batch directory page redirected to Academic Workspace batch management tab.
  */
@@ -19,7 +19,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { CalendarDays, Plus, Users, Layers, CheckCircle, Lock } from 'lucide-react'
-import { standardsApi, divisionsApi } from '../api/endpoints'
+import { standardsApi, divisionsApi, boardsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { EditModeBar, BatchCapacityBulletMeter } from '../components/common'
@@ -33,6 +33,7 @@ export default function BatchesPage() {
   const [showBatchModal, setShowBatchModal] = useState(false)
   const [batchForm, setBatchForm] = useState({
     standard_id: '',
+    board_id: '',
     name: '',
     capacity: '40',
     room_number: '',
@@ -42,6 +43,12 @@ export default function BatchesPage() {
   const { data: standards = [] } = useQuery({
     queryKey: ['standards', selectedInstitutionId],
     queryFn: () => standardsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+  })
+
+  // Fetch boards
+  const { data: boards = [] } = useQuery({
+    queryKey: ['boards', selectedInstitutionId],
+    queryFn: () => boardsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
   })
 
   // Set default selected standard when loaded
@@ -58,13 +65,13 @@ export default function BatchesPage() {
   })
 
   const batchMutation = useMutation({
-    mutationFn: (data: { standard_id: number; name: string; capacity: number; room_number?: string }) =>
+    mutationFn: (data: { standard_id: number; board_id?: number; name: string; capacity: number; room_number?: string }) =>
       divisionsApi.create(data),
     onSuccess: () => {
       toast.success('Batch created successfully')
       qc.invalidateQueries({ queryKey: ['divisions', currentStandardId] })
       setShowBatchModal(false)
-      setBatchForm({ standard_id: '', name: '', capacity: '40', room_number: '' })
+      setBatchForm({ standard_id: '', board_id: '', name: '', capacity: '40', room_number: '' })
     },
     onError: (e: any) => toast.error(e?.response?.data?.detail || 'Failed to create batch'),
   })
@@ -238,6 +245,21 @@ export default function BatchesPage() {
             </select>
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Board / Curriculum</label>
+            <select
+              className="input w-full"
+              value={batchForm.board_id}
+              onChange={(e) => setBatchForm({ ...batchForm, board_id: e.target.value })}
+            >
+              <option value="">Select board (Optional)...</option>
+              {boards.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name} ({b.code})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Batch Code / Name *</label>
             <input
               className="input w-full"
@@ -272,6 +294,7 @@ export default function BatchesPage() {
               onClick={() =>
                 batchMutation.mutate({
                   standard_id: Number(batchForm.standard_id),
+                  board_id: batchForm.board_id ? Number(batchForm.board_id) : undefined,
                   name: batchForm.name,
                   capacity: Number(batchForm.capacity) || 40,
                   room_number: batchForm.room_number,

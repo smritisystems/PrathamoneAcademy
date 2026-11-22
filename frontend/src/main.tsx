@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-17
+ * @updated     2026-11-22
  *
  * @description Vite React application entry point initializing DOM root, query client, and global styles.
  */
@@ -40,8 +40,10 @@ const queryClient = new QueryClient({
         if (status === 401 || status === 403 || status === 404) return false
         return failureCount < 1
       },
-      staleTime: 30_000,
+      staleTime: 60_000,
+      gcTime: 10 * 60_000,
       refetchOnWindowFocus: false,
+      refetchOnMount: false,
     },
   },
 })

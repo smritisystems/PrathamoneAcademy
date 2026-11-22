@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-21
+ * @updated     2026-11-22
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -77,6 +77,7 @@ const PlanningWorkspacePage = lazyWithRetry(() => import('./pages/PlanningWorksp
 const EduBoardWorkspacePage = lazyWithRetry(() => import('./pages/EduBoardWorkspace'), 'EduBoardWorkspace')
 const EduBoardWindowPage = lazyWithRetry(() => import('./pages/EduBoardWindowPage'), 'EduBoardWindowPage')
 const VideoStudioPage = lazyWithRetry(() => import('./pages/VideoStudio'), 'VideoStudio')
+const MasterCataloguesHubPage = lazyWithRetry(() => import('./pages/MasterCataloguesHub'), 'MasterCataloguesHub')
 
 function PageLoader() {
   return (
@@ -277,6 +278,10 @@ export default function App() {
 
           {/* Non-Student Staff & Faculty Operational Workspaces */}
           <Route element={<RoleOutlet />}>
+          {/* Master Catalogues & MDM Hub */}
+          <Route path="catalogue" element={<Suspense fallback={<PageLoader />}><MasterCataloguesHubPage /></Suspense>} />
+          <Route path="catalogue/overview" element={<Suspense fallback={<PageLoader />}><MasterCataloguesHubPage /></Suspense>} />
+          <Route path="mdm" element={<Navigate to="/catalogue" replace />} />
           {/* Academic Structure Dedicated Workspaces */}
           <Route path="academic" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
           <Route path="academic/overview" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />

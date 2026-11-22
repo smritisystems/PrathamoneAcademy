@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-21
+ * @updated     2026-11-22
  *
  * @description Canonical Module Registry (SSOT) defining all application workspaces, icons, routes, and permissions.
  */
@@ -19,6 +19,7 @@
 import React from 'react'
 import {
   LayoutDashboard,
+  FolderTree,
   GraduationCap,
   UserPlus,
   Users,
@@ -75,6 +76,22 @@ export const CANONICAL_MODULE_REGISTRY: ModuleDefinition[] = [
     subItems: [],
   },
   {
+    id: 'catalogue',
+    label: 'Master Catalogues',
+    category: 'core',
+    defaultPath: '/catalogue',
+    icon: FolderTree,
+    iconName: 'FolderTree',
+    description: 'Centralized Master Data Management (MDM) hub, dependency pipeline, integrity audit, and unified master entity studio.',
+    subItems: [
+      { id: 'catalogue_overview', label: 'Overview & Telemetry', to: '/catalogue' },
+      { id: 'catalogue_academic', label: 'Academic Masters', to: '/catalogue#academic' },
+      { id: 'catalogue_people', label: 'People & Rosters', to: '/catalogue#people' },
+      { id: 'catalogue_finance', label: 'Finance Masters', to: '/catalogue#finance' },
+      { id: 'catalogue_integrity', label: 'Integrity Scanner', to: '/catalogue#integrity' },
+    ],
+  },
+  {
     id: 'academic',
     label: 'Academic Structure',
     category: 'academic',
@@ -84,6 +101,7 @@ export const CANONICAL_MODULE_REGISTRY: ModuleDefinition[] = [
     description: 'Curriculum standards, boards, subjects, batches, timetable schedules, and class enrollment rosters.',
     subItems: [
       { id: 'academic_structure', label: 'Academic Structure', to: '/academic' },
+      { id: 'academic_catalogue', label: 'Master Catalogue Hub', to: '/catalogue' },
       { id: 'academic_boards', label: 'Boards', to: '/academic/boards' },
       { id: 'academic_classes', label: 'Classes / Standards', to: '/academic/classes' },
       { id: 'academic_subjects', label: 'Subjects', to: '/academic/subjects' },

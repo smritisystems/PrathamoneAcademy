@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-21
+ * @updated     2026-11-22
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -5921,5 +5921,51 @@ export interface MentionableEntityItem {
   download_url?: string | null
   chip_text: string
 }
+
+export interface CatalogueIntegrityWarning {
+  code: string
+  severity: 'warning' | 'info' | 'error'
+  title: string
+  description: string
+  count: number
+  items?: Array<Record<string, any>>
+  action_route: string
+}
+
+export interface CataloguePipelineStep {
+  step: number
+  key: string
+  label: string
+  completed: boolean
+  count: number
+}
+
+export interface CatalogueOverviewResponse {
+  institution_id: number
+  counts: {
+    boards: number
+    standards: number
+    batches: number
+    total_capacity: number
+    canonical_subjects: number
+    subject_mappings: number
+    active_students: number
+    inactive_students: number
+    total_students: number
+    teachers: number
+    staff: number
+    fee_categories: number
+    fee_structures: number
+    academic_years: number
+  }
+  integrity_warnings: CatalogueIntegrityWarning[]
+  pipeline: {
+    completed_steps: number
+    total_steps: number
+    percentage: number
+    steps: CataloguePipelineStep[]
+  }
+}
+
 
 

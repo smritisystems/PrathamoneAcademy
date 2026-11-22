@@ -11,13 +11,14 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-21
+ * @updated     2026-11-22
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
 
 import apiClient from './client'
 import type {
+  CatalogueOverviewResponse,
   ChatRoomItem, ChatMessageItem, SendChatMessagePayload, CreateChatRoomPayload, MentionableEntityItem,
   DirectChatUserItem,
   PaymentPermissions,
@@ -3397,6 +3398,11 @@ export const chatApi = {
     apiClient.get<Blob>(`/chat/rooms/${roomId}/export-pdf`, {
       responseType: 'blob',
     }),
+}
+
+export const catalogueApi = {
+  getOverview: (params?: { institution_id?: number | string; academic_year_id?: number | string }) =>
+    apiClient.get<CatalogueOverviewResponse>('/catalogue/overview', { params }),
 }
 
 export type { EduBoardPageItem }

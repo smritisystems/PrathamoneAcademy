@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-22
 #  *
 #  * @description API endpoints for standards/classes management, board associations, and settings.
 #  */
@@ -161,53 +161,21 @@ async def get_academic_overview(
     target_inst = institution_id if institution_id is not None else (
         None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
     )
-    # 1. Total Students
-    student_count_stmt = select(func.count(Student.id)).where(Student.is_active == True)
-    if target_inst is not None:
-        student_count_stmt = student_count_stmt.where(Student.institution_id == target_inst)
-    total_students = (await db.execute(student_count_stmt)).scalar() or 0
+    # 1-5. Consolidated Single-Roundtrip Academic Metrics Query
+    std_inst_filter = [Standard.institution_id == target_inst] if target_inst is not None else []
+    stu_inst_filter = [Student.institution_id == target_inst] if target_inst is not None else []
 
-    # 2. Total Standards / Classes
-    standards_count_stmt = select(func.count(Standard.id)).where(Standard.is_active == True)
-    if target_inst is not None:
-        standards_count_stmt = standards_count_stmt.where(Standard.institution_id == target_inst)
-    total_classes = (await db.execute(standards_count_stmt)).scalar() or 0
-
-    # 3. Active Batches
-    active_batches_stmt = (
-        select(func.count(Division.id))
-        .join(Standard, Division.standard_id == Standard.id)
-        .where(Division.is_active == True, Division.status == "active")
+    metrics_query = select(
+        select(func.count(Student.id)).where(Student.is_active == True, *stu_inst_filter).scalar_subquery().label("total_students"),
+        select(func.count(Standard.id)).where(Standard.is_active == True, *std_inst_filter).scalar_subquery().label("total_classes"),
+        select(func.count(Division.id)).join(Standard, Division.standard_id == Standard.id).where(Division.is_active == True, Division.status == "active", *std_inst_filter).scalar_subquery().label("active_batches"),
+        select(func.coalesce(func.sum(func.coalesce(Division.capacity, 40)), 0)).join(Standard, Division.standard_id == Standard.id).where(Division.is_active == True, Division.status == "active", *std_inst_filter).scalar_subquery().label("total_seats"),
+        select(func.count(StudentEnrollment.id)).join(Division, StudentEnrollment.division_id == Division.id).join(Standard, Division.standard_id == Standard.id).where(Division.is_active == True, Division.status == "active", StudentEnrollment.status == "active", *std_inst_filter).scalar_subquery().label("enrolled_seats"),
+        select(func.count(TimetableEntry.id)).where(TimetableEntry.is_active == True).scalar_subquery().label("weekly_sessions"),
     )
-    if target_inst is not None:
-        active_batches_stmt = active_batches_stmt.where(Standard.institution_id == target_inst)
-    active_batches = (await db.execute(active_batches_stmt)).scalar() or 0
-
-    # 4. Enrolled vs Total Seats
-    active_divs_stmt = (
-        select(Division.id, Division.capacity)
-        .join(Standard, Division.standard_id == Standard.id)
-        .where(Division.is_active == True, Division.status == "active")
-    )
-    if target_inst is not None:
-        active_divs_stmt = active_divs_stmt.where(Standard.institution_id == target_inst)
-    active_divs = (await db.execute(active_divs_stmt)).all()
-    total_seats = sum(d[1] or 40 for d in active_divs)
-
-    active_div_ids = [d[0] for d in active_divs]
-    enrolled_seats = 0
-    if active_div_ids:
-        enr_stmt = select(func.count(StudentEnrollment.id)).where(
-            StudentEnrollment.division_id.in_(active_div_ids),
-            StudentEnrollment.status == "active",
-        )
-        enrolled_seats = (await db.execute(enr_stmt)).scalar() or 0
-
+    metrics_row = (await db.execute(metrics_query)).one()
+    total_students, total_classes, active_batches, total_seats, enrolled_seats, weekly_sessions = metrics_row
     occupancy_pct = round((enrolled_seats / total_seats) * 100) if total_seats > 0 else 0
-
-    # 5. Weekly Class Sessions
-    weekly_sessions_stmt = select(func.count(TimetableEntry.id)).where(TimetableEntry.is_active == True)
-    weekly_sessions = (await db.execute(weekly_sessions_stmt)).scalar() or 0
 
     # 6. Academic Tree Structure: Boards -> Classes/Standards -> Batch count & Student count
     boards_stmt = select(Board).where(Board.is_active == True).order_by(Board.name)
