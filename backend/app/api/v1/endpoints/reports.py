@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-22
+#  * @updated     2026-11-23
 #  *
 #  * @description API endpoints for academic, attendance, faculty load, and fee collection reporting.
 #  */
@@ -20,7 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
-from sqlalchemy import select, func, or_, and_, desc
+from sqlalchemy import select, func, or_, and_, desc, distinct
 from typing import Optional, List, Dict, Any
 from datetime import datetime, date
 from decimal import Decimal
@@ -582,42 +582,84 @@ async def faculty_load_report(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
+    """
+    Teacher Workload & Multi-Batch Clashing Diagnostics Report.
+    Audits weekly instructional sessions, decimal contact hours, assigned divisions,
+    supervised students, and detects multi-batch timetable collision conflicts.
+    """
     user_stmt = select(User).where(User.role.in_(["teacher", "faculty", "staff", "admin"]), User.is_active == True)
     if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
         user_stmt = user_stmt.where(User.institution_id == current_user.institution_id)
     users = (await db.execute(user_stmt)).scalars().all()
 
-    # Pre-fetch divisions where teacher is in charge
-    div_stmt = (
-        select(Division.class_teacher_id, func.count(Division.id), func.sum(Division.capacity))
-        .where(Division.is_active == True, Division.class_teacher_id.isnot(None))
-        .group_by(Division.class_teacher_id)
-    )
-    div_stats = {t_id: cnt for t_id, cnt, _ in (await db.execute(div_stmt)).all()}
+    # 1. Timetable direct sessions, hours, and clash diagnostics
+    tt_entries = (await db.execute(
+        select(TimetableEntry).where(TimetableEntry.is_active == True, TimetableEntry.teacher_id.isnot(None))
+    )).scalars().all()
 
-    # Timetable sessions count for teacher's batches
-    tt_stmt = (
-        select(Division.class_teacher_id, func.count(TimetableEntry.id))
-        .join(TimetableEntry, Division.id == TimetableEntry.division_id)
-        .where(TimetableEntry.is_active == True, Division.class_teacher_id.isnot(None))
-        .group_by(Division.class_teacher_id)
-    )
-    tt_stats = {t_id: cnt for t_id, cnt in (await db.execute(tt_stmt)).all()}
+    tt_sessions = {}
+    tt_hours = {}
+    tt_divisions = {}
+    day_slots = {}
+    tt_clashes = {}
 
-    # Total enrolled students in teacher's batches
-    stu_stmt = (
-        select(Division.class_teacher_id, func.count(StudentEnrollment.id))
-        .join(StudentEnrollment, Division.id == StudentEnrollment.division_id)
-        .where(StudentEnrollment.status == "active", Division.class_teacher_id.isnot(None))
-        .group_by(Division.class_teacher_id)
+    for te in tt_entries:
+        t_id = te.teacher_id
+        tt_sessions[t_id] = tt_sessions.get(t_id, 0) + 1
+        tt_divisions.setdefault(t_id, set()).add(te.division_id)
+
+        dur = 1.0
+        if te.start_time and te.end_time:
+            try:
+                sh, sm = map(int, te.start_time.split(":"))
+                eh, em = map(int, te.end_time.split(":"))
+                dur = max(0.25, (eh * 60 + em - (sh * 60 + sm)) / 60)
+            except Exception:
+                pass
+        tt_hours[t_id] = round(tt_hours.get(t_id, 0.0) + dur, 2)
+
+        key = (t_id, te.day_of_week)
+        day_slots.setdefault(key, []).append((te.start_time, te.end_time, te.division_id, te.room_number))
+
+    for (t_id, day), slots in day_slots.items():
+        for i in range(len(slots)):
+            for j in range(i + 1, len(slots)):
+                s1, e1, d1, r1 = slots[i]
+                s2, e2, d2, r2 = slots[j]
+                if s1 < e2 and s2 < e1:
+                    tt_clashes[t_id] = tt_clashes.get(t_id, 0) + 1
+
+    # 2. Teacher assignments
+    ta_stmt = select(TeacherAssignment.teacher_user_id, TeacherAssignment.division_id).where(TeacherAssignment.is_active == True)
+    ta_rows = (await db.execute(ta_stmt)).all()
+    ta_divisions = {}
+    for t_id, div_id in ta_rows:
+        ta_divisions.setdefault(t_id, set()).add(div_id)
+
+    # 3. Class teacher mentorship
+    ct_stmt = select(Division.class_teacher_id, Division.id).where(Division.is_active == True, Division.class_teacher_id.isnot(None))
+    ct_rows = (await db.execute(ct_stmt)).all()
+    ct_divisions = {}
+    class_teacher_set = set()
+    for t_id, div_id in ct_rows:
+        ct_divisions.setdefault(t_id, set()).add(div_id)
+        class_teacher_set.add(t_id)
+
+    # 4. Enrolled students per division
+    enr_stmt = (
+        select(StudentEnrollment.division_id, func.count(distinct(StudentEnrollment.student_id)))
+        .where(StudentEnrollment.status == "active")
+        .group_by(StudentEnrollment.division_id)
     )
-    stu_stats = {t_id: cnt for t_id, cnt in (await db.execute(stu_stmt)).all()}
+    div_student_counts = dict((await db.execute(enr_stmt)).all())
 
     results = []
     for u in users:
-        batches_cnt = div_stats.get(u.id, 0)
-        sessions_cnt = tt_stats.get(u.id, 0)
-        students_cnt = stu_stats.get(u.id, 0)
+        all_divs = tt_divisions.get(u.id, set()) | ta_divisions.get(u.id, set()) | ct_divisions.get(u.id, set())
+        stu_cnt = sum(div_student_counts.get(d_id, 0) for d_id in all_divs)
+        sess_cnt = tt_sessions.get(u.id, 0)
+        hrs_cnt = tt_hours.get(u.id, 0.0)
+        clashes_cnt = tt_clashes.get(u.id, 0)
 
         results.append({
             "user_id": u.id,
@@ -626,12 +668,15 @@ async def faculty_load_report(
             "email": u.email,
             "staff_code": u.staff_code or "—",
             "designation": u.designation or u.role.capitalize(),
-            "assigned_batches_count": batches_cnt,
-            "weekly_sessions_count": sessions_cnt,
-            "total_students": students_cnt,
+            "assigned_batches_count": len(all_divs),
+            "weekly_sessions_count": sess_cnt,
+            "weekly_hours": hrs_cnt,
+            "schedule_clashes_count": clashes_cnt,
+            "total_students": stu_cnt,
+            "is_class_teacher": u.id in class_teacher_set,
         })
 
-    results.sort(key=lambda r: (r["assigned_batches_count"], r["weekly_sessions_count"]), reverse=True)
+    results.sort(key=lambda r: (r["weekly_sessions_count"], r["assigned_batches_count"]), reverse=True)
     return results
 
 

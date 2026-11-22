@@ -1055,6 +1055,26 @@ function ReportsWorkspace() {
     enabled: activeReportId === 'faculty-load',
   })
 
+  const facultyLoadMetrics = useMemo(() => {
+    if (!facultyLoadData || !facultyLoadData.length) return null
+    const activeFaculty = facultyLoadData.filter((r: any) => (r.weekly_sessions_count || 0) > 0 || (r.assigned_batches_count || 0) > 0)
+    const totalSessions = facultyLoadData.reduce((sum: number, r: any) => sum + (r.weekly_sessions_count || 0), 0)
+    const totalHours = facultyLoadData.reduce((sum: number, r: any) => sum + (Number(r.weekly_hours) || 0), 0)
+    const totalClashes = facultyLoadData.reduce((sum: number, r: any) => sum + (r.schedule_clashes_count || 0), 0)
+    const totalStudents = facultyLoadData.reduce((sum: number, r: any) => sum + (r.total_students || 0), 0)
+    const avgSessions = activeFaculty.length > 0 ? (totalSessions / activeFaculty.length).toFixed(1) : '0'
+
+    return {
+      totalFaculty: facultyLoadData.length,
+      activeFaculty: activeFaculty.length,
+      totalSessions,
+      totalHours: totalHours.toFixed(1),
+      totalClashes,
+      totalStudents,
+      avgSessions,
+    }
+  }, [facultyLoadData])
+
   // 16. Workforce: Specialized Payroll Reports
   const payrollReportType = useMemo(() => {
     if (activeReportId.startsWith('payroll-')) {
@@ -2547,25 +2567,177 @@ function ReportsWorkspace() {
             </div>
           )}
 
-          {/* 13. Faculty Load */}
+          {/* 13. Faculty Load & Multi-Batch Clashing Diagnostics */}
           {activeReportId === 'faculty-load' && (
-            <ExcelReportGrid
-              title="Faculty Teaching Load & Mentorship Audit"
-              subtitle="Weekly session commitments, assigned classroom batches, and supervised students"
-              columns={[
-                { id: 'teacher_name', header: 'Faculty Member', accessorKey: 'teacher_name', type: 'text', width: 190, sortable: true, render: (val) => <span className="font-bold text-slate-900">{val}</span> },
-                { id: 'staff_code', header: 'Staff Code', accessorKey: 'staff_code', type: 'text', width: 130, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
-                { id: 'designation', header: 'Designation', accessorKey: 'designation', type: 'text', width: 140 },
-                { id: 'assigned_batches_count', header: 'Active Batches', accessorKey: 'assigned_batches_count', type: 'number', width: 130, align: 'center', sortable: true },
-                { id: 'weekly_sessions_count', header: 'Weekly Sessions', accessorKey: 'weekly_sessions_count', type: 'number', width: 130, align: 'center', sortable: true },
-                { id: 'total_students', header: 'Supervised Students', accessorKey: 'total_students', type: 'number', width: 160, align: 'center', sortable: true, render: (val) => <span className="font-bold text-emerald-800">{val}</span> },
-              ]}
-              data={facultyLoadData}
-              loading={loadingFacultyLoad}
-              exportFilename="faculty_teaching_load"
-              sheetName="Faculty Load"
-              showSummaryRow={true}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {facultyLoadMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Faculty</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{facultyLoadMetrics.totalFaculty}</p>
+                  </div>
+                  <div className="bg-blue-50/50 border border-blue-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Active Teaching</p>
+                    <p className="text-base font-black font-mono text-blue-800 mt-0.5">{facultyLoadMetrics.activeFaculty}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Weekly Sessions</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{facultyLoadMetrics.totalSessions}</p>
+                  </div>
+                  <div className="bg-purple-50/50 border border-purple-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Instruction Hours</p>
+                    <p className="text-base font-black font-mono text-purple-800 mt-0.5">{facultyLoadMetrics.totalHours}h</p>
+                  </div>
+                  <div className={`${Number(facultyLoadMetrics.totalClashes) > 0 ? 'bg-rose-50/60 border-rose-200/80' : 'bg-emerald-50/50 border-emerald-200/70'} border rounded-xl px-3.5 py-2.5 shadow-xs`}>
+                    <p className={`text-[10px] font-bold uppercase tracking-wider ${Number(facultyLoadMetrics.totalClashes) > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>Schedule Clashes</p>
+                    <p className={`text-base font-black font-mono ${Number(facultyLoadMetrics.totalClashes) > 0 ? 'text-rose-800' : 'text-emerald-800'} mt-0.5`}>
+                      {facultyLoadMetrics.totalClashes} {Number(facultyLoadMetrics.totalClashes) === 0 ? '• Clean' : 'Alert'}
+                    </p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Avg Sessions / Staff</p>
+                    <p className="text-base font-black font-mono text-amber-800 mt-0.5">{facultyLoadMetrics.avgSessions}</p>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title="Faculty Teaching Load & Multi-Batch Clashing Diagnostics"
+                subtitle="Weekly session commitments, instruction contact hours, active classroom batches, and scheduling collision diagnostics"
+                columns={[
+                  {
+                    id: 'teacher_name',
+                    header: 'Faculty Member',
+                    accessorKey: 'teacher_name',
+                    type: 'text',
+                    width: 200,
+                    sortable: true,
+                    render: (val, row) => (
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-slate-900 text-xs">{val}</span>
+                          {row.is_class_teacher && (
+                            <span className="px-1.5 py-0.2 text-[9px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-800 border border-indigo-200 rounded">
+                              Class Mentor
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-mono">{row.email}</span>
+                      </div>
+                    ),
+                  },
+                  {
+                    id: 'staff_code',
+                    header: 'Staff Code',
+                    accessorKey: 'staff_code',
+                    type: 'text',
+                    width: 120,
+                    render: (val) => <span className="font-mono font-bold text-primary-700 text-xs">{val}</span>,
+                  },
+                  {
+                    id: 'designation',
+                    header: 'Designation',
+                    accessorKey: 'designation',
+                    type: 'text',
+                    width: 170,
+                    render: (val) => <span className="text-slate-700 text-xs">{val}</span>,
+                  },
+                  {
+                    id: 'assigned_batches_count',
+                    header: 'Active Batches',
+                    accessorKey: 'assigned_batches_count',
+                    type: 'number',
+                    width: 125,
+                    align: 'center',
+                    sortable: true,
+                    render: (val) => (
+                      <span className="px-2 py-0.5 bg-slate-100 font-mono font-bold text-slate-800 rounded text-xs">
+                        {val}
+                      </span>
+                    ),
+                  },
+                  {
+                    id: 'weekly_sessions_count',
+                    header: 'Weekly Sessions',
+                    accessorKey: 'weekly_sessions_count',
+                    type: 'number',
+                    width: 130,
+                    align: 'center',
+                    sortable: true,
+                    render: (val) => (
+                      <span className="font-mono font-bold text-slate-900 text-xs">
+                        {val}
+                      </span>
+                    ),
+                  },
+                  {
+                    id: 'weekly_hours',
+                    header: 'Contact Hours',
+                    accessorKey: 'weekly_hours',
+                    type: 'number',
+                    width: 120,
+                    align: 'center',
+                    sortable: true,
+                    render: (val) => <span className="font-mono font-bold text-purple-800 text-xs">{val}h</span>,
+                  },
+                  {
+                    id: 'schedule_clashes_count',
+                    header: 'Schedule Clashes',
+                    accessorKey: 'schedule_clashes_count',
+                    type: 'number',
+                    width: 140,
+                    align: 'center',
+                    sortable: true,
+                    render: (val) =>
+                      Number(val) > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200 rounded-full">
+                          <AlertTriangle className="w-3 h-3 text-rose-600" />
+                          {val} Clashes
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          Clean
+                        </span>
+                      ),
+                  },
+                  {
+                    id: 'total_students',
+                    header: 'Taught Students',
+                    accessorKey: 'total_students',
+                    type: 'number',
+                    width: 135,
+                    align: 'center',
+                    sortable: true,
+                    render: (val) => <span className="font-bold text-emerald-800 text-xs">{val}</span>,
+                  },
+                ]}
+                data={facultyLoadData}
+                loading={loadingFacultyLoad}
+                exportFilename="faculty_teaching_load_and_clash_diagnostics"
+                sheetName="Faculty Load"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  teacher_name: (rows) => <span className="font-black text-slate-900 font-mono">Faculty: {rows.length}</span>,
+                  weekly_sessions_count: (rows) => (
+                    <span className="font-black text-slate-900 font-mono">
+                      {rows.reduce((sum, r) => sum + (Number(r.weekly_sessions_count) || 0), 0)}
+                    </span>
+                  ),
+                  weekly_hours: (rows) => (
+                    <span className="font-black text-slate-900 font-mono">
+                      {rows.reduce((sum, r) => sum + (Number(r.weekly_hours) || 0), 0).toFixed(1)}h
+                    </span>
+                  ),
+                  total_students: (rows) => (
+                    <span className="font-black text-emerald-800 font-mono">
+                      {rows.reduce((sum, r) => sum + (Number(r.total_students) || 0), 0)}
+                    </span>
+                  ),
+                }}
+              />
+            </div>
           )}
 
           {/* 14. Specialized Payroll Reports */}

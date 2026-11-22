@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-23
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -2226,7 +2226,10 @@ export interface FacultyLoadReportRow {
   designation: string
   assigned_batches_count: number
   weekly_sessions_count: number
+  weekly_hours?: number
+  schedule_clashes_count?: number
   total_students: number
+  is_class_teacher?: boolean
 }
 
 
@@ -2531,7 +2534,10 @@ export interface FacultyLoadReportRow {
   designation: string
   assigned_batches_count: number
   weekly_sessions_count: number
+  weekly_hours?: number
+  schedule_clashes_count?: number
   total_students: number
+  is_class_teacher?: boolean
 }
 
 
