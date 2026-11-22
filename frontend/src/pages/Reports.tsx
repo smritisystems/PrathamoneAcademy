@@ -862,6 +862,25 @@ function ReportsWorkspace() {
     enabled: activeReportId === 'student-master',
   })
 
+  const studentMasterMetrics = useMemo(() => {
+    if (!studentMasterData || !studentMasterData.length) return null
+    const totalStudents = studentMasterData.length
+    const activeEnrolled = studentMasterData.filter((r: any) => r.status === 'enrolled' || r.status === 'active').length
+    const uniqueStandards = new Set(studentMasterData.map((r: any) => r.standard_name).filter(Boolean)).size
+    const uniqueBatches = new Set(studentMasterData.map((r: any) => r.division_name).filter(Boolean)).size
+    const uniqueBoards = new Set(studentMasterData.map((r: any) => r.board_name).filter(Boolean)).size
+    const maleCount = studentMasterData.filter((r: any) => (r.gender || '').toLowerCase() === 'male' || (r.gender || '').toLowerCase() === 'm').length
+    const femaleCount = studentMasterData.filter((r: any) => (r.gender || '').toLowerCase() === 'female' || (r.gender || '').toLowerCase() === 'f').length
+    return {
+      totalStudents,
+      activeEnrolled,
+      uniqueStandards,
+      uniqueBatches,
+      uniqueBoards,
+      genderRatio: `M:${maleCount} / F:${femaleCount}`,
+    }
+  }, [studentMasterData])
+
   // 2. Students: Attendance Summary
   const { data: attendanceSummaryData = [], isLoading: loadingAttendance, refetch: refetchAttendance } = useQuery({
     queryKey: ['report-attendance-summary', selectedAcademicYearId, selectedStandardId, selectedDivisionId, startDate, endDate, defaultersOnly],
@@ -876,6 +895,24 @@ function ReportsWorkspace() {
       }).then((r) => r.data),
     enabled: activeReportId === 'student-attendance',
   })
+
+  const attendanceSummaryMetrics = useMemo(() => {
+    if (!attendanceSummaryData || !attendanceSummaryData.length) return null
+    const totalEvaluated = attendanceSummaryData.length
+    const totalSessions = attendanceSummaryData.reduce((sum: number, r: any) => sum + (Number(r.total_days) || 0), 0)
+    const totalAttended = attendanceSummaryData.reduce((sum: number, r: any) => sum + (Number(r.present_days) || 0), 0)
+    const totalAbsences = attendanceSummaryData.reduce((sum: number, r: any) => sum + (Number(r.absent_days) || 0), 0)
+    const avgAttendance = totalSessions > 0 ? ((totalAttended / totalSessions) * 100).toFixed(1) : '0'
+    const defaultersCount = attendanceSummaryData.filter((r: any) => (Number(r.attendance_percentage) || 0) < 75 || r.is_defaulter).length
+    return {
+      totalEvaluated,
+      avgAttendance,
+      totalSessions,
+      totalAttended,
+      totalAbsences,
+      defaultersCount,
+    }
+  }, [attendanceSummaryData])
 
   // 3. Students: Withdrawals
   const { data: withdrawalsReport = [], isLoading: loadingWithdrawals, refetch: refetchWithdrawals } = useQuery({
@@ -1998,39 +2035,114 @@ function ReportsWorkspace() {
 
           {/* 1. Student Master Directory */}
           {activeReportId === 'student-master' && (
-            <ExcelReportGrid
-              title="Student Master Directory & Demographic Roster"
-              subtitle="Official demographic register of all enrolled students with guardian contact and status"
-              columns={studentMasterColumns}
-              data={studentMasterData}
-              loading={loadingMaster}
-              exportFilename="student_master_directory"
-              sheetName="Students"
-              showSummaryRow={true}
-              summaryCalculations={{
-                admission_number: (rows) => <span className="font-extrabold text-slate-900">Total: {rows.length}</span>,
-              }}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {studentMasterMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Roster</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{studentMasterMetrics.totalStudents}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Active Enrolled</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">{studentMasterMetrics.activeEnrolled}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Standards</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{studentMasterMetrics.uniqueStandards}</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Batches Active</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">{studentMasterMetrics.uniqueBatches}</p>
+                  </div>
+                  <div className="bg-violet-50/50 border border-violet-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600">Boards</p>
+                    <p className="text-base font-black font-mono text-violet-800 mt-0.5">{studentMasterMetrics.uniqueBoards}</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Gender Ratio</p>
+                    <p className="text-sm font-black font-mono text-amber-800 mt-1">{studentMasterMetrics.genderRatio}</p>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title="Student Master Directory & Demographic Roster"
+                subtitle="Official demographic register of all enrolled students with guardian contact and status"
+                columns={studentMasterColumns}
+                data={studentMasterData}
+                loading={loadingMaster}
+                exportFilename="student_master_directory"
+                sheetName="Students"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  admission_number: (rows) => <span className="font-extrabold text-slate-900 font-mono">Total: {rows.length}</span>,
+                }}
+              />
+            </div>
           )}
 
           {/* 2. Attendance Summary */}
           {activeReportId === 'student-attendance' && (
-            <ExcelReportGrid
-              title="Student Attendance Summary & Defaulter Audit"
-              subtitle="Aggregated session check-in percentages and chronic defaulter flags"
-              columns={attendanceColumns}
-              data={attendanceSummaryData}
-              loading={loadingAttendance}
-              exportFilename="student_attendance_summary"
-              sheetName="Attendance"
-              showSummaryRow={true}
-              summaryCalculations={{
-                admission_number: (rows) => <span className="font-extrabold text-slate-900">Total: {rows.length}</span>,
-                total_days: (rows) => <span className="font-extrabold">{rows.reduce((acc, r) => acc + (r.total_days || 0), 0)}</span>,
-                present_days: (rows) => <span className="font-extrabold text-emerald-700">{rows.reduce((acc, r) => acc + (r.present_days || 0), 0)}</span>,
-                absent_days: (rows) => <span className="font-extrabold text-rose-700">{rows.reduce((acc, r) => acc + (r.absent_days || 0), 0)}</span>,
-              }}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {attendanceSummaryMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Evaluated Students</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{attendanceSummaryMetrics.totalEvaluated}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Average Attendance</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{attendanceSummaryMetrics.avgAttendance}%</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Total Sessions</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">{attendanceSummaryMetrics.totalSessions}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Total Present</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">{attendanceSummaryMetrics.totalAttended}</p>
+                  </div>
+                  <div className="bg-rose-50/50 border border-rose-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Total Absent</p>
+                    <p className="text-base font-black font-mono text-rose-700 mt-0.5">{attendanceSummaryMetrics.totalAbsences}</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Defaulters (&lt;75%)</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <p className="text-base font-black font-mono text-amber-800">{attendanceSummaryMetrics.defaultersCount}</p>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${attendanceSummaryMetrics.defaultersCount > 0 ? 'bg-amber-200/80 text-amber-900' : 'bg-emerald-100 text-emerald-800'}`}>
+                        {attendanceSummaryMetrics.defaultersCount > 0 ? 'Alert' : 'Clean'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title="Student Attendance Summary & Defaulter Audit"
+                subtitle="Aggregated session check-in percentages and chronic defaulter flags"
+                columns={attendanceColumns}
+                data={attendanceSummaryData}
+                loading={loadingAttendance}
+                exportFilename="student_attendance_summary"
+                sheetName="Attendance"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  admission_number: (rows) => <span className="font-extrabold text-slate-900 font-mono">Total: {rows.length}</span>,
+                  total_days: (rows) => <span className="font-extrabold font-mono text-slate-900">{rows.reduce((acc, r) => acc + (r.total_days || 0), 0)}</span>,
+                  present_days: (rows) => <span className="font-extrabold font-mono text-emerald-700">{rows.reduce((acc, r) => acc + (r.present_days || 0), 0)}</span>,
+                  absent_days: (rows) => <span className="font-extrabold font-mono text-rose-700">{rows.reduce((acc, r) => acc + (r.absent_days || 0), 0)}</span>,
+                  attendance_percentage: (rows) => {
+                    const totalDays = rows.reduce((acc, r) => acc + (r.total_days || 0), 0)
+                    const presentDays = rows.reduce((acc, r) => acc + (r.present_days || 0), 0)
+                    const pct = totalDays > 0 ? ((presentDays / totalDays) * 100).toFixed(1) : '0'
+                    return <span className="font-extrabold font-mono text-indigo-700">{pct}%</span>
+                  },
+                }}
+              />
+            </div>
           )}
 
           {/* 3. Fee Collection Register */}
