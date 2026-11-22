@@ -25,7 +25,7 @@ import {
   AlertCircle, Download, ChevronRight, Save, RefreshCw, ShieldAlert,
   FileCheck, Upload, MessageSquare, Paperclip, AlertTriangle, CheckCircle2,
   XCircle, Send, Sparkles, Presentation, Printer, ChevronLeft, Check, X,
-  Trophy, FileSpreadsheet, PlayCircle, Video
+  Trophy, FileSpreadsheet, PlayCircle, Video, ArrowUpRight
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { studentPortalApi, studentsApi, homeworkApi, eduboardApi } from '../api/endpoints'
@@ -33,6 +33,7 @@ import { useAuthStore } from '../store/authStore'
 import { StatusBadge } from '../components/Badge'
 import Modal from '../components/Modal'
 import EduBoardCanvas from '../components/eduboard/EduBoardCanvas'
+import NepRoadmapModal from '../components/common/NepRoadmapModal'
 import type {
   TimetableSlot,
   StudyMaterialItem,
@@ -103,6 +104,7 @@ export default function StudentDashboardPage() {
   const [selectedStudentId, setSelectedStudentId] = useState<number | undefined>(urlStudentId)
   const [editSuccessMessage, setEditSuccessMessage] = useState<string | null>(null)
   const [isProfileEditMode, setIsProfileEditMode] = useState(false)
+  const [showNepModal, setShowNepModal] = useState(false)
 
   useEffect(() => {
     setIsProfileEditMode(false)
@@ -502,6 +504,29 @@ export default function StudentDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* NEP 2020 Reassuring Learning Philosophy Message (Option C) */}
+      <div className="bg-gradient-to-r from-indigo-50/90 via-blue-50/70 to-slate-50 border border-indigo-100/90 rounded-xl px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs shadow-2xs">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-indigo-600 text-white rounded-md shrink-0 shadow-2xs">
+            NEP 2020 Aligned
+          </span>
+          <p className="text-slate-700 font-medium">
+            Powered by NEP 2020-aligned competency analytics to help students master concepts, not just memorize.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowNepModal(true)}
+          className="text-[11px] font-bold text-indigo-700 hover:text-indigo-900 flex items-center gap-1 shrink-0 transition-colors self-end sm:self-auto cursor-pointer"
+        >
+          <span>Learn More</span>
+          <ArrowUpRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* NEP 2020 Roadmap Modal */}
+      <NepRoadmapModal isOpen={showNepModal} onClose={() => setShowNepModal(false)} />
 
       {/* Responsive Navigation Tabs */}
       <div className="bg-white border border-gray-200 rounded-xl p-1.5 shadow-sm overflow-x-auto scrollbar-none">
