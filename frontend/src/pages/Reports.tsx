@@ -903,6 +903,24 @@ function ReportsWorkspace() {
     enabled: activeReportId === 'batch-capacity',
   })
 
+  const batchCapacityMetrics = useMemo(() => {
+    if (!batchCapacityData || !batchCapacityData.length) return null
+    const totalBatches = batchCapacityData.length
+    const totalCapacity = batchCapacityData.reduce((sum: number, r: any) => sum + (Number(r.capacity) || 0), 0)
+    const totalEnrolled = batchCapacityData.reduce((sum: number, r: any) => sum + (Number(r.enrolled) || 0), 0)
+    const totalVacant = batchCapacityData.reduce((sum: number, r: any) => sum + (Number(r.available_seats) || 0), 0)
+    const overallOccupancy = totalCapacity > 0 ? ((totalEnrolled / totalCapacity) * 100).toFixed(1) : '0'
+    const highOccupancyBatches = batchCapacityData.filter((r: any) => (Number(r.occupancy_percentage) || 0) >= 90).length
+    return {
+      totalBatches,
+      totalCapacity,
+      totalEnrolled,
+      totalVacant,
+      overallOccupancy,
+      highOccupancyBatches,
+    }
+  }, [batchCapacityData])
+
   // 6. Academics: Board Distribution
   const { data: distributionData = [], isLoading: loadingDistribution, refetch: refetchDistribution } = useQuery({
     queryKey: ['report-distribution'],
@@ -916,6 +934,24 @@ function ReportsWorkspace() {
     queryFn: () => reportsApi.curriculumMatrix({ board_id: selectedBoardId || undefined, standard_id: selectedStandardId || undefined }).then((r) => r.data),
     enabled: activeReportId === 'curriculum-matrix',
   })
+
+  const curriculumMatrixMetrics = useMemo(() => {
+    if (!curriculumMatrixData || !curriculumMatrixData.length) return null
+    const totalOfferings = curriculumMatrixData.length
+    const uniqueSubjects = new Set(curriculumMatrixData.map((r: any) => r.subject_name)).size
+    const totalWeeklyHours = curriculumMatrixData.reduce((sum: number, r: any) => sum + (Number(r.weekly_hours) || 0), 0)
+    const uniqueStandards = new Set(curriculumMatrixData.map((r: any) => r.standard_name)).size
+    const allocatedTeachersCount = curriculumMatrixData.reduce((sum: number, r: any) => sum + (Number(r.assigned_teachers_count) || 0), 0)
+    const avgWeeklyLoad = totalOfferings > 0 ? (totalWeeklyHours / totalOfferings).toFixed(1) : '0'
+    return {
+      totalOfferings,
+      uniqueSubjects,
+      totalWeeklyHours,
+      uniqueStandards,
+      allocatedTeachersCount,
+      avgWeeklyLoad,
+    }
+  }, [curriculumMatrixData])
 
   // 8. Academics: Timetable Utilization
   const { data: timetableData = [], isLoading: loadingTimetable, refetch: refetchTimetable } = useQuery({
@@ -2123,24 +2159,73 @@ function ReportsWorkspace() {
 
           {/* 9. Batch Capacity */}
           {activeReportId === 'batch-capacity' && (
-            <ExcelReportGrid
-              title="Batch Capacity & Occupancy Analysis"
-              subtitle="Audited batch-level seat allotments, occupancy rates, and classroom timing"
-              columns={[
-                { id: 'batch_name', header: 'Batch / Division', accessorKey: 'batch_name', type: 'text', width: 180, sortable: true, render: (val, r: any) => <span className="font-semibold text-slate-900">{val} {r.batch_code ? `[${r.batch_code}]` : ''}</span> },
-                { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true },
-                { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-semibold">{val}</span> },
-                { id: 'capacity', header: 'Capacity', accessorKey: 'capacity', type: 'number', width: 110, align: 'center', sortable: true },
-                { id: 'enrolled', header: 'Enrolled', accessorKey: 'enrolled', type: 'number', width: 110, align: 'center', sortable: true, render: (val) => <span className="font-bold text-primary-700">{val}</span> },
-                { id: 'available_seats', header: 'Vacant', accessorKey: 'available_seats', type: 'number', width: 110, align: 'center', sortable: true, render: (val) => <span className={`font-bold ${val <= 5 ? 'text-amber-600' : 'text-emerald-700'}`}>{val}</span> },
-                { id: 'occupancy_percentage', header: 'Occupancy %', accessorKey: 'occupancy_percentage', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-primary-800">{val}%</span> },
-              ]}
-              data={batchCapacityData}
-              loading={loadingBatchCapacity}
-              exportFilename="batch_capacity_report"
-              sheetName="Batch Capacity"
-              showSummaryRow={true}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {batchCapacityMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Batches</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{batchCapacityMetrics.totalBatches}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Total Capacity</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{batchCapacityMetrics.totalCapacity}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Active Enrolled</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">{batchCapacityMetrics.totalEnrolled}</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Vacant Seats</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">{batchCapacityMetrics.totalVacant}</p>
+                  </div>
+                  <div className="bg-violet-50/50 border border-violet-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600">Overall Occupancy</p>
+                    <p className="text-base font-black font-mono text-violet-800 mt-0.5">{batchCapacityMetrics.overallOccupancy}%</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Near Full (≥90%)</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <p className="text-base font-black font-mono text-amber-800">{batchCapacityMetrics.highOccupancyBatches}</p>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${batchCapacityMetrics.highOccupancyBatches > 0 ? 'bg-amber-200/80 text-amber-900' : 'bg-emerald-100 text-emerald-800'}`}>
+                        {batchCapacityMetrics.highOccupancyBatches > 0 ? 'Alert' : 'Balanced'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title="Batch Capacity & Occupancy Analysis"
+                subtitle="Audited batch-level seat allotments, occupancy rates, and classroom timing"
+                columns={[
+                  { id: 'batch_name', header: 'Batch / Division', accessorKey: 'batch_name', type: 'text', width: 180, sortable: true, render: (val, r: any) => <span className="font-semibold text-slate-900">{val} {r.batch_code ? `[${r.batch_code}]` : ''}</span> },
+                  { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true },
+                  { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-semibold">{val}</span> },
+                  { id: 'capacity', header: 'Capacity', accessorKey: 'capacity', type: 'number', width: 110, align: 'center', sortable: true },
+                  { id: 'enrolled', header: 'Enrolled', accessorKey: 'enrolled', type: 'number', width: 110, align: 'center', sortable: true, render: (val) => <span className="font-bold text-primary-700">{val}</span> },
+                  { id: 'available_seats', header: 'Vacant', accessorKey: 'available_seats', type: 'number', width: 110, align: 'center', sortable: true, render: (val) => <span className={`font-bold ${val <= 5 ? 'text-amber-600' : 'text-emerald-700'}`}>{val}</span> },
+                  { id: 'occupancy_percentage', header: 'Occupancy %', accessorKey: 'occupancy_percentage', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-primary-800">{val}%</span> },
+                ]}
+                data={batchCapacityData}
+                loading={loadingBatchCapacity}
+                exportFilename="batch_capacity_report"
+                sheetName="Batch Capacity"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  batch_name: (rows) => <span className="font-black text-slate-900 font-mono">Batches: {rows.length}</span>,
+                  capacity: (rows) => <span className="font-black text-slate-900 font-mono">{rows.reduce((sum, r) => sum + (Number(r.capacity) || 0), 0)}</span>,
+                  enrolled: (rows) => <span className="font-black text-emerald-700 font-mono">{rows.reduce((sum, r) => sum + (Number(r.enrolled) || 0), 0)}</span>,
+                  available_seats: (rows) => <span className="font-black text-sky-700 font-mono">{rows.reduce((sum, r) => sum + (Number(r.available_seats) || 0), 0)}</span>,
+                  occupancy_percentage: (rows) => {
+                    const totalCap = rows.reduce((sum, r) => sum + (Number(r.capacity) || 0), 0)
+                    const totalEnr = rows.reduce((sum, r) => sum + (Number(r.enrolled) || 0), 0)
+                    const pct = totalCap > 0 ? ((totalEnr / totalCap) * 100).toFixed(1) : '0'
+                    return <span className="font-black text-violet-800 font-mono">{pct}%</span>
+                  },
+                }}
+              />
+            </div>
           )}
 
           {/* 10. Board Distribution */}
@@ -2185,24 +2270,61 @@ function ReportsWorkspace() {
 
           {/* 11. Curriculum Matrix */}
           {activeReportId === 'curriculum-matrix' && (
-            <ExcelReportGrid
-              title="Subject & Curriculum Offering Matrix"
-              subtitle="Standardized curriculum mapping across educational boards with allocated faculty"
-              columns={[
-                { id: 'subject_name', header: 'Subject Name', accessorKey: 'subject_name', type: 'text', width: 190, sortable: true, render: (val) => <span className="font-bold text-slate-900">{val}</span> },
-                { id: 'subject_code', header: 'Code', accessorKey: 'subject_code', type: 'text', width: 110, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
-                { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true },
-                { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-semibold">{val}</span> },
-                { id: 'weekly_hours', header: 'Weekly Load', accessorKey: 'weekly_hours', type: 'number', width: 120, align: 'center', render: (val) => <span className="font-bold text-slate-700">{val} hrs/wk</span> },
-                { id: 'assigned_teachers_count', header: 'Teachers', accessorKey: 'assigned_teachers_count', type: 'number', width: 110, align: 'center', render: (val) => <span className="font-bold text-primary-700">{val}</span> },
-                { id: 'teachers_list', header: 'Allocated Faculty Members', accessorKey: 'teachers_list', type: 'text', width: 280, render: (val) => <span className="text-slate-700 font-medium">{val}</span> },
-              ]}
-              data={curriculumMatrixData}
-              loading={loadingCurriculum}
-              exportFilename="curriculum_matrix_report"
-              sheetName="Curriculum"
-              showSummaryRow={true}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {curriculumMatrixMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Curriculum Offerings</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{curriculumMatrixMetrics.totalOfferings}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Unique Subjects</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{curriculumMatrixMetrics.uniqueSubjects}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Weekly Hours Load</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">{curriculumMatrixMetrics.totalWeeklyHours} h</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Standards Covered</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">{curriculumMatrixMetrics.uniqueStandards}</p>
+                  </div>
+                  <div className="bg-violet-50/50 border border-violet-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600">Teachers Allocated</p>
+                    <p className="text-base font-black font-mono text-violet-800 mt-0.5">{curriculumMatrixMetrics.allocatedTeachersCount}</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Avg Weekly Load</p>
+                    <p className="text-base font-black font-mono text-amber-800 mt-0.5">{curriculumMatrixMetrics.avgWeeklyLoad} h/wk</p>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title="Subject & Curriculum Offering Matrix"
+                subtitle="Standardized curriculum mapping across educational boards with allocated faculty"
+                columns={[
+                  { id: 'subject_name', header: 'Subject Name', accessorKey: 'subject_name', type: 'text', width: 190, sortable: true, render: (val) => <span className="font-bold text-slate-900">{val}</span> },
+                  { id: 'subject_code', header: 'Code', accessorKey: 'subject_code', type: 'text', width: 110, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
+                  { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true },
+                  { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-semibold">{val}</span> },
+                  { id: 'weekly_hours', header: 'Weekly Load', accessorKey: 'weekly_hours', type: 'number', width: 120, align: 'center', render: (val) => <span className="font-bold text-slate-700">{val} hrs/wk</span> },
+                  { id: 'assigned_teachers_count', header: 'Teachers', accessorKey: 'assigned_teachers_count', type: 'number', width: 110, align: 'center', render: (val) => <span className="font-bold text-primary-700">{val}</span> },
+                  { id: 'teachers_list', header: 'Allocated Faculty Members', accessorKey: 'teachers_list', type: 'text', width: 280, render: (val) => <span className="text-slate-700 font-medium">{val}</span> },
+                ]}
+                data={curriculumMatrixData}
+                loading={loadingCurriculum}
+                exportFilename="curriculum_matrix_report"
+                sheetName="Curriculum"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  subject_name: (rows) => <span className="font-black text-slate-900 font-mono">Offerings: {rows.length}</span>,
+                  weekly_hours: (rows) => <span className="font-black text-emerald-700 font-mono">{rows.reduce((sum, r) => sum + (Number(r.weekly_hours) || 0), 0)} hrs/wk</span>,
+                  assigned_teachers_count: (rows) => <span className="font-black text-primary-700 font-mono">{rows.reduce((sum, r) => sum + (Number(r.assigned_teachers_count) || 0), 0)}</span>,
+                }}
+              />
+            </div>
           )}
 
           {/* 12. Timetable Utilization */}
