@@ -65,6 +65,7 @@ import {
   Presentation,
   BookOpen,
   SlidersHorizontal,
+  CalendarCheck,
 } from 'lucide-react'
 import {
   BarChart,
@@ -194,6 +195,15 @@ const REPORT_CATALOG: ReportMeta[] = [
     description: 'Weekly schedule occupancy analysis showing classroom room utilization, weekday spread, and instructional coverage.',
     badge: 'Scheduling',
     icon: Calendar,
+  },
+  {
+    id: 'timetable-execution-audit',
+    name: 'Timetable Schedule Execution & Substitution Audit',
+    category: 'academics',
+    categoryLabel: 'Academics & Batches',
+    description: 'Audits scheduled vs delivered lectures, substitute/proxy assignments, cancellations, room adherence, and payroll verification.',
+    badge: 'Core Audit (8.8/10)',
+    icon: CalendarCheck,
   },
   {
     id: 'homework-register',
@@ -668,6 +678,7 @@ function ReportsWorkspace() {
   const [selectedBoardId, setSelectedBoardId] = useState<string>('')
   const [selectedExamId, setSelectedExamId] = useState<string>('')
   const [reportStatusFilter, setReportStatusFilter] = useState<'default' | 'all' | 'active' | 'withdrawn' | 'completed' | 'graduated' | 'inactive'>('default')
+  const [timetableAuditStatus, setTimetableAuditStatus] = useState<string>('all')
   const [concessionStudentSearch, setConcessionStudentSearch] = useState<string>('')
   const [concessionStatusFilter, setConcessionStatusFilter] = useState<string>('all')
   const [concessionFundingFilter, setConcessionFundingFilter] = useState<string>('all')
@@ -913,6 +924,20 @@ function ReportsWorkspace() {
     enabled: activeReportId === 'timetable-utilization',
   })
 
+  // 8b. Academics: Timetable Execution & Substitution Audit
+  const { data: timetableExecutionData, isLoading: loadingTimetableExecution, refetch: refetchTimetableExecution } = useQuery({
+    queryKey: ['report-timetable-execution-audit', selectedDivisionId, timetableAuditStatus, startDate, endDate, selectedAcademicYearId],
+    queryFn: () =>
+      reportsApi.timetableExecutionAudit({
+        division_id: selectedDivisionId || undefined,
+        status: timetableAuditStatus !== 'all' ? timetableAuditStatus : undefined,
+        date_from: startDate || undefined,
+        date_to: endDate || undefined,
+        academic_year_id: selectedAcademicYearId || undefined,
+      }).then((r) => r.data),
+    enabled: activeReportId === 'timetable-execution-audit',
+  })
+
   // 9. Fees: Fee Collection
   const { data: collectionReport = [], isLoading: loadingCollection, refetch: refetchCollection } = useQuery({
     queryKey: ['report-collection', selectedAcademicYearId, selectedInstitutionId, reportStatusFilter],
@@ -1108,6 +1133,7 @@ function ReportsWorkspace() {
           'academic-distribution': 'report-distribution',
           'curriculum-matrix': 'report-curriculum-matrix',
           'timetable-utilization': 'report-timetable-utilization',
+          'timetable-execution-audit': 'report-timetable-execution-audit',
           collection: 'report-collection',
           outstanding: 'report-outstanding',
           'fee-defaulters': 'report-fee-defaulters',
@@ -1179,6 +1205,7 @@ function ReportsWorkspace() {
     else if (activeReportId === 'academic-distribution') refetchDistribution()
     else if (activeReportId === 'curriculum-matrix') refetchCurriculum()
     else if (activeReportId === 'timetable-utilization') refetchTimetable()
+    else if (activeReportId === 'timetable-execution-audit') refetchTimetableExecution()
     else if (activeReportId === 'collection') refetchCollection()
     else if (activeReportId === 'outstanding') refetchOutstanding()
     else if (activeReportId === 'fee-defaulters') refetchFeeDefaulters()
@@ -1548,6 +1575,7 @@ function ReportsWorkspace() {
             activeReportId === 'withdrawals' ||
             activeReportId === 'batch-capacity' ||
             activeReportId === 'curriculum-matrix' ||
+            activeReportId === 'timetable-execution-audit' ||
             activeReportId === 'fee-defaulters') && (
             <div className="flex items-center gap-1.5">
               <span className="text-slate-500 font-semibold">Standard:</span>
@@ -1575,6 +1603,7 @@ function ReportsWorkspace() {
             activeReportId === 'student-attendance' ||
             activeReportId === 'withdrawals' ||
             activeReportId === 'timetable-utilization' ||
+            activeReportId === 'timetable-execution-audit' ||
             activeReportId === 'fee-defaulters') && (
             <div className="flex items-center gap-1.5">
               <span className="text-slate-500 font-semibold">Batch:</span>
@@ -1652,6 +1681,7 @@ function ReportsWorkspace() {
           {(isConcessionReportActive ||
             activeReportId === 'student-attendance' ||
             activeReportId === 'daily-collection' ||
+            activeReportId === 'timetable-execution-audit' ||
             activeReportId.startsWith('payroll-') ||
             activeReportId === 'audit-logs') && (
             <div className="flex items-center gap-2">
@@ -1669,6 +1699,24 @@ function ReportsWorkspace() {
                 onChange={(e) => setEndDate(e.target.value)}
                 className="px-2 py-1 bg-slate-50 border border-slate-300 rounded-lg text-slate-800"
               />
+            </div>
+          )}
+
+          {/* Timetable Execution Status Filter */}
+          {activeReportId === 'timetable-execution-audit' && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-500 font-semibold">Session Status:</span>
+              <select
+                value={timetableAuditStatus}
+                onChange={(e) => setTimetableAuditStatus(e.target.value)}
+                className="px-2.5 py-1 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium"
+              >
+                <option value="all">All Session Types</option>
+                <option value="conducted">Conducted / Completed</option>
+                <option value="substituted">Proxy Substituted</option>
+                <option value="cancelled">Cancelled / Missed</option>
+                <option value="rescheduled">Rescheduled</option>
+              </select>
             </div>
           )}
 
@@ -2108,6 +2156,228 @@ function ReportsWorkspace() {
               sheetName="Timetable"
               showSummaryRow={true}
             />
+          )}
+
+          {/* 12b. Timetable Schedule Execution & Substitution Status Audit */}
+          {activeReportId === 'timetable-execution-audit' && (
+            <div className="space-y-4">
+              {/* Telemetry KPI Summary Ribbon */}
+              {timetableExecutionData?.summary && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Sessions</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{timetableExecutionData.summary.total_sessions}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Conducted</p>
+                    <p className="text-base font-black font-mono text-emerald-800 mt-0.5">{timetableExecutionData.summary.conducted_count}</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Proxy Substituted</p>
+                    <p className="text-base font-black font-mono text-amber-800 mt-0.5">{timetableExecutionData.summary.substituted_count}</p>
+                  </div>
+                  <div className="bg-rose-50/50 border border-rose-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Cancelled / Missed</p>
+                    <p className="text-base font-black font-mono text-rose-800 mt-0.5">{timetableExecutionData.summary.cancelled_count}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Substitution Rate</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{timetableExecutionData.summary.substitution_rate_pct}%</p>
+                  </div>
+                  <div className="bg-purple-50/50 border border-purple-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Instruction Hours</p>
+                    <p className="text-base font-black font-mono text-purple-800 mt-0.5">{timetableExecutionData.summary.total_instruction_hours}h</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Governed ExcelReportGrid Table */}
+              <ExcelReportGrid
+                title="Timetable Schedule Execution & Substitution Audit"
+                subtitle="Granular audit of scheduled timetable commitments vs delivered teaching sessions with proxy teacher tracing and payroll status"
+                columns={[
+                  {
+                    id: 'session_date',
+                    header: 'Date',
+                    accessorKey: 'session_date',
+                    type: 'date',
+                    width: 105,
+                    sortable: true,
+                    render: (val, row) => (
+                      <div className="flex flex-col">
+                        <span className="font-mono font-medium text-slate-800 text-xs">{val}</span>
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold">{row.day_of_week}</span>
+                      </div>
+                    ),
+                  },
+                  {
+                    id: 'time_slot',
+                    header: 'Time Slot',
+                    accessorKey: 'time_slot',
+                    type: 'text',
+                    width: 115,
+                    render: (val) => <span className="font-mono text-xs font-semibold text-slate-700">{val}</span>,
+                  },
+                  {
+                    id: 'batch_name',
+                    header: 'Batch / Div',
+                    accessorKey: 'batch_name',
+                    type: 'text',
+                    width: 120,
+                    sortable: true,
+                    render: (val, row) => (
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900 text-xs">{val}</span>
+                        <span className="text-[10px] text-slate-400">{row.standard_name}</span>
+                      </div>
+                    ),
+                  },
+                  {
+                    id: 'subject_name',
+                    header: 'Subject',
+                    accessorKey: 'subject_name',
+                    type: 'text',
+                    width: 140,
+                    sortable: true,
+                    render: (val, row) => (
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-slate-800 text-xs">{val}</span>
+                        <span className="text-[10px] font-mono text-primary-600 font-medium">{row.subject_code}</span>
+                      </div>
+                    ),
+                  },
+                  {
+                    id: 'scheduled_teacher_name',
+                    header: 'Scheduled Faculty',
+                    accessorKey: 'scheduled_teacher_name',
+                    type: 'text',
+                    width: 150,
+                    sortable: true,
+                    render: (val) => <span className="text-slate-700 text-xs font-medium">{val}</span>,
+                  },
+                  {
+                    id: 'actual_teacher_name',
+                    header: 'Delivered By (Proxy)',
+                    accessorKey: 'actual_teacher_name',
+                    type: 'text',
+                    width: 175,
+                    sortable: true,
+                    render: (val, row) =>
+                      row.is_substituted ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-amber-900 text-xs">{val}</span>
+                          <span className="px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 rounded">
+                            Proxy
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-800 text-xs font-medium">{val}</span>
+                      ),
+                  },
+                  {
+                    id: 'status_label',
+                    header: 'Execution Status',
+                    accessorKey: 'status_label',
+                    type: 'text',
+                    width: 140,
+                    sortable: true,
+                    render: (val, row) => {
+                      if (row.is_substituted) {
+                        return (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-amber-50 text-amber-800 rounded-full border border-amber-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            Proxy Substituted
+                          </span>
+                        )
+                      }
+                      if (row.session_status === 'completed') {
+                        return (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-800 rounded-full border border-emerald-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            Conducted
+                          </span>
+                        )
+                      }
+                      if (row.session_status === 'cancelled') {
+                        return (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-rose-50 text-rose-800 rounded-full border border-rose-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                            Cancelled
+                          </span>
+                        )
+                      }
+                      return (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-slate-100 text-slate-700 rounded-full border border-slate-200">
+                          {val}
+                        </span>
+                      )
+                    },
+                  },
+                  {
+                    id: 'room_number',
+                    header: 'Room',
+                    accessorKey: 'room_number',
+                    type: 'text',
+                    width: 95,
+                    align: 'center',
+                    render: (val) => (
+                      <span className="px-2 py-0.5 bg-slate-100 font-mono font-bold text-slate-800 rounded text-[11px]">
+                        {val}
+                      </span>
+                    ),
+                  },
+                  {
+                    id: 'duration_hours',
+                    header: 'Duration',
+                    accessorKey: 'duration_hours',
+                    type: 'number',
+                    width: 90,
+                    align: 'center',
+                    sortable: true,
+                    render: (val) => <span className="font-mono text-xs font-semibold text-slate-800">{val}h</span>,
+                  },
+                  {
+                    id: 'topic_taught',
+                    header: 'Topic Covered',
+                    accessorKey: 'topic_taught',
+                    type: 'text',
+                    width: 220,
+                    render: (val) => <span className="text-slate-600 text-xs truncate max-w-[210px] block" title={val}>{val}</span>,
+                  },
+                  {
+                    id: 'approval_status',
+                    header: 'Payroll Verified',
+                    accessorKey: 'approval_status',
+                    type: 'text',
+                    width: 120,
+                    align: 'center',
+                    render: (val) =>
+                      val === 'approved' ? (
+                        <span className="px-2 py-0.5 text-[11px] font-semibold bg-blue-50 text-blue-700 rounded-full border border-blue-200">
+                          Approved
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 text-[11px] font-medium bg-slate-100 text-slate-500 rounded-full">
+                          Pending
+                        </span>
+                      ),
+                  },
+                ]}
+                data={timetableExecutionData?.records || []}
+                loading={loadingTimetableExecution}
+                exportFilename="timetable_schedule_execution_and_substitution_audit"
+                sheetName="Timetable Execution Audit"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  session_date: (rows) => <span className="font-black text-slate-900 font-mono">Sessions: {rows.length}</span>,
+                  duration_hours: (rows) => (
+                    <span className="font-black text-slate-900 font-mono">
+                      {rows.reduce((sum, r) => sum + (Number(r.duration_hours) || 0), 0).toFixed(1)}h
+                    </span>
+                  ),
+                }}
+              />
+            </div>
           )}
 
           {/* 13. Faculty Load */}

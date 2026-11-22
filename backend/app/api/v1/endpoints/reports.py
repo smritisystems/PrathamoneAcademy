@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-21
+#  * @updated     2026-11-22
 #  *
 #  * @description API endpoints for academic, attendance, faculty load, and fee collection reporting.
 #  */
@@ -19,6 +19,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 from sqlalchemy import select, func, or_, and_, desc
 from typing import Optional, List, Dict, Any
 from datetime import datetime, date
@@ -104,6 +105,7 @@ from app.models.attendance import Attendance
 from app.models.exam import Examination, ExamMark
 from app.models.subject import Subject
 from app.models.staff import TeacherAssignment
+from app.models.teacher_payroll import TeachingSession
 from app.models.user import User, AuditLog
 from app.services.codex_service import CodeXService
 
@@ -1567,6 +1569,174 @@ async def timetable_utilization_report(
         }
         for te, div, sub, u in rows
     ]
+
+
+@router.get("/academic/timetable-execution-audit")
+async def timetable_execution_audit_report(
+    division_id: Optional[int] = None,
+    teacher_id: Optional[int] = None,
+    status: Optional[str] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    academic_year_id: Optional[int] = None,
+    data_env: str = Depends(get_data_environment),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*REPORT_STAFF_ROLES)),
+):
+    """
+    Timetable Schedule Execution & Substitution Status Audit Report.
+    Audits planned timetable commitments against actual delivered teaching sessions,
+    tracking proxy substitutions, cancellations, room adherence, and payroll approvals.
+    Rated Tier-1 Core Operational Requirement (8.8/10).
+    """
+    inst_id = await resolve_report_institution_id(db, current_user, data_env)
+
+    TeacherUser = aliased(User, name="teacher_user")
+    SubstituteUser = aliased(User, name="substitute_user")
+
+    query = (
+        select(
+            TeachingSession,
+            Division,
+            Standard,
+            Subject,
+            TeacherUser,
+            SubstituteUser,
+            TimetableEntry,
+        )
+        .join(Division, TeachingSession.division_id == Division.id)
+        .join(Standard, Division.standard_id == Standard.id)
+        .join(Subject, TeachingSession.subject_id == Subject.id)
+        .join(TeacherUser, TeachingSession.teacher_user_id == TeacherUser.id)
+        .outerjoin(SubstituteUser, TeachingSession.substitute_teacher_id == SubstituteUser.id)
+        .outerjoin(TimetableEntry, TeachingSession.timetable_entry_id == TimetableEntry.id)
+        .where(TeachingSession.institution_id == inst_id)
+    )
+
+    if division_id:
+        query = query.where(TeachingSession.division_id == division_id)
+    if teacher_id:
+        query = query.where(
+            or_(
+                TeachingSession.teacher_user_id == teacher_id,
+                TeachingSession.substitute_teacher_id == teacher_id,
+            )
+        )
+    if academic_year_id:
+        query = query.where(TeachingSession.academic_year_id == academic_year_id)
+    if date_from:
+        query = query.where(TeachingSession.session_date >= date_from)
+    if date_to:
+        query = query.where(TeachingSession.session_date <= date_to)
+
+    if status and status.lower() != "all":
+        st = status.lower()
+        if st in {"substituted", "proxy"}:
+            query = query.where(
+                or_(
+                    TeachingSession.session_status == "substitute_assigned",
+                    TeachingSession.substitute_teacher_id.isnot(None),
+                )
+            )
+        elif st in {"conducted", "completed"}:
+            query = query.where(TeachingSession.session_status == "completed")
+        elif st in {"cancelled", "canceled"}:
+            query = query.where(TeachingSession.session_status == "cancelled")
+        elif st in {"rescheduled"}:
+            query = query.where(TeachingSession.session_status == "rescheduled")
+        else:
+            query = query.where(TeachingSession.session_status == st)
+
+    res = await db.execute(query.order_by(TeachingSession.session_date.desc(), TeachingSession.scheduled_start_time.asc()))
+    rows = res.all()
+
+    records = []
+    total_hours = 0.0
+    conducted_cnt = 0
+    substituted_cnt = 0
+    cancelled_cnt = 0
+    approved_cnt = 0
+
+    for session, div, std, sub, teacher, sub_teacher, te in rows:
+        is_sub = bool(session.substitute_teacher_id and session.substitute_teacher_id != session.teacher_user_id)
+        if session.session_status == "substitute_assigned":
+            is_sub = True
+
+        dur = float(session.calculated_duration_hours or 1.0)
+        total_hours += dur
+
+        status_label = "Conducted"
+        if is_sub:
+            status_label = "Proxy Substituted"
+            substituted_cnt += 1
+        elif session.session_status == "completed":
+            status_label = "Conducted"
+            conducted_cnt += 1
+        elif session.session_status == "cancelled":
+            status_label = "Cancelled"
+            cancelled_cnt += 1
+        elif session.session_status == "rescheduled":
+            status_label = "Rescheduled"
+        else:
+            status_label = (session.session_status or "scheduled").capitalize()
+            conducted_cnt += 1
+
+        if session.approval_status == "approved":
+            approved_cnt += 1
+
+        teacher_name = f"{teacher.first_name} {teacher.last_name}".strip() if teacher else "Unassigned"
+        actual_name = (
+            f"{sub_teacher.first_name} {sub_teacher.last_name}".strip()
+            if (is_sub and sub_teacher)
+            else teacher_name
+        )
+
+        room = (te.room_number if te and te.room_number else getattr(div, "room_number", None)) or "Room 101"
+        day_name = session.session_date.strftime("%A") if session.session_date else "Monday"
+
+        records.append({
+            "id": session.id,
+            "session_code": session.session_code,
+            "session_date": session.session_date.isoformat() if session.session_date else "",
+            "day_of_week": day_name,
+            "scheduled_start_time": session.scheduled_start_time,
+            "scheduled_end_time": session.scheduled_end_time,
+            "time_slot": f"{session.scheduled_start_time} - {session.scheduled_end_time}",
+            "batch_name": div.name,
+            "batch_code": div.code or div.name,
+            "standard_name": std.name,
+            "subject_name": sub.name,
+            "subject_code": sub.code or sub.name,
+            "scheduled_teacher_name": teacher_name,
+            "actual_teacher_name": actual_name,
+            "is_substituted": is_sub,
+            "substitute_teacher_name": f"{sub_teacher.first_name} {sub_teacher.last_name}".strip() if (is_sub and sub_teacher) else None,
+            "session_status": session.session_status,
+            "status_label": status_label,
+            "approval_status": session.approval_status,
+            "duration_hours": round(dur, 2),
+            "room_number": room,
+            "topic_taught": session.topic_taught or "—",
+            "students_present": session.students_present_count if session.students_present_count is not None else "—",
+            "is_payable": session.is_payable,
+            "payroll_id": session.payroll_id,
+        })
+
+    total_sessions = len(records)
+    sub_rate = round((substituted_cnt / total_sessions * 100), 1) if total_sessions > 0 else 0.0
+
+    return {
+        "summary": {
+            "total_sessions": total_sessions,
+            "conducted_count": conducted_cnt,
+            "substituted_count": substituted_cnt,
+            "cancelled_count": cancelled_cnt,
+            "substitution_rate_pct": sub_rate,
+            "total_instruction_hours": round(total_hours, 1),
+            "approved_for_payroll_count": approved_cnt,
+        },
+        "records": records,
+    }
 
 
 @router.get("/examinations/consolidated-merit")

@@ -1084,6 +1084,14 @@ export const reportsApi = {
     division_id?: number | string
     day_of_week?: string
   }) => apiClient.get<any[]>('/reports/academic/timetable-utilization', { params }),
+  timetableExecutionAudit: (params?: {
+    division_id?: number | string
+    teacher_id?: number | string
+    status?: string
+    date_from?: string
+    date_to?: string
+    academic_year_id?: number | string
+  }) => apiClient.get<{ summary: any; records: any[] }>('/reports/academic/timetable-execution-audit', { params }),
   examMeritRegister: (params?: {
     exam_id?: number | string
     academic_year_id?: number | string
