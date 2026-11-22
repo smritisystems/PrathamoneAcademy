@@ -849,6 +849,35 @@ function ReportsWorkspace() {
     })
   }, [flexibleMatrixData, flexibleRules])
 
+  const flexibleMatrixMetrics = useMemo(() => {
+    if (!filteredFlexibleData || !filteredFlexibleData.length) return null
+    const cohortCount = filteredFlexibleData.length
+    const totalBilled = filteredFlexibleData.reduce((acc: number, r: any) => acc + Number(r.total_fees || 0), 0)
+    const totalCollected = filteredFlexibleData.reduce((acc: number, r: any) => acc + Number(r.paid_fees || 0), 0)
+    const totalBalance = filteredFlexibleData.reduce((acc: number, r: any) => acc + Number(r.balance_fees || 0), 0)
+
+    const withAttendance = filteredFlexibleData.filter((r: any) => Number(r.total_sessions || 0) > 0)
+    const avgAttendance =
+      withAttendance.length > 0
+        ? (withAttendance.reduce((acc: number, r: any) => acc + Number(r.attendance_percentage || 0), 0) / withAttendance.length).toFixed(1)
+        : '0.0'
+
+    const withExams = filteredFlexibleData.filter((r: any) => Number(r.exam_percentage || 0) > 0)
+    const avgExamPct =
+      withExams.length > 0
+        ? (withExams.reduce((acc: number, r: any) => acc + Number(r.exam_percentage || 0), 0) / withExams.length).toFixed(1)
+        : '0.0'
+
+    return {
+      cohortCount,
+      totalBilled,
+      totalCollected,
+      totalBalance,
+      avgAttendance,
+      avgExamPct,
+    }
+  }, [filteredFlexibleData])
+
   // 1. Students: Master Directory
   const { data: studentMasterData = [], isLoading: loadingMaster, refetch: refetchMaster } = useQuery({
     queryKey: ['report-student-master', selectedAcademicYearId, selectedStandardId, selectedDivisionId, reportStatusFilter],
@@ -1293,6 +1322,44 @@ function ReportsWorkspace() {
       }).then((r) => r.data),
     enabled: activeReportId.startsWith('payroll-'),
   })
+
+  const payrollMetrics = useMemo(() => {
+    if (!payrollReportData || !payrollReportData.length) return null
+    const totalEntries = payrollReportData.length
+
+    const totalOutlay = payrollReportData.reduce((sum: number, r: any) => {
+      const val = Number(r.net_payable ?? r.total_cost ?? r.total_amount ?? r.amount_paid ?? r.base_earnings ?? 0)
+      return sum + (isNaN(val) ? 0 : val)
+    }, 0)
+
+    const paidOut = payrollReportData.reduce((sum: number, r: any) => {
+      const val = Number(r.paid_amount ?? r.amount_paid ?? (r.status === 'paid' ? r.net_payable : 0) ?? 0)
+      return sum + (isNaN(val) ? 0 : val)
+    }, 0)
+
+    const pendingAmount = payrollReportData.reduce((sum: number, r: any) => {
+      const val = Number(r.pending_amount ?? (r.status === 'pending' ? r.net_payable : 0) ?? 0)
+      return sum + (isNaN(val) ? 0 : val)
+    }, 0)
+
+    const totalHours = payrollReportData.reduce((sum: number, r: any) => {
+      const val = Number(r.teaching_hours ?? r.total_hours ?? 0)
+      return sum + (isNaN(val) ? 0 : val)
+    }, 0)
+
+    const uniqueTeachers = new Set(payrollReportData.map((r: any) => r.teacher_name || r.teacher_id).filter(Boolean)).size
+    const settlementRate = totalOutlay > 0 ? ((paidOut / totalOutlay) * 100).toFixed(1) : '100.0'
+
+    return {
+      totalEntries,
+      totalOutlay,
+      paidOut,
+      pendingAmount,
+      totalHours,
+      uniqueTeachers: uniqueTeachers || totalEntries,
+      settlementRate,
+    }
+  }, [payrollReportData])
 
   // 17. Examinations: Merit Register
   const { data: examMeritData = [], isLoading: loadingExamMerit, refetch: refetchExamMerit } = useQuery({
@@ -2196,6 +2263,36 @@ function ReportsWorkspace() {
           {/* 0. Universal Flexible Student & Academic 360 Matrix */}
           {activeReportId === 'flexible-student-matrix' && (
             <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {flexibleMatrixMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Cohort Count</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{flexibleMatrixMetrics.cohortCount}</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Avg Attendance</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">{flexibleMatrixMetrics.avgAttendance}%</p>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Billed</p>
+                    <p className="text-base font-black font-mono text-slate-800 mt-0.5">₹{flexibleMatrixMetrics.totalBilled.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Realized Fees</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">₹{flexibleMatrixMetrics.totalCollected.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-rose-50/50 border border-rose-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Pending Dues</p>
+                    <p className="text-base font-black font-mono text-rose-700 mt-0.5">₹{flexibleMatrixMetrics.totalBalance.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Exam Cohort Avg</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{flexibleMatrixMetrics.avgExamPct}%</p>
+                  </div>
+                </div>
+              )}
+
               <FlexibleFilterBuilder
                 fields={flexibleFieldDefinitions}
                 rules={flexibleRules}
@@ -2218,19 +2315,19 @@ function ReportsWorkspace() {
                 sheetName="Student Matrix"
                 showSummaryRow={true}
                 summaryCalculations={{
-                  admission_number: (rows) => <span className="font-extrabold text-slate-900">Total: {rows.length}</span>,
+                  admission_number: (rows) => <span className="font-black text-slate-900 font-mono">Total: {rows.length}</span>,
                   attendance_percentage: (rows) => {
                     const withSessions = rows.filter((r) => Number(r.total_sessions || 0) > 0)
                     const avg = withSessions.length > 0 ? (withSessions.reduce((acc, r) => acc + Number(r.attendance_percentage || 0), 0) / withSessions.length).toFixed(1) : '0.0'
-                    return <span className="font-extrabold text-primary-700">{avg}% avg</span>
+                    return <span className="font-black text-sky-700 font-mono">{avg}% avg</span>
                   },
-                  total_fees: (rows) => <span className="font-extrabold text-slate-900">₹{rows.reduce((acc, r) => acc + Number(r.total_fees || 0), 0).toLocaleString('en-IN')}</span>,
-                  paid_fees: (rows) => <span className="font-extrabold text-emerald-800">₹{rows.reduce((acc, r) => acc + Number(r.paid_fees || 0), 0).toLocaleString('en-IN')}</span>,
-                  balance_fees: (rows) => <span className="font-extrabold text-rose-700">₹{rows.reduce((acc, r) => acc + Number(r.balance_fees || 0), 0).toLocaleString('en-IN')}</span>,
+                  total_fees: (rows) => <span className="font-black text-slate-900 font-mono">₹{rows.reduce((acc, r) => acc + Number(r.total_fees || 0), 0).toLocaleString('en-IN')}</span>,
+                  paid_fees: (rows) => <span className="font-black text-emerald-700 font-mono">₹{rows.reduce((acc, r) => acc + Number(r.paid_fees || 0), 0).toLocaleString('en-IN')}</span>,
+                  balance_fees: (rows) => <span className="font-black text-rose-700 font-mono">₹{rows.reduce((acc, r) => acc + Number(r.balance_fees || 0), 0).toLocaleString('en-IN')}</span>,
                   exam_percentage: (rows) => {
                     const withExams = rows.filter((r) => Number(r.exam_percentage || 0) > 0)
                     const avg = withExams.length > 0 ? (withExams.reduce((acc, r) => acc + Number(r.exam_percentage || 0), 0) / withExams.length).toFixed(1) : '0.0'
-                    return <span className="font-extrabold text-indigo-700">{avg}% avg</span>
+                    return <span className="font-black text-indigo-700 font-mono">{avg}% avg</span>
                   },
                 }}
               />
@@ -3484,16 +3581,50 @@ function ReportsWorkspace() {
 
           {/* 14. Specialized Payroll Reports */}
           {activeReportId.startsWith('payroll-') && (
-            <ExcelReportGrid
-              title={activeReport.name}
-              subtitle={activeReport.description}
-              columns={dynamicPayrollColumns}
-              data={payrollReportData}
-              loading={loadingPayroll}
-              exportFilename={`payroll_${payrollReportType}_report`}
-              sheetName="Payroll"
-              showSummaryRow={true}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {payrollMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Entries</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{payrollMetrics.totalEntries}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Gross Outlay</p>
+                    <p className="text-base font-black font-mono text-emerald-700 mt-0.5">₹{payrollMetrics.totalOutlay.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Disbursed / Paid</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">₹{payrollMetrics.paidOut.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Pending Payable</p>
+                    <p className="text-base font-black font-mono text-amber-700 mt-0.5">₹{payrollMetrics.pendingAmount.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-sky-600">Teaching Hours</p>
+                    <p className="text-base font-black font-mono text-sky-700 mt-0.5">
+                      {payrollMetrics.totalHours > 0 ? `${payrollMetrics.totalHours.toFixed(1)}h` : '—'}
+                    </p>
+                  </div>
+                  <div className="bg-teal-50/50 border border-teal-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-teal-600">Settlement %</p>
+                    <p className="text-base font-black font-mono text-teal-700 mt-0.5">{payrollMetrics.settlementRate}%</p>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title={activeReport.name}
+                subtitle={activeReport.description}
+                columns={dynamicPayrollColumns}
+                data={payrollReportData}
+                loading={loadingPayroll}
+                exportFilename={`payroll_${payrollReportType}_report`}
+                sheetName="Payroll"
+                showSummaryRow={true}
+              />
+            </div>
           )}
 
           {/* 15. Exam Merit Register */}
