@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-23
  *
  * @description Centralized Reporting & Analytics Centre uniting module-wise reports across Students, Academics, Fees, Workforce Payroll, Examinations, and System Audit.
  */
@@ -923,6 +923,55 @@ function ReportsWorkspace() {
     queryFn: () => reportsApi.timetableUtilization({ division_id: selectedDivisionId || undefined }).then((r) => r.data),
     enabled: activeReportId === 'timetable-utilization',
   })
+
+  const enrichedTimetableData = useMemo(() => {
+    return timetableData.map((d: any) => {
+      let dur = 1.0
+      if (d.start_time && d.end_time) {
+        const [sh, sm] = d.start_time.split(':').map(Number)
+        const [eh, em] = d.end_time.split(':').map(Number)
+        if (!isNaN(sh) && !isNaN(eh)) {
+          const diff = (eh * 60 + em - (sh * 60 + sm)) / 60
+          if (diff > 0) dur = Math.round(diff * 100) / 100
+        }
+      }
+      return { ...d, duration_hours: dur }
+    })
+  }, [timetableData])
+
+  const timetableUtilizationMetrics = useMemo(() => {
+    if (!enrichedTimetableData || !enrichedTimetableData.length) return null
+    const uniqueRooms = new Set(enrichedTimetableData.map((d: any) => d.room_number).filter(Boolean))
+    const uniqueBatches = new Set(enrichedTimetableData.map((d: any) => d.batch_name).filter(Boolean))
+    const uniqueTeachers = new Set(
+      enrichedTimetableData.map((d: any) => d.teacher_name).filter((t: string) => t && t !== 'Unassigned')
+    )
+    const totalHours = enrichedTimetableData.reduce((acc: number, cur: any) => acc + (cur.duration_hours || 0), 0)
+
+    const dayCounts: Record<string, number> = {}
+    enrichedTimetableData.forEach((d: any) => {
+      if (d.day_of_week) {
+        dayCounts[d.day_of_week] = (dayCounts[d.day_of_week] || 0) + 1
+      }
+    })
+    let peakDay = '—'
+    let peakCount = 0
+    Object.entries(dayCounts).forEach(([day, count]) => {
+      if (count > peakCount) {
+        peakCount = count
+        peakDay = day
+      }
+    })
+
+    return {
+      totalSlots: enrichedTimetableData.length,
+      activeRooms: uniqueRooms.size,
+      activeBatches: uniqueBatches.size,
+      activeTeachers: uniqueTeachers.size,
+      totalWeeklyHours: Math.round(totalHours * 10) / 10,
+      peakDay: `${peakDay} (${peakCount} slots)`,
+    }
+  }, [enrichedTimetableData])
 
   // 8b. Academics: Timetable Execution & Substitution Audit
   const { data: timetableExecutionData, isLoading: loadingTimetableExecution, refetch: refetchTimetableExecution } = useQuery({
@@ -2138,24 +2187,142 @@ function ReportsWorkspace() {
 
           {/* 12. Timetable Utilization */}
           {activeReportId === 'timetable-utilization' && (
-            <ExcelReportGrid
-              title="Timetable Room & Batch Utilization"
-              subtitle="Classroom scheduling distribution and day-wise slot commitments"
-              columns={[
-                { id: 'day_of_week', header: 'Day', accessorKey: 'day_of_week', type: 'text', width: 120, sortable: true, render: (val) => <span className="font-bold text-primary-700 uppercase">{val}</span> },
-                { id: 'start_time', header: 'Start Time', accessorKey: 'start_time', type: 'text', width: 110 },
-                { id: 'end_time', header: 'End Time', accessorKey: 'end_time', type: 'text', width: 110 },
-                { id: 'room_number', header: 'Room / Hall', accessorKey: 'room_number', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-slate-100 font-bold text-slate-800 rounded">{val}</span> },
-                { id: 'batch_name', header: 'Batch / Division', accessorKey: 'batch_name', type: 'text', width: 160, sortable: true },
-                { id: 'subject_name', header: 'Subject', accessorKey: 'subject_name', type: 'text', width: 160, sortable: true },
-                { id: 'teacher_name', header: 'Assigned Teacher', accessorKey: 'teacher_name', type: 'text', width: 180 },
-              ]}
-              data={timetableData}
-              loading={loadingTimetable}
-              exportFilename="timetable_utilization_report"
-              sheetName="Timetable"
-              showSummaryRow={true}
-            />
+            <div className="space-y-4">
+              {/* Telemetry KPI Ribbon (Rule 014 Sleek Design System) */}
+              {timetableUtilizationMetrics && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Scheduled Slots</p>
+                    <p className="text-base font-black font-mono text-slate-900 mt-0.5">{timetableUtilizationMetrics.totalSlots}</p>
+                  </div>
+                  <div className="bg-indigo-50/50 border border-indigo-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Active Rooms</p>
+                    <p className="text-base font-black font-mono text-indigo-800 mt-0.5">{timetableUtilizationMetrics.activeRooms}</p>
+                  </div>
+                  <div className="bg-blue-50/50 border border-blue-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Active Batches</p>
+                    <p className="text-base font-black font-mono text-blue-800 mt-0.5">{timetableUtilizationMetrics.activeBatches}</p>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Faculty Allocated</p>
+                    <p className="text-base font-black font-mono text-emerald-800 mt-0.5">{timetableUtilizationMetrics.activeTeachers}</p>
+                  </div>
+                  <div className="bg-purple-50/50 border border-purple-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Weekly Commitment</p>
+                    <p className="text-base font-black font-mono text-purple-800 mt-0.5">{timetableUtilizationMetrics.totalWeeklyHours}h</p>
+                  </div>
+                  <div className="bg-amber-50/50 border border-amber-200/70 rounded-xl px-3.5 py-2.5 shadow-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Peak Volume Day</p>
+                    <p className="text-xs font-black font-mono text-amber-900 mt-1">{timetableUtilizationMetrics.peakDay}</p>
+                  </div>
+                </div>
+              )}
+
+              <ExcelReportGrid
+                title="Timetable Room & Batch Utilization"
+                subtitle="Classroom scheduling distribution, room saturation analysis, and weekly slot commitments"
+                columns={[
+                  {
+                    id: 'day_of_week',
+                    header: 'Day',
+                    accessorKey: 'day_of_week',
+                    type: 'text',
+                    width: 120,
+                    sortable: true,
+                    render: (val) => <span className="font-bold text-primary-700 uppercase">{val}</span>,
+                  },
+                  {
+                    id: 'start_time',
+                    header: 'Start Time',
+                    accessorKey: 'start_time',
+                    type: 'text',
+                    width: 105,
+                    render: (val) => <span className="font-mono text-xs font-semibold text-slate-700">{val}</span>,
+                  },
+                  {
+                    id: 'end_time',
+                    header: 'End Time',
+                    accessorKey: 'end_time',
+                    type: 'text',
+                    width: 105,
+                    render: (val) => <span className="font-mono text-xs font-semibold text-slate-700">{val}</span>,
+                  },
+                  {
+                    id: 'duration_hours',
+                    header: 'Duration',
+                    accessorKey: 'duration_hours',
+                    type: 'number',
+                    width: 95,
+                    align: 'center',
+                    sortable: true,
+                    render: (val) => <span className="font-mono text-xs font-bold text-slate-800">{val}h</span>,
+                  },
+                  {
+                    id: 'room_number',
+                    header: 'Room / Hall',
+                    accessorKey: 'room_number',
+                    type: 'text',
+                    width: 125,
+                    sortable: true,
+                    render: (val) => (
+                      <span className="px-2 py-0.5 bg-slate-100 font-mono font-bold text-slate-800 rounded border border-slate-200 text-xs">
+                        {val}
+                      </span>
+                    ),
+                  },
+                  {
+                    id: 'batch_name',
+                    header: 'Batch / Division',
+                    accessorKey: 'batch_name',
+                    type: 'text',
+                    width: 160,
+                    sortable: true,
+                    render: (val, row) => (
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900">{val}</span>
+                        <span className="text-[10px] text-slate-400 font-mono">{row.batch_code}</span>
+                      </div>
+                    ),
+                  },
+                  {
+                    id: 'subject_name',
+                    header: 'Subject',
+                    accessorKey: 'subject_name',
+                    type: 'text',
+                    width: 160,
+                    sortable: true,
+                    render: (val) => <span className="font-semibold text-slate-800">{val}</span>,
+                  },
+                  {
+                    id: 'teacher_name',
+                    header: 'Assigned Teacher',
+                    accessorKey: 'teacher_name',
+                    type: 'text',
+                    width: 180,
+                    sortable: true,
+                    render: (val) =>
+                      val === 'Unassigned' ? (
+                        <span className="text-amber-700 italic text-xs font-medium">Unassigned</span>
+                      ) : (
+                        <span className="font-medium text-slate-800">{val}</span>
+                      ),
+                  },
+                ]}
+                data={enrichedTimetableData}
+                loading={loadingTimetable}
+                exportFilename="timetable_room_and_batch_utilization_report"
+                sheetName="Timetable"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  day_of_week: (rows) => <span className="font-black text-slate-900 font-mono">Slots: {rows.length}</span>,
+                  duration_hours: (rows) => (
+                    <span className="font-black text-slate-900 font-mono">
+                      {rows.reduce((sum, r) => sum + (Number(r.duration_hours) || 0), 0).toFixed(1)}h
+                    </span>
+                  ),
+                }}
+              />
+            </div>
           )}
 
           {/* 12b. Timetable Schedule Execution & Substitution Status Audit */}
