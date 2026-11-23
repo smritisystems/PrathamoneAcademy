@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-23
-#  * @updated     2026-11-23
+#  * @updated     2026-11-24
 #  *
 #  * @description Focused test suite for customer-account license reactivation, session handling, polling, key retention, and artifact verification.
 #  */
@@ -303,7 +303,7 @@ async def test_customer_reactivation_approved_and_activated(monkeypatch):
     """Approved reactivation request proceeds to POST /api/license/activate with reactivation_request_id."""
     artifact, public_keys, _ = _generate_signed_artifact(
         installation_id="machine-hw-001",
-        activation_identifier="act-ident-001",
+        activation_identifier="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
         company_binding="PA001",
     )
     authority_requests = []
@@ -344,7 +344,7 @@ async def test_customer_reactivation_approved_and_activated(monkeypatch):
     stored_settings = {
         "license.customer_session_token": "valid-token-123",
         "license.installation_id": "machine-hw-001",
-        "license.activation_identifier": "act-ident-001",
+        "license.activation_identifier": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
     }
 
     class FakeDb:
@@ -503,6 +503,41 @@ async def test_customer_reactivation_rejected_and_expired():
 # ==============================================================================
 # 5. Secure Key Retention Tests
 # ==============================================================================
+
+@pytest.mark.asyncio
+async def test_empty_activation_identifier_is_replaced_with_persisted_uuid(monkeypatch):
+    """Empty legacy activation settings must not be sent to the reactivation authority."""
+    stored_settings = {
+        "license.activation_identifier": "",
+        "license.installation_id": "",
+    }
+
+    class FakeDb:
+        async def commit(self):
+            return None
+
+    async def fake_get_setting(_db, _inst_id, key):
+        val = stored_settings.get(key)
+        return SimpleNamespace(value=val) if val is not None else None
+
+    async def fake_save_setting(_db, _inst_id, _user, key, val, _desc):
+        stored_settings[key] = val
+
+    monkeypatch.setattr(license_endpoint, "_get_setting", fake_get_setting)
+    monkeypatch.setattr(license_endpoint, "_save_setting", fake_save_setting)
+    monkeypatch.setattr(license_endpoint, "get_machine_hardware_fingerprint", lambda: "PRATHAM-789F-CEBC-0916-6315")
+    monkeypatch.setattr(license_endpoint.settings, "SECRET_KEY", "app-secret-encryption-key-2026")
+
+    admin = SimpleNamespace(id=1, full_name="Admin", role="admin", institution_id=1)
+    installation_id, activation_identifier, public_key = await license_endpoint._prepare_installation_identity(
+        FakeDb(), 1, admin
+    )
+
+    assert installation_id == "PRATHAM-789F-CEBC-0916-6315"
+    assert license_endpoint._ACTIVATION_IDENTIFIER_PATTERN.fullmatch(activation_identifier)
+    assert stored_settings["license.activation_identifier"] == activation_identifier
+    assert len(public_key) == 43
+
 
 @pytest.mark.asyncio
 async def test_persistent_keys_reused_and_private_key_never_leaked(monkeypatch):
