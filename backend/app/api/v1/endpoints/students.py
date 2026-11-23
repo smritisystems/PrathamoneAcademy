@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-22
+#  * @updated     2026-11-23
 #  *
 #  * @description API endpoints for student CRUD, profile editing, guardian details, and identity documents.
 #  */
@@ -19,7 +19,7 @@
 import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, or_, and_, desc
+from sqlalchemy import select, func, or_, and_, desc, case
 from sqlalchemy.orm import selectinload
 from typing import Optional, List, Dict, Any
 from app.core.database import get_db
@@ -311,6 +311,41 @@ async def list_students(
     )
     students = result.scalars().all()
 
+    student_ids = [s.id for s in students]
+    enrollment_map = {}
+    if student_ids:
+        enr_q = (
+            select(
+                StudentEnrollment.student_id,
+                StudentEnrollment.roll_number,
+                StudentEnrollment.status.label("enrollment_status"),
+                Standard.id.label("standard_id"),
+                Standard.name.label("standard_name"),
+                Division.id.label("division_id"),
+                Division.name.label("division_name"),
+                Division.code.label("batch_code"),
+                Board.id.label("board_id"),
+                Board.name.label("board_name"),
+                Board.code.label("board_code"),
+            )
+            .join(Standard, StudentEnrollment.standard_id == Standard.id)
+            .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+            .outerjoin(Board, Division.board_id == Board.id)
+            .where(StudentEnrollment.student_id.in_(student_ids))
+            .order_by(
+                StudentEnrollment.student_id,
+                case((StudentEnrollment.status.in_(["active", "enrolled"]), 0), else_=1),
+                StudentEnrollment.id.desc(),
+            )
+        )
+        if academic_year_id:
+            enr_q = enr_q.where(StudentEnrollment.academic_year_id == academic_year_id)
+
+        enr_res = await db.execute(enr_q)
+        for row in enr_res.all():
+            if row.student_id not in enrollment_map:
+                enrollment_map[row.student_id] = row
+
     return {
         "total": total,
         "page": page,
@@ -334,6 +369,15 @@ async def list_students(
                 "exit_date": str(s.exit_date) if s.exit_date else None,
                 "exit_reason": s.exit_reason,
                 "exit_notes": s.exit_notes,
+                "standard_id": enrollment_map[s.id].standard_id if s.id in enrollment_map else None,
+                "standard_name": enrollment_map[s.id].standard_name if s.id in enrollment_map else None,
+                "division_id": enrollment_map[s.id].division_id if s.id in enrollment_map else None,
+                "division_name": enrollment_map[s.id].division_name if s.id in enrollment_map else None,
+                "batch_code": enrollment_map[s.id].batch_code if s.id in enrollment_map else None,
+                "board_id": enrollment_map[s.id].board_id if s.id in enrollment_map else None,
+                "board_name": enrollment_map[s.id].board_name if s.id in enrollment_map else None,
+                "board_code": enrollment_map[s.id].board_code if s.id in enrollment_map else None,
+                "roll_number": enrollment_map[s.id].roll_number if s.id in enrollment_map else None,
             }
             for s in students
         ],

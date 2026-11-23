@@ -285,6 +285,15 @@ export interface Student {
   exit_date?: string
   exit_reason?: string
   exit_notes?: string
+  standard_id?: number
+  standard_name?: string
+  division_id?: number
+  division_name?: string
+  batch_code?: string
+  board_id?: number
+  board_name?: string
+  board_code?: string
+  roll_number?: string
   guardians?: Guardian[]
   enrollments?: Enrollment[]
   fee_summary?: FeeSummary
@@ -340,6 +349,9 @@ export interface FeeInvoice {
   student_name?: string
   admission_number?: string
   student_phone?: string | null
+  standard_name?: string
+  division_name?: string
+  board_name?: string
   assignment_id?: number
   academic_year_id?: number
   total_amount: number

@@ -1594,6 +1594,21 @@ function FeesContent() {
       ),
     },
     {
+      id: 'batch_name',
+      header: 'Course / Batch',
+      sortable: true,
+      render: (inv) => (
+        <div>
+          <span className="font-semibold text-slate-800 block text-xs">
+            {inv.division_name || 'Unassigned'}
+          </span>
+          <span className="block text-[11px] font-mono text-slate-400">
+            {inv.standard_name ? `${inv.standard_name}${inv.board_name ? ` · ${inv.board_name}` : ''}` : '—'}
+          </span>
+        </div>
+      ),
+    },
+    {
       id: 'issue_date',
       header: 'Issue Date',
       sortable: true,

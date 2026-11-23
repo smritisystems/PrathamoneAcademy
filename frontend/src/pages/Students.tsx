@@ -216,10 +216,14 @@ function StudentsContent() {
   const STUDENT_SORT_OPTIONS: TableSortOption[] = [
     { key: 'admission_number', label: 'Admission No.' },
     { key: 'student_name', label: 'Student Name' },
+    { key: 'standard_name', label: 'Standard / Grade' },
+    { key: 'division_name', label: 'Batch' },
+    { key: 'board_name', label: 'Board' },
+    { key: 'roll_number', label: 'Roll No.' },
     { key: 'is_active', label: 'Status' },
+    { key: 'phone', label: 'Phone' },
     { key: 'gender', label: 'Gender' },
     { key: 'date_of_birth', label: 'DOB', type: 'date' as const },
-    { key: 'phone', label: 'Phone' },
     { key: 'city', label: 'City' },
   ]
 
@@ -248,11 +252,73 @@ function StudentsContent() {
         ),
       },
       {
+        id: 'standard_name',
+        header: 'Standard / Grade',
+        accessorKey: 'standard_name',
+        sortable: true,
+        width: 130,
+        defaultVisible: true,
+        cell: ({ value }) =>
+          value ? (
+            <span className="font-medium text-slate-800">{value}</span>
+          ) : (
+            <span className="text-slate-400 font-mono">—</span>
+          ),
+      },
+      {
+        id: 'division_name',
+        header: 'Batch',
+        accessorKey: 'division_name',
+        sortable: true,
+        width: 140,
+        defaultVisible: true,
+        cell: ({ row }) =>
+          row.division_name ? (
+            <span className="font-semibold text-primary-700 bg-primary-50 px-2 py-0.5 rounded text-xs border border-primary-200/60">
+              {row.division_name}
+              {row.batch_code ? ` (${row.batch_code})` : ''}
+            </span>
+          ) : (
+            <span className="text-slate-400 font-mono text-xs">Unassigned</span>
+          ),
+      },
+      {
+        id: 'board_name',
+        header: 'Board',
+        accessorKey: 'board_name',
+        sortable: true,
+        width: 100,
+        defaultVisible: true,
+        cell: ({ value }) =>
+          value ? (
+            <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs font-semibold">
+              {value}
+            </span>
+          ) : (
+            <span className="text-slate-400 font-mono">—</span>
+          ),
+      },
+      {
+        id: 'roll_number',
+        header: 'Roll No.',
+        accessorKey: 'roll_number',
+        sortable: true,
+        width: 90,
+        defaultVisible: false,
+        cell: ({ value }) =>
+          value ? (
+            <span className="font-mono text-xs text-slate-600">{value}</span>
+          ) : (
+            <span className="text-slate-400 font-mono">—</span>
+          ),
+      },
+      {
         id: 'is_active',
         header: 'Status',
         accessorKey: 'is_active',
         sortable: true,
         width: 110,
+        defaultVisible: true,
         cell: ({ row }) =>
           row.is_active ? (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
@@ -265,11 +331,24 @@ function StudentsContent() {
           ),
       },
       {
+        id: 'phone',
+        header: 'Phone',
+        accessorKey: 'phone',
+        sortable: true,
+        type: 'phone',
+        width: 130,
+        defaultVisible: true,
+        cell: ({ value }) => (
+          <span className="font-mono text-slate-600">{formatPhoneNumber(value)}</span>
+        ),
+      },
+      {
         id: 'gender',
         header: 'Gender',
         accessorKey: 'gender',
         sortable: true,
         width: 90,
+        defaultVisible: false,
         cell: ({ value }) => <span className="capitalize text-slate-600">{value}</span>,
       },
       {
@@ -279,18 +358,8 @@ function StudentsContent() {
         sortable: true,
         type: 'date',
         width: 110,
+        defaultVisible: false,
         cell: ({ value }) => <span className="text-slate-600">{formatDateIN(value)}</span>,
-      },
-      {
-        id: 'phone',
-        header: 'Phone',
-        accessorKey: 'phone',
-        sortable: true,
-        type: 'phone',
-        width: 130,
-        cell: ({ value }) => (
-          <span className="font-mono text-slate-600">{formatPhoneNumber(value)}</span>
-        ),
       },
       {
         id: 'city',
@@ -298,6 +367,7 @@ function StudentsContent() {
         accessorKey: 'city',
         sortable: true,
         width: 110,
+        defaultVisible: false,
         cell: ({ value }) => <span className="text-slate-600">{value || '—'}</span>,
       },
       {

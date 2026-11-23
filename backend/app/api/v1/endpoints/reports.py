@@ -20,7 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
-from sqlalchemy import select, func, or_, and_, desc, distinct
+from sqlalchemy import select, func, or_, and_, desc, distinct, case
 from typing import Optional, List, Dict, Any
 from datetime import datetime, date
 from decimal import Decimal
@@ -109,6 +109,51 @@ from app.models.teacher_payroll import TeachingSession
 from app.models.user import User, AuditLog
 from app.services.codex_service import CodeXService
 
+
+async def get_students_academic_coordinates(
+    db: AsyncSession,
+    student_ids: List[int],
+    academic_year_id: Optional[int] = None,
+) -> Dict[int, Any]:
+    """
+    Authoritative helper resolving active academic coordinates (Standard, Board, Batch, Roll Number)
+    for a given list of student IDs in a single batch query (Zero N+1).
+    """
+    if not student_ids:
+        return {}
+    enr_q = (
+        select(
+            StudentEnrollment.student_id,
+            StudentEnrollment.roll_number,
+            Standard.id.label("standard_id"),
+            Standard.name.label("standard_name"),
+            Division.id.label("division_id"),
+            Division.name.label("division_name"),
+            Division.code.label("batch_code"),
+            Board.id.label("board_id"),
+            Board.name.label("board_name"),
+            Board.code.label("board_code"),
+        )
+        .join(Standard, StudentEnrollment.standard_id == Standard.id)
+        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .outerjoin(Board, Division.board_id == Board.id)
+        .where(StudentEnrollment.student_id.in_(student_ids))
+        .order_by(
+            StudentEnrollment.student_id,
+            case((StudentEnrollment.status.in_(["active", "enrolled"]), 0), else_=1),
+            StudentEnrollment.id.desc(),
+        )
+    )
+    if academic_year_id:
+        enr_q = enr_q.where(StudentEnrollment.academic_year_id == academic_year_id)
+    enr_res = await db.execute(enr_q)
+    enrollment_map = {}
+    for row in enr_res.all():
+        if row.student_id not in enrollment_map:
+            enrollment_map[row.student_id] = row
+    return enrollment_map
+
+
 router = APIRouter()
 
 
@@ -129,6 +174,7 @@ async def fee_collection_report(
     )
     query = (
         select(
+            Student.id.label("student_id"),
             Student.admission_number,
             Student.first_name,
             Student.last_name,
@@ -192,16 +238,23 @@ async def fee_collection_report(
     result = await db.execute(query)
     rows = result.all()
 
-    raw_rows = [
-        {
+    student_ids = [r.student_id for r in rows]
+    enr_map = await get_students_academic_coordinates(db, student_ids, academic_year_id)
+
+    raw_rows = []
+    for r in rows:
+        enr = enr_map.get(r.student_id)
+        raw_rows.append({
+            "student_id": r.student_id,
             "admission_number": r.admission_number,
             "student_name": f"{r.first_name} {r.last_name}",
+            "standard_name": enr.standard_name if enr else "Unassigned",
+            "division_name": enr.division_name if enr else "Unassigned",
+            "board_name": enr.board_name if enr else "N/A",
             "total_fees": float(r.total_fees),
             "paid": float(r.paid),
             "outstanding": float(r.outstanding),
-        }
-        for r in rows
-    ]
+        })
     return await CodeXService.mask_records_list(
         db=db,
         institution_id=user_inst_id,
@@ -245,6 +298,9 @@ async def export_fee_collection(
         export_rows.append({
             "admission_number": row_dict.get("admission_number", ""),
             "student_name": row_dict.get("student_name", ""),
+            "standard_name": row_dict.get("standard_name", "Unassigned"),
+            "division_name": row_dict.get("division_name", "Unassigned"),
+            "board_name": row_dict.get("board_name", "N/A"),
             "total_fees": row_dict.get("total_fees", 0.0),
             "paid": row_dict.get("paid", 0.0),
             "outstanding": row_dict.get("outstanding", 0.0),
@@ -259,6 +315,9 @@ async def export_fee_collection(
             fieldnames=[
                 "admission_number",
                 "student_name",
+                "standard_name",
+                "division_name",
+                "board_name",
                 "total_fees",
                 "paid",
                 "outstanding",
@@ -287,6 +346,9 @@ async def export_fee_collection(
         headers = [
             "Admission No.",
             "Student Name",
+            "Standard / Grade",
+            "Batch",
+            "Board",
             "Total Fees",
             "Paid",
             "Outstanding",
@@ -297,6 +359,9 @@ async def export_fee_collection(
                 [
                     row["admission_number"],
                     row["student_name"],
+                    row["standard_name"],
+                    row["division_name"],
+                    row["board_name"],
                     row["total_fees"],
                     row["paid"],
                     row["outstanding"],
@@ -376,6 +441,10 @@ async def outstanding_report(
     
     result = await db.execute(query)
     rows = result.all()
+
+    student_ids = [s.id for inv, s in rows]
+    enr_map = await get_students_academic_coordinates(db, student_ids, academic_year_id)
+
     records = [
         {
             "invoice_id": inv.id,
@@ -383,6 +452,9 @@ async def outstanding_report(
             "student_id": inv.student_id,
             "student_name": f"{s.first_name} {s.last_name}",
             "admission_number": s.admission_number,
+            "standard_name": enr_map[s.id].standard_name if s.id in enr_map else "Unassigned",
+            "division_name": enr_map[s.id].division_name if s.id in enr_map else "Unassigned",
+            "board_name": enr_map[s.id].board_name if s.id in enr_map else "N/A",
             "net_amount": float(inv.net_amount),
             "paid_amount": float(inv.paid_amount),
             "outstanding": float(inv.outstanding_amount),
@@ -760,10 +832,11 @@ async def student_withdrawals_report(
     exit date & reasons, paid/unpaid status, gross payments, refunds, net retained, and outstanding dues.
     """
     query = (
-        select(StudentEnrollment, Student, Standard, Division, AcademicYear, User)
+        select(StudentEnrollment, Student, Standard, Division, AcademicYear, User, Board)
         .join(Student, StudentEnrollment.student_id == Student.id)
         .join(Standard, StudentEnrollment.standard_id == Standard.id)
         .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .outerjoin(Board, Division.board_id == Board.id)
         .join(AcademicYear, StudentEnrollment.academic_year_id == AcademicYear.id)
         .outerjoin(User, StudentEnrollment.exited_by_id == User.id)
         .where(
@@ -802,7 +875,7 @@ async def student_withdrawals_report(
     rows = (await db.execute(query)).all()
 
     report_items = []
-    for enr, std, standard, div, ay, user in rows:
+    for enr, std, standard, div, ay, user, brd in rows:
         # 1. Total invoiced for this student in this academic year
         inv_stmt = select(
             func.coalesce(func.sum(FeeInvoice.net_amount), 0).label("invoiced"),
@@ -883,6 +956,7 @@ async def student_withdrawals_report(
             "standard_name": standard.name,
             "division_id": div.id if div else None,
             "division_name": div.name if div else "Unassigned",
+            "board_name": brd.name if brd else "N/A",
             "academic_year_id": ay.id,
             "academic_year_name": ay.name,
             "enrollment_date": str(enr.enrollment_date),
@@ -1427,10 +1501,11 @@ async def student_attendance_summary_report(
     inst_id = await resolve_report_institution_id(db, current_user, data_env)
 
     enr_query = (
-        select(Student, StudentEnrollment, Standard, Division)
+        select(Student, StudentEnrollment, Standard, Division, Board)
         .join(StudentEnrollment, Student.id == StudentEnrollment.student_id)
         .join(Standard, StudentEnrollment.standard_id == Standard.id)
         .join(Division, StudentEnrollment.division_id == Division.id)
+        .outerjoin(Board, Division.board_id == Board.id)
         .where(
             Student.institution_id == inst_id,
             StudentEnrollment.status.in_(["enrolled", "active"]),
@@ -1475,7 +1550,7 @@ async def student_attendance_summary_report(
     att_map = {row.student_id: row for row in att_res.all()}
 
     output = []
-    for s, enr, std, div in student_records:
+    for s, enr, std, div, brd in student_records:
         att = att_map.get(s.id)
         tot = att.total_days if att else 0
         pres = att.present_days if att else 0
@@ -1493,6 +1568,7 @@ async def student_attendance_summary_report(
             "student_name": f"{s.first_name} {s.last_name}",
             "standard_name": std.name,
             "division_name": div.name,
+            "board_name": brd.name if brd else "N/A",
             "total_days": tot,
             "present_days": pres,
             "absent_days": ab,
@@ -1857,6 +1933,9 @@ async def exam_consolidated_merit_report(
             sm["has_failed_subject"] = True
 
     results = []
+    student_ids = list(student_marks_map.keys())
+    enr_map = await get_students_academic_coordinates(db, student_ids, exam.academic_year_id if exam else None)
+
     for sm in student_marks_map.values():
         max_m = float(sm["max_marks"]) if sm["max_marks"] > 0 else 100.0
         obt_m = float(sm["marks_obtained"])
@@ -1876,11 +1955,15 @@ async def exam_consolidated_merit_report(
             grade = "E"
 
         status = "Pass" if not sm["has_failed_subject"] and pct >= 35.0 else "Fail"
+        enr = enr_map.get(sm["student_id"])
 
         results.append({
             "student_id": sm["student_id"],
             "admission_number": sm["admission_number"],
             "student_name": sm["student_name"],
+            "standard_name": exam_std.name if exam_std else (enr.standard_name if enr else "Unassigned"),
+            "division_name": enr.division_name if enr else "Unassigned",
+            "board_name": enr.board_name if enr else "N/A",
             "exam_name": sm["exam_name"],
             "marks_obtained": obt_m,
             "max_marks": max_m,
@@ -1920,7 +2003,7 @@ async def fee_defaulters_aging_report(
     today = date.today()
 
     query = (
-        select(FeeInvoice, Student, StudentEnrollment, Standard, Division)
+        select(FeeInvoice, Student, StudentEnrollment, Standard, Division, Board)
         .join(Student, FeeInvoice.student_id == Student.id)
         .outerjoin(
             StudentEnrollment,
@@ -1933,6 +2016,7 @@ async def fee_defaulters_aging_report(
         )
         .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
         .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .outerjoin(Board, Division.board_id == Board.id)
         .where(
             FeeInvoice.status.in_(["unpaid", "overdue", "partially_paid", "partial", "pending"]),
             FeeInvoice.due_date < today,
@@ -1968,7 +2052,7 @@ async def fee_defaulters_aging_report(
             )
 
     records = []
-    for inv, s, enr, std, div in rows:
+    for inv, s, enr, std, div, brd in rows:
         invoice_schedules = schedules_by_invoice.get(inv.id, [])
         overdue_schedules = [
             installment
@@ -2011,6 +2095,7 @@ async def fee_defaulters_aging_report(
                 "student_name": f"{s.first_name} {s.last_name}",
                 "standard_name": std.name if std else "N/A",
                 "division_name": div.name if div else "N/A",
+                "board_name": brd.name if brd else "N/A",
                 "guardian_phone": s.phone or "N/A",
                 "installment_name": name,
                 "due_date": due_date.isoformat(),
@@ -2079,9 +2164,13 @@ async def daily_payment_collection_report(
     res = await db.execute(query.order_by(Payment.payment_date.desc(), Payment.id.desc()))
     rows = res.all()
 
+    student_ids = [s.id for p, s, u, receipt in rows]
+    enr_map = await get_students_academic_coordinates(db, student_ids)
+
     records = []
     for p, s, u, receipt in rows:
         receipt_is_valid = receipt is not None and receipt.status == "valid"
+        enr = enr_map.get(s.id)
         records.append({
             "payment_id": p.id,
             "receipt_number": receipt.receipt_number if receipt_is_valid else None,
@@ -2089,6 +2178,9 @@ async def daily_payment_collection_report(
             "payment_date": p.payment_date.isoformat() if p.payment_date else None,
             "admission_number": s.admission_number,
             "student_name": f"{s.first_name} {s.last_name}",
+            "standard_name": enr.standard_name if enr else "Unassigned",
+            "division_name": enr.division_name if enr else "Unassigned",
+            "board_name": enr.board_name if enr else "N/A",
             "amount": float(p.amount),
             "payment_mode": p.payment_method or "cash",
             "transaction_reference": p.transaction_reference or "N/A",

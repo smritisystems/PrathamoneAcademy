@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-21
+#  * @updated     2026-11-23
 #  *
 #  * @description API endpoints for fee obligations, payment collections, receipts, trends, and ledger reconciliation.
 #  */
@@ -728,6 +728,34 @@ async def list_invoices(
         query = query.where(FeeInvoice.status == status)
     result = await db.execute(query.order_by(FeeInvoice.created_at.desc()))
     invoices = result.all()
+
+    student_ids = [student.id for inv, student in invoices]
+    enr_map = {}
+    if student_ids:
+        enr_q = (
+            select(
+                StudentEnrollment.student_id,
+                Standard.name.label("standard_name"),
+                Division.name.label("division_name"),
+                Board.name.label("board_name"),
+            )
+            .join(Standard, StudentEnrollment.standard_id == Standard.id)
+            .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+            .outerjoin(Board, Division.board_id == Board.id)
+            .where(StudentEnrollment.student_id.in_(student_ids))
+            .order_by(
+                StudentEnrollment.student_id,
+                case((StudentEnrollment.status.in_(["active", "enrolled"]), 0), else_=1),
+                StudentEnrollment.id.desc(),
+            )
+        )
+        if academic_year_id:
+            enr_q = enr_q.where(StudentEnrollment.academic_year_id == academic_year_id)
+        enr_res = await db.execute(enr_q)
+        for row in enr_res.all():
+            if row.student_id not in enr_map:
+                enr_map[row.student_id] = row
+
     inv_list = [
         {
             "id": inv.id,
@@ -740,6 +768,9 @@ async def list_invoices(
             ),
             "admission_number": student.admission_number,
             "student_phone": student.phone,
+            "standard_name": enr_map[student.id].standard_name if student.id in enr_map else None,
+            "division_name": enr_map[student.id].division_name if student.id in enr_map else None,
+            "board_name": enr_map[student.id].board_name if student.id in enr_map else None,
             "assignment_id": inv.assignment_id,
             "academic_year_id": inv.academic_year_id,
             "total_amount": float(inv.total_amount),
