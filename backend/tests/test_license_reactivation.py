@@ -270,6 +270,40 @@ async def test_customer_get_reactivations_lists_licenses():
 # ==============================================================================
 
 @pytest.mark.asyncio
+async def test_customer_reactivation_surrender_payload():
+    """Surrender confirmation and reason are sent explicitly to the authority."""
+
+    called_payload = {}
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return {"id": "req-surrender-1", "status": "approved"}
+
+    class FakeClient:
+        async def post(self, url: str, json: dict[str, Any], headers: dict[str, str]):
+            called_payload.update(json)
+            return FakeResponse()
+
+    result = await customer_create_reactivation_request(
+        authority_url="https://license.smritisys.com",
+        session_token="valid_session_token",
+        license_id=42,
+        installation_id="PRATHAM-789F-CEBC-0916-6315",
+        activation_identifier="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        refresh_public_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        surrender_confirmed=True,
+        surrender_reason="Previous device surrendered to support",
+        client=FakeClient(),
+    )
+
+    assert result["status"] == "approved"
+    assert called_payload["surrender_confirmed"] is True
+    assert called_payload["surrender_reason"] == "Previous device surrendered to support"
+
+
+@pytest.mark.asyncio
 async def test_customer_reactivation_error_response_is_preserved():
     """Authority `error` JSON is shown instead of a generic 400 message."""
 

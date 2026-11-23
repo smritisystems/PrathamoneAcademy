@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-23
- * @updated     2026-11-23
+ * @updated     2026-11-24
  *
  * @description Focused tests for customer-account license reactivation, session handling, polling/retry, and error states.
  */
@@ -197,7 +197,7 @@ describe('LicenseCustomerReactivation', () => {
     fireEvent.click(reactivateBtn)
 
     await waitFor(() => {
-      expect(requestCustomerReactivationMock).toHaveBeenCalledWith(202, 'tok-1', undefined)
+      expect(requestCustomerReactivationMock).toHaveBeenCalledWith(202, 'tok-1', undefined, false, '')
       expect(activateMock).toHaveBeenCalledWith({ reactivation_request_id: 'req-approved-001' }, undefined)
     })
   })

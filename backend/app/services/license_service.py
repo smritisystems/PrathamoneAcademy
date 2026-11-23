@@ -426,6 +426,8 @@ async def customer_create_reactivation_request(
     installation_id: str,
     activation_identifier: str,
     refresh_public_key: str,
+    surrender_confirmed: bool = False,
+    surrender_reason: str | None = None,
     client: httpx.AsyncClient | None = None,
 ) -> dict[str, Any]:
     """Submits a license reactivation request using POST /api/license/reactivations.
@@ -443,7 +445,12 @@ async def customer_create_reactivation_request(
         "installation_id": installation_id,
         "activation_identifier": activation_identifier,
         "refresh_public_key": refresh_public_key,
+        "surrender_confirmed": surrender_confirmed,
     }
+    if surrender_confirmed:
+        if not surrender_reason or len(surrender_reason.strip()) < 10:
+            raise LicenseReactivationError("A surrender reason of at least 10 characters is required.")
+        payload["surrender_reason"] = surrender_reason.strip()
 
     async def _post(c: httpx.AsyncClient):
         return await c.post(f"{norm_url}/api/license/reactivations", json=payload, headers=headers)

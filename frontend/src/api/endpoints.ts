@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-23
+ * @updated     2026-11-24
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -1918,7 +1918,13 @@ export const licenseApi = {
       params: institution_id ? { institution_id } : undefined,
       headers: session_token ? { 'X-License-Session': session_token } : undefined,
     }),
-  requestCustomerReactivation: (license_id: number, session_token?: string, institution_id?: number) =>
+  requestCustomerReactivation: (
+    license_id: number,
+    session_token?: string,
+    institution_id?: number,
+    surrender_confirmed = false,
+    surrender_reason?: string,
+  ) =>
     apiClient.post<{
       ok: boolean
       id: string
@@ -1927,7 +1933,12 @@ export const licenseApi = {
       message?: string
     }>(
       '/license/customer/request',
-      { license_id, session_token },
+      {
+        license_id,
+        session_token,
+        surrender_confirmed,
+        ...(surrender_confirmed && surrender_reason ? { surrender_reason } : {}),
+      },
       {
         params: institution_id ? { institution_id } : undefined,
         headers: session_token ? { 'X-License-Session': session_token } : undefined,

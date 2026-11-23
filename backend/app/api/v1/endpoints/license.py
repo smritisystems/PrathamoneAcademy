@@ -170,6 +170,8 @@ class CustomerLoginRequest(BaseModel):
 class CustomerReactivationRequest(BaseModel):
     license_id: int = Field(ge=1)
     session_token: str | None = None
+    surrender_confirmed: bool = False
+    surrender_reason: str | None = Field(default=None, min_length=10, max_length=300)
 
 
 class CustomerReactivationActivateRequest(BaseModel):
@@ -1418,6 +1420,8 @@ async def customer_reactivation_request(
             installation_id=installation_id,
             activation_identifier=activation_identifier,
             refresh_public_key=refresh_public_key_b64,
+            surrender_confirmed=body.surrender_confirmed,
+            surrender_reason=body.surrender_reason,
         )
     except LicenseReactivationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
