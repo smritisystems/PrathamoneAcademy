@@ -309,6 +309,20 @@ class LicenseReactivationError(ValueError):
     """Raised when customer-account license reactivation fails."""
 
 
+def _authority_error_message(response: httpx.Response, fallback: str) -> str:
+    try:
+        data = response.json()
+    except (AttributeError, ValueError, json.JSONDecodeError):
+        return fallback
+    if not isinstance(data, dict):
+        return fallback
+    for key in ("detail", "message", "error"):
+        value = data.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return fallback
+
+
 async def customer_account_login(
     authority_url: str,
     email: str,
@@ -334,9 +348,13 @@ async def customer_account_login(
         raise LicenseReactivationError("License authority is temporarily unreachable.") from exc
 
     if response.status_code in {401, 403}:
-        raise LicenseReactivationError("Invalid customer account email or password.")
+        raise LicenseReactivationError(
+            _authority_error_message(response, "Invalid customer account email or password.")
+        )
     if response.status_code >= 400:
-        raise LicenseReactivationError(f"License authority rejected login (status {response.status_code}).")
+        raise LicenseReactivationError(
+            _authority_error_message(response, f"License authority rejected login (status {response.status_code}).")
+        )
 
     try:
         data = response.json()
@@ -383,7 +401,9 @@ async def customer_get_reactivations(
     if response.status_code in {401, 403}:
         raise LicenseReactivationError("Customer session has expired. Please sign in again.")
     if response.status_code >= 400:
-        raise LicenseReactivationError(f"Failed to retrieve eligible licenses (status {response.status_code}).")
+        raise LicenseReactivationError(
+            _authority_error_message(response, f"Failed to retrieve eligible licenses (status {response.status_code}).")
+        )
 
     try:
         data = response.json()
@@ -440,16 +460,9 @@ async def customer_create_reactivation_request(
     if response.status_code in {401, 403}:
         raise LicenseReactivationError("Customer session has expired. Please sign in again.")
     if response.status_code >= 400:
-        error_msg = "Reactivation request rejected by server."
-        try:
-            err_data = response.json()
-            if isinstance(err_data, dict) and err_data.get("detail"):
-                error_msg = str(err_data["detail"])
-            elif isinstance(err_data, dict) and err_data.get("message"):
-                error_msg = str(err_data["message"])
-        except Exception:
-            pass
-        raise LicenseReactivationError(error_msg)
+        raise LicenseReactivationError(
+            _authority_error_message(response, "Reactivation request rejected by server.")
+        )
 
     try:
         data = response.json()
@@ -501,7 +514,9 @@ async def customer_poll_reactivation_status(
     if response.status_code == 404:
         raise LicenseReactivationError("Reactivation request not found.")
     if response.status_code >= 400:
-        raise LicenseReactivationError(f"Reactivation status check failed (status {response.status_code}).")
+        raise LicenseReactivationError(
+            _authority_error_message(response, f"Reactivation status check failed (status {response.status_code}).")
+        )
 
     try:
         data = response.json()
@@ -558,16 +573,12 @@ async def customer_activate_reactivation(
         raise LicenseReactivationError("License authority is temporarily unreachable.") from exc
 
     if response.status_code >= 400:
-        err_msg = "License authority could not activate the approved reactivation request."
-        try:
-            err_data = response.json()
-            if isinstance(err_data, dict) and err_data.get("detail"):
-                err_msg = str(err_data["detail"])
-            elif isinstance(err_data, dict) and err_data.get("message"):
-                err_msg = str(err_data["message"])
-        except Exception:
-            pass
-        raise LicenseReactivationError(err_msg)
+        raise LicenseReactivationError(
+            _authority_error_message(
+                response,
+                "License authority could not activate the approved reactivation request.",
+            )
+        )
 
     try:
         data = response.json()

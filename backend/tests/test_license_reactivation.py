@@ -270,6 +270,35 @@ async def test_customer_get_reactivations_lists_licenses():
 # ==============================================================================
 
 @pytest.mark.asyncio
+async def test_customer_reactivation_error_response_is_preserved():
+    """Authority `error` JSON is shown instead of a generic 400 message."""
+
+    class FakeResponse:
+        status_code = 400
+
+        def json(self):
+            return {"ok": False, "error": "A valid license and installation identity are required"}
+
+    class FakeClient:
+        async def post(self, url: str, json: dict[str, Any], headers: dict[str, str]):
+            return FakeResponse()
+
+    with pytest.raises(
+        LicenseReactivationError,
+        match="A valid license and installation identity are required",
+    ):
+        await customer_create_reactivation_request(
+            authority_url="https://license.smritisys.com",
+            session_token="valid_session_token",
+            license_id=42,
+            installation_id="PRATHAM-789F-CEBC-0916-6315",
+            activation_identifier="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            refresh_public_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            client=FakeClient(),
+        )
+
+
+@pytest.mark.asyncio
 async def test_customer_reactivation_approved_and_activated(monkeypatch):
     """Approved reactivation request proceeds to POST /api/license/activate with reactivation_request_id."""
     artifact, public_keys, _ = _generate_signed_artifact(
