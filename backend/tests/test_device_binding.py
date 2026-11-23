@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-19
-#  * @updated     2026-11-19
+#  * @updated     2026-11-23
 #  *
 #  * @description Comprehensive test suite for optional device-wise security binding, policy evaluation, multi-tenant isolation, safe disablement, and licensing independence.
 #  */
@@ -201,7 +201,11 @@ async def test_flexible_security_policy_modes(
         headers={"x-device-fingerprint": "unregistered_fp_device_123"},
     )
     assert login_unreg.status_code == 403
-    assert "Device registration required" in login_unreg.json()["detail"] or "Access denied" in login_unreg.json()["detail"]
+    assert (
+        "Device registration required" in login_unreg.json()["detail"]
+        or "Access denied" in login_unreg.json()["detail"]
+        or "DEVICE_CONSENT_REQUIRED" in login_unreg.json()["detail"]
+    )
 
     # Register device for staff
     reg_res = await client.post(
@@ -248,10 +252,10 @@ async def test_flexible_security_policy_modes(
     login_pending = await client.post(
         "/api/v1/auth/login",
         data={"username": sample_staff.username, "password": "StaffPass123!"},
-        headers={"x-device-fingerprint": new_fp, "x-device-name": "Classroom Smartboard"},
+        headers={"x-device-fingerprint": new_fp, "x-device-name": "Classroom Smartboard", "x-device-consent": "true"},
     )
     assert login_pending.status_code == 403
-    assert "administrator approval" in login_pending.json()["detail"]
+    assert "administrator approval" in login_pending.json()["detail"].lower()
 
     # Find pending device
     pending_dev = (

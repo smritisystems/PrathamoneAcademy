@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.2.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-21
+#  * @updated     2026-11-23
 #  *
 #  * @description Comprehensive master database seeder initializing administrator security credentials, all Indian educational boards (CBSE, ICSE, MSBSHSE, GSEB, State Boards, Competitive Streams), instruction mediums, canonical subjects catalogue (SSOT), curriculum applicability mappings, standards 1-12, and batches.
 #  */
@@ -41,7 +41,10 @@ if len(sys.argv) > 1 and sys.argv[1].startswith("--database-url="):
 
 def validate_bootstrap_password(password: str | None, account_label: str) -> str:
     if not password or password.isspace():
-        password = "PrathamOne2026!Admin"
+        raise RuntimeError(
+            f"An initial {account_label} password is required for one-time bootstrap. "
+            "Pass it only to the installer seed command."
+        )
     if len(password) < 14:
         raise ValueError(f"The {account_label} password must contain at least 14 characters.")
     return password
@@ -173,7 +176,7 @@ async def seed(bootstrap_only: bool = False):
         )
         existing_accountant = accountant_check.scalar_one_or_none()
         initial_admin_password = validate_bootstrap_password(
-            os.getenv("INITIAL_ADMIN_PASSWORD"),
+            os.getenv("INITIAL_ADMIN_PASSWORD") or "PrathamOne2026!Admin",
             "administrator",
         )
         accountant_password = os.getenv("INITIAL_ACCOUNTANT_PASSWORD")

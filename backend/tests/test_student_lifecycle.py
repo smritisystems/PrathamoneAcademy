@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-16
+#  * @updated     2026-11-23
 #  *
 #  * @description Comprehensive test suite verifying student exit workflows, reactivation, refunds, and withdrawal analytics.
 #  */
@@ -176,21 +176,21 @@ async def setup_lifecycle_data(db: AsyncSession):
 
     inst1 = FeeInstallment(
         invoice_id=invoice1.id,
-        fee_structure_id=fee_struct.id,
         description="Installment 1",
         installment_number=1,
         amount=Decimal("20000.00"),
         paid_amount=Decimal("20000.00"),
+        outstanding_amount=Decimal("0.00"),
         due_date=date(2026, 5, 1),
         status="paid",
     )
     inst2 = FeeInstallment(
         invoice_id=invoice1.id,
-        fee_structure_id=fee_struct.id,
         description="Installment 2",
         installment_number=2,
         amount=Decimal("20000.00"),
         paid_amount=Decimal("0.00"),
+        outstanding_amount=Decimal("20000.00"),
         due_date=date(2026, 9, 1),
         status="unpaid",
     )

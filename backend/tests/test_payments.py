@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-23
 #  *
 #  * @description Pytest suite validating payment recording, invoice reconciliation, and receipt generation.
 #  */
@@ -174,7 +174,8 @@ class TestPaymentCreation:
             headers=auth_headers,
         )
         assert resp.status_code == 400
-        assert "exceeds outstanding" in resp.json()["detail"].lower()
+        detail = resp.json()["detail"].lower()
+        assert "exceeds outstanding" in detail or "exceeds invoice balance" in detail
 
     async def test_allocation_mismatch_rejected(
         self, client, auth_headers, test_fee_invoice

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-16
+#  * @updated     2026-11-23
 #  *
 #  * @description Automated security and cross-module enforcement test suite verifying all 4 visibility modes, backend data masking, persistent PIN brute-force lockout, genuine zero vs masked distinction, and export leakage prevention.
 #  */
@@ -252,7 +252,7 @@ async def test_codex_export_csv_masking_prevention():
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         res = await client.get("/api/v1/reports/fee-collection/export?format=csv", headers=headers)
         assert res.status_code == 200
-        csv_text = res.text
+        csv_text = res.text.lstrip("\ufeff")
         # Header line should exist
         assert "admission_number,student_name,total_fees,paid,outstanding" in csv_text
         lines = [l for l in csv_text.splitlines() if l.strip() and not l.startswith("admission_number") and "PrathamOne" not in l]
