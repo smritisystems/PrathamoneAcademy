@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-21
+#  * @updated     2026-11-23
 #  *
 #  * @description Service managing payment lifecycle states, ERP approval rules, audited modifications, receipt versioning, and refunds.
 #  */
@@ -291,28 +291,30 @@ async def execute_refund_disbursement(
 
     for invoice_id, amount in invoice_amounts.items():
         invoice = invoice_snapshots[invoice_id]
-        invoice.paid_amount -= amount
-        invoice.outstanding_amount = min(
-            invoice.net_amount, invoice.outstanding_amount + amount
+        invoice.paid_amount = max(Decimal("0.00"), invoice.paid_amount - amount)
+        invoice.outstanding_amount = max(
+            Decimal("0.00"), invoice.net_amount - invoice.paid_amount
         )
         if invoice.status not in ("cancelled", "written_off"):
-            invoice.status = (
-                "unpaid"
-                if invoice.paid_amount == Decimal("0.00")
-                else "partial"
-            )
+            if invoice.outstanding_amount == Decimal("0.00"):
+                invoice.status = "paid"
+            elif invoice.paid_amount == Decimal("0.00"):
+                invoice.status = "unpaid"
+            else:
+                invoice.status = "partial"
 
     for installment_id, amount in installment_amounts.items():
         installment = installment_snapshots[installment_id]
-        installment.paid_amount -= amount
-        installment.outstanding_amount = min(
-            installment.amount, installment.outstanding_amount + amount
+        installment.paid_amount = max(Decimal("0.00"), installment.paid_amount - amount)
+        installment.outstanding_amount = max(
+            Decimal("0.00"), installment.amount - installment.paid_amount
         )
-        installment.status = (
-            "unpaid"
-            if installment.paid_amount == Decimal("0.00")
-            else "partial"
-        )
+        if installment.outstanding_amount == Decimal("0.00"):
+            installment.status = "paid"
+        elif installment.paid_amount == Decimal("0.00"):
+            installment.status = "unpaid"
+        else:
+            installment.status = "partial"
 
     now = datetime.now(timezone.utc)
     refund.status = "completed"

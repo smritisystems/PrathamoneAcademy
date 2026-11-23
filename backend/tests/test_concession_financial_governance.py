@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-16
+#  * @updated     2026-11-23
 #  *
 #  * @description Comprehensive 20-scenario verification suite for Centralized Concessions, Fee Waivers, Scholarships, Sponsor Funding, Reversals, Cancellations, RBAC, 20 Reports, and Single Source of Truth Reconciliation.
 #  */
@@ -467,6 +467,7 @@ class TestConcessionFinancialGovernance:
 
         # Scenario 13: Manual fee adjustment synced to invoice & tracked separately in governance summary
         s13, inv13, struct13, _ = await _make_student_and_invoice(db, test_institution.id, test_academic_year.id, Decimal("20000.00"))
+        # Scenario 13: Direct adjustment with concession or on active invoice rejected (409) under strict governance
         adj_res = await client.post(
             f"/api/v1/fees/students/{s13.id}/adjust-fees",
             json={
@@ -477,7 +478,14 @@ class TestConcessionFinancialGovernance:
             },
             headers=admin_headers,
         )
-        assert adj_res.status_code == 200, adj_res.text
+        assert adj_res.status_code == 409
+        assert "Concessions must use the governed concession application" in adj_res.json()["detail"]
+
+        # Simulate legacy/untracked discount on the invoice to verify FinancialGovernanceService detects manual_fee_adjustments
+        inv13.discount_amount = Decimal("1500.00")
+        inv13.net_amount = Decimal("18500.00")
+        inv13.outstanding_amount = Decimal("18500.00")
+        await db.commit()
         await db.refresh(inv13)
         assert inv13.discount_amount == Decimal("1500.00")
         assert inv13.net_amount == Decimal("18500.00")

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-16
+#  * @updated     2026-11-23
 #  *
 #  * @description Comprehensive test suite validating Central Reporting & Analytics Centre API endpoints, data aggregations, and CodeX financial masking.
 #  */
@@ -113,15 +113,11 @@ class TestReportingCentre:
         student = test_fee_invoice["student"]
 
         # Overdue installment (due in the past)
-        installment = FeeInstallment(
-            invoice_id=invoice.id,
-            fee_structure_id=test_fee_invoice["item"].fee_structure_id,
-            installment_number=1,
-            amount=Decimal("5000.00"),
-            due_date=date(2026, 1, 1),
-            status="overdue",
-        )
-        db.add(installment)
+        installment = test_fee_invoice["installment"]
+        installment.due_date = date(2026, 1, 1)
+        installment.status = "overdue"
+        installment.amount = Decimal("5000.00")
+        installment.outstanding_amount = Decimal("5000.00")
         await db.commit()
 
         # Query endpoint
