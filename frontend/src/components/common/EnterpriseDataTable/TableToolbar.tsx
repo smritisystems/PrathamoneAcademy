@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-23
- * @updated     2026-11-23
+ * @updated     2026-11-24
  *
  * @description Universal toolbar deck with debounced search, column visibility toggle, and instant multi-format exports.
  */
@@ -186,7 +186,10 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                   <div className="max-h-60 overflow-y-auto space-y-1 pr-1 text-xs">
                     {hideableColumns.map((col) => {
                       const colId = col.id || ''
-                      const isVisible = columnVisibility[colId] !== false
+                      const isVisible =
+                        columnVisibility[colId] !== undefined
+                          ? columnVisibility[colId] === true
+                          : col.defaultVisible !== false
                       return (
                         <label
                           key={colId}

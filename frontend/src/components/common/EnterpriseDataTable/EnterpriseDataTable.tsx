@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-23
- * @updated     2026-11-23
+ * @updated     2026-11-24
  *
  * @description Production-grade canonical EnterpriseDataTable component complying with Rule 001 SSOT, Rule 010 View-First, and Rule 014 Sleek UI/UX.
  */
@@ -154,22 +154,31 @@ export function EnterpriseDataTable<T extends Record<string, any>>({
   // ─── 3. Column Visibility with LocalStorage Persistence ─────────────────────
   const storageKey = `prathamone_table_cols_${tableId}`
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>(() => {
-    try {
-      const saved = localStorage.getItem(storageKey)
-      if (saved) return JSON.parse(saved)
-    } catch {
-      // fallback
-    }
     const initialMap: Record<string, boolean> = {}
     normalizedColumns.forEach((col) => {
       initialMap[col.id] = col.defaultVisible !== false
     })
+
+    try {
+      const saved = localStorage.getItem(storageKey)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        normalizedColumns.forEach((col) => {
+          if (parsed && typeof parsed[col.id] === 'boolean') {
+            initialMap[col.id] = parsed[col.id]
+          }
+        })
+      }
+    } catch {
+      // fallback to initialMap
+    }
     return initialMap
   })
 
   const toggleColumnVisibility = (colId: string) => {
     setColumnVisibility((prev) => {
-      const updated = { ...prev, [colId]: !prev[colId] }
+      const currentVal = prev[colId] !== undefined ? prev[colId] : true
+      const updated = { ...prev, [colId]: !currentVal }
       try {
         localStorage.setItem(storageKey, JSON.stringify(updated))
       } catch {
@@ -194,7 +203,11 @@ export function EnterpriseDataTable<T extends Record<string, any>>({
 
   // Visible columns filter
   const visibleColumns = useMemo(() => {
-    return normalizedColumns.filter((col) => columnVisibility[col.id] !== false)
+    return normalizedColumns.filter((col) =>
+      columnVisibility[col.id] !== undefined
+        ? columnVisibility[col.id] === true
+        : col.defaultVisible !== false
+    )
   }, [normalizedColumns, columnVisibility])
 
   // ─── 4. Cell Value Resolver (Canonical SSOT) ───────────────────────────────
