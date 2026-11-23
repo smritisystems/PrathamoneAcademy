@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-23
+ * @updated     2026-11-24
  *
  * @description Centralized Reporting & Analytics Centre uniting module-wise reports across Students, Academics, Fees, Workforce Payroll, Examinations, and System Audit.
  */
@@ -1723,57 +1723,57 @@ function ReportsWorkspace() {
   const flexibleMatrixColumns = useMemo<ColumnConfig<any>[]>(() => [
     { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, filterable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
     { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 190, sortable: true, filterable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
-    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 120, sortable: true, filterable: true, render: (val) => <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-semibold">{val}</span> },
-    { id: 'standard_name', header: 'Standard / Grade', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true, filterable: true },
-    { id: 'division_name', header: 'Batch / Division', accessorKey: 'division_name', type: 'text', width: 160, sortable: true, filterable: true, render: (val, r) => <span className="font-semibold text-slate-800">{val} {r.batch_code ? `[${r.batch_code}]` : ''}</span> },
+    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 120, sortable: true, filterable: true, filterType: 'select', render: (val) => <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-semibold">{val}</span> },
+    { id: 'standard_name', header: 'Standard / Grade', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true, filterable: true, filterType: 'select' },
+    { id: 'division_name', header: 'Batch / Division', accessorKey: 'division_name', type: 'text', width: 160, sortable: true, filterable: true, filterType: 'select', render: (val, r) => <span className="font-semibold text-slate-800">{val} {r.batch_code ? `[${r.batch_code}]` : ''}</span> },
     { id: 'roll_number', header: 'Roll #', accessorKey: 'roll_number', type: 'text', width: 90, sortable: true, align: 'center' },
     { id: 'guardian_name', header: 'Guardian Name', accessorKey: 'guardian_name', type: 'text', width: 150, sortable: true },
     { id: 'guardian_phone', header: 'Guardian Contact', accessorKey: 'guardian_phone', type: 'text', width: 140, render: (val) => <span className="font-mono">{val}</span> },
     { id: 'attendance_percentage', header: 'Attd %', accessorKey: 'attendance_percentage', type: 'number', width: 120, align: 'right', sortable: true, render: (val) => <span className={`font-mono font-bold ${val < 75 ? 'text-rose-600' : val >= 85 ? 'text-emerald-700' : 'text-amber-600'}`}>{val}%</span> },
-    { id: 'attendance_status', header: 'Attd Health', accessorKey: 'attendance_status', type: 'text', width: 140, render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold ${val === 'Defaulter (<75%)' ? 'bg-rose-100 text-rose-800' : val === 'Good' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>{val}</span> },
+    { id: 'attendance_status', header: 'Attd Health', accessorKey: 'attendance_status', type: 'text', width: 140, filterable: true, filterType: 'select', render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold ${val === 'Defaulter (<75%)' ? 'bg-rose-100 text-rose-800' : val === 'Good' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>{val}</span> },
     { id: 'total_fees', header: 'Total Fees (₹)', accessorKey: 'total_fees', type: 'currency', width: 140, align: 'right', sortable: true, render: (val) => <span className="font-medium text-slate-900">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
     { id: 'paid_fees', header: 'Paid (₹)', accessorKey: 'paid_fees', type: 'currency', width: 140, align: 'right', sortable: true, render: (val) => <span className="font-bold text-emerald-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
     { id: 'balance_fees', header: 'Balance Dues (₹)', accessorKey: 'balance_fees', type: 'currency', width: 150, align: 'right', sortable: true, render: (val) => <span className={`font-bold ${val > 0 ? 'text-rose-600' : 'text-slate-400'}`}>₹{Number(val || 0).toLocaleString('en-IN')}</span> },
-    { id: 'payment_status', header: 'Fee Status', accessorKey: 'payment_status', type: 'text', width: 120, render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${val === 'Paid' ? 'bg-emerald-100 text-emerald-800' : val === 'Defaulter' ? 'bg-rose-100 text-rose-800' : val === 'Partial' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>{val}</span> },
+    { id: 'payment_status', header: 'Fee Status', accessorKey: 'payment_status', type: 'text', width: 120, filterable: true, filterType: 'select', render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${val === 'Paid' ? 'bg-emerald-100 text-emerald-800' : val === 'Defaulter' ? 'bg-rose-100 text-rose-800' : val === 'Partial' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>{val}</span> },
     { id: 'exam_percentage', header: 'Exam Marks %', accessorKey: 'exam_percentage', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}%</span> },
-    { id: 'performance_grade', header: 'Grade', accessorKey: 'performance_grade', type: 'text', width: 100, align: 'center', sortable: true, render: (val) => <span className="px-2 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-700">{val}</span> },
+    { id: 'performance_grade', header: 'Grade', accessorKey: 'performance_grade', type: 'text', width: 100, align: 'center', sortable: true, filterable: true, filterType: 'select', render: (val) => <span className="px-2 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-700">{val}</span> },
   ], [])
 
   // 1. Student Master Directory Columns
   const studentMasterColumns = useMemo<ColumnConfig<any>[]>(() => [
     { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, filterable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
     { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 190, sortable: true, filterable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
-    { id: 'standard_name', header: 'Standard / Grade', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true, filterable: true },
-    { id: 'division_name', header: 'Batch / Division', accessorKey: 'division_name', type: 'text', width: 150, sortable: true, filterable: true },
-    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 110, sortable: true, filterable: true, render: (val) => <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-semibold">{val}</span> },
-    { id: 'gender', header: 'Gender', accessorKey: 'gender', type: 'text', width: 90, sortable: true, render: (val) => <span className="capitalize">{val}</span> },
+    { id: 'standard_name', header: 'Standard / Grade', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true, filterable: true, filterType: 'select' },
+    { id: 'division_name', header: 'Batch / Division', accessorKey: 'division_name', type: 'text', width: 150, sortable: true, filterable: true, filterType: 'select' },
+    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 110, sortable: true, filterable: true, filterType: 'select', render: (val) => <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-semibold">{val}</span> },
+    { id: 'gender', header: 'Gender', accessorKey: 'gender', type: 'text', width: 90, sortable: true, filterable: true, filterType: 'select', render: (val) => <span className="capitalize">{val}</span> },
     { id: 'date_of_birth', header: 'DOB', accessorKey: 'date_of_birth', type: 'date', width: 110, sortable: true },
     { id: 'phone', header: 'Guardian Phone', accessorKey: 'phone', type: 'text', width: 130, render: (val) => <span className="font-mono">{val}</span> },
-    { id: 'city', header: 'City', accessorKey: 'city', type: 'text', width: 110 },
-    { id: 'status', header: 'Status', accessorKey: 'status', type: 'text', width: 110, render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${val === 'enrolled' || val === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>{val}</span> },
+    { id: 'city', header: 'City', accessorKey: 'city', type: 'text', width: 110, filterable: true, filterType: 'select' },
+    { id: 'status', header: 'Status', accessorKey: 'status', type: 'text', width: 110, filterable: true, filterType: 'select', render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${val === 'enrolled' || val === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>{val}</span> },
   ], [])
 
   // 2. Attendance Summary Columns
   const attendanceColumns = useMemo<ColumnConfig<any>[]>(() => [
     { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
     { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 190, sortable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
-    { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 130, sortable: true },
-    { id: 'division_name', header: 'Batch', accessorKey: 'division_name', type: 'text', width: 140, sortable: true },
-    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 110, sortable: true, render: (val) => val && val !== 'N/A' ? <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs font-semibold">{val}</span> : <span>—</span> },
+    { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 130, sortable: true, filterable: true, filterType: 'select' },
+    { id: 'division_name', header: 'Batch', accessorKey: 'division_name', type: 'text', width: 140, sortable: true, filterable: true, filterType: 'select' },
+    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 110, sortable: true, filterable: true, filterType: 'select', render: (val) => val && val !== 'N/A' ? <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs font-semibold">{val}</span> : <span>—</span> },
     { id: 'total_days', header: 'Total Sessions', accessorKey: 'total_days', type: 'number', width: 120, align: 'center', sortable: true },
     { id: 'present_days', header: 'Attended', accessorKey: 'present_days', type: 'number', width: 110, align: 'center', sortable: true, render: (val) => <span className="font-bold text-emerald-700">{val}</span> },
     { id: 'absent_days', header: 'Absent', accessorKey: 'absent_days', type: 'number', width: 100, align: 'center', sortable: true, render: (val) => <span className="font-bold text-rose-700">{val}</span> },
     { id: 'attendance_percentage', header: 'Attendance %', accessorKey: 'attendance_percentage', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className={`font-mono font-bold text-sm ${val < 75 ? 'text-rose-600' : 'text-emerald-700'}`}>{val}%</span> },
-    { id: 'status', header: 'Compliance', accessorKey: 'status', type: 'text', width: 140, render: (val, row) => <span className={`px-2 py-0.5 rounded text-xs font-bold ${row.is_defaulter ? 'bg-rose-100 text-rose-800' : 'bg-emerald-50 text-emerald-700'}`}>{val}</span> },
+    { id: 'status', header: 'Compliance', accessorKey: 'status', type: 'text', width: 140, filterable: true, filterType: 'select', render: (val, row) => <span className={`px-2 py-0.5 rounded text-xs font-bold ${row.is_defaulter ? 'bg-rose-100 text-rose-800' : 'bg-emerald-50 text-emerald-700'}`}>{val}</span> },
   ], [])
 
   // 3. Fee Collection Columns
   const collectionColumns = useMemo<ColumnConfig<any>[]>(() => [
     { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, filterable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
     { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 190, sortable: true, filterable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
-    { id: 'standard_name', header: 'Standard / Grade', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true, filterable: true },
-    { id: 'division_name', header: 'Batch', accessorKey: 'division_name', type: 'text', width: 140, sortable: true, filterable: true },
-    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 110, sortable: true, filterable: true, render: (val) => val && val !== 'N/A' ? <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-semibold">{val}</span> : <span>—</span> },
+    { id: 'standard_name', header: 'Standard / Grade', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true, filterable: true, filterType: 'select' },
+    { id: 'division_name', header: 'Batch', accessorKey: 'division_name', type: 'text', width: 140, sortable: true, filterable: true, filterType: 'select' },
+    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 110, sortable: true, filterable: true, filterType: 'select', render: (val) => val && val !== 'N/A' ? <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-semibold">{val}</span> : <span>—</span> },
     { id: 'total_fees', header: 'Net Invoiced (₹)', accessorKey: 'total_fees', type: 'currency', width: 150, align: 'right', sortable: true, render: (val) => <span className="font-bold text-slate-900">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
     { id: 'paid', header: 'Realized Paid (₹)', accessorKey: 'paid', type: 'currency', width: 150, align: 'right', sortable: true, render: (val) => <span className="font-bold text-emerald-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
     { id: 'outstanding', header: 'Balance Due (₹)', accessorKey: 'outstanding', type: 'currency', width: 150, align: 'right', sortable: true, render: (val) => <span className={`font-bold ${val > 0 ? 'text-rose-600' : 'text-slate-400'}`}>₹{Number(val || 0).toLocaleString('en-IN')}</span> },
@@ -1783,9 +1783,9 @@ function ReportsWorkspace() {
   const feeDefaultersColumns = useMemo<ColumnConfig<any>[]>(() => [
     { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, render: (val) => <span className="font-mono font-bold text-rose-700">{val}</span> },
     { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 190, sortable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
-    { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 130, sortable: true },
-    { id: 'division_name', header: 'Batch', accessorKey: 'division_name', type: 'text', width: 140, sortable: true },
-    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 110, sortable: true, render: (val) => val && val !== 'N/A' ? <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs font-semibold">{val}</span> : <span>—</span> },
+    { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 130, sortable: true, filterable: true, filterType: 'select' },
+    { id: 'division_name', header: 'Batch', accessorKey: 'division_name', type: 'text', width: 140, sortable: true, filterable: true, filterType: 'select' },
+    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 110, sortable: true, filterable: true, filterType: 'select', render: (val) => val && val !== 'N/A' ? <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs font-semibold">{val}</span> : <span>—</span> },
     { id: 'guardian_phone', header: 'Guardian Phone', accessorKey: 'guardian_phone', type: 'text', width: 140, render: (val) => <span className="font-mono">{val}</span> },
     { id: 'installment_name', header: 'Overdue Milestone', accessorKey: 'installment_name', type: 'text', width: 150 },
     { id: 'days_overdue', header: 'Days Overdue', accessorKey: 'days_overdue', type: 'number', width: 120, align: 'center', sortable: true, render: (val) => <span className="px-2 py-0.5 bg-rose-100 text-rose-800 rounded font-bold">{val} days</span> },
@@ -1796,14 +1796,14 @@ function ReportsWorkspace() {
   // 5. Daily Collection Columns
   const dailyCollectionColumns = useMemo<ColumnConfig<any>[]>(() => [
     { id: 'receipt_number', header: 'Receipt #', accessorKey: 'receipt_number', type: 'text', width: 160, sortable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val || '—'}</span> },
-    { id: 'receipt_status', header: 'Receipt Status', accessorKey: 'receipt_status', type: 'text', width: 130, render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${val === 'valid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>{val === 'valid' ? 'Issued' : val === 'missing' ? 'Not issued' : val}</span> },
+    { id: 'receipt_status', header: 'Receipt Status', accessorKey: 'receipt_status', type: 'text', width: 130, filterable: true, filterType: 'select', render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${val === 'valid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>{val === 'valid' ? 'Issued' : val === 'missing' ? 'Not issued' : val}</span> },
     { id: 'payment_date', header: 'Date', accessorKey: 'payment_date', type: 'date', width: 110, sortable: true },
     { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 180, sortable: true },
     { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 120 },
-    { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 120, sortable: true },
-    { id: 'division_name', header: 'Batch', accessorKey: 'division_name', type: 'text', width: 130, sortable: true },
-    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 100, sortable: true, render: (val) => val && val !== 'N/A' ? <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs font-semibold">{val}</span> : <span>—</span> },
-    { id: 'payment_mode', header: 'Mode', accessorKey: 'payment_mode', type: 'text', width: 110, render: (val) => <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-bold uppercase">{val}</span> },
+    { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 120, sortable: true, filterable: true, filterType: 'select' },
+    { id: 'division_name', header: 'Batch', accessorKey: 'division_name', type: 'text', width: 130, sortable: true, filterable: true, filterType: 'select' },
+    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 100, sortable: true, filterable: true, filterType: 'select', render: (val) => val && val !== 'N/A' ? <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs font-semibold">{val}</span> : <span>—</span> },
+    { id: 'payment_mode', header: 'Mode', accessorKey: 'payment_mode', type: 'text', width: 110, filterable: true, filterType: 'select', render: (val) => <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-bold uppercase">{val}</span> },
     { id: 'transaction_reference', header: 'Reference', accessorKey: 'transaction_reference', type: 'text', width: 150, render: (val) => <span className="font-mono text-xs">{val}</span> },
     { id: 'collector_name', header: 'Cashier / Collector', accessorKey: 'collector_name', type: 'text', width: 160 },
     { id: 'amount', header: 'Amount (₹)', accessorKey: 'amount', type: 'currency', width: 140, align: 'right', sortable: true, render: (val) => <span className="font-bold text-emerald-800">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
@@ -1814,14 +1814,14 @@ function ReportsWorkspace() {
     { id: 'rank', header: 'Rank', accessorKey: 'rank', type: 'number', width: 80, align: 'center', sortable: true, render: (val) => <span className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs mx-auto ${val === 1 ? 'bg-amber-100 text-amber-800 border border-amber-300' : val === 2 ? 'bg-slate-200 text-slate-800' : val === 3 ? 'bg-amber-50 text-amber-900' : 'bg-slate-50 text-slate-600'}`}>{val}</span> },
     { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
     { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 190, sortable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
-    { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 120, sortable: true },
-    { id: 'division_name', header: 'Batch', accessorKey: 'division_name', type: 'text', width: 130, sortable: true },
-    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 100, sortable: true, render: (val) => val && val !== 'N/A' ? <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs font-semibold">{val}</span> : <span>—</span> },
+    { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 120, sortable: true, filterable: true, filterType: 'select' },
+    { id: 'division_name', header: 'Batch', accessorKey: 'division_name', type: 'text', width: 130, sortable: true, filterable: true, filterType: 'select' },
+    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 100, sortable: true, filterable: true, filterType: 'select', render: (val) => val && val !== 'N/A' ? <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs font-semibold">{val}</span> : <span>—</span> },
     { id: 'exam_name', header: 'Exam', accessorKey: 'exam_name', type: 'text', width: 150 },
     { id: 'marks_obtained', header: 'Marks Obtained', accessorKey: 'marks_obtained', type: 'number', width: 130, align: 'center', sortable: true, render: (val, row) => <span className="font-mono font-bold text-slate-900">{val} / {row.max_marks}</span> },
     { id: 'percentage', header: 'Percentage', accessorKey: 'percentage', type: 'number', width: 120, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}%</span> },
-    { id: 'grade', header: 'Grade', accessorKey: 'grade', type: 'text', width: 90, align: 'center', render: (val) => <span className="px-2.5 py-0.5 bg-primary-100 text-primary-800 font-bold rounded">{val}</span> },
-    { id: 'status', header: 'Result', accessorKey: 'status', type: 'text', width: 100, align: 'center', render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold ${val === 'Pass' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>{val}</span> },
+    { id: 'grade', header: 'Grade', accessorKey: 'grade', type: 'text', width: 90, align: 'center', filterable: true, filterType: 'select', render: (val) => <span className="px-2.5 py-0.5 bg-primary-100 text-primary-800 font-bold rounded">{val}</span> },
+    { id: 'status', header: 'Result', accessorKey: 'status', type: 'text', width: 100, align: 'center', filterable: true, filterType: 'select', render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold ${val === 'Pass' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>{val}</span> },
   ], [])
 
   // 7. Security Audit Columns
