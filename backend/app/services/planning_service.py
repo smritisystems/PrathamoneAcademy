@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-18
+#  * @updated     2026-11-23
 #  *
 #  * @description Planning activity authorization, recurrence expansion, conflict detection, and read-only module projections.
 #  */
@@ -374,10 +374,11 @@ async def resolve_reference_labels(
     # 2. Leads
     if "lead" in by_type:
         rows = await db.execute(
-            select(Lead.id, Lead.student_name, Lead.stage)
+            select(Lead.id, Lead.first_name, Lead.last_name, Lead.stage)
             .where(Lead.id.in_(by_type["lead"]))
         )
-        for lid, name, stage in rows.all():
+        for lid, fname, lname, stage in rows.all():
+            name = f"{fname or ''} {lname or ''}".strip() or f"Lead #{lid}"
             labels[("lead", lid)] = f"{name} ({stage})" if stage else name
 
     # 3. Examinations

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-18
+#  * @updated     2026-11-23
 #  *
 #  * @description Test suite verifying payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refunds.
 #  */
@@ -19,7 +19,7 @@
 import pytest
 from decimal import Decimal
 from datetime import date
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from app.models.payment import (
     Payment,
     PaymentAllocation,
@@ -153,6 +153,8 @@ async def test_invoice_wide_payment_allocates_oldest_installments_first(
     client, auth_headers, test_student, test_academic_year, test_fee_invoice, db
 ):
     invoice = test_fee_invoice["invoice"]
+    await db.execute(delete(FeeInvoiceInstallment).where(FeeInvoiceInstallment.invoice_id == invoice.id))
+    await db.flush()
     first = FeeInvoiceInstallment(
         invoice_id=invoice.id,
         installment_number=1,
@@ -217,6 +219,9 @@ async def test_posting_legacy_invoice_wide_allocation_normalizes_schedule(
     client, auth_headers, test_student, test_academic_year, test_fee_invoice, db
 ):
     invoice = test_fee_invoice["invoice"]
+    await db.execute(delete(FeeInvoiceInstallment).where(FeeInvoiceInstallment.invoice_id == invoice.id))
+    await db.flush()
+
     response = await client.post(
         "/api/v1/payments/",
         json={

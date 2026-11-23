@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-21
+#  * @updated     2026-11-23
 #  *
 #  * @description REST API router for Lead Management & CRM: Enquiries, Kanban Pipeline, Follow-ups, Demo Classes, and Lead-to-Admission Conversion.
 #  */
@@ -1807,10 +1807,11 @@ async def add_lead_follow_up(
         )
         if due_dt.tzinfo is None:
             due_dt = due_dt.replace(tzinfo=timezone.utc)
+        lead_name = f"{lead.first_name} {lead.last_name}".strip() if (getattr(lead, "first_name", None) or getattr(lead, "last_name", None)) else "Student"
         await create_automated_task(
             db=db,
             institution_id=effective_inst_id,
-            title=f"Lead Follow-up: {lead.student_name or lead.contact_person or 'Student'}",
+            title=f"Lead Follow-up: {lead_name}",
             description=f"Scheduled follow-up for lead #{lead.id}. Outcome of last interaction: {data.outcome or 'N/A'}. Remarks: {remarks_text}",
             due_at=due_dt,
             source_type="lead",
