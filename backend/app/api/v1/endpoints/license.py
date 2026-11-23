@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-23
+#  * @updated     2026-11-24
 #  *
 #  * @description License activation, signed snapshot storage, status, and API enforcement.
 #  */
@@ -84,6 +84,10 @@ _SETTING_CLOCK_CHECKPOINT = "license.clock_checkpoint"
 _SETTING_CUSTOMER_SESSION_TOKEN = "license.customer_session_token"
 _SERIAL_NUMBER_PATTERN = re.compile(r"(?:[0-9]{1,9}|SMR-LIC-(?:[0-9]{8}|[A-Fa-f0-9]{20}))")
 _ACTIVATION_KEY_PATTERN = re.compile(r"(?:[A-Za-z0-9]{16}|ACT-[A-Fa-f0-9]{48})")
+_ACTIVATION_IDENTIFIER_PATTERN = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
 _ROUTE_MODULES = (
     ("/reports/intelligence", "premium_analytics"),
     ("/academic-years", "academic_management"),
@@ -308,7 +312,13 @@ async def _prepare_installation_identity(
     
     # Cryptographic Physical Hardware Node-Locking
     installation_id = get_machine_hardware_fingerprint()
-    activation_identifier = activation_setting.value if activation_setting else str(uuid4())
+    activation_identifier = (
+        activation_setting.value.strip()
+        if activation_setting and activation_setting.value
+        else str(uuid4())
+    )
+    if not _ACTIVATION_IDENTIFIER_PATTERN.fullmatch(activation_identifier):
+        activation_identifier = str(uuid4())
     try:
         if refresh_key_setting and refresh_key_setting.value:
             refresh_private_key = decrypt_refresh_private_key(
@@ -344,6 +354,7 @@ async def _prepare_installation_identity(
         db, institution_id, user, _SETTING_REFRESH_PRIVATE_KEY, encrypted_refresh_key,
         "Encrypted installation-scoped private key for license snapshot refresh.",
     )
+    await db.commit()
     return installation_id, activation_identifier, public_key
 
 
