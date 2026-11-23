@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-18
+#  * @updated     2026-11-23
 #  *
 #  * @description Protected REST API endpoints for the Housekeeping Module: DB backups, verification, retention pruning, sandbox restore drills, guarded production restore, vacuum maintenance, and backup schedules.
 #  */
@@ -43,9 +43,9 @@ async def _require_housekeeping_access(
 
 
 async def _require_housekeeping_view_or_backup_access(
-    current_user: User = Depends(require_role("admin")),
+    current_user: User = Depends(require_sysadmin),
 ) -> User:
-    """Admins may view housekeeping telemetry and create backups; SysAdmins retain full access."""
+    """Cluster database backups, vacuum, and maintenance strictly require SysAdmin."""
     return current_user
 
 

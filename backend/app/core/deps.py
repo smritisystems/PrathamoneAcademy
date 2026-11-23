@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-17
+#  * @updated     2026-11-23
 #  *
 #  * @description FastAPI dependency injection providers for database sessions and authenticated user context.
 #  */
@@ -87,6 +87,21 @@ async def get_current_active_user(current_user=Depends(get_current_user)):
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+
+async def get_current_user_optional(
+    request: Request,
+    bearer_token: Optional[str] = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db),
+):
+    token = bearer_token or (request.cookies.get(ACCESS_COOKIE_NAME) if request else None)
+    if not token:
+        return None
+    try:
+        user = await get_current_user(request, bearer_token, db)
+        return user if user and user.is_active else None
+    except HTTPException:
+        return None
 
 
 def require_role(*roles):

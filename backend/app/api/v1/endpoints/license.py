@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-22
+#  * @updated     2026-11-23
 #  *
 #  * @description License activation, signed snapshot storage, status, and API enforcement.
 #  */
@@ -21,10 +21,11 @@ import logging
 import re
 import time
 from datetime import datetime, timezone
+from typing import Optional, Dict, Any, List
 from uuid import uuid4
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -36,6 +37,7 @@ from app.core.hardware import get_machine_hardware_fingerprint, verify_hardware_
 from app.core.deps import (
     enforce_institution_access,
     get_current_active_user,
+    get_current_user_optional,
     get_data_environment,
     is_sysadmin,
     require_role,
@@ -613,10 +615,27 @@ def _is_evaluation_read_allowed(request: Request, policy: dict) -> bool:
 
 async def enforce_license_request(
     request: Request,
-    current_user: User = Depends(get_current_active_user),
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
     data_environment: str = Depends(get_data_environment),
 ) -> None:
+    # Exempt server-to-server webhooks and public shared documents from user credential requirement
+    path = request.url.path
+    if (
+        path.endswith("/online/webhook")
+        or "/communication/shared-doc/" in path
+        or path.startswith("/api/v1/auth")
+        or "/institutions/public" in path
+    ):
+        return
+
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     raw_institution_id = (
         request.path_params.get("institution_id")
         or request.query_params.get("institution_id")
