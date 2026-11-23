@@ -1196,7 +1196,7 @@
   }
 
   #receipt-print-area button,
-  #receipt-print-area .print\\:hidden,
+  #receipt-print-area .print\:hidden,
   #receipt-print-area .no-print {
     display: none !important;
   }
@@ -1283,7 +1283,7 @@
   }
 
   #student-id-card-printable button,
-  #student-id-card-printable .print\\:hidden,
+  #student-id-card-printable .print\:hidden,
   #student-id-card-printable .no-print {
     display: none !important;
   }

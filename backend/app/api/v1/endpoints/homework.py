@@ -1747,12 +1747,12 @@ async def get_daily_homework_register(
     """Daily homework register with printable / exportable rows."""
     await _require_hw_action(db, current_user, "reports")
     inst_id = current_user.institution_id or 1
-    query_date = target_date or date.today()
 
     # Defensive parameter extraction to handle direct Python calls as well as FastAPI HTTP calls
     real_target_date = target_date if (target_date and not hasattr(target_date, 'default')) else None
     real_division_id = division_id if (division_id and not hasattr(division_id, 'default')) else None
     real_standard_id = standard_id if (standard_id and not hasattr(standard_id, 'default')) else None
+    query_date = real_target_date or date.today()
 
     conditions = [
         HomeworkAssignment.institution_id == inst_id,
