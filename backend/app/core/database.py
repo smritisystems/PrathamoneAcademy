@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-23
 #  *
 #  * @description SQLAlchemy database engine, session factory, and declarative base definitions.
 #  */
@@ -35,6 +35,8 @@ AsyncSessionLocal = async_sessionmaker(
     expire_on_commit=False,
     class_=AsyncSession,
 )
+# Canonical alias for background daemons and external utilities
+async_session_maker = AsyncSessionLocal
 
 
 class Base(DeclarativeBase):

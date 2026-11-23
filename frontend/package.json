@@ -1,11 +1,12 @@
 {
   "name": "prashant-academy",
   "private": true,
-  "version": "1.170.4",
+  "version": "1.170.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && python ../scripts/check_release_hygiene.py --fix",
+    "build": "tsc && vite build",
+    "build:hygiene": "tsc && vite build && python ../scripts/check_release_hygiene.py --fix",
     "preview": "vite preview",
     "test": "vitest run --pool=forks",
     "test:watch": "vitest",

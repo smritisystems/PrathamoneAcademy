@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-21
-#  * @updated     2026-11-21
+#  * @updated     2026-11-23
 #  *
 #  * @description Cross-module automated task creation and resolution engine with idempotency, anti-spam governance, and institutional triggers across Fees, CRM, Homework, Timetable, and Truancy.
 #  */
@@ -918,8 +918,8 @@ async def run_daily_autonomous_sync_daemon():
 
     while True:
         try:
-            from app.core.database import async_session_maker
-            async with async_session_maker() as db:
+            from app.core.database import AsyncSessionLocal
+            async with AsyncSessionLocal() as db:
                 institutions = (
                     await db.execute(select(Institution.id).where(Institution.is_active == True))
                 ).scalars().all()
@@ -927,6 +927,7 @@ async def run_daily_autonomous_sync_daemon():
                 for inst_id in institutions:
                     try:
                         res = await sync_all_automated_tasks(db, institution_id=inst_id)
+                        await db.commit()
                         logger.info(
                             "[AUTONOMOUS SYNC] Inst %s synced: %d created, %d active.",
                             inst_id,
@@ -934,6 +935,7 @@ async def run_daily_autonomous_sync_daemon():
                             res["total_already_active"],
                         )
                     except Exception as inst_err:
+                        await db.rollback()
                         logger.error("[AUTONOMOUS SYNC] Failed for institution %s: %s", inst_id, inst_err)
 
         except Exception as e:
