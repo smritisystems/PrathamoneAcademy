@@ -866,10 +866,27 @@ async def activate_license(
         activation_payload["license_key"] = license_key
 
     try:
+        activation_headers = None
+        if uses_reactivation:
+            reactivation_session_setting = await _get_setting(
+                db, target_institution_id, _SETTING_CUSTOMER_SESSION_TOKEN
+            )
+            reactivation_session_token = (
+                reactivation_session_setting.value
+                if reactivation_session_setting and reactivation_session_setting.value
+                else None
+            )
+            if not reactivation_session_token:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Customer sign-in is required to complete approved reactivation.",
+                )
+            activation_headers = {"Authorization": f"Bearer {reactivation_session_token}"}
         async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
             response = await client.post(
                 f"{authority_url}/api/license/activate",
                 json=activation_payload,
+                headers=activation_headers,
             )
     except httpx.RequestError as exc:
         logger.warning("License authority request failed: %s", exc)

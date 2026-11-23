@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-23
+#  * @updated     2026-11-24
 #  *
 #  * @description Verifies signed license artifacts and calculates local entitlement state.
 #  */
@@ -543,6 +543,7 @@ async def customer_activate_reactivation(
     installation_id: str,
     activation_identifier: str,
     refresh_public_key: str | None = None,
+    session_token: str | None = None,
     client: httpx.AsyncClient | None = None,
 ) -> dict[str, Any]:
     """Calls POST /api/license/activate with reactivation_request_id once approved."""
@@ -560,8 +561,10 @@ async def customer_activate_reactivation(
     if refresh_public_key:
         payload["refresh_public_key"] = refresh_public_key
 
+    headers = {"Authorization": f"Bearer {session_token}"} if session_token else None
+
     async def _post(c: httpx.AsyncClient):
-        return await c.post(f"{norm_url}/api/license/activate", json=payload)
+        return await c.post(f"{norm_url}/api/license/activate", json=payload, headers=headers)
 
     try:
         if client:
