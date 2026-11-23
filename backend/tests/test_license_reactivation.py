@@ -406,6 +406,10 @@ async def test_customer_reactivation_approved_and_activated(monkeypatch):
         data_environment="PRODUCTION",
     )
 
+    activation_call = authority_requests[1]
+    assert activation_call["url"].endswith("/api/license/activate")
+    assert activation_call["headers"]["Authorization"] == "Bearer valid-token-123"
+
     assert act_res["ok"] is True
     assert act_res["mode"] == "active"
     assert act_res["document_id"] == "art-reactivate-001"
