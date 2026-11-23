@@ -27,6 +27,9 @@ export interface DataTableColumn<T = any> {
   accessorFn?: (row: T) => any
   type?: SortType | 'currency' | 'date' | 'masked_aadhaar' | 'phone' | 'badge'
   sortable?: boolean
+  filterable?: boolean
+  filterType?: 'select' | 'text' | 'number_range' | 'date_range' | 'boolean'
+  filterOptions?: { label: string; value: any }[]
   width?: string | number
   minWidth?: string | number
   align?: 'left' | 'center' | 'right'
@@ -63,6 +66,9 @@ export interface EnterpriseDataTableProps<T = any> {
   searchValue?: string
   onSearchChange?: (val: string) => void
   customFilterBar?: React.ReactNode
+  columnFilters?: Record<string, any>
+  onColumnFilterChange?: (filters: Record<string, any>) => void
+  disableColumnFiltering?: boolean
 
   // Sorting
   defaultSortKey?: string

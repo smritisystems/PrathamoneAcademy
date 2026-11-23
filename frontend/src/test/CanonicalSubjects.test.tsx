@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-16
+ * @updated     2026-11-23
  *
  * @description Comprehensive test suite validating Canonical Subject Master architecture, dual view modes, live duplicate prevention, and View-First Edit Mode governance.
  */
@@ -126,6 +126,7 @@ describe('Canonical Subject Master & Applicability Mappings Suite', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    queryClient.clear()
     useEditModeStore.getState().resetAll()
     useAuthStore.setState({ user: adminUser, token: 'mock-token', selectedInstitutionId: 1 })
 

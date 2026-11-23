@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-23 22:47:47<br>
-**Total Indexed Items:** 744<br>
+**Last Reindexed:** 2026-11-23 23:31:10<br>
+**Total Indexed Items:** 745<br>
 
 ---
 
@@ -31,7 +31,7 @@
 | `14` | [14_PRINTING_DOCUMENTS](#14_printing_documents) | **15** | Document Generation & Print Engine |
 | `15` | [15_INTEGRATIONS](#15_integrations) | **11** | Integrations, Messaging & Importers |
 | `16` | [16_DATABASE_API](#16_database_api) | **8** | Database Schema & REST API Standards |
-| `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **45** | UI/UX Design, Components & Footer |
+| `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **46** | UI/UX Design, Components & Footer |
 | `18` | [18_TESTING_QA](#18_testing_qa) | **14** | Testing, Verification & Quality Assurance |
 | `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **16** | Releases, Versioning & Changelogs |
 | `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **73** | Forensic Audits & Data Health |
@@ -448,6 +448,7 @@
 | **Branding Decision Record: Official Orange Accent** | `DECISION-RECORD` | `1.0` | 2026-11-17 | `Approved for Initial Implementation` | [2026-11-17_UI-UX-DESIGN_BRANDING-DECISION_BLOOD-RED-ACCENT_V1.md](17_UI_UX_DESIGN/2026-11-17_UI-UX-DESIGN_BRANDING-DECISION_BLOOD-RED-ACCENT_V1.md) | 17_UI_UX_DESIGN, 13_SYSADMIN_SETTINGS |
 | **Campus Noticeboard & Quick Schedule Drawer Implementation Report** | `REPORT` | `1.0` | 2026-11-23 | `Approved` | [2026-11-23_UI-UX-DESIGN_IMPLEMENTATION-REPORT_CAMPUS-NOTICEBOARD-AND-TIMETABLE-DRAWER_V1.md](17_UI_UX_DESIGN/2026-11-23_UI-UX-DESIGN_IMPLEMENTATION-REPORT_CAMPUS-NOTICEBOARD-AND-TIMETABLE-DRAWER_V1.md) | 03_ACADEMIC_MANAGEMENT, 15_INTEGRATIONS, 17_UI_UX_DESIGN |
 | **Coaching Login Background Ambient Parallax Integration** | `REPORT` | `1.0` | 2026-11-23 | `Approved` | [2026-11-23_UI-UX-DESIGN_IMPLEMENTATION-REPORT_COACHING-LOGIN-BACKGROUND_V1.md](17_UI_UX_DESIGN/2026-11-23_UI-UX-DESIGN_IMPLEMENTATION-REPORT_COACHING-LOGIN-BACKGROUND_V1.md) | 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS |
+| **Column Header Sorting & Filtering Architecture: Forensic Comparison & Engineering Recommendation** | `REPORT` | `1.0` | 2026-11-23 | `Approved` | [2026-11-23_UI-UX-DESIGN_RESEARCH-REPORT_COLUMN-HEADER-SORTING-AND-FILTERING-ARCHITECTURE_V1.md](17_UI_UX_DESIGN/2026-11-23_UI-UX-DESIGN_RESEARCH-REPORT_COLUMN-HEADER-SORTING-AND-FILTERING-ARCHITECTURE_V1.md) | 01_ARCHITECTURE, 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS, 11_REPORTS_EXPORTS, 17_UI_UX_DESIGN, 25_BUSINESS_REQUIREMENTS |
 | **Design Token Specification for Official Branding and Themes** | `SPECIFICATION` | `1.0` | 2026-11-17 | `Approved for Initial Implementation` | [2026-11-17_UI-UX-DESIGN_TOKEN-SPECIFICATION_OFFICIAL-BRANDING-AND-THEMES_V1.md](17_UI_UX_DESIGN/2026-11-17_UI-UX-DESIGN_TOKEN-SPECIFICATION_OFFICIAL-BRANDING-AND-THEMES_V1.md) | 17_UI_UX_DESIGN, 13_SYSADMIN_SETTINGS |
 | **Enterprise DataTables & Field Architecture Forensic Audit & Engineering Recommendation** | `REPORT` | `1.0` | 2026-11-23 | `Approved` | [2026-11-23_UI-UX-DESIGN_RESEARCH-REPORT_ENTERPRISE-DATATABLES-AND-FIELDS-SYSTEM_V1.md](17_UI_UX_DESIGN/2026-11-23_UI-UX-DESIGN_RESEARCH-REPORT_ENTERPRISE-DATATABLES-AND-FIELDS-SYSTEM_V1.md) | 01_ARCHITECTURE, 04_STUDENT_MANAGEMENT, 07_ATTENDANCE, 09_FEES_PAYMENTS, 25_BUSINESS_REQUIREMENTS |
 | **EnterpriseDataTable Canonical Rollout and Standardization Report** | `REPORT` | `1.0` | 2026-11-23 | `Approved` | [2026-11-23_UI_UX_DESIGN_IMPLEMENTATION-REPORT_ENTERPRISE-DATATABLE-CANONICAL-ROLLOUT_V1.md](17_UI_UX_DESIGN/2026-11-23_UI_UX_DESIGN_IMPLEMENTATION-REPORT_ENTERPRISE-DATATABLE-CANONICAL-ROLLOUT_V1.md) | 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 08_EXAMINATION, 09_FEES_PAYMENTS |

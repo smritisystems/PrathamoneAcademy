@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-22
+ * @updated     2026-11-23
  *
  * @description Flagship Homework & Assignment Management workspace featuring Overview, Unified Assignment Creation, Physical Checking Register, Digital Submissions, Templates, and Daily Reports.
  */
@@ -35,7 +35,14 @@ import {
 } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton, DeleteConfirmationModal, ContextualHelpButton } from '../components/common'
+import {
+  EditModeBar,
+  LockedButton,
+  DeleteConfirmationModal,
+  ContextualHelpButton,
+  EnterpriseDataTable,
+  DataTableColumn,
+} from '../components/common'
 import StatCard from '../components/StatCard'
 import Modal from '../components/Modal'
 import HomeworkCreateForm from '../components/homework/HomeworkCreateForm'
@@ -401,6 +408,212 @@ export default function HomeworkWorkspace() {
     })
     submitCheckMutation.mutate(items)
   }
+
+  // ── Canonical EnterpriseDataTable Columns for Homework Checking Register ──
+  const checkingColumns: DataTableColumn<any>[] = useMemo(
+    () => [
+      {
+        id: 'roll_number',
+        header: 'Roll',
+        accessorKey: 'roll_number',
+        sortable: true,
+        width: 80,
+        cell: ({ value }) => (
+          <span className="font-mono font-bold text-slate-700">{value}</span>
+        ),
+      },
+      {
+        id: 'student_name',
+        header: 'Student Name',
+        accessorKey: 'student_name',
+        sortable: true,
+        cell: ({ row }) => (
+          <div>
+            <div className="font-bold text-slate-900">{row.student_name}</div>
+            <div className="text-2xs text-slate-400">{row.admission_number}</div>
+          </div>
+        ),
+      },
+      {
+        id: 'review_status',
+        header: 'Status Flag',
+        accessorFn: (st) => localCheckingState[st.record_id]?.review_status || st.review_status,
+        sortable: true,
+        filterType: 'select',
+        filterOptions: [
+          { label: 'Done', value: 'done' },
+          { label: 'Incomplete', value: 'incomplete' },
+          { label: 'Not Done', value: 'not_done' },
+          { label: 'Absent', value: 'absent_not_checked' },
+          { label: 'Excused', value: 'excused' },
+        ],
+        cell: ({ row }) => {
+          const state = localCheckingState[row.record_id] || { review_status: row.review_status }
+          return (
+            <span
+              className={`px-2 py-0.5 text-2xs font-bold rounded-md uppercase ${
+                state.review_status === 'done'
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  : state.review_status === 'incomplete'
+                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                  : state.review_status === 'not_done'
+                  ? 'bg-red-50 text-red-700 border border-red-200'
+                  : state.review_status === 'excused'
+                  ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                  : 'bg-slate-100 text-slate-600'
+              }`}
+            >
+              {(state.review_status || '').replace('_', ' ')}
+            </span>
+          )
+        },
+      },
+      {
+        id: 'checking_actions',
+        header: 'Checking Actions',
+        sortable: false,
+        cell: ({ row }) => {
+          const state = localCheckingState[row.record_id] || { review_status: row.review_status }
+          return (
+            <div className="flex items-center gap-1">
+              {[
+                { key: 'done', label: 'Done', color: 'emerald' },
+                { key: 'incomplete', label: 'Incomplete', color: 'amber' },
+                { key: 'not_done', label: 'Not Done', color: 'red' },
+                { key: 'absent_not_checked', label: 'Absent', color: 'slate' },
+                { key: 'excused', label: 'Excused', color: 'purple' },
+              ].map((btn) => (
+                <button
+                  key={btn.key}
+                  type="button"
+                  disabled={!isEditMode}
+                  onClick={() => {
+                    setLocalCheckingState((prev) => ({
+                      ...prev,
+                      [row.record_id]: { ...prev[row.record_id], review_status: btn.key },
+                    }))
+                  }}
+                  className={`px-2 py-1 text-2xs font-bold rounded-lg transition-all ${
+                    state.review_status === btn.key
+                      ? btn.color === 'emerald'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : btn.color === 'amber'
+                        ? 'bg-amber-500 text-white shadow-xs'
+                        : btn.color === 'red'
+                        ? 'bg-red-600 text-white shadow-xs'
+                        : btn.color === 'purple'
+                        ? 'bg-purple-600 text-white shadow-xs'
+                        : 'bg-slate-700 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {btn.label}
+                </button>
+              ))}
+            </div>
+          )
+        },
+      },
+      {
+        id: 'marks',
+        header: 'Marks',
+        sortable: false,
+        width: 90,
+        cell: ({ row }) => {
+          const state = localCheckingState[row.record_id] || { marks_obtained: '' }
+          return (
+            <input
+              type="number"
+              disabled={!isEditMode}
+              placeholder="Marks"
+              value={state.marks_obtained}
+              onChange={(e) => {
+                const val = e.target.value
+                setLocalCheckingState((prev) => ({
+                  ...prev,
+                  [row.record_id]: { ...prev[row.record_id], marks_obtained: val },
+                }))
+              }}
+              className="w-16 px-2 py-1 text-xs border border-slate-200 rounded-lg font-mono text-center"
+            />
+          )
+        },
+      },
+      {
+        id: 'remarks',
+        header: 'Teacher Remarks',
+        sortable: false,
+        cell: ({ row }) => {
+          const state = localCheckingState[row.record_id] || { teacher_remarks: '' }
+          return (
+            <input
+              type="text"
+              disabled={!isEditMode}
+              placeholder="Feedback / remarks..."
+              value={state.teacher_remarks}
+              onChange={(e) => {
+                const val = e.target.value
+                setLocalCheckingState((prev) => ({
+                  ...prev,
+                  [row.record_id]: { ...prev[row.record_id], teacher_remarks: val },
+                }))
+              }}
+              className="w-48 px-2 py-1 text-xs border border-slate-200 rounded-lg"
+            />
+          )
+        },
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        sortable: false,
+        align: 'right',
+        cell: ({ row }) => (
+          <div className="flex items-center justify-end gap-1">
+            <button
+              type="button"
+              disabled={!isEditMode}
+              onClick={() =>
+                setActionModal({
+                  type: 'resubmit',
+                  record: row,
+                  textValue: 'Please complete the missing problems and resubmit.',
+                  dateValue: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
+                })
+              }
+              className={`px-2 py-1 text-2xs font-semibold rounded-md transition-colors ${
+                isEditMode
+                  ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 cursor-pointer'
+                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+              }`}
+            >
+              Resubmit
+            </button>
+            <button
+              type="button"
+              disabled={!isEditMode}
+              onClick={() =>
+                setActionModal({
+                  type: 'extend',
+                  record: row,
+                  textValue: 'Medical leave requested',
+                  dateValue: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
+                })
+              }
+              className={`px-2 py-1 text-2xs font-semibold rounded-md transition-colors ${
+                isEditMode
+                  ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer'
+                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+              }`}
+            >
+              Extend
+            </button>
+          </div>
+        ),
+      },
+    ],
+    [localCheckingState, isEditMode]
+  )
 
   // ── Daily Register Report Query (Phase 9) ──
   const [reportDate, setReportDate] = useState<string>(() => new Date().toISOString().split('T')[0])
@@ -944,190 +1157,26 @@ export default function HomeworkWorkspace() {
             </div>
           </div>
 
-          {/* Student Checking Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between gap-4">
-              <div className="relative w-64">
-                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Filter student or roll no..."
-                  value={checkingSearch}
-                  onChange={(e) => setCheckingSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-
-              <div className="text-xs text-slate-500 font-medium">
-                Total Enrolled in Register: <strong>{checkingStudents.length}</strong>
-              </div>
-            </div>
-
-            {isCheckingLoading ? (
-              <div className="py-12 text-center text-slate-400">Loading checking register...</div>
-            ) : checkingStudents.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 text-xs">
-                No students enrolled in this batch or matching your search filter.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
-                    <tr>
-                      <th className="py-3 px-4">Roll</th>
-                      <th className="py-3 px-4">Student Name</th>
-                      <th className="py-3 px-4">Status Flag</th>
-                      <th className="py-3 px-4">Checking Actions</th>
-                      <th className="py-3 px-4">Marks</th>
-                      <th className="py-3 px-4">Teacher Remarks</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {checkingStudents.map((st) => {
-                      const state = localCheckingState[st.record_id] || {
-                        review_status: st.review_status,
-                        marks_obtained: '',
-                        teacher_remarks: '',
-                      }
-                      return (
-                        <tr key={st.record_id} className="hover:bg-slate-50/70 transition-colors">
-                          <td className="py-3 px-4 font-mono font-bold text-slate-700">
-                            {st.roll_number}
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="font-bold text-slate-900">{st.student_name}</div>
-                            <div className="text-2xs text-slate-400">{st.admission_number}</div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span
-                              className={`px-2 py-0.5 text-2xs font-bold rounded-md uppercase ${
-                                state.review_status === 'done'
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : state.review_status === 'incomplete'
-                                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                  : state.review_status === 'not_done'
-                                  ? 'bg-red-50 text-red-700 border border-red-200'
-                                  : state.review_status === 'excused'
-                                  ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                                  : 'bg-slate-100 text-slate-600'
-                              }`}
-                            >
-                              {state.review_status.replace('_', ' ')}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-1">
-                              {[
-                                { key: 'done', label: 'Done', color: 'emerald' },
-                                { key: 'incomplete', label: 'Incomplete', color: 'amber' },
-                                { key: 'not_done', label: 'Not Done', color: 'red' },
-                                { key: 'absent_not_checked', label: 'Absent', color: 'slate' },
-                                { key: 'excused', label: 'Excused', color: 'purple' },
-                              ].map((btn) => (
-                                <button
-                                  key={btn.key}
-                                  type="button"
-                                  disabled={!isEditMode}
-                                  onClick={() => {
-                                    setLocalCheckingState((prev) => ({
-                                      ...prev,
-                                      [st.record_id]: { ...prev[st.record_id], review_status: btn.key },
-                                    }))
-                                  }}
-                                  className={`px-2 py-1 text-2xs font-bold rounded-lg transition-all ${
-                                    state.review_status === btn.key
-                                      ? btn.color === 'emerald'
-                                        ? 'bg-emerald-600 text-white shadow-xs'
-                                        : btn.color === 'amber'
-                                        ? 'bg-amber-500 text-white shadow-xs'
-                                        : btn.color === 'red'
-                                        ? 'bg-red-600 text-white shadow-xs'
-                                        : btn.color === 'purple'
-                                        ? 'bg-purple-600 text-white shadow-xs'
-                                        : 'bg-slate-700 text-white shadow-xs'
-                                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                  }`}
-                                >
-                                  {btn.label}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <input
-                              type="number"
-                              disabled={!isEditMode}
-                              placeholder="Marks"
-                              value={state.marks_obtained}
-                              onChange={(e) => {
-                                const val = e.target.value
-                                setLocalCheckingState((prev) => ({
-                                  ...prev,
-                                  [st.record_id]: { ...prev[st.record_id], marks_obtained: val },
-                                }))
-                              }}
-                              className="w-16 px-2 py-1 text-xs border border-slate-200 rounded-lg font-mono text-center"
-                            />
-                          </td>
-                          <td className="py-3 px-4">
-                            <input
-                              type="text"
-                              disabled={!isEditMode}
-                              placeholder="Feedback / remarks..."
-                              value={state.teacher_remarks}
-                              onChange={(e) => {
-                                const val = e.target.value
-                                setLocalCheckingState((prev) => ({
-                                  ...prev,
-                                  [st.record_id]: { ...prev[st.record_id], teacher_remarks: val },
-                                }))
-                              }}
-                              className="w-48 px-2 py-1 text-xs border border-slate-200 rounded-lg"
-                            />
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <button
-                                type="button"
-                                disabled={!isEditMode}
-                                onClick={() =>
-                                  setActionModal({
-                                    type: 'resubmit',
-                                    record: st,
-                                    textValue: 'Please complete the missing problems and resubmit.',
-                                    dateValue: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
-                                  })
-                                }
-                                className="px-2 py-1 text-2xs font-semibold bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-md transition-colors"
-                              >
-                                Resubmit
-                              </button>
-                              <button
-                                type="button"
-                                disabled={!isEditMode}
-                                onClick={() =>
-                                  setActionModal({
-                                    type: 'extend',
-                                    record: st,
-                                    textValue: 'Medical leave requested',
-                                    dateValue: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
-                                  })
-                                }
-                                className="px-2 py-1 text-2xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-md transition-colors"
-                              >
-                                Extend
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          {/* Canonical EnterpriseDataTable Student Checking Register */}
+          <EnterpriseDataTable
+            tableId="homework_checking_register"
+            data={checkingStudents}
+            columns={checkingColumns}
+            isLoading={isCheckingLoading}
+            loadingMessage="Loading checking register..."
+            emptyMessage="No students enrolled in this batch or matching your search filter."
+            searchable={true}
+            searchPlaceholder="Filter student or roll no..."
+            searchValue={checkingSearch}
+            onSearchChange={setCheckingSearch}
+            isEditMode={isEditMode}
+            pageSize={50}
+            exportConfig={{
+              filename: `Homework_${activeCheckingAssignment?.assignment_code || 'Register'}`,
+              sheetName: 'Checking Register',
+              title: `Homework Checking Register - ${activeCheckingAssignment?.title || ''}`,
+            }}
+          />
         </div>
       )}
 

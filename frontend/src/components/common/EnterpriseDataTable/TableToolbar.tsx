@@ -27,6 +27,7 @@ import {
   Printer,
   ChevronDown,
   RotateCcw,
+  Filter,
 } from 'lucide-react'
 import type { DataTableColumn, TableExportConfig } from './types'
 
@@ -45,6 +46,8 @@ interface TableToolbarProps<T = any> {
   customFilterBar?: React.ReactNode
   totalCount: number
   filteredCount: number
+  activeFiltersCount?: number
+  onClearAllFilters?: () => void
 }
 
 export const TableToolbar: React.FC<TableToolbarProps> = ({
@@ -62,6 +65,8 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
   customFilterBar,
   totalCount,
   filteredCount,
+  activeFiltersCount = 0,
+  onClearAllFilters,
 }) => {
   const [localSearch, setLocalSearch] = useState(searchValue)
   const [showColumnsMenu, setShowColumnsMenu] = useState(false)
@@ -133,6 +138,20 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
 
         {/* Action Controls Group: Column Toggle, Export, Counts */}
         <div className="flex items-center gap-2 ml-auto">
+          {/* Active Filter Clear Button */}
+          {activeFiltersCount > 0 && onClearAllFilters && (
+            <button
+              type="button"
+              onClick={onClearAllFilters}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200 shadow-2xs transition"
+              title="Clear all active column filters"
+            >
+              <Filter className="w-3.5 h-3.5 text-primary-600" />
+              <span>Filters ({activeFiltersCount})</span>
+              <X className="w-3 h-3 text-primary-500 hover:text-primary-800" />
+            </button>
+          )}
+
           {/* Column Visibility Menu */}
           {hideableColumns.length > 0 && (
             <div className="relative" ref={columnsMenuRef}>
