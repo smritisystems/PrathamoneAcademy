@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-24
 #  *
 #  * @description API endpoints for administrative executive dashboard, financial accuracy, status-wise outstanding breakdown, aging recovery, multi-tab analytics, and operational intelligence.
 #  */
@@ -702,6 +702,7 @@ async def get_dashboard_stats(
             PaymentReceipt.receipt_number,
             Division.name.label("batch_name"),
             Standard.name.label("standard_name"),
+            Board.name.label("board_name"),
             FeeCategory.name.label("category_name"),
         )
         .join(Student, Payment.student_id == Student.id)
@@ -713,6 +714,7 @@ async def get_dashboard_stats(
         )
         .outerjoin(Division, latest_enr.c.division_id == Division.id)
         .outerjoin(Standard, latest_enr.c.standard_id == Standard.id)
+        .outerjoin(Board, Division.board_id == Board.id)
         .outerjoin(PaymentAllocation, Payment.id == PaymentAllocation.payment_id)
         .outerjoin(FeeInvoice, PaymentAllocation.invoice_id == FeeInvoice.id)
         .outerjoin(FeeInvoiceItem, FeeInvoice.id == FeeInvoiceItem.invoice_id)
@@ -738,6 +740,7 @@ async def get_dashboard_stats(
             PaymentReceipt.receipt_number,
             Division.name,
             Standard.name,
+            Board.name,
             FeeCategory.name,
         )
         .order_by(Payment.payment_date.desc(), Payment.created_at.desc())
@@ -758,6 +761,8 @@ async def get_dashboard_stats(
                 if std_name and b_name
                 else (b_name or std_name or "General Batch")
             ),
+            "batch_name": b_name or "—",
+            "board_name": board_name or "—",
             "fee_category": cat_name or "Tuition Fee / General",
             "amount": float(p.amount),
             "payment_date": str(p.payment_date),
@@ -766,7 +771,7 @@ async def get_dashboard_stats(
             "transaction_reference": p.transaction_reference or "—",
             "created_at": p.created_at.isoformat() if p.created_at else None,
         }
-        for p, s, rec_num, b_name, std_name, cat_name in recent_rows
+        for p, s, rec_num, b_name, std_name, board_name, cat_name in recent_rows
     ]
 
     gov_flt = FinancialFilter(
@@ -1187,6 +1192,7 @@ async def get_dashboard_analytics(
             Student.admission_number,
             Standard.name.label("standard_name"),
             Division.name.label("batch_name"),
+            Board.name.label("board_name"),
             FeeInvoice.invoice_number,
             FeeInvoice.due_date,
             FeeInvoice.net_amount,
@@ -1202,6 +1208,7 @@ async def get_dashboard_analytics(
         )
         .outerjoin(Standard, latest_enr.c.standard_id == Standard.id)
         .outerjoin(Division, latest_enr.c.division_id == Division.id)
+        .outerjoin(Board, Division.board_id == Board.id)
         .where(
             FeeInvoice.status != "cancelled",
             FeeInvoice.outstanding_amount > 0,
@@ -1224,6 +1231,7 @@ async def get_dashboard_analytics(
             "admission_number": r.admission_number,
             "standard": r.standard_name or "—",
             "batch": r.batch_name or "—",
+            "board_name": r.board_name or "—",
             "invoice_number": r.invoice_number,
             "due_date": str(r.due_date) if r.due_date else None,
             "days_overdue": int(r.days_overdue) if (r.days_overdue and r.days_overdue > 0 and r.due_date and r.due_date < today) else 0,
@@ -1307,15 +1315,17 @@ async def get_dashboard_analytics(
             Division.id.label("division_id"),
             Division.name.label("division_name"),
             Standard.name.label("standard_name"),
+            Board.name.label("board_name"),
             Division.capacity,
             func.count(latest_enr.c.id).label("enrolled_count"),
         )
         .join(Standard, Division.standard_id == Standard.id)
+        .outerjoin(Board, Division.board_id == Board.id)
         .outerjoin(
             latest_enr,
             (Division.id == latest_enr.c.division_id) & (latest_enr.c.status == "active"),
         )
-        .group_by(Division.id, Division.name, Standard.name, Division.capacity)
+        .group_by(Division.id, Division.name, Standard.name, Board.name, Division.capacity)
         .order_by(Standard.name.asc(), Division.name.asc())
     )
     batch_util_rows = (await db.execute(batch_util_q)).all()
@@ -1324,6 +1334,7 @@ async def get_dashboard_analytics(
             "division_id": r.division_id,
             "batch_name": r.division_name,
             "standard_name": r.standard_name,
+            "board_name": r.board_name or "—",
             "capacity": int(r.capacity or 40),
             "enrolled_count": int(r.enrolled_count),
             "utilization_rate": round((int(r.enrolled_count) / int(r.capacity or 40) * 100), 1),
@@ -1800,6 +1811,7 @@ async def get_outstanding_drilldown(
             Student,
             Standard.name.label("standard_name"),
             Division.name.label("batch_name"),
+            Board.name.label("board_name"),
             cat_expr.label("student_category"),
             aging_expr.label("aging_bucket"),
             days_overdue_expr.label("days_overdue"),
@@ -1812,6 +1824,7 @@ async def get_outstanding_drilldown(
         )
         .outerjoin(Standard, latest_enr.c.standard_id == Standard.id)
         .outerjoin(Division, latest_enr.c.division_id == Division.id)
+        .outerjoin(Board, Division.board_id == Board.id)
         .where(FeeInvoice.status != "cancelled", FeeInvoice.outstanding_amount > 0)
     )
 
@@ -1820,7 +1833,7 @@ async def get_outstanding_drilldown(
     if academic_year_id:
         query = query.where(FeeInvoice.academic_year_id == academic_year_id)
     if board_id:
-        query = query.join(Board, Division.board_id == Board.id).where(Board.id == board_id)
+        query = query.where(Board.id == board_id)
     if standard_id:
         query = query.where(latest_enr.c.standard_id == standard_id)
     if division_id:
@@ -1875,7 +1888,7 @@ async def get_outstanding_drilldown(
     rows = (await db.execute(query)).all()
 
     records = []
-    for inv, std, std_name, b_name, cat, aging, overdue_days in rows:
+    for inv, std, std_name, b_name, board_name, cat, aging, overdue_days in rows:
         d_overdue = int(overdue_days) if (overdue_days is not None and overdue_days > 0 and inv.due_date and inv.due_date < today) else 0
         records.append({
             "invoice_id": inv.id,
@@ -1886,6 +1899,7 @@ async def get_outstanding_drilldown(
             "phone": std.phone or "—",
             "class_name": std_name or "—",
             "batch_name": b_name or "—",
+            "board_name": board_name or "—",
             "student_status": cat,
             "aging_bucket": aging,
             "due_date": str(inv.due_date) if inv.due_date else None,

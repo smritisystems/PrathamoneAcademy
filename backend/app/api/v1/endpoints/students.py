@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-23
+#  * @updated     2026-11-24
 #  *
 #  * @description API endpoints for student CRUD, profile editing, guardian details, and identity documents.
 #  */
@@ -519,12 +519,36 @@ async def get_student(
     )
     fee_summary = fee_result.one()
 
+    # Active academic coordinates (Standard, Division/Batch, Board, Roll No)
+    active_enr_res = await db.execute(
+        select(
+            Standard.name.label("standard_name"),
+            Division.name.label("division_name"),
+            Board.name.label("board_name"),
+            StudentEnrollment.roll_number.label("roll_number"),
+        )
+        .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
+        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .outerjoin(Board, Division.board_id == Board.id)
+        .where(
+            StudentEnrollment.student_id == student_id,
+            StudentEnrollment.status.in_(["active", "enrolled"]),
+        )
+        .order_by(StudentEnrollment.id.desc())
+        .limit(1)
+    )
+    enr_coords = active_enr_res.first()
+
     return {
         "id": student.id,
         "admission_number": student.admission_number,
         "first_name": student.first_name,
         "last_name": student.last_name,
         "middle_name": student.middle_name,
+        "standard_name": enr_coords.standard_name if enr_coords else None,
+        "division_name": enr_coords.division_name if enr_coords else None,
+        "board_name": enr_coords.board_name if enr_coords else None,
+        "roll_number": enr_coords.roll_number if enr_coords else None,
         "date_of_birth": str(student.date_of_birth),
         "gender": student.gender,
         "blood_group": student.blood_group,

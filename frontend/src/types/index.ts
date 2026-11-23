@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-23
+ * @updated     2026-11-24
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -558,8 +558,11 @@ export interface RecentPayment {
   admission_number: string
   academic_year?: string
   board?: string
+  board_name?: string
   standard?: string
+  standard_name?: string
   batch: string
+  batch_name?: string
   fee_category?: string
   amount: number
   payment_date: string
@@ -932,6 +935,7 @@ export interface OutstandingDrilldownRecord {
   phone: string
   class_name: string
   batch_name: string
+  board_name?: string
   student_status: string
   aging_bucket: string
   due_date: string | null
@@ -1029,6 +1033,8 @@ export interface AnalyticsTopDefaulter {
   admission_number: string
   standard: string
   batch: string
+  board?: string
+  board_name?: string
   invoice_number: string
   due_date: string | null
   days_overdue: number
@@ -1055,6 +1061,7 @@ export interface AnalyticsBatchUtilization {
   division_id?: number
   batch_name: string
   standard_name: string
+  board_name?: string
   capacity: number
   enrolled_count: number
   utilization_rate: number
