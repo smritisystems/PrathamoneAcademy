@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-23
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -1887,6 +1887,7 @@ export const licenseApi = {
       email_challenge_id?: string
       license_id?: number
       registration?: NonNullable<LicenseStatusResponse['registration']>
+      reactivation_request_id?: string
     },
     institution_id?: number,
   ) =>
@@ -1895,6 +1896,54 @@ export const licenseApi = {
       activation,
       { params: institution_id ? { institution_id } : undefined },
     ),
+  customerLogin: (email: string, password: string, institution_id?: number) =>
+    apiClient.post<{ ok: boolean; session_token: string; email: string }>(
+      '/license/customer/login',
+      { email, password },
+      { params: institution_id ? { institution_id } : undefined },
+    ),
+  getCustomerReactivations: (session_token?: string, institution_id?: number) =>
+    apiClient.get<{
+      ok: boolean
+      licenses: Array<{
+        license_id: number
+        serial_number: string | null
+        seats: number
+        activation_count: number
+        edition?: string
+        license_model?: string
+        status?: string
+      }>
+    }>('/license/customer/reactivations', {
+      params: institution_id ? { institution_id } : undefined,
+      headers: session_token ? { 'X-License-Session': session_token } : undefined,
+    }),
+  requestCustomerReactivation: (license_id: number, session_token?: string, institution_id?: number) =>
+    apiClient.post<{
+      ok: boolean
+      id: string
+      status: 'approved' | 'pending' | 'rejected' | 'expired'
+      registered_phone?: string
+      message?: string
+    }>(
+      '/license/customer/request',
+      { license_id, session_token },
+      {
+        params: institution_id ? { institution_id } : undefined,
+        headers: session_token ? { 'X-License-Session': session_token } : undefined,
+      },
+    ),
+  pollCustomerReactivation: (request_id: string, session_token?: string, institution_id?: number) =>
+    apiClient.get<{
+      ok: boolean
+      id: string
+      status: 'approved' | 'pending' | 'rejected' | 'expired'
+      registered_phone?: string
+      message?: string
+    }>(`/license/customer/request/${request_id}`, {
+      params: institution_id ? { institution_id } : undefined,
+      headers: session_token ? { 'X-License-Session': session_token } : undefined,
+    }),
   requestEmailCode: (
     request: {
       purpose: 'activation' | 'email_change'

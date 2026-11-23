@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-23
 #  *
 #  * @description API endpoints for multi-branch institute profile configuration and campus metadata.
 #  */
@@ -268,3 +268,55 @@ async def update_institution(
     await db.commit()
     await db.refresh(institution)
     return {"id": institution.id, "name": institution.name}
+
+
+@public_router.get("/public/notices")
+async def get_public_campus_notices(
+    institution_id: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Public unauthenticated endpoint returning non-confidential campus notices and circulars.
+    Strictly excludes internal faculty notes, disciplinary records, and financial ledgers.
+    """
+    from app.models.portal import Announcement
+    target_id = institution_id or 1
+    stmt = (
+        select(Announcement)
+        .where(Announcement.institution_id == target_id)
+        .order_by(Announcement.is_pinned.desc(), Announcement.id.desc())
+        .limit(10)
+    )
+    res = await db.execute(stmt)
+    records = res.scalars().all()
+
+    output = []
+    for r in records:
+        cat = "Academic"
+        raw_cat = (r.category or "").lower()
+        title_lower = (r.title or "").lower()
+        if "exam" in raw_cat or "test" in title_lower:
+            cat = "Examination"
+        elif "holiday" in raw_cat:
+            cat = "Holiday"
+        elif "event" in raw_cat or "celebration" in title_lower:
+            cat = "Event"
+
+        date_str = "23 Nov 2026"
+        if hasattr(r, "publish_date") and r.publish_date:
+            date_str = r.publish_date.strftime("%d %b %Y")
+        elif hasattr(r, "created_at") and r.created_at:
+            date_str = r.created_at.strftime("%d %b %Y")
+
+        output.append({
+            "id": f"notice-{r.id}",
+            "title": r.title,
+            "category": cat,
+            "date": date_str,
+            "urgency": "high" if getattr(r, "is_pinned", False) else "normal",
+            "summary": (r.content or "")[:240],
+            "targetGrade": "All Standards",
+            "hasAttachment": bool(getattr(r, "attachment_url", None)),
+        })
+    return {"status": "success", "count": len(output), "notices": output}
+

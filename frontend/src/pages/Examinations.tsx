@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-23
  *
  * @description Examinations flagship workspace featuring 7 dedicated submenus: overview, schedules, marks entry, analytics, report cards, question papers, and settings.
  */
@@ -32,7 +32,16 @@ import { standardsApi, academicYearsApi, examinationsApi, settingsApi } from '..
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, LockedButton, SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton } from '../components/common'
+import {
+  EditModeBar,
+  LockedButton,
+  SortableHeader,
+  TableSortSelect,
+  TableSortOption,
+  ContextualHelpButton,
+  EnterpriseDataTable,
+  DataTableColumn,
+} from '../components/common'
 import { useTableSort } from '../hooks/useTableSort'
 import Modal from '../components/Modal'
 import ReportCardModal from '../components/ReportCardModal'
@@ -335,6 +344,122 @@ function ExaminationsContent() {
 
   const selectedStdObj = standards.find((s) => String(s.id) === currentStandardId)
   const currentExamObj = exams.find((e) => e.id === (selectedExamId || exams[0]?.id))
+
+  const examColumns: DataTableColumn<any>[] = useMemo(
+    () => [
+      {
+        id: 'name',
+        header: 'Exam Name',
+        accessorKey: 'name',
+        sortable: true,
+        sticky: 'left',
+        minWidth: 180,
+        cell: ({ row: ex }) => (
+          <div className="font-semibold text-slate-900 flex items-center gap-2">
+            <Award className="w-4 h-4 text-purple-600 shrink-0" />
+            <span>{ex.name}</span>
+          </div>
+        ),
+      },
+      {
+        id: 'exam_type',
+        header: 'Type',
+        accessorKey: 'exam_type',
+        sortable: true,
+        width: 120,
+        cell: ({ value }) => (
+          <span className="bg-purple-50 text-purple-700 px-2.5 py-0.5 rounded-full text-xs font-medium border border-purple-200">
+            {value}
+          </span>
+        ),
+      },
+      {
+        id: 'standard_name',
+        header: 'Standard',
+        accessorFn: (ex) => ex.standard_name || selectedStdObj?.name || 'All',
+        sortable: true,
+        width: 120,
+        cell: ({ value }) => <span className="text-slate-600 font-medium">{value}</span>,
+      },
+      {
+        id: 'total_marks',
+        header: 'Max Marks',
+        accessorKey: 'total_marks',
+        sortable: true,
+        type: 'number',
+        align: 'center',
+        width: 110,
+        cell: ({ row: ex }) => (
+          <span className="font-mono font-semibold text-slate-800">
+            {ex.max_marks || ex.total_marks || 100}
+          </span>
+        ),
+      },
+      {
+        id: 'passing_marks',
+        header: 'Passing Marks',
+        accessorKey: 'passing_marks',
+        sortable: true,
+        type: 'number',
+        align: 'center',
+        width: 120,
+        cell: ({ row: ex }) => (
+          <span className="font-mono text-slate-700">{ex.passing_marks || 35}</span>
+        ),
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        accessorKey: 'status',
+        sortable: true,
+        align: 'center',
+        width: 130,
+        cell: () => (
+          <span className="inline-flex items-center gap-1 text-xs text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+            <CheckCircle className="w-3 h-3 text-emerald-600" /> Scheduled
+          </span>
+        ),
+      },
+      {
+        id: 'actions',
+        header: 'Actions & Reports',
+        sortable: false,
+        sticky: 'right',
+        align: 'right',
+        hideable: false,
+        minWidth: 260,
+        cell: ({ row: ex }) => (
+          <div className="flex items-center justify-end gap-1.5">
+            <button
+              onClick={() => setActiveMarksExam({ id: ex.id, name: ex.name })}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-primary-50 hover:bg-primary-100 text-primary-700 rounded-lg border border-indigo-200 transition"
+              title="Enter student marks for all subjects"
+            >
+              <FileEdit className="w-3.5 h-3.5" /> Marks
+            </button>
+            <button
+              onClick={() => setActiveAnalyticsExam({ id: ex.id, name: ex.name })}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg border border-emerald-200 transition"
+              title="View class performance analytics & leaderboard"
+            >
+              <BarChart3 className="w-3.5 h-3.5" /> Analytics
+            </button>
+            <button
+              onClick={() => {
+                setSelectedExamId(ex.id)
+                setTab('report-cards')
+              }}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg border border-slate-200 transition"
+              title="View student report cards"
+            >
+              <FileText className="w-3.5 h-3.5" /> Report Card
+            </button>
+          </div>
+        ),
+      },
+    ],
+    [selectedStdObj]
+  )
 
   // Grading Policies Query & Mutation
   const { data: policiesData, refetch: refetchPolicies } = useQuery({
@@ -680,151 +805,23 @@ function ExaminationsContent() {
           )}
 
           {/* Examinations List Table */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <div>
-                <h2 className="text-base font-bold text-gray-900">
-                  {selectedStdObj?.name ? `${selectedStdObj.name} — Examinations & Schedules` : 'Examinations'}
-                </h2>
-                <p className="text-xs text-gray-500">
-                  Total {sortedExams.length} examination{sortedExams.length === 1 ? '' : 's'} registered in academic schedule
-                </p>
-              </div>
-              <TableSortSelect
-                options={EXAM_SORT_OPTIONS}
-                currentSortKey={examSortKey}
-                currentDirection={examSortDirection}
-                onSortChange={(key, dir) => {
-                  const opt = EXAM_SORT_OPTIONS.find((o) => o.key === key)
-                  setExamSort(key, dir, undefined, opt?.type || 'auto')
-                }}
-                onClear={clearExamSort}
-                placeholder="Sort Examinations..."
-              />
-            </div>
-
-            {isLoading ? (
-              <div className="flex items-center justify-center h-48">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-700" />
-              </div>
-            ) : sortedExams.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
-                <Award className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-                <p className="text-sm font-medium">No examinations scheduled for this standard</p>
-                <p className="text-xs mt-1">
-                  Click "+ Schedule Examination" to create a new test or mock exam.
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-100 text-gray-500 text-left">
-                      <SortableHeader
-                        columnKey="name"
-                        label="Exam Name"
-                        currentSortKey={examSortKey}
-                        currentDirection={examSortDirection}
-                        onSort={requestExamSort}
-                      />
-                      <SortableHeader
-                        columnKey="exam_type"
-                        label="Type"
-                        currentSortKey={examSortKey}
-                        currentDirection={examSortDirection}
-                        onSort={requestExamSort}
-                      />
-                      <th className="pb-3 font-medium">Standard</th>
-                      <SortableHeader
-                        columnKey="total_marks"
-                        label="Max Marks"
-                        align="center"
-                        currentSortKey={examSortKey}
-                        currentDirection={examSortDirection}
-                        onSort={requestExamSort}
-                        sortType="number"
-                      />
-                      <SortableHeader
-                        columnKey="passing_marks"
-                        label="Passing Marks"
-                        align="center"
-                        currentSortKey={examSortKey}
-                        currentDirection={examSortDirection}
-                        onSort={requestExamSort}
-                        sortType="number"
-                      />
-                      <SortableHeader
-                        columnKey="status"
-                        label="Status"
-                        align="center"
-                        currentSortKey={examSortKey}
-                        currentDirection={examSortDirection}
-                        onSort={requestExamSort}
-                      />
-                      <th className="pb-3 font-medium text-right">Actions & Reports</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {sortedExams.map((ex: any) => (
-                      <tr key={ex.id} className="hover:bg-gray-50/50">
-                        <td className="py-3 font-medium text-gray-900 flex items-center gap-2">
-                          <Award className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                          <span>{ex.name}</span>
-                        </td>
-                        <td className="py-3 text-xs text-gray-600">
-                          <span className="bg-purple-50 text-purple-700 px-2.5 py-0.5 rounded-full font-medium border border-purple-200">
-                            {ex.exam_type}
-                          </span>
-                        </td>
-                        <td className="py-3 text-xs text-gray-600 font-medium">
-                          {ex.standard_name || selectedStdObj?.name}
-                        </td>
-                        <td className="py-3 text-center text-gray-700 font-semibold">
-                          {ex.max_marks || 100}
-                        </td>
-                        <td className="py-3 text-center text-gray-700">
-                          {ex.passing_marks || 35}
-                        </td>
-                        <td className="py-3 text-center">
-                          <span className="inline-flex items-center gap-1 text-xs text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                            <CheckCircle className="w-3 h-3 text-emerald-600" /> Scheduled
-                          </span>
-                        </td>
-                        <td className="py-3 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => setActiveMarksExam({ id: ex.id, name: ex.name })}
-                              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-primary-50 hover:bg-primary-100 text-primary-700 rounded-lg border border-indigo-200 transition"
-                              title="Enter student marks for all subjects"
-                            >
-                              <FileEdit className="w-3.5 h-3.5" /> Marks
-                            </button>
-                            <button
-                              onClick={() => setActiveAnalyticsExam({ id: ex.id, name: ex.name })}
-                              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg border border-emerald-200 transition"
-                              title="View class performance analytics & leaderboard"
-                            >
-                              <BarChart3 className="w-3.5 h-3.5" /> Analytics
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedExamId(ex.id)
-                                setTab('report-cards')
-                              }}
-                              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg border border-slate-200 transition"
-                              title="View student report cards"
-                            >
-                              <FileText className="w-3.5 h-3.5" /> Report Card
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          <EnterpriseDataTable
+            tableId="examinations_schedules_master"
+            data={exams}
+            columns={examColumns}
+            isLoading={isLoading}
+            loadingMessage="Loading academic examination schedule…"
+            emptyMessage="No examinations scheduled for this standard."
+            searchable={true}
+            searchPlaceholder="Search examination name, type, or standard…"
+            exportConfig={{
+              filename: 'Examinations_Schedule',
+              sheetName: 'Exams',
+              title: selectedStdObj?.name ? `${selectedStdObj.name} — Examinations Schedule` : 'Examinations Schedule',
+            }}
+            pageSize={20}
+            pageSizeOptions={[10, 20, 50, -1]}
+          />
         </div>
       )}
 

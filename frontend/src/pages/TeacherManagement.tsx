@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-22
+ * @updated     2026-11-23
  *
  * @description Dedicated Teachers & Faculty Management Centre with 8 first-class workspaces:
  */
@@ -70,7 +70,11 @@ import {
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, LockedButton, SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton } from '../components/common'
+import {
+  EditModeBar, LockedButton, SortableHeader, TableSortSelect, TableSortOption,
+  ContextualHelpButton, EnterpriseDataTable, DataTableColumn
+} from '../components/common'
+import { fallbackEmpty } from '../utils/formatters'
 import { useTableSort } from '../hooks/useTableSort'
 import TeacherProfileModal from '../components/TeacherProfileModal'
 import StaffLifecycleModal from '../components/StaffLifecycleModal'
@@ -251,7 +255,7 @@ function TeacherManagementContent() {
   } = useQuery({
     queryKey: ['teacher-workforce-dashboard', selectedAcademicYearId],
     queryFn: () => staffApi.getTeacherDashboard(selectedAcademicYearId).then((r) => r.data),
-    enabled: activeTab === 'overview',
+    enabled: true,
     staleTime: 5 * 60 * 1000,
     placeholderData: (prev) => prev,
   })
@@ -544,6 +548,116 @@ function TeacherManagementContent() {
     initialKey: 'name',
     initialDirection: 'asc',
   })
+
+  // Canonical EnterpriseDataTable Columns for Faculty Directory
+  const teacherColumns: DataTableColumn<any>[] = useMemo(() => [
+    {
+      key: 'name',
+      header: 'Faculty Member',
+      sortable: true,
+      pinned: 'left',
+      render: (tch) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-primary-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+            {tch.name?.charAt(0) || 'T'}
+          </div>
+          <div>
+            <div className="font-semibold text-slate-900">{tch.name}</div>
+            <div className="text-[11px] text-slate-500">{tch.email} &bull; {tch.phone || 'No phone'}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'employee_id',
+      header: 'Employee ID',
+      sortable: true,
+      render: (tch) => (
+        <span className="font-mono text-slate-700 font-semibold text-[11px]">
+          {tch.employee_id || fallbackEmpty}
+        </span>
+      ),
+    },
+    {
+      key: 'specialization',
+      header: 'Specialization & Subject',
+      sortable: true,
+      render: (tch) => (
+        <div>
+          <div className="font-medium text-slate-800">{tch.specialization || 'General Studies'}</div>
+          <div className="text-[10px] text-slate-400">{tch.qualification}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'is_assigned',
+      header: 'Academic Batches',
+      render: (tch) => tch.is_assigned ? (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <Check className="w-3 h-3 text-emerald-600" /> Assigned
+        </span>
+      ) : (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+          Unassigned
+        </span>
+      ),
+    },
+    {
+      key: 'has_timetable',
+      header: 'Timetable Status',
+      render: (tch) => tch.has_timetable ? (
+        <span className="text-emerald-700 font-semibold text-xs">Scheduled</span>
+      ) : (
+        <span className="text-slate-400 text-xs">Not scheduled</span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Lifecycle Status',
+      sortable: true,
+      render: (tch) => (
+        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+          tch.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
+        }`}>
+          {tch.status || 'Active'}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      pinned: 'right',
+      align: 'right',
+      render: (tch) => (
+        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedTeacherId(tch.id)
+              setShowProfileModal(true)
+            }}
+            className="px-2 py-1 text-slate-600 hover:text-primary-600 hover:bg-indigo-50 rounded font-medium transition-colors"
+          >
+            Profile
+          </button>
+          <button
+            type="button"
+            onClick={() => handleOpenAssignModal(tch.id)}
+            className="px-2 py-1 text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded font-medium transition-colors"
+          >
+            Assign
+          </button>
+          <button
+            type="button"
+            onClick={() => handleOpenLifecycleModal(tch)}
+            className="px-2 py-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded font-medium transition-colors"
+          >
+            Lifecycle
+          </button>
+        </div>
+      ),
+    },
+  ], [])
 
   // Filtered assignments
   const filteredAssignments = useMemo(() => {
@@ -1062,78 +1176,72 @@ function TeacherManagementContent() {
       {/* ── TAB 2: FACULTY DIRECTORY & DOSSIERS ── */}
       {activeTab === 'directory' && (
         <div className="space-y-4">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 pb-3">
-            {/* Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none text-xs">
-              {[
-                { key: 'all', label: 'All Faculty', count: metrics.total_teachers },
-                { key: 'assigned', label: 'Assigned', count: metrics.assigned_teachers },
-                { key: 'unassigned', label: 'Unassigned', count: metrics.unassigned_teachers, alert: metrics.unassigned_teachers > 0 },
-                { key: 'without_timetable', label: 'No Timetable', count: metrics.teachers_without_timetable },
-                { key: 'on_leave', label: 'On Leave', count: metrics.teachers_on_leave },
-                { key: 'upcoming', label: 'Upcoming Joining', count: metrics.upcoming_joining },
-                { key: 'departed', label: 'Departed', count: metrics.departed_teachers },
-              ].map((tab: any) => {
-                const isActive = directoryStatusTab === tab.key
-                return (
-                  <button
-                    type="button"
-                    key={tab.key}
-                    onClick={() => setDirectoryStatusTab(tab.key)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium whitespace-nowrap transition-all ${
-                      isActive
-                        ? 'bg-primary-600 text-white font-semibold shadow-xs'
-                        : tab.alert
-                        ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 font-bold'
-                        : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50'
-                    }`}
-                  >
-                    <span>{tab.label}</span>
-                    {tab.count !== undefined && (
-                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                        isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-                      }`}>
-                        {tab.count}
-                      </span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Search Box */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <TableSortSelect
-                options={TEACHER_SORT_OPTIONS}
-                currentSortKey={teacherSortKey}
-                currentDirection={teacherSortDirection}
-                onSortChange={(key, dir) => {
-                  const opt = TEACHER_SORT_OPTIONS.find((o) => o.key === key)
-                  setTeacherSort(key, dir, undefined, opt?.type || 'auto')
-                }}
-                onClear={clearTeacherSort}
-                placeholder="Sort Faculty..."
-              />
-              <div className="relative min-w-[260px]">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search faculty by name, ID, subject..."
-                  className="w-full text-xs pl-9 pr-3 py-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-primary-500 outline-none shadow-2xs"
-                />
+          <EnterpriseDataTable<any>
+            data={filteredTeachers}
+            columns={teacherColumns}
+            rowKey="id"
+            isLoading={isDashboardLoading}
+            loadingMessage="Loading teacher workforce directory..."
+            isEditMode={isEditMode}
+            searchPlaceholder="Search faculty by name, ID, subject..."
+            searchValue={search}
+            onSearchChange={setSearch}
+            customFilterBar={
+              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1">
+                {[
+                  { key: 'all', label: 'All Faculty', count: metrics.total_teachers },
+                  { key: 'assigned', label: 'Assigned', count: metrics.assigned_teachers },
+                  { key: 'unassigned', label: 'Unassigned', count: metrics.unassigned_teachers, alert: metrics.unassigned_teachers > 0 },
+                  { key: 'without_timetable', label: 'No Timetable', count: metrics.teachers_without_timetable },
+                  { key: 'on_leave', label: 'On Leave', count: metrics.teachers_on_leave },
+                  { key: 'upcoming', label: 'Upcoming Joining', count: metrics.upcoming_joining },
+                  { key: 'departed', label: 'Departed', count: metrics.departed_teachers },
+                ].map((tab: any) => {
+                  const isActive = directoryStatusTab === tab.key
+                  return (
+                    <button
+                      type="button"
+                      key={tab.key}
+                      onClick={() => setDirectoryStatusTab(tab.key)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                        isActive
+                          ? 'bg-primary-600 text-white font-semibold shadow-xs'
+                          : tab.alert
+                          ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 font-bold'
+                          : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      {tab.count !== undefined && (
+                        <span
+                          className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                            isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {tab.count}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
-            </div>
-          </div>
-
-          {/* Teachers Directory Table */}
-          <div className="bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden">
-            {isDashboardLoading ? (
-              <div className="p-12 text-center text-xs text-slate-500 font-medium">
-                Loading teacher workforce directory...
-              </div>
-            ) : sortedTeachers.length === 0 ? (
+            }
+            exportConfig={{
+              filename: 'faculty-workforce-directory',
+              sheetName: 'Faculty',
+              title: 'PrathamOne EduOS — Faculty Workforce Directory',
+              columns: [
+                { header: 'Faculty Name', key: 'name', width: 22 },
+                { header: 'Employee ID', key: 'employee_id', width: 14 },
+                { header: 'Specialization', key: 'specialization', width: 20 },
+                { header: 'Qualification', key: 'qualification', width: 18 },
+                { header: 'Email', key: 'email', width: 24 },
+                { header: 'Phone', key: 'phone', width: 16 },
+                { header: 'Status', key: 'status', width: 12 },
+              ],
+            }}
+            pageSize={20}
+            emptyState={
               <div className="p-12 text-center">
                 <GraduationCap className="w-10 h-10 text-slate-300 mx-auto mb-2" />
                 <h4 className="text-sm font-bold text-slate-700">No Teachers Found</h4>
@@ -1141,120 +1249,8 @@ function TeacherManagementContent() {
                   {search ? 'Try clearing your search query.' : 'No faculty records match this view filter.'}
                 </p>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
-                    <tr>
-                      <SortableHeader
-                        columnKey="name"
-                        label="Faculty Member"
-                        currentSortKey={teacherSortKey}
-                        currentDirection={teacherSortDirection}
-                        onSort={requestTeacherSort}
-                      />
-                      <SortableHeader
-                        columnKey="employee_id"
-                        label="Employee ID"
-                        currentSortKey={teacherSortKey}
-                        currentDirection={teacherSortDirection}
-                        onSort={requestTeacherSort}
-                      />
-                      <SortableHeader
-                        columnKey="specialization"
-                        label="Specialization & Subject"
-                        currentSortKey={teacherSortKey}
-                        currentDirection={teacherSortDirection}
-                        onSort={requestTeacherSort}
-                      />
-                      <th className="px-4 py-3">Academic Batches</th>
-                      <th className="px-4 py-3">Timetable Status</th>
-                      <SortableHeader
-                        columnKey="status"
-                        label="Lifecycle Status"
-                        currentSortKey={teacherSortKey}
-                        currentDirection={teacherSortDirection}
-                        onSort={requestTeacherSort}
-                      />
-                      <th className="px-4 py-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {sortedTeachers.map((tch) => (
-                      <tr key={tch.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-primary-600 text-white font-bold text-xs flex items-center justify-center">
-                              {tch.name?.charAt(0) || 'T'}
-                            </div>
-                            <div>
-                              <div className="font-semibold text-slate-900">{tch.name}</div>
-                              <div className="text-[11px] text-slate-500">{tch.email} &bull; {tch.phone || 'No phone'}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 font-mono text-slate-600 font-medium">{tch.employee_id || '-'}</td>
-                        <td className="px-4 py-3">
-                          <div className="font-medium text-slate-800">{tch.specialization || 'General Studies'}</div>
-                          <div className="text-[10px] text-slate-400">{tch.qualification}</div>
-                        </td>
-                        <td className="px-4 py-3">
-                          {tch.is_assigned ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              <Check className="w-3 h-3 text-emerald-600" /> Assigned
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                              Unassigned
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          {tch.has_timetable ? (
-                            <span className="text-emerald-700 font-medium">Scheduled</span>
-                          ) : (
-                            <span className="text-slate-400">Not scheduled</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                            tch.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
-                          }`}>
-                            {tch.status || 'Active'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => {
-                                setSelectedTeacherId(tch.id)
-                                setShowProfileModal(true)
-                              }}
-                              className="px-2 py-1 text-slate-600 hover:text-primary-600 hover:bg-indigo-50 rounded font-medium transition-colors"
-                            >
-                              Profile
-                            </button>
-                            <button
-                              onClick={() => handleOpenAssignModal(tch.id)}
-                              className="px-2 py-1 text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded font-medium transition-colors"
-                            >
-                              Assign
-                            </button>
-                            <button
-                              onClick={() => handleOpenLifecycleModal(tch)}
-                              className="px-2 py-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded font-medium transition-colors"
-                            >
-                              Lifecycle
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+            }
+          />
         </div>
       )}
 

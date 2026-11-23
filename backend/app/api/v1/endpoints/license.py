@@ -49,16 +49,23 @@ from app.services.license_service import (
     LICENSE_REFRESH_INTERVAL,
     LICENSE_REFRESH_RETRY_INTERVAL,
     LicenseArtifactError,
+    LicenseReactivationError,
     LICENSE_CLOCK_CHECKPOINT_INTERVAL,
     LICENSE_CLOCK_ROLLBACK_TOLERANCE,
     calculate_license_mode,
     create_license_clock_checkpoint,
     create_refresh_keypair,
+    customer_account_login,
+    customer_activate_reactivation,
+    customer_create_reactivation_request,
+    customer_get_reactivations,
+    customer_poll_reactivation_status,
     decrypt_refresh_private_key,
     encrypt_refresh_private_key,
     refresh_public_key,
     sign_license_management_request,
     sign_refresh_request,
+    verify_and_import_reactivation_artifact,
     verify_license_clock_checkpoint,
     verify_signed_license_artifact,
 )
@@ -74,6 +81,7 @@ _SETTING_REGISTERED_EMAIL = "license.registered_email"
 _SETTING_REFRESH_PRIVATE_KEY = "license.refresh_private_key"
 _SETTING_REFRESH_ATTEMPTED_AT = "license.refresh_attempted_at"
 _SETTING_CLOCK_CHECKPOINT = "license.clock_checkpoint"
+_SETTING_CUSTOMER_SESSION_TOKEN = "license.customer_session_token"
 _SERIAL_NUMBER_PATTERN = re.compile(r"(?:[0-9]{1,9}|SMR-LIC-(?:[0-9]{8}|[A-Fa-f0-9]{20}))")
 _ACTIVATION_KEY_PATTERN = re.compile(r"(?:[A-Za-z0-9]{16}|ACT-[A-Fa-f0-9]{48})")
 _ROUTE_MODULES = (
@@ -147,6 +155,21 @@ class LicenseActivationRequest(BaseModel):
     email_challenge_id: str | None = Field(default=None, min_length=36, max_length=36)
     license_id: int | None = Field(default=None, ge=1)
     registration: LicenseRegistrationRequest | None = None
+    reactivation_request_id: str | None = Field(default=None, min_length=1, max_length=100)
+
+
+class CustomerLoginRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+    password: str = Field(min_length=1, max_length=256)
+
+
+class CustomerReactivationRequest(BaseModel):
+    license_id: int = Field(ge=1)
+    session_token: str | None = None
+
+
+class CustomerReactivationActivateRequest(BaseModel):
+    reactivation_request_id: str = Field(min_length=1, max_length=100)
 
 
 class LicenseEmailCodeRequest(BaseModel):
@@ -183,7 +206,7 @@ async def _get_setting(db: AsyncSession, institution_id: int, key: str) -> Insti
 def _audit_value(key: str, value: str | None) -> str | None:
     if value is None:
         return None
-    if key in {_SETTING_REFRESH_PRIVATE_KEY, _SETTING_CLOCK_CHECKPOINT}:
+    if key in {_SETTING_REFRESH_PRIVATE_KEY, _SETTING_CLOCK_CHECKPOINT, _SETTING_CUSTOMER_SESSION_TOKEN}:
         return "[redacted]"
     if key != _SETTING_ARTIFACT:
         return value
@@ -212,7 +235,7 @@ async def _save_setting(
     if setting:
         setting.value = value
         setting.data_type = "json" if key == _SETTING_ARTIFACT else "string"
-        setting.is_secret = key in {_SETTING_REFRESH_PRIVATE_KEY, _SETTING_CLOCK_CHECKPOINT}
+        setting.is_secret = key in {_SETTING_REFRESH_PRIVATE_KEY, _SETTING_CLOCK_CHECKPOINT, _SETTING_CUSTOMER_SESSION_TOKEN}
         setting.description = description
         setting.updated_by_id = user.id if user else None if user else None
     else:
@@ -222,7 +245,7 @@ async def _save_setting(
             key=key,
             value=value,
             data_type="json" if key == _SETTING_ARTIFACT else "string",
-            is_secret=key in {_SETTING_REFRESH_PRIVATE_KEY, _SETTING_CLOCK_CHECKPOINT},
+            is_secret=key in {_SETTING_REFRESH_PRIVATE_KEY, _SETTING_CLOCK_CHECKPOINT, _SETTING_CUSTOMER_SESSION_TOKEN},
             scope="institute",
             description=description,
             updated_by_id=user.id if user else None,
@@ -688,12 +711,7 @@ async def enforce_license_request(
         raise HTTPException(status_code=423, detail=f"The {module} module is unavailable in Evaluation Mode.")
     if _is_evaluation_read_allowed(request, policy):
         return
-    if request.url.path in {
-        "/api/v1/license/status",
-        "/api/v1/license/activate",
-        "/api/v1/license/offline-request",
-        "/api/v1/license/offline-import",
-    }:
+    if request.url.path.startswith("/api/v1/license/"):
         return
     raise HTTPException(
         status_code=423,
@@ -766,17 +784,21 @@ async def activate_license(
     license_key = body.license_key.strip() if body.license_key else None
     serial_number = body.serial_number.strip().upper() if body.serial_number else None
     activation_key = body.activation_key.strip() if body.activation_key else None
+    reactivation_request_id = body.reactivation_request_id.strip() if body.reactivation_request_id else None
+    uses_reactivation = bool(reactivation_request_id)
     uses_activation_code = bool(serial_number or activation_key)
     uses_email_verification = bool(body.email or body.email_challenge_id or body.license_id)
-    if (uses_activation_code and (not serial_number or not activation_key or license_key or uses_email_verification)) or (
-        uses_email_verification and (not body.email or not body.email_challenge_id or not body.license_id or license_key)
-    ) or (
-        not uses_activation_code and not uses_email_verification and not license_key
-    ):
+
+    valid_modes = [uses_activation_code, uses_email_verification, bool(license_key), uses_reactivation]
+    if sum(valid_modes) != 1:
         raise HTTPException(
             status_code=400,
-            detail="Provide a license key, serial and activation key, or verified email activation details.",
+            detail="Provide a license key, serial and activation key, verified email activation details, or a reactivation request ID.",
         )
+    if uses_activation_code and (not serial_number or not activation_key):
+        raise HTTPException(status_code=400, detail="Provide both serial number and activation key.")
+    if uses_email_verification and (not body.email or not body.email_challenge_id or not body.license_id):
+        raise HTTPException(status_code=400, detail="Provide verified email activation details.")
     if uses_email_verification and not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", body.email or ""):
         raise HTTPException(status_code=400, detail="A valid registered email is required for activation.")
     if serial_number and not _SERIAL_NUMBER_PATTERN.fullmatch(serial_number):
@@ -815,7 +837,9 @@ async def activate_license(
         "activation_identifier": activation_identifier,
         "refresh_public_key": refresh_public_key_b64,
     }
-    if uses_activation_code:
+    if uses_reactivation:
+        activation_payload["reactivation_request_id"] = reactivation_request_id
+    elif uses_activation_code:
         activation_payload.update({
             "serial_number": serial_number,
             "activation_key": activation_key,
@@ -842,7 +866,16 @@ async def activate_license(
 
     if response.status_code >= 400:
         status_code = response.status_code if response.status_code in {400, 404, 409, 429} else 503
-        raise HTTPException(status_code=status_code, detail="License authority rejected or could not process activation.")
+        detail = "License authority rejected or could not process activation."
+        try:
+            err_data = response.json()
+            if isinstance(err_data, dict) and err_data.get("detail"):
+                detail = str(err_data["detail"])
+            elif isinstance(err_data, dict) and err_data.get("message"):
+                detail = str(err_data["message"])
+        except Exception:
+            pass
+        raise HTTPException(status_code=status_code, detail=detail)
     try:
         response_body = response.json()
         if not isinstance(response_body, dict) or not isinstance(response_body.get("artifact"), dict):
@@ -1215,3 +1248,222 @@ async def import_offline_activation_artifact(
         "edition": payload.get("edition"),
         "expires_at": payload.get("expires_at"),
     }
+
+
+def _resolve_target_institution_id(current_user: User, institution_id: int | None) -> int:
+    if is_sysadmin(current_user):
+        target_institution_id = institution_id or current_user.institution_id
+    else:
+        if institution_id is not None and institution_id != current_user.institution_id:
+            raise HTTPException(status_code=403, detail="Administrators can only manage their own institution license.")
+        target_institution_id = current_user.institution_id
+    if target_institution_id is None:
+        raise HTTPException(status_code=400, detail="An institution must be selected.")
+    return target_institution_id
+
+
+@router.post("/customer/login")
+async def customer_login(
+    body: CustomerLoginRequest,
+    current_user: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+    institution_id: int | None = Query(None, ge=1),
+    data_environment: str = Depends(get_data_environment),
+):
+    """Workflow Step 1: Customer signs in with existing PrathamOne account email and password using POST /api/login.
+    No OTP. Does not save password; stores session token in secure credential storage.
+    """
+    if data_environment != "PRODUCTION":
+        raise HTTPException(status_code=409, detail="Customer license reactivation is available only for the production institution.")
+    target_institution_id = _resolve_target_institution_id(current_user, institution_id)
+    institution = await db.get(Institution, target_institution_id)
+    if not institution or not institution.is_active:
+        raise HTTPException(status_code=404, detail="Active institution not found.")
+
+    authority_url = settings.LICENSE_AUTHORITY_URL.strip().rstrip("/")
+    if not authority_url:
+        raise HTTPException(status_code=503, detail="License authority URL is not configured.")
+
+    try:
+        login_res = await customer_account_login(authority_url, body.email, body.password)
+    except LicenseReactivationError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+    session_token = login_res["session_token"]
+    # Store session token in secure credential storage (is_secret=True, redacted from audit logs)
+    await _save_setting(
+        db, target_institution_id, current_user, _SETTING_CUSTOMER_SESSION_TOKEN, session_token,
+        "Customer account session token stored in secure credential storage.",
+    )
+    await _save_setting(
+        db, target_institution_id, current_user, _SETTING_REGISTERED_EMAIL, login_res["email"],
+        "Customer account email verified via login.",
+    )
+    await db.commit()
+
+    return {
+        "ok": True,
+        "session_token": session_token,
+        "email": login_res["email"],
+    }
+
+
+@router.get("/customer/reactivations")
+async def customer_reactivations(
+    request: Request,
+    current_user: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+    institution_id: int | None = Query(None, ge=1),
+    data_environment: str = Depends(get_data_environment),
+):
+    """Workflow Step 2: With the authenticated session, call GET /api/license/reactivations to select an eligible license."""
+    if data_environment != "PRODUCTION":
+        raise HTTPException(status_code=409, detail="Customer license reactivation is available only for the production institution.")
+    target_institution_id = _resolve_target_institution_id(current_user, institution_id)
+
+    authority_url = settings.LICENSE_AUTHORITY_URL.strip().rstrip("/")
+    if not authority_url:
+        raise HTTPException(status_code=503, detail="License authority URL is not configured.")
+
+    session_token = request.headers.get("x-license-session")
+    if not session_token:
+        token_setting = await _get_setting(db, target_institution_id, _SETTING_CUSTOMER_SESSION_TOKEN)
+        session_token = token_setting.value if token_setting else None
+
+    if not session_token:
+        raise HTTPException(status_code=401, detail="Sign in with your PrathamOne customer account first.")
+
+    try:
+        licenses = await customer_get_reactivations(authority_url, session_token)
+    except LicenseReactivationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return {
+        "ok": True,
+        "licenses": licenses,
+    }
+
+
+@router.post("/customer/request")
+@router.post("/customer/reactivations")
+async def customer_reactivation_request(
+    body: CustomerReactivationRequest,
+    request: Request,
+    current_user: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+    institution_id: int | None = Query(None, ge=1),
+    data_environment: str = Depends(get_data_environment),
+):
+    """Workflow Steps 3 & 4:
+    Reuse or create persistent installation ID, activation ID, and Ed25519 refresh-key pair. Keep private key local.
+    POST /api/license/reactivations with license_id, installation_id, activation_identifier, and refresh_public_key.
+    """
+    if data_environment != "PRODUCTION":
+        raise HTTPException(status_code=409, detail="Customer license reactivation is available only for the production institution.")
+    target_institution_id = _resolve_target_institution_id(current_user, institution_id)
+    institution = await db.get(Institution, target_institution_id)
+    if not institution or not institution.is_active:
+        raise HTTPException(status_code=404, detail="Active institution not found.")
+
+    authority_url = settings.LICENSE_AUTHORITY_URL.strip().rstrip("/")
+    if not authority_url:
+        raise HTTPException(status_code=503, detail="License authority URL is not configured.")
+
+    session_token = body.session_token or request.headers.get("x-license-session")
+    if not session_token:
+        token_setting = await _get_setting(db, target_institution_id, _SETTING_CUSTOMER_SESSION_TOKEN)
+        session_token = token_setting.value if token_setting else None
+
+    if not session_token:
+        raise HTTPException(status_code=401, detail="Sign in with your PrathamOne customer account first.")
+
+    # Persistent installation identity - private key stays encrypted on installation, never sent to server
+    installation_id, activation_identifier, refresh_public_key_b64 = await _prepare_installation_identity(
+        db, target_institution_id, current_user,
+    )
+
+    try:
+        req_res = await customer_create_reactivation_request(
+            authority_url=authority_url,
+            session_token=session_token,
+            license_id=body.license_id,
+            installation_id=installation_id,
+            activation_identifier=activation_identifier,
+            refresh_public_key=refresh_public_key_b64,
+        )
+    except LicenseReactivationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return {
+        "ok": True,
+        "id": req_res["id"],
+        "status": req_res["status"],
+        "registered_phone": req_res.get("registered_phone"),
+        "message": req_res.get("message"),
+    }
+
+
+@router.get("/customer/request/{request_id}")
+@router.get("/customer/reactivations/{request_id}")
+async def customer_reactivation_poll(
+    request_id: str,
+    request: Request,
+    current_user: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+    institution_id: int | None = Query(None, ge=1),
+    data_environment: str = Depends(get_data_environment),
+):
+    """Workflow Step 5 (polling): Poll GET /api/license/reactivations/<id> while pending."""
+    if data_environment != "PRODUCTION":
+        raise HTTPException(status_code=409, detail="Customer license reactivation is available only for the production institution.")
+    target_institution_id = _resolve_target_institution_id(current_user, institution_id)
+
+    authority_url = settings.LICENSE_AUTHORITY_URL.strip().rstrip("/")
+    if not authority_url:
+        raise HTTPException(status_code=503, detail="License authority URL is not configured.")
+
+    session_token = request.headers.get("x-license-session")
+    if not session_token:
+        token_setting = await _get_setting(db, target_institution_id, _SETTING_CUSTOMER_SESSION_TOKEN)
+        session_token = token_setting.value if token_setting else None
+
+    if not session_token:
+        raise HTTPException(status_code=401, detail="Sign in with your PrathamOne customer account first.")
+
+    try:
+        poll_res = await customer_poll_reactivation_status(
+            authority_url=authority_url,
+            session_token=session_token,
+            request_id=request_id,
+        )
+    except LicenseReactivationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return {
+        "ok": True,
+        "id": poll_res["id"],
+        "status": poll_res["status"],
+        "registered_phone": poll_res.get("registered_phone"),
+        "message": poll_res.get("message"),
+    }
+
+
+@router.post("/customer/activate")
+async def customer_reactivation_activate(
+    body: CustomerReactivationActivateRequest,
+    current_user: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+    institution_id: int | None = Query(None, ge=1),
+    data_environment: str = Depends(get_data_environment),
+):
+    """Workflow Steps 5 & 6:
+    POST /api/license/activate with { "reactivation_request_id": "<id>" }.
+    Verifies and imports returned artifact using existing Ed25519 verification path.
+    """
+    return await activate_license(
+        body=LicenseActivationRequest(reactivation_request_id=body.reactivation_request_id),
+        db=db,
+        current_user=current_user,
+        institution_id=institution_id,
+        data_environment=data_environment,
+    )

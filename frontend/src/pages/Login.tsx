@@ -11,7 +11,7 @@
  *
  * @version     1.6.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-23
  *
  * @description Premium enterprise authentication portal featuring organic curved wave architecture, original PrathamOne navy/saffron theme colors, single unified Zero-Tab authentication, server-enforced role routing, and comprehensive academic curriculum spectrum overlays.
  */
@@ -36,6 +36,7 @@ import {
   UserPlus,
   Headphones,
   ArrowRight,
+  ChevronRight,
   MapPin,
   Phone,
   Sparkles,
@@ -50,7 +51,7 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import Modal from '../components/Modal'
-import { NepRoadmapModal } from '../components/common'
+import { NepRoadmapModal, CoachingLoginBackground, CampusNoticeboardDrawer } from '../components/common'
 import { authApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useBranding } from '../config/branding'
@@ -126,6 +127,39 @@ export default function LoginPage() {
   const [showNepModal, setShowNepModal] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [logoLoadFailed, setLogoLoadFailed] = useState(false)
+
+  // Live Monospace Clock for Left Command Panel
+  const [currentClock, setCurrentClock] = useState(() => {
+    const d = new Date()
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' IST'
+  })
+
+  useEffect(() => {
+    const update = () => {
+      const d = new Date()
+      setCurrentClock(d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' IST')
+    }
+    const timer = setInterval(update, 10000)
+    return () => clearInterval(timer)
+  }, [])
+
+  // Interactive Noticeboard & Timetable Ticker States
+  const [showNoticeDrawer, setShowNoticeDrawer] = useState(false)
+  const [activeTickerIndex, setActiveTickerIndex] = useState(0)
+
+  const TICKER_ITEMS = [
+    '📢 Pre-Board & Term-2 Exam Timetable Released for Class 10 & 12',
+    '❄️ Winter Session Timings active from 01 Dec: Morning 07:00 AM',
+    '🔬 Special NEP 2020 Conceptual Problem-Solving Lab this Saturday',
+    '🏆 Annual Academic Merit Award Nominations Open',
+  ]
+
+  useEffect(() => {
+    const tickerTimer = setInterval(() => {
+      setActiveTickerIndex((prev) => (prev + 1) % TICKER_ITEMS.length)
+    }, 4500)
+    return () => clearInterval(tickerTimer)
+  }, [])
 
   // Device Binding & DPDP Act 2023 Consent States
   const [deviceMeta, setDeviceMeta] = useState<{
@@ -321,185 +355,124 @@ export default function LoginPage() {
           }}
         />
 
-        {/* Subtle Watermark: Historic Nalanda University Architectural Line Art */}
-        <div className="absolute inset-0 pointer-events-none select-none overflow-hidden z-0">
-          <svg
-            className="w-full h-full"
-            viewBox="0 0 1000 700"
-            preserveAspectRatio="xMidYMid slice"
+        {/* Full Interactive Coaching Ambient Field with Dynamic Institute Watermark & Highlighted Home State */}
+        <CoachingLoginBackground
+          layout="panel"
+          instituteName={branding.academyName}
+          instituteState={branding.state || 'Maharashtra'}
+          logoUrl={branding.assets.logoUrl}
+          background="transparent"
+          intensity={1.6}
+          logoOpacity={0.28}
+          parallax={true}
+        />
+
+        {/* TOP STATUS BAR: Operational Session, Notice Ticker & Helpdesk Ribbons */}
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-2.5 w-full">
+          {/* Live Academic Session & Time Monospace Chip */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/10 backdrop-blur-md shadow-xs select-none shrink-0">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[11px] font-mono tracking-wide text-slate-200 font-medium">
+              Academic Session 2026–27
+            </span>
+            <span className="text-white/20">•</span>
+            <span className="text-[11px] font-mono text-cyan-300/80">
+              {currentClock}
+            </span>
+          </div>
+
+          {/* Interactive 1-Line Notice & Timetable Ticker Pill */}
+          <button
+            type="button"
+            onClick={() => setShowNoticeDrawer(true)}
+            className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 hover:bg-blue-500/20 border border-blue-400/20 hover:border-cyan-400/40 backdrop-blur-md transition-all duration-200 text-left cursor-pointer max-w-[270px] sm:max-w-[320px] xl:max-w-[360px] select-none"
+            title="Click to open Campus Noticeboard & Batch Timetables"
           >
-            <defs>
-              <filter id="nalanda-lineart-tint" colorInterpolationFilters="sRGB">
-                <feColorMatrix
-                  in="SourceGraphic"
-                  type="matrix"
-                  values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -2 -2 -2 0 1.5"
-                  result="line-alpha"
-                />
-                <feFlood floodColor="#38BDF8" floodOpacity="0.9" result="line-color" />
-                <feComposite in="line-color" in2="line-alpha" operator="in" />
-              </filter>
-            </defs>
-            <g opacity="0.13" filter="url(#nalanda-lineart-tint)">
-              <image
-                href="/artwork/16112026/001/nalanda15.svg"
-                x="-40"
-                y="20"
-                width="1080"
-                height="680"
-                preserveAspectRatio="xMidYMid slice"
-              />
-            </g>
-          </svg>
+            <span className="w-2 h-2 rounded-full bg-amber-400 group-hover:scale-125 transition-transform shrink-0" />
+            <span className="text-[11px] text-slate-200 group-hover:text-white transition-colors truncate font-sans">
+              {TICKER_ITEMS[activeTickerIndex]}
+            </span>
+            <span className="text-[10.5px] font-mono text-cyan-300 group-hover:translate-x-0.5 transition-transform flex items-center shrink-0 font-medium">
+              <ChevronRight className="w-3.5 h-3.5" />
+            </span>
+          </button>
+
+          {/* Campus Node / Helpdesk Micro-Pill */}
+          <a
+            href="mailto:support@prashantacademy.com"
+            className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.09] border border-white/10 backdrop-blur-md text-[11px] font-mono text-slate-300 hover:text-white transition-all duration-200 select-none shrink-0"
+            title="Institutional Support Desk"
+          >
+            <Headphones className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Campus Helpdesk</span>
+          </a>
         </div>
 
-        {/* Subtle Watermark 2: Open Academic Book Line-Art (Center-Bottom) */}
-        <div className="absolute bottom-12 right-12 lg:right-24 w-52 h-36 pointer-events-none opacity-[0.08] text-cyan-300">
-          <svg viewBox="0 0 216 113" className="w-full h-full" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M 0 41 Q 54 11 108 41 V 113 Q 54 83 0 113 Z" fill="currentColor" fillOpacity="0.08" />
-            <path d="M 108 41 Q 162 11 216 41 V 113 Q 162 83 108 113 Z" fill="currentColor" fillOpacity="0.05" />
-            <line x1="108" y1="42" x2="108" y2="112" strokeWidth="1.5" />
-            <circle cx="108" cy="42" r="3" fill="#38BDF8" />
-          </svg>
-        </div>
-
-        {/* Top Header Block: Academy Crest, Name & Edition */}
-        <div className="relative z-10 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            {/* Elevated Academy Crest / Custom Logo with High-Contrast White Enamel Tile */}
-            <div className="brand-logo-plate relative bg-white p-1.5 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-black/25 ring-2 ring-white/30 overflow-hidden">
-              {hasValidLogo ? (
-                <img
-                  src={branding.assets.logoUrl}
-                  alt={branding.academyName}
-                  onError={() => setLogoLoadFailed(true)}
-                  className="w-full h-full object-contain rounded-xl [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.12))]"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-[#0D2852] to-[#071C44] rounded-xl flex items-center justify-center font-black text-lg text-white">
-                  {branding.monogram}
-                </div>
-              )}
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#071C44] shadow-xs" title="Portal Active" />
-            </div>
-
-            <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white drop-shadow-xs truncate">
-                {branding.academyName}
-              </h1>
-              <p className="text-xs text-blue-200/80 font-semibold tracking-wider uppercase mt-0.5">
-                PrathamOne EduOS • Coaching Management. Simplified.
-              </p>
-            </div>
+        {/* LOWER SECTION: Cultural Shloka & Institutional Telemetry */}
+        <div className="relative z-10 mt-auto pt-6 pb-2 space-y-3.5 max-w-xl">
+          {/* Sanskrit Educational Mantra */}
+          <div className="border-l-2 border-amber-400/60 pl-3.5 py-0.5">
+            <p className="text-sm font-serif tracking-wider text-amber-200/95 font-medium">
+              "सा विद्या या विमुक्तये"
+            </p>
+            <p className="text-[11.5px] text-slate-300/80 font-sans tracking-normal mt-0.5">
+              Knowledge is that which liberates the intellect and empowers character.
+            </p>
           </div>
 
-          <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[11px] font-semibold text-blue-100">
-            <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
-            <span>Academic Session 2026–2027</span>
-          </div>
-        </div>
-
-        {/* Central Editorial Branding & Value Proposition */}
-        <div className="relative z-10 my-8 lg:my-auto max-w-lg space-y-4 sm:space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-bold tracking-widest uppercase">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>A Better Way to Learn &amp; Manage</span>
-          </div>
-
-          <h2 className="text-3xl sm:text-4xl xl:text-5xl font-extrabold text-white tracking-tight leading-tight">
-            One connected home for every learner.
-          </h2>
-
-          <p className="text-blue-100/90 text-sm sm:text-base leading-relaxed font-normal">
-            Bring academic operations, faculty pedagogy, and student success together in one thoughtfully designed coaching workspace.
-          </p>
-
-          {/* 3 Core Operational Pillars */}
-          <div className="flex flex-wrap items-center gap-2.5 pt-1">
-            <span className="px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs font-semibold text-blue-100 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#38BDF8]" />
-              <span>Academic Operations</span>
-            </span>
-            <span className="px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs font-semibold text-blue-100 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-              <span>Teaching &amp; Pedagogy</span>
-            </span>
-            <span className="px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs font-semibold text-blue-100 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span>Student Success</span>
-            </span>
-          </div>
-
-          {/* Academic Curriculum Spectrum Matrix (Boards, Grades, Medium & Targets) */}
-          <div className="bg-[#071C44]/80 border border-cyan-500/25 rounded-2xl p-3.5 backdrop-blur-md shadow-inner space-y-2 mt-4">
-            <div className="flex items-center justify-between text-[10px] font-bold tracking-wider uppercase text-cyan-300">
-              <span className="flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-sky-400" />
-                <span>Curriculum &amp; Target Competitive Programs</span>
+          {/* ACCREDITED BOARDS & ENTRANCE WINGS RIBBON (ABOVE FOOTER) */}
+          <div className="pt-2 border-t border-white/10 select-none">
+            <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-cyan-300/80 mb-2">
+              <span className="flex items-center gap-1.5 font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                Accredited Curriculum & Target Wings
               </span>
-              <span className="text-[9.5px] font-medium text-blue-200/80">English &amp; Semi-English Medium</span>
+              <span className="text-slate-400/90 font-mono text-[9.5px]">Comprehensive K-12</span>
             </div>
-
-            <div className="grid grid-cols-2 gap-2 text-[10px] sm:text-[11px] font-medium">
-              <div className="px-2.5 py-1.5 rounded-lg bg-blue-500/10 border border-blue-400/20 text-blue-200 flex items-center gap-2 truncate">
-                <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
-                <span className="truncate">CBSE • ICSE • State Board</span>
-              </div>
-              <div className="px-2.5 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-400/20 text-cyan-200 flex items-center gap-2 truncate">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0" />
-                <span className="truncate">Class 8th – 10th Foundation</span>
-              </div>
-              <div className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-400/20 text-emerald-200 flex items-center gap-2 truncate">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-                <span className="truncate">11th–12th JEE • NEET • CET</span>
-              </div>
-              <div className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-400/20 text-amber-200 flex items-center gap-2 truncate">
-                <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                <span className="truncate">Commerce &amp; CA Foundation</span>
-              </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {/* Maharashtra State Board (Priority Home State) */}
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/15 border border-amber-400/35 text-amber-300 font-mono text-[10px] font-bold tracking-wide shadow-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                STATE BOARD (HSC • SSC)
+              </span>
+              {/* CBSE */}
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-200 font-mono text-[10px] font-medium transition-colors">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                CBSE
+              </span>
+              {/* ICSE • ISC */}
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-200 font-mono text-[10px] font-medium transition-colors">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                ICSE • ISC
+              </span>
+              {/* MHT-CET */}
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-200 font-mono text-[10px] font-medium transition-colors">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                MHT-CET
+              </span>
+              {/* NEET-UG */}
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-200 font-mono text-[10px] font-medium transition-colors">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                NEET-UG
+              </span>
+              {/* JEE ADVANCED */}
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-200 font-mono text-[10px] font-medium transition-colors">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+                JEE ADVANCED
+              </span>
+              {/* FOUNDATION & OLYMPIADS */}
+              <span className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-200 font-mono text-[10px] font-medium transition-colors">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                OLYMPIADS • NTSE
+              </span>
             </div>
-          </div>
-
-          {/* NEP 2020 Aligned Trust Banner & Upcoming Features Trigger */}
-          <div className="bg-[#051632]/85 border border-sky-400/25 rounded-2xl p-3 sm:p-3.5 backdrop-blur-md shadow-inner flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-3">
-            <div className="flex items-start gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-amber-400/15 border border-amber-400/30 text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-400 text-slate-950">
-                    NEP 2020 Aligned
-                  </span>
-                  <h4 className="text-xs font-bold text-white truncate">
-                    Built for the Future of Coaching — NEP 2020 Ready
-                  </h4>
-                </div>
-                <p className="text-[11px] text-blue-200/80 leading-snug mt-1">
-                  Supporting competency-based testing, flexible subject batches, and APAAR standards as your institute transitions.
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowNepModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold tracking-tight transition-all shrink-0 self-start sm:self-center cursor-pointer shadow-xs"
-            >
-              <span>Upcoming Features</span>
-              <ArrowRight className="w-3.5 h-3.5 text-cyan-300" />
-            </button>
           </div>
         </div>
 
-        {/* Left Footer Attribution */}
-        <div className="relative z-10 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs text-blue-200/70">
-          <span className="font-medium text-white/90">
-            A calm, secure workspace for your coaching institute.
-          </span>
-          <span className="font-mono text-[11px]">
-            SMRITISYS &amp; AITDL NETWORKS • {branding.versionDisplay}
-          </span>
+        {/* Minimalist Bottom Footer Attribution */}
+        <div className="relative z-10 pt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-blue-200/50 font-mono tracking-wider border-t border-white/10 select-none">
+          <span>{branding.suiteName || 'PRATHAMONE EduOS'} • COACHING INSTITUTE EDITION</span>
+          <span>{branding.versionDisplay}</span>
         </div>
       </div>
 
@@ -529,11 +502,23 @@ export default function LoginPage() {
         </div>
 
         {/* Top Status Bar within the Right Pane */}
-        <div className="relative z-10 w-full max-w-[460px] mx-auto flex items-center justify-between">
+        <div className="relative z-10 w-full max-w-[460px] mx-auto flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-xs font-bold tracking-wider uppercase">
             <span className="w-2.5 h-2.5 rounded-full bg-[#F16906] shadow-xs shadow-orange-500/50 animate-pulse" />
             <span className="text-app-muted">Account Access</span>
           </div>
+
+          {/* Mobile Quick Noticeboard Pill (Visible on screens < 1024px) */}
+          <button
+            type="button"
+            onClick={() => setShowNoticeDrawer(true)}
+            className="lg:hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 text-[11px] font-mono font-medium transition-colors cursor-pointer select-none"
+            title="Open Campus Noticeboard & Batch Timetables"
+          >
+            <Megaphone className="w-3 h-3 text-cyan-600 animate-pulse" />
+            <span>Notices</span>
+          </button>
+
           <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
             <img
               src={branding.assets.softwareIconSvgUrl}
@@ -548,17 +533,17 @@ export default function LoginPage() {
         {/* Central Authentication Form — Centered Ergonomically at 460px */}
         <div className="relative z-10 w-full max-w-[460px] mx-auto my-auto py-8">
           {/* Institute Brand Header */}
-          <div className="flex items-center gap-3.5 mb-6 pb-4 border-b border-slate-100">
-            <div className="brand-logo-plate w-12 h-12 rounded-xl border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
+          <div className="flex items-center gap-4 mb-6 pb-4 border-b border-slate-100">
+            <div className="brand-logo-plate w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border border-slate-200/90 bg-white p-2 flex items-center justify-center shrink-0 shadow-md overflow-hidden">
               {hasValidLogo ? (
                 <img
                   src={branding.assets.logoUrl}
                   alt={branding.academyName}
                   onError={() => setLogoLoadFailed(true)}
-                  className="w-full h-full object-contain rounded-lg [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.12))]"
+                  className="w-full h-full object-contain rounded-xl [filter:drop-shadow(0_2px_4px_rgba(0,0,0,0.15))]"
                 />
               ) : (
-                <div className="w-full h-full bg-[#0B2D6B] rounded-lg flex items-center justify-center font-bold text-sm text-white">
+                <div className="w-full h-full bg-[#0B2D6B] rounded-xl flex items-center justify-center font-bold text-lg text-white">
                   {branding.monogram}
                 </div>
               )}
@@ -677,7 +662,7 @@ export default function LoginPage() {
                 background: 'linear-gradient(135deg, #0B2D6B 0%, #17458F 100%)',
                 boxShadow: '0 4px 14px 0 rgba(11, 45, 107, 0.35)',
               }}
-              className="w-full py-3.5 px-4 mt-3 rounded-xl text-base font-semibold text-white hover:brightness-105 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-[#F16906] focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-3.5 px-4 mt-3 rounded-xl text-base font-semibold text-white hover:brightness-105 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-[#F16906] focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 select-none"
             >
               {loading ? (
                 <span className="inline-flex items-center gap-2">
@@ -688,6 +673,9 @@ export default function LoginPage() {
                 <span className="inline-flex items-center justify-center gap-2">
                   <span>Sign in securely</span>
                   <ArrowRight className="w-4 h-4 text-amber-300" />
+                  <span className="hidden sm:inline-flex items-center text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/20 border border-white/25 text-white/90 ml-1">
+                    ↵ Enter
+                  </span>
                 </span>
               )}
             </button>
@@ -967,6 +955,13 @@ export default function LoginPage() {
 
         {/* NEP 2020 Upcoming Features Milestone Modal */}
         <NepRoadmapModal isOpen={showNepModal} onClose={() => setShowNepModal(false)} />
+
+        {/* Public Campus Noticeboard & Batch Timetable Drawer */}
+        <CampusNoticeboardDrawer
+          isOpen={showNoticeDrawer}
+          onClose={() => setShowNoticeDrawer(false)}
+          academyName={branding.academyName}
+        />
       </div>
     </div>
   )

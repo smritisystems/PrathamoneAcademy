@@ -11,9 +11,9 @@
  *
  * @version     1.0.0
  * @created     2026-11-12
- * @updated     2026-11-16
+ * @updated     2026-11-23
  *
- * @description Canonical INR currency and Indian locale date/time formatting helpers (Rule 008 SSOT).
+ * @description Canonical INR currency, Indian locale date/time, Aadhaar mask, and phone formatting helpers (Rule 008 SSOT).
  */
 
 /**
@@ -33,7 +33,7 @@ export function formatINR(
 }
 
 /**
- * Formats an ISO date or Date instance using `en-IN` locale formatting.
+ * Formats an ISO date or Date instance using `en-IN` locale formatting (DD MMM YYYY).
  */
 export function formatDateIN(
   value: string | Date | null | undefined,
@@ -44,4 +44,36 @@ export function formatDateIN(
   if (Number.isNaN(dt.getTime())) return String(value)
   return dt.toLocaleDateString('en-IN', options ?? { day: '2-digit', month: 'short', year: 'numeric' })
 }
+
+/**
+ * Masks a 12-digit Aadhaar number for DPDP Act 2023 compliance: `XXXX-XXXX-1234`.
+ */
+export function formatMaskedAadhaar(value: string | null | undefined): string {
+  if (!value) return '—'
+  const clean = String(value).replace(/\D/g, '')
+  if (clean.length !== 12) return value
+  return `XXXX-XXXX-${clean.slice(8)}`
+}
+
+/**
+ * Formats standard 10-digit Indian phone numbers with optional +91 prefix.
+ */
+export function formatPhoneNumber(value: string | null | undefined, withPrefix = false): string {
+  if (!value) return '—'
+  const clean = String(value).replace(/\D/g, '')
+  if (clean.length === 10) {
+    const formatted = `${clean.slice(0, 5)} ${clean.slice(5)}`
+    return withPrefix ? `+91 ${formatted}` : formatted
+  }
+  return value
+}
+
+/**
+ * Minimalist Rule 014 empty state fallback helper.
+ */
+export function fallbackEmpty(value: any, fallback = '—'): string {
+  if (value === null || value === undefined || value === '') return fallback
+  return String(value)
+}
+
 

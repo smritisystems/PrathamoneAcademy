@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-22
+ * @updated     2026-11-23
  *
  * @description Central export index for shared common components including View-First Edit Mode governance tools.
  */
@@ -44,6 +44,9 @@ export type { SortableHeaderProps } from './SortableHeader'
 export { default as TableSortSelect } from './TableSortSelect'
 export type { TableSortSelectProps, TableSortOption } from './TableSortSelect'
 
+export { default as EnterpriseDataTable } from './EnterpriseDataTable'
+export type { DataTableColumn, EnterpriseDataTableProps, TableExportConfig } from './EnterpriseDataTable'
+
 export { default as ContextualHelpButton, resolveContextualHelpPath } from './ContextualHelpButton'
 
 export { ConcessionTraceModal } from './ConcessionTraceModal'
@@ -69,4 +72,10 @@ export { default as BatchCapacityBulletMeter } from './BatchCapacityBulletMeter'
 export type {
   BatchCapacityBulletMeterProps,
 } from './BatchCapacityBulletMeter'
+
+export { default as CoachingLoginBackground } from './CoachingLoginBackground'
+export type { CoachingLoginBackgroundProps } from './CoachingLoginBackground'
+
+export { CampusNoticeboardDrawer } from './CampusNoticeboardDrawer'
+export type { CampusNotice, TimetableSlot } from './CampusNoticeboardDrawer'
 

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-22
+ * @updated     2026-11-23
  *
  * @description Dedicated multi-workspace hub for Staff & HR Directory comprising HR Analytics, Staff Register, Onboarding, Roles & Duties, Daily Attendance, Leave Requests, HR Documents Studio, and HR Policies.
  */
@@ -52,7 +52,11 @@ import { staffApi, settingsApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, LockedButton, ContextualHelpButton } from '../components/common'
+import {
+  EditModeBar, LockedButton, ContextualHelpButton,
+  EnterpriseDataTable, DataTableColumn
+} from '../components/common'
+import { fallbackEmpty } from '../utils/formatters'
 import StaffProfileModal from '../components/StaffProfileModal'
 import StaffLifecycleModal from '../components/StaffLifecycleModal'
 import toast from 'react-hot-toast'
@@ -200,6 +204,96 @@ function StaffManagementContent() {
 
   const staffItems = staffData?.items ?? []
   const totalStaff = staffData?.total ?? 0
+
+  // Canonical EnterpriseDataTable Columns for Staff Directory
+  const staffColumns: DataTableColumn<StaffMember>[] = useMemo(() => [
+    {
+      key: 'name',
+      header: 'Staff Member',
+      sortable: true,
+      pinned: 'left',
+      render: (s) => (
+        <span className="font-bold text-slate-900">
+          {s.first_name} {s.last_name}
+        </span>
+      ),
+    },
+    {
+      key: 'employee_id',
+      header: 'Employee ID',
+      sortable: true,
+      render: (s) => (
+        <span className="font-mono font-semibold text-primary-700 text-xs">
+          {s.employee_id || `EMP-${s.user_id}`}
+        </span>
+      ),
+    },
+    {
+      key: 'department',
+      header: 'Department & Role',
+      sortable: true,
+      render: (s) => (
+        <div>
+          <p className="font-semibold text-slate-800">{s.department || 'Operations'}</p>
+          <p className="text-[11px] text-slate-500 capitalize">{s.role}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      sortable: true,
+      render: (s) => (
+        <span
+          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+            s.status === 'active'
+              ? 'bg-emerald-100 text-emerald-800'
+              : 'bg-slate-100 text-slate-600'
+          }`}
+        >
+          {s.status}
+        </span>
+      ),
+    },
+    {
+      key: 'phone',
+      header: 'Phone',
+      render: (s) => <span className="text-slate-600 font-mono text-xs">{fallbackEmpty(s.phone)}</span>,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      pinned: 'right',
+      align: 'right',
+      render: (s) => (
+        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            onClick={() => {
+              setProfileModalStaffId(s.user_id)
+              setShowProfileModal(true)
+            }}
+            className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition"
+            title="View Full Profile"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedUserId(s.user_id)
+              setActiveDocTemplate('appointment_letter')
+              setShowDocPreviewModal(true)
+            }}
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition"
+            title="Generate Appointment Letter"
+          >
+            <Printer className="w-4 h-4" />
+          </button>
+        </div>
+      ),
+    },
+  ], [])
 
   // 2. Staff Profile Detail Query
   const { data: staffDetail } = useQuery({
@@ -690,136 +784,75 @@ function StaffManagementContent() {
       {/* ─── TAB 2: STAFF REGISTER ───────────────────────────────────────────── */}
       {activeTab === 'directory' && (
         <div className="space-y-4 animate-fade-in">
-          {/* Filters Bar */}
-          <div className="card p-4 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-56">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-              <input
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value)
-                  setPage(1)
-                }}
-                className="input pl-9 text-xs"
-                placeholder="Search staff by name, employee code, phone, role…"
-              />
-            </div>
-            <select
-              value={selectedDepartment}
-              onChange={(e) => {
-                setSelectedDepartment(e.target.value)
-                setPage(1)
-              }}
-              className="input w-48 text-xs"
-            >
-              <option value="">All Departments</option>
-              <option value="Administration">Administration</option>
-              <option value="Finance">Finance & Accounts</option>
-              <option value="Counselling">Counselling & Admissions</option>
-              <option value="IT Support">IT & Tech Support</option>
-              <option value="Operations">Operations & Facility</option>
-            </select>
-            <select
-              value={selectedStatus}
-              onChange={(e) => {
-                setSelectedStatus(e.target.value)
-                setPage(1)
-              }}
-              className="input w-36 text-xs"
-            >
-              <option value="active">Active Only</option>
-              <option value="all">All Statuses</option>
-              <option value="on_leave">On Leave</option>
-              <option value="inactive">Departed / Inactive</option>
-            </select>
-          </div>
-
-          {/* Staff Table */}
-          <div className="card p-0 overflow-hidden bg-white border border-slate-200 rounded-2xl shadow-xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
-                    <th className="py-3 px-4">Staff Member</th>
-                    <th className="py-3 px-4">Employee ID</th>
-                    <th className="py-3 px-4">Department & Role</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4">Phone</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
-                  {isStaffLoading && (
-                    <tr>
-                      <td colSpan={6} className="py-10 text-center text-slate-400">
-                        Loading staff records…
-                      </td>
-                    </tr>
-                  )}
-                  {!isStaffLoading && staffItems.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="py-10 text-center text-slate-400">
-                        No staff members found matching query.
-                      </td>
-                    </tr>
-                  )}
-                  {staffItems.map((s) => (
-                    <tr key={s.user_id} className="hover:bg-slate-50 transition">
-                      <td className="py-3 px-4 font-bold text-slate-900">
-                        {s.first_name} {s.last_name}
-                      </td>
-                      <td className="py-3 px-4 font-mono font-semibold text-primary-700">
-                        {s.employee_id || `EMP-${s.user_id}`}
-                      </td>
-                      <td className="py-3 px-4">
-                        <p className="font-semibold text-slate-800">{s.department || 'Operations'}</p>
-                        <p className="text-[11px] text-slate-500 capitalize">{s.role}</p>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                            s.status === 'active'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-slate-100 text-slate-600'
-                          }`}
-                        >
-                          {s.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-slate-600">{s.phone || '—'}</td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setProfileModalStaffId(s.user_id)
-                              setShowProfileModal(true)
-                            }}
-                            className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition"
-                            title="View Full Profile"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedUserId(s.user_id)
-                              setActiveDocTemplate('appointment_letter')
-                              setShowDocPreviewModal(true)
-                            }}
-                            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition"
-                            title="Generate Appointment Letter"
-                          >
-                            <Printer className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <EnterpriseDataTable<StaffMember>
+            data={staffItems}
+            columns={staffColumns}
+            rowKey="user_id"
+            isLoading={isStaffLoading}
+            loadingMessage="Loading staff workforce records…"
+            isEditMode={isEditMode}
+            searchPlaceholder="Search staff by name, employee code, phone, role…"
+            searchValue={search}
+            onSearchChange={(v) => {
+              setSearch(v)
+              setPage(1)
+            }}
+            serverSidePagination={true}
+            page={page}
+            pageSize={15}
+            totalCount={totalStaff}
+            onPageChange={(p) => setPage(p)}
+            customFilterBar={
+              <div className="flex items-center gap-2 flex-wrap py-1">
+                <select
+                  value={selectedDepartment}
+                  onChange={(e) => {
+                    setSelectedDepartment(e.target.value)
+                    setPage(1)
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-700 font-medium focus:ring-2 focus:ring-primary-500 outline-none shadow-2xs"
+                >
+                  <option value="">All Departments</option>
+                  <option value="Administration">Administration</option>
+                  <option value="Finance">Finance & Accounts</option>
+                  <option value="Counselling">Counselling & Admissions</option>
+                  <option value="IT Support">IT & Tech Support</option>
+                  <option value="Operations">Operations & Facility</option>
+                </select>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => {
+                    setSelectedStatus(e.target.value)
+                    setPage(1)
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-700 font-medium focus:ring-2 focus:ring-primary-500 outline-none shadow-2xs"
+                >
+                  <option value="active">Active Only</option>
+                  <option value="all">All Statuses</option>
+                  <option value="on_leave">On Leave</option>
+                  <option value="inactive">Departed / Inactive</option>
+                </select>
+              </div>
+            }
+            exportConfig={{
+              filename: 'staff-personnel-register',
+              sheetName: 'Staff',
+              title: 'PrathamOne EduOS — Staff Workforce Register',
+              columns: [
+                { header: 'Staff Member', key: 'first_name', width: 22 },
+                { header: 'Employee ID', key: 'employee_id', width: 14 },
+                { header: 'Department', key: 'department', width: 18 },
+                { header: 'Role', key: 'role', width: 16 },
+                { header: 'Phone', key: 'phone', width: 16 },
+                { header: 'Status', key: 'status', width: 12 },
+              ],
+            }}
+            emptyState={
+              <div className="py-12 text-center text-slate-400 font-medium">
+                No staff members found matching query.
+              </div>
+            }
+          />
         </div>
       )}
 

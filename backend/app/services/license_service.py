@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-16
+#  * @updated     2026-11-23
 #  *
 #  * @description Verifies signed license artifacts and calculates local entitlement state.
 #  */
@@ -26,6 +26,7 @@ import re
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
+import httpx
 from cryptography.exceptions import InvalidSignature, InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import serialization
@@ -302,3 +303,335 @@ def calculate_license_mode(
     if not isinstance(grace_days, int) or not 0 <= grace_days <= 30:
         raise LicenseArtifactError("License grace period is invalid.")
     return "grace" if (today - expiry_day).days <= grace_days else "evaluation"
+
+
+class LicenseReactivationError(ValueError):
+    """Raised when customer-account license reactivation fails."""
+
+
+async def customer_account_login(
+    authority_url: str,
+    email: str,
+    password: str,
+    client: httpx.AsyncClient | None = None,
+) -> dict[str, Any]:
+    """Authenticates the customer using POST /api/login without OTP. Never stores the password."""
+    norm_url = authority_url.strip().rstrip("/")
+    if not norm_url:
+        raise LicenseReactivationError("License authority URL is not configured.")
+    payload = {"email": email.strip().lower(), "password": password}
+
+    async def _post(c: httpx.AsyncClient):
+        return await c.post(f"{norm_url}/api/login", json=payload)
+
+    try:
+        if client:
+            response = await _post(client)
+        else:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as c:
+                response = await _post(c)
+    except httpx.RequestError as exc:
+        raise LicenseReactivationError("License authority is temporarily unreachable.") from exc
+
+    if response.status_code in {401, 403}:
+        raise LicenseReactivationError("Invalid customer account email or password.")
+    if response.status_code >= 400:
+        raise LicenseReactivationError(f"License authority rejected login (status {response.status_code}).")
+
+    try:
+        data = response.json()
+    except (ValueError, json.JSONDecodeError) as exc:
+        raise LicenseReactivationError("License authority returned an invalid login response.") from exc
+
+    token = data.get("token") or data.get("session_token") or data.get("access_token")
+    if not token or not isinstance(token, str):
+        raise LicenseReactivationError("License authority login did not return a valid session token.")
+
+    return {
+        "ok": True,
+        "session_token": token,
+        "email": email.strip().lower(),
+    }
+
+
+async def customer_get_reactivations(
+    authority_url: str,
+    session_token: str,
+    client: httpx.AsyncClient | None = None,
+) -> list[dict[str, Any]]:
+    """Retrieves eligible licenses for reactivation using GET /api/license/reactivations."""
+    norm_url = authority_url.strip().rstrip("/")
+    if not norm_url:
+        raise LicenseReactivationError("License authority URL is not configured.")
+    if not session_token:
+        raise LicenseReactivationError("Customer session token is required to list reactivations.")
+
+    headers = {"Authorization": f"Bearer {session_token}"}
+
+    async def _get(c: httpx.AsyncClient):
+        return await c.get(f"{norm_url}/api/license/reactivations", headers=headers)
+
+    try:
+        if client:
+            response = await _get(client)
+        else:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as c:
+                response = await _get(c)
+    except httpx.RequestError as exc:
+        raise LicenseReactivationError("License authority is temporarily unreachable.") from exc
+
+    if response.status_code in {401, 403}:
+        raise LicenseReactivationError("Customer session has expired. Please sign in again.")
+    if response.status_code >= 400:
+        raise LicenseReactivationError(f"Failed to retrieve eligible licenses (status {response.status_code}).")
+
+    try:
+        data = response.json()
+    except (ValueError, json.JSONDecodeError) as exc:
+        raise LicenseReactivationError("License authority returned an invalid reactivations response.") from exc
+
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        licenses = data.get("licenses") or data.get("items") or data.get("data")
+        if isinstance(licenses, list):
+            return licenses
+    return []
+
+
+async def customer_create_reactivation_request(
+    authority_url: str,
+    session_token: str,
+    license_id: int,
+    installation_id: str,
+    activation_identifier: str,
+    refresh_public_key: str,
+    client: httpx.AsyncClient | None = None,
+) -> dict[str, Any]:
+    """Submits a license reactivation request using POST /api/license/reactivations.
+    Keeps private key on installation and sends only refresh_public_key.
+    """
+    norm_url = authority_url.strip().rstrip("/")
+    if not norm_url:
+        raise LicenseReactivationError("License authority URL is not configured.")
+    if not session_token:
+        raise LicenseReactivationError("Customer session token is required.")
+
+    headers = {"Authorization": f"Bearer {session_token}"}
+    payload = {
+        "license_id": license_id,
+        "installation_id": installation_id,
+        "activation_identifier": activation_identifier,
+        "refresh_public_key": refresh_public_key,
+    }
+
+    async def _post(c: httpx.AsyncClient):
+        return await c.post(f"{norm_url}/api/license/reactivations", json=payload, headers=headers)
+
+    try:
+        if client:
+            response = await _post(client)
+        else:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as c:
+                response = await _post(c)
+    except httpx.RequestError as exc:
+        raise LicenseReactivationError("License authority is temporarily unreachable.") from exc
+
+    if response.status_code in {401, 403}:
+        raise LicenseReactivationError("Customer session has expired. Please sign in again.")
+    if response.status_code >= 400:
+        error_msg = "Reactivation request rejected by server."
+        try:
+            err_data = response.json()
+            if isinstance(err_data, dict) and err_data.get("detail"):
+                error_msg = str(err_data["detail"])
+            elif isinstance(err_data, dict) and err_data.get("message"):
+                error_msg = str(err_data["message"])
+        except Exception:
+            pass
+        raise LicenseReactivationError(error_msg)
+
+    try:
+        data = response.json()
+    except (ValueError, json.JSONDecodeError) as exc:
+        raise LicenseReactivationError("Invalid reactivation response format from server.") from exc
+
+    req_id = data.get("id") or data.get("reactivation_request_id")
+    status = data.get("status", "pending")
+    phone = data.get("registered_phone") or data.get("phone") or data.get("support_phone")
+    message = data.get("message")
+    return {
+        "id": str(req_id) if req_id is not None else None,
+        "status": status,
+        "registered_phone": phone,
+        "message": message,
+        "raw": data,
+    }
+
+
+async def customer_poll_reactivation_status(
+    authority_url: str,
+    session_token: str,
+    request_id: str,
+    client: httpx.AsyncClient | None = None,
+) -> dict[str, Any]:
+    """Polls the status of a reactivation request using GET /api/license/reactivations/<id>."""
+    norm_url = authority_url.strip().rstrip("/")
+    if not norm_url:
+        raise LicenseReactivationError("License authority URL is not configured.")
+    if not session_token:
+        raise LicenseReactivationError("Customer session token is required.")
+
+    headers = {"Authorization": f"Bearer {session_token}"}
+
+    async def _get(c: httpx.AsyncClient):
+        return await c.get(f"{norm_url}/api/license/reactivations/{request_id}", headers=headers)
+
+    try:
+        if client:
+            response = await _get(client)
+        else:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as c:
+                response = await _get(c)
+    except httpx.RequestError as exc:
+        raise LicenseReactivationError("License authority is temporarily unreachable.") from exc
+
+    if response.status_code in {401, 403}:
+        raise LicenseReactivationError("Customer session has expired. Please sign in again.")
+    if response.status_code == 404:
+        raise LicenseReactivationError("Reactivation request not found.")
+    if response.status_code >= 400:
+        raise LicenseReactivationError(f"Reactivation status check failed (status {response.status_code}).")
+
+    try:
+        data = response.json()
+    except (ValueError, json.JSONDecodeError) as exc:
+        raise LicenseReactivationError("Invalid status response format from server.") from exc
+
+    status = data.get("status", "pending")
+    phone = data.get("registered_phone") or data.get("phone")
+    message = data.get("message")
+    return {
+        "id": str(request_id),
+        "status": status,
+        "registered_phone": phone,
+        "message": message,
+        "raw": data,
+    }
+
+
+async def customer_activate_reactivation(
+    authority_url: str,
+    reactivation_request_id: str,
+    product_code: str,
+    company_binding: str,
+    installation_id: str,
+    activation_identifier: str,
+    refresh_public_key: str | None = None,
+    client: httpx.AsyncClient | None = None,
+) -> dict[str, Any]:
+    """Calls POST /api/license/activate with reactivation_request_id once approved."""
+    norm_url = authority_url.strip().rstrip("/")
+    if not norm_url:
+        raise LicenseReactivationError("License authority URL is not configured.")
+
+    payload = {
+        "reactivation_request_id": reactivation_request_id,
+        "product_code": product_code,
+        "company_binding": company_binding,
+        "installation_id": installation_id,
+        "activation_identifier": activation_identifier,
+    }
+    if refresh_public_key:
+        payload["refresh_public_key"] = refresh_public_key
+
+    async def _post(c: httpx.AsyncClient):
+        return await c.post(f"{norm_url}/api/license/activate", json=payload)
+
+    try:
+        if client:
+            response = await _post(client)
+        else:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as c:
+                response = await _post(c)
+    except httpx.RequestError as exc:
+        raise LicenseReactivationError("License authority is temporarily unreachable.") from exc
+
+    if response.status_code >= 400:
+        err_msg = "License authority could not activate the approved reactivation request."
+        try:
+            err_data = response.json()
+            if isinstance(err_data, dict) and err_data.get("detail"):
+                err_msg = str(err_data["detail"])
+            elif isinstance(err_data, dict) and err_data.get("message"):
+                err_msg = str(err_data["message"])
+        except Exception:
+            pass
+        raise LicenseReactivationError(err_msg)
+
+    try:
+        data = response.json()
+    except (ValueError, json.JSONDecodeError) as exc:
+        raise LicenseReactivationError("License authority returned an invalid activation response.") from exc
+
+    artifact = data.get("artifact") if isinstance(data, dict) else None
+    if not isinstance(artifact, dict):
+        raise LicenseReactivationError("Missing signed license artifact in activation response.")
+
+    return {
+        "ok": True,
+        "artifact": artifact,
+        "registered_email": data.get("registered_email"),
+        "raw": data,
+    }
+
+
+def verify_and_import_reactivation_artifact(
+    artifact: dict[str, Any],
+    public_keys_json: str,
+    expected_product_code: str,
+    expected_company_binding: str,
+    expected_installation_id: str,
+    expected_activation_identifier: str,
+) -> dict[str, Any]:
+    """Verifies and validates the returned license artifact using Ed25519 verification.
+    Never bypasses signature, product, company, or installation checks.
+    """
+    # 1. Cryptographic Ed25519 signature & structure verification
+    payload = verify_signed_license_artifact(artifact, public_keys_json)
+
+    # 2. Binding checks
+    if payload.get("product_code") != expected_product_code:
+        raise LicenseArtifactError(
+            f"Artifact product '{payload.get('product_code')}' does not match expected '{expected_product_code}'."
+        )
+    if payload.get("company_binding") != expected_company_binding:
+        raise LicenseArtifactError(
+            f"Artifact company binding '{payload.get('company_binding')}' does not match expected '{expected_company_binding}'."
+        )
+    if payload.get("installation_id") != expected_installation_id:
+        raise LicenseArtifactError(
+            f"Artifact installation ID '{payload.get('installation_id')}' does not match this installation '{expected_installation_id}'."
+        )
+    if payload.get("activation_identifier") != expected_activation_identifier:
+        raise LicenseArtifactError(
+            "Artifact activation identifier does not match this installation."
+        )
+
+    # 3. Mode calculation & expiration verification
+    mode = calculate_license_mode(payload)
+    if mode == "evaluation":
+        status = payload.get("status")
+        if status in {"SUSPENDED", "CANCELLED", "DRAFT"}:
+            raise LicenseArtifactError(f"The reactivated license is {status.lower()}.")
+        raise LicenseArtifactError("The reactivated license is expired or outside its offline validity window.")
+
+    return {
+        "mode": mode,
+        "payload": payload,
+        "document_id": payload["document_id"],
+        "license_model": payload.get("license_model"),
+        "edition": payload.get("edition"),
+        "expires_at": payload.get("expires_at"),
+        "issued_at": payload.get("issued_at"),
+    }

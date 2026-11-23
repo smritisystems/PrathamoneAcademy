@@ -11,14 +11,14 @@
  *
  * @version     1.0.0
  * @created     2026-11-14
- * @updated     2026-11-21
+ * @updated     2026-11-23
  *
  * @description Institution-scoped activation and refresh of signed software licenses.
  */
 
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Download, KeyRound, Mail, RefreshCw, ShieldOff, Upload } from 'lucide-react'
+import { Download, KeyRound, Mail, RefreshCw, ShieldOff, Upload, UserCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { licenseApi } from '../api/endpoints'
 import { useEditModeStore } from '../store/editModeStore'
@@ -51,6 +51,27 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
     Array<{ license_id: number; serial_number: string | null; seats: number; activation_count: number }>
   >([])
   const [selectedEmailLicenseId, setSelectedEmailLicenseId] = useState<number | null>(null)
+  const [customerEmail, setCustomerEmail] = useState('')
+  const [customerPassword, setCustomerPassword] = useState('')
+  const [customerSessionToken, setCustomerSessionToken] = useState<string | null>(null)
+  const [customerLicenses, setCustomerLicenses] = useState<
+    Array<{
+      license_id: number
+      serial_number: string | null
+      seats: number
+      activation_count: number
+      edition?: string
+      license_model?: string
+      status?: string
+    }>
+  >([])
+  const [selectedCustomerLicenseId, setSelectedCustomerLicenseId] = useState<number | null>(null)
+  const [reactivationRequestId, setReactivationRequestId] = useState<string | null>(null)
+  const [reactivationStatus, setReactivationStatus] = useState<
+    'idle' | 'pending' | 'approved' | 'rejected' | 'expired' | 'activating'
+  >('idle')
+  const [reactivationPhone, setReactivationPhone] = useState<string | null>(null)
+  const [reactivationMessage, setReactivationMessage] = useState<string | null>(null)
   const [registration, setRegistration] = useState<NonNullable<LicenseStatusResponse['registration']>>({
     institution_name: '',
     contact_name: '',
@@ -96,6 +117,15 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
     setEmailCode('')
     setEmailLicenseChoices([])
     setSelectedEmailLicenseId(null)
+    setCustomerEmail('')
+    setCustomerPassword('')
+    setCustomerSessionToken(null)
+    setCustomerLicenses([])
+    setSelectedCustomerLicenseId(null)
+    setReactivationRequestId(null)
+    setReactivationStatus('idle')
+    setReactivationPhone(null)
+    setReactivationMessage(null)
   }, [institutionId])
 
   useEffect(() => {
@@ -116,8 +146,10 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
   )
 
   const activateLicenseMutation = useMutation({
-    mutationFn: () => licenseApi.activate(
-      emailPurpose === 'activation' && emailChallengeId && selectedEmailLicenseId
+    mutationFn: (overridePayload?: { reactivation_request_id?: string }) => licenseApi.activate(
+      overridePayload?.reactivation_request_id
+        ? { reactivation_request_id: overridePayload.reactivation_request_id }
+        : emailPurpose === 'activation' && emailChallengeId && selectedEmailLicenseId
         ? {
             email: licenseEmail.trim(),
             email_challenge_id: emailChallengeId,
@@ -136,6 +168,8 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
       setEmailCode('')
       setEmailLicenseChoices([])
       setSelectedEmailLicenseId(null)
+      setReactivationRequestId(null)
+      setReactivationStatus('idle')
       queryClient.invalidateQueries({ queryKey: ['license-status', institutionId] })
       toast.success(licenseStatus?.document_id
         ? 'Signed license snapshot refreshed.'
@@ -150,6 +184,117 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
       }
     },
   })
+
+  const customerLoginMutation = useMutation({
+    mutationFn: () => licenseApi.customerLogin(customerEmail.trim(), customerPassword, institutionId),
+    onSuccess: (res) => {
+      setCustomerSessionToken(res.data.session_token)
+      setCustomerPassword('')
+      toast.success('Signed in to PrathamOne customer account.')
+      loadCustomerLicensesMutation.mutate(res.data.session_token)
+    },
+    onError: (error: any) => {
+      toast.error(`Customer account login failed: ${error.response?.data?.detail || error.message}`)
+    },
+  })
+
+  const loadCustomerLicensesMutation = useMutation({
+    mutationFn: (token?: string) =>
+      licenseApi.getCustomerReactivations(token || customerSessionToken || undefined, institutionId),
+    onSuccess: (res) => {
+      const list = res.data.licenses || []
+      setCustomerLicenses(list)
+      if (list.length === 1) {
+        setSelectedCustomerLicenseId(list[0].license_id)
+      }
+      if (list.length === 0) {
+        toast.error('No eligible licenses found for this customer account.')
+      } else {
+        toast.success(`Loaded ${list.length} eligible license(s).`)
+      }
+    },
+    onError: (error: any) => {
+      toast.error(`Could not load eligible licenses: ${error.response?.data?.detail || error.message}`)
+    },
+  })
+
+  const requestReactivationMutation = useMutation({
+    mutationFn: () => {
+      if (!selectedCustomerLicenseId) {
+        throw new Error('Please select an eligible license to reactivate.')
+      }
+      return licenseApi.requestCustomerReactivation(
+        selectedCustomerLicenseId,
+        customerSessionToken || undefined,
+        institutionId,
+      )
+    },
+    onSuccess: (res) => {
+      const { id, status, registered_phone, message } = res.data
+      setReactivationRequestId(id)
+      setReactivationPhone(registered_phone || null)
+      setReactivationMessage(message || null)
+
+      if (status === 'approved') {
+        setReactivationStatus('approved')
+        toast.success('Reactivation request approved! Activating installation...')
+        activateLicenseMutation.mutate({ reactivation_request_id: id })
+      } else if (status === 'pending') {
+        setReactivationStatus('pending')
+        toast.success('Reactivation request submitted and pending verification.')
+      } else if (status === 'rejected') {
+        setReactivationStatus('rejected')
+        toast.error(message || 'The reactivation request was rejected.')
+      } else if (status === 'expired') {
+        setReactivationStatus('expired')
+        toast.error('The reactivation request has expired.')
+      }
+    },
+    onError: (error: any) => {
+      toast.error(`Reactivation request failed: ${error.response?.data?.detail || error.message}`)
+    },
+  })
+
+  useEffect(() => {
+    if (!reactivationRequestId || reactivationStatus !== 'pending') return
+
+    let cancelled = false
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await licenseApi.pollCustomerReactivation(
+          reactivationRequestId,
+          customerSessionToken || undefined,
+          institutionId,
+        )
+        if (cancelled) return
+        const { status, registered_phone, message } = res.data
+        if (registered_phone) setReactivationPhone(registered_phone)
+        if (message) setReactivationMessage(message)
+
+        if (status === 'approved') {
+          setReactivationStatus('approved')
+          clearInterval(pollInterval)
+          toast.success('Reactivation request approved! Activating license...')
+          activateLicenseMutation.mutate({ reactivation_request_id: reactivationRequestId })
+        } else if (status === 'rejected') {
+          setReactivationStatus('rejected')
+          clearInterval(pollInterval)
+          toast.error(message || 'Reactivation request was rejected by support.')
+        } else if (status === 'expired') {
+          setReactivationStatus('expired')
+          clearInterval(pollInterval)
+          toast.error('Reactivation request has expired. Please submit a new request.')
+        }
+      } catch (err: any) {
+        console.warn('Polling reactivation status warning:', err)
+      }
+    }, 3000)
+
+    return () => {
+      cancelled = true
+      clearInterval(pollInterval)
+    }
+  }, [reactivationRequestId, reactivationStatus, customerSessionToken, institutionId])
 
   const requestEmailCodeMutation = useMutation({
     mutationFn: (purpose: 'activation' | 'email_change') => licenseApi.requestEmailCode({
@@ -743,6 +888,176 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
               <p className="mt-2 text-xs text-slate-500">
                 Registration details are taken from this institution profile and your signed-in account. Online activation requires internet access. For offline activation, download the request file, use it with the activation key on the licensing website from an internet-connected device, then import the signed response here. Both flows require Institution Admin or SysAdmin access and explicit Edit Mode.
               </p>
+              </div>
+            )}
+
+            {isEditMode && !hasVerifiedLicense && (
+              <div className="mt-6 rounded-xl border border-indigo-200 bg-indigo-50/40 p-5 space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <UserCheck className="h-4 w-4 text-primary-600" />
+                      Reactivate with PrathamOne Customer Account
+                    </h4>
+                    <p className="mt-1 text-xs text-slate-600">
+                      Sign in with your existing account email and password to select and reactivate your eligible license on this installation. No activation keys or OTP required.
+                    </p>
+                  </div>
+                  {customerSessionToken && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                      Account Authenticated
+                    </span>
+                  )}
+                </div>
+
+                {!customerSessionToken ? (
+                  <div className="space-y-3">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <input
+                        type="email"
+                        maxLength={254}
+                        value={customerEmail}
+                        onChange={(e) => setCustomerEmail(e.target.value)}
+                        disabled={!isEditMode || customerLoginMutation.isPending}
+                        aria-label="Customer account email"
+                        placeholder="Account Email (e.g. customer@example.com)"
+                        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
+                      />
+                      <input
+                        type="password"
+                        maxLength={256}
+                        value={customerPassword}
+                        onChange={(e) => setCustomerPassword(e.target.value)}
+                        disabled={!isEditMode || customerLoginMutation.isPending}
+                        aria-label="Customer account password"
+                        placeholder="Account Password"
+                        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => customerLoginMutation.mutate()}
+                      disabled={!isEditMode || !customerEmail.trim() || !customerPassword || customerLoginMutation.isPending}
+                      className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {customerLoginMutation.isPending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <UserCheck className="h-4 w-4" />}
+                      {customerLoginMutation.isPending ? 'Signing in…' : 'Sign In with Account'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Select an eligible license to reactivate
+                      </label>
+                      {customerLicenses.length > 0 ? (
+                        <select
+                          value={selectedCustomerLicenseId || ''}
+                          onChange={(e) => setSelectedCustomerLicenseId(e.target.value ? Number(e.target.value) : null)}
+                          disabled={!isEditMode || reactivationStatus === 'pending' || activateLicenseMutation.isPending}
+                          aria-label="Select eligible license"
+                          className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
+                        >
+                          <option value="">-- Choose an eligible license --</option>
+                          {customerLicenses.map((lic) => (
+                            <option key={lic.license_id} value={lic.license_id}>
+                              {lic.serial_number ? `Serial: ${lic.serial_number}` : `License #${lic.license_id}`} · {lic.edition || 'Standard'} ({lic.activation_count}/{lic.seats} devices active)
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <p className="text-xs text-slate-500 italic">
+                          {loadCustomerLicensesMutation.isPending ? 'Loading eligible licenses…' : 'No eligible licenses found for this account.'}
+                        </p>
+                      )}
+                    </div>
+
+                    {reactivationStatus === 'pending' ? (
+                      <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950 space-y-2">
+                        <div className="flex items-center gap-2 font-bold text-sm">
+                          <RefreshCw className="h-4 w-4 animate-spin text-amber-600" />
+                          Reactivation Request Pending Verification
+                        </div>
+                        <p className="text-xs text-amber-900 leading-relaxed">
+                          Support will call your registered phone {reactivationPhone ? <strong className="font-mono">{reactivationPhone}</strong> : 'on file'} to verify this device transfer.
+                          This application is automatically polling for approval and will complete activation once verified.
+                        </p>
+                        {reactivationMessage && (
+                          <p className="text-xs font-mono text-amber-800 bg-amber-100/60 p-2 rounded">
+                            {reactivationMessage}
+                          </p>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (reactivationRequestId) {
+                              licenseApi.pollCustomerReactivation(reactivationRequestId, customerSessionToken || undefined, institutionId)
+                                .then((res) => {
+                                  if (res.data.status === 'approved') {
+                                    setReactivationStatus('approved')
+                                    activateLicenseMutation.mutate({ reactivation_request_id: reactivationRequestId })
+                                  } else {
+                                    toast('Status is still pending verification.')
+                                  }
+                                })
+                            }
+                          }}
+                          className="text-xs font-semibold text-amber-900 underline hover:text-amber-950"
+                        >
+                          Check status now
+                        </button>
+                      </div>
+                    ) : reactivationStatus === 'rejected' ? (
+                      <div className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-rose-950 text-xs">
+                        <strong>Request Rejected:</strong> {reactivationMessage || 'The reactivation request was rejected by support.'} Please contact support for assistance.
+                      </div>
+                    ) : reactivationStatus === 'expired' ? (
+                      <div className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-rose-950 text-xs">
+                        <strong>Request Expired:</strong> The reactivation request has timed out. Please select your license and submit again.
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => requestReactivationMutation.mutate()}
+                          disabled={
+                            !isEditMode ||
+                            !selectedCustomerLicenseId ||
+                            requestReactivationMutation.isPending ||
+                            activateLicenseMutation.isPending
+                          }
+                          className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {requestReactivationMutation.isPending || activateLicenseMutation.isPending ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                              Processing Reactivation…
+                            </>
+                          ) : (
+                            <>
+                              <KeyRound className="h-4 w-4" />
+                              Reactivate Selected License
+                            </>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCustomerSessionToken(null)
+                            setCustomerLicenses([])
+                            setSelectedCustomerLicenseId(null)
+                            setReactivationStatus('idle')
+                            setReactivationRequestId(null)
+                          }}
+                          className="text-xs text-slate-500 hover:text-slate-700 underline"
+                        >
+                          Sign out of customer account
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </>

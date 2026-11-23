@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-23
  *
  * @description Dedicated multi-workspace hub for Students & Admissions Centre comprising Overview, Master Register, KYC Admissions, Batch Allocations, ID Cards, Activity History, Reactivation, and Admission Policies.
  */
@@ -55,7 +55,17 @@ import { studentsApi, standardsApi, divisionsApi, enrollmentsApi, settingsApi } 
 import { useAuthStore, isUserAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, LockedButton, SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton } from '../components/common'
+import {
+  EditModeBar,
+  LockedButton,
+  SortableHeader,
+  TableSortSelect,
+  TableSortOption,
+  ContextualHelpButton,
+  EnterpriseDataTable,
+  DataTableColumn,
+} from '../components/common'
+import { formatDateIN, formatPhoneNumber } from '../utils/formatters'
 import { useTableSort } from '../hooks/useTableSort'
 import Pagination from '../components/Pagination'
 import StudentExitModal from '../components/StudentExitModal'
@@ -212,6 +222,174 @@ function StudentsContent() {
     { key: 'phone', label: 'Phone' },
     { key: 'city', label: 'City' },
   ]
+
+  const studentColumns: DataTableColumn<Student>[] = useMemo(
+    () => [
+      {
+        id: 'admission_number',
+        header: 'Admission No.',
+        accessorKey: 'admission_number',
+        sortable: true,
+        sticky: 'left',
+        width: 140,
+        cell: ({ value }) => (
+          <span className="font-mono text-primary-700 font-semibold">{value}</span>
+        ),
+      },
+      {
+        id: 'student_name',
+        header: 'Student Name',
+        accessorFn: (s) => `${s.first_name || ''} ${s.last_name || ''}`.trim(),
+        sortable: true,
+        cell: ({ row }) => (
+          <div className="font-semibold text-slate-900">
+            {row.first_name} {row.last_name}
+          </div>
+        ),
+      },
+      {
+        id: 'is_active',
+        header: 'Status',
+        accessorKey: 'is_active',
+        sortable: true,
+        width: 110,
+        cell: ({ row }) =>
+          row.is_active ? (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+              Active
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-100 text-rose-800">
+              {row.exit_reason ? `Withdrawn (${row.exit_reason})` : 'Inactive'}
+            </span>
+          ),
+      },
+      {
+        id: 'gender',
+        header: 'Gender',
+        accessorKey: 'gender',
+        sortable: true,
+        width: 90,
+        cell: ({ value }) => <span className="capitalize text-slate-600">{value}</span>,
+      },
+      {
+        id: 'date_of_birth',
+        header: 'DOB',
+        accessorKey: 'date_of_birth',
+        sortable: true,
+        type: 'date',
+        width: 110,
+        cell: ({ value }) => <span className="text-slate-600">{formatDateIN(value)}</span>,
+      },
+      {
+        id: 'phone',
+        header: 'Phone',
+        accessorKey: 'phone',
+        sortable: true,
+        type: 'phone',
+        width: 130,
+        cell: ({ value }) => (
+          <span className="font-mono text-slate-600">{formatPhoneNumber(value)}</span>
+        ),
+      },
+      {
+        id: 'city',
+        header: 'City',
+        accessorKey: 'city',
+        sortable: true,
+        width: 110,
+        cell: ({ value }) => <span className="text-slate-600">{value || '—'}</span>,
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        sortable: false,
+        sticky: 'right',
+        align: 'right',
+        hideable: false,
+        width: 180,
+        cell: ({ row: s }) => (
+          <div className="flex items-center justify-end gap-1">
+            <Link
+              to={`/students/${s.id}`}
+              className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition"
+              title="View Full Profile"
+            >
+              <Eye className="w-4 h-4" />
+            </Link>
+            <button
+              type="button"
+              onClick={() => setSelectedCardStudentId(s.id)}
+              className="p-1.5 rounded-lg hover:bg-indigo-50 text-indigo-600 transition"
+              title="View ID Card & QR Badge"
+            >
+              <QrCode className="w-4 h-4" />
+            </button>
+            <Link
+              to={`/forms?formId=student_kyc&recordId=${s.id}&mode=prefilled`}
+              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-700 transition"
+              title="Print KYC Form"
+            >
+              <Printer className="w-4 h-4" />
+            </Link>
+            {s.is_active && (
+              <Link
+                to={`/fees/collect/${s.id}`}
+                className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600 transition"
+                title="Collect Fee"
+              >
+                <CreditCard className="w-4 h-4" />
+              </Link>
+            )}
+            {canManageLifecycle && (
+              <>
+                {s.is_active ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isEditMode) {
+                        toast.error('Locked in View Mode: Enable Edit Mode to withdraw students.')
+                        return
+                      }
+                      setExitTargetStudent(s)
+                    }}
+                    className={`p-1.5 rounded-lg transition ${
+                      isEditMode
+                        ? 'hover:bg-rose-50 text-rose-600'
+                        : 'text-slate-300 cursor-not-allowed'
+                    }`}
+                    title={isEditMode ? 'Exit / Withdraw Student' : 'Locked in View Mode: Enable Edit Mode'}
+                  >
+                    <UserMinus className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isEditMode) {
+                        toast.error('Locked in View Mode: Enable Edit Mode to reactivate students.')
+                        return
+                      }
+                      setReactivateTargetStudent(s)
+                    }}
+                    className={`p-1.5 rounded-lg transition ${
+                      isEditMode
+                        ? 'hover:bg-emerald-50 text-emerald-600'
+                        : 'text-slate-300 cursor-not-allowed'
+                    }`}
+                    title={isEditMode ? 'Reactivate Student' : 'Locked in View Mode: Enable Edit Mode'}
+                  >
+                    <UserCheck className="w-4 h-4" />
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        ),
+      },
+    ],
+    [canManageLifecycle, isEditMode]
+  )
 
   const {
     sortedData: sortedStudents,
@@ -761,115 +939,114 @@ function StudentsContent() {
 
       {/* ─── TAB 2: MASTER DIRECTORY ─────────────────────────────────────────── */}
       {activeTab === 'directory' && (
-        <div className="space-y-4 animate-fade-in">
-          {/* Filters Bar */}
-          <div className="card p-4 space-y-3 bg-white border border-slate-200 rounded-2xl shadow-xs">
-            <div className="flex flex-wrap gap-3 items-center">
-              <div className="relative flex-1 min-w-56">
-                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                <input
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value)
-                    setPage(1)
-                  }}
-                  className="input pl-9 text-xs"
-                  placeholder="Search by name, admission no., phone, city…"
-                />
-              </div>
-              <select
-                value={standardId ?? ''}
-                onChange={(e) => {
-                  setStandardId(e.target.value ? Number(e.target.value) : undefined)
-                  setDivisionId(undefined)
-                  setPage(1)
-                }}
-                className="input w-40 text-xs"
-              >
-                <option value="">All Standards</option>
-                {standards.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-              {standardId && divisions.length > 0 && (
+        <div className="space-y-3 animate-fade-in">
+          <EnterpriseDataTable
+            tableId="students_directory_master"
+            data={students}
+            columns={studentColumns}
+            isLoading={isLoadingStudents}
+            searchable={true}
+            searchPlaceholder="Search by name, admission no., phone, city…"
+            searchValue={search}
+            onSearchChange={(val) => {
+              setSearch(val)
+              setPage(1)
+            }}
+            serverSidePagination={true}
+            page={page}
+            pageSize={20}
+            totalCount={totalStudents}
+            onPageChange={setPage}
+            isEditMode={isEditMode}
+            exportConfig={{
+              filename: 'Student_Master_Directory',
+              sheetName: 'Students',
+              title: 'Master Student Directory',
+            }}
+            customFilterBar={
+              <div className="flex flex-wrap items-center gap-2.5 pt-1 text-xs">
                 <select
-                  value={divisionId ?? ''}
+                  value={standardId ?? ''}
                   onChange={(e) => {
-                    setDivisionId(e.target.value ? Number(e.target.value) : undefined)
+                    setStandardId(e.target.value ? Number(e.target.value) : undefined)
+                    setDivisionId(undefined)
                     setPage(1)
                   }}
-                  className="input w-36 text-xs"
+                  className="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                 >
-                  <option value="">All Divisions</option>
-                  {divisions.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      Division {d.name}
+                  <option value="">All Standards</option>
+                  {standards.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
                     </option>
                   ))}
                 </select>
-              )}
 
-              {/* Include Inactive Checkbox & Status Filter */}
-              <div className="flex items-center gap-2 flex-wrap sm:pl-2 sm:border-l sm:border-gray-200">
-                <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium text-gray-700 select-none">
-                  <input
-                    type="checkbox"
-                    data-testid="include-inactive-checkbox"
-                    checked={effectiveIncludeInactive}
-                    onChange={(e) => {
-                      setUserToggledInactive(true)
-                      setIncludeInactive(e.target.checked)
-                      if (!e.target.checked) setStatusFilter('all')
-                      setPage(1)
-                    }}
-                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 w-4 h-4"
-                  />
-                  <span>Include Inactive</span>
-                  {allSettings?.admission?.student_visibility_lists === 'include_all' && !userToggledInactive && (
-                    <span className="text-[10px] text-primary-600 font-semibold">(Default)</span>
-                  )}
-                </label>
-
-                {effectiveIncludeInactive && (
+                {standardId && divisions.length > 0 && (
                   <select
-                    data-testid="student-status-filter"
-                    value={statusFilter}
+                    value={divisionId ?? ''}
                     onChange={(e) => {
-                      setStatusFilter(e.target.value as any)
+                      setDivisionId(e.target.value ? Number(e.target.value) : undefined)
                       setPage(1)
                     }}
-                    className="input text-xs py-1.5 px-2 w-36 animate-fade-in"
+                    className="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                   >
-                    <option value="all">All Statuses</option>
-                    <option value="active">Active Only</option>
-                    <option value="inactive">Inactive Only</option>
-                    <option value="withdrawn">Withdrawn Only</option>
-                    <option value="completed">Completed Only</option>
-                    <option value="graduated">Graduated Only</option>
+                    <option value="">All Divisions</option>
+                    {divisions.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        Division {d.name}
+                      </option>
+                    ))}
                   </select>
                 )}
-              </div>
 
-              {/* Sort Selection Control */}
-              <div className="w-full sm:w-auto sm:ml-auto sm:pl-2 sm:border-l sm:border-gray-200">
-                <TableSortSelect
-                  options={STUDENT_SORT_OPTIONS}
-                  currentSortKey={studentSortKey}
-                  currentDirection={studentSortDirection}
-                  onSortChange={(key, dir) => {
-                    const opt = STUDENT_SORT_OPTIONS.find((o) => o.key === key)
-                    setStudentSort(key, dir, undefined, opt?.type || 'auto')
-                  }}
-                  onClear={clearStudentSort}
-                  placeholder="Sort Students By..."
-                />
-              </div>
-            </div>
-          </div>
+                <div className="flex items-center gap-2 flex-wrap pl-2 border-l border-slate-200">
+                  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium text-slate-700 select-none">
+                    <input
+                      type="checkbox"
+                      data-testid="include-inactive-checkbox"
+                      checked={effectiveIncludeInactive}
+                      onChange={(e) => {
+                        setUserToggledInactive(true)
+                        setIncludeInactive(e.target.checked)
+                        if (!e.target.checked) setStatusFilter('all')
+                        setPage(1)
+                      }}
+                      className="rounded border-slate-300 text-primary-600 focus:ring-primary-500 w-3.5 h-3.5"
+                    />
+                    <span>Include Inactive</span>
+                    {allSettings?.admission?.student_visibility_lists === 'include_all' && !userToggledInactive && (
+                      <span className="text-[10px] text-primary-600 font-semibold">(Default)</span>
+                    )}
+                  </label>
 
-          {/* Directory Table & Mobile Cards */}
+                  {effectiveIncludeInactive && (
+                    <select
+                      data-testid="student-status-filter"
+                      value={statusFilter}
+                      onChange={(e) => {
+                        setStatusFilter(e.target.value as any)
+                        setPage(1)
+                      }}
+                      className="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="active">Active Only</option>
+                      <option value="inactive">Inactive Only</option>
+                      <option value="withdrawn">Withdrawn Only</option>
+                      <option value="completed">Completed Only</option>
+                      <option value="graduated">Graduated Only</option>
+                    </select>
+                  )}
+                </div>
+              </div>
+            }
+          />
+        </div>
+      )}
+
+      {false && (
+        <div className="space-y-4">
           <div className="card p-0 overflow-hidden bg-white border border-slate-200 rounded-2xl shadow-xs">
             {/* Desktop Table Presentation (>= md) */}
             <div className="hidden md:block overflow-x-auto">

@@ -45,7 +45,12 @@ import {
 } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin, hasPermission } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton, LockedIconButton, SortableHeader, TableSortSelect, TableSortOption, ConcessionTraceModal, ContextualHelpButton, AgingReceivablesStackedBar } from '../components/common'
+import {
+  EditModeBar, LockedButton, LockedIconButton, SortableHeader,
+  TableSortSelect, TableSortOption, ConcessionTraceModal, ContextualHelpButton,
+  AgingReceivablesStackedBar, EnterpriseDataTable, DataTableColumn
+} from '../components/common'
+import { formatINR, formatDateIN, fallbackEmpty } from '../utils/formatters'
 import ReportIntelligenceBanner from '../components/reports/ReportIntelligenceBanner'
 import { useTableSort } from '../hooks/useTableSort'
 import Modal from '../components/Modal'
@@ -1441,6 +1446,214 @@ function FeesContent() {
     initialDirection: 'desc',
     initialType: 'number',
   })
+
+  const feeRegisterColumns: DataTableColumn<FeeRegisterEntry>[] = useMemo(() => [
+    {
+      id: 'admission_number',
+      header: 'Admission No',
+      sortable: true,
+      pinned: 'left',
+      width: '130px',
+      render: (row) => <span className="font-mono font-bold text-slate-700 text-xs">{row.admission_number}</span>,
+    },
+    {
+      id: 'student_name',
+      header: 'Student Name',
+      sortable: true,
+      render: (row) => (
+        <div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-bold text-slate-900 block">{row.student_name}</span>
+            {row.is_former && (
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                Former Student
+              </span>
+            )}
+          </div>
+          <span className="text-[11px] text-slate-400 font-mono">
+            {row.phone}
+            {row.exit_date && ` • Exited: ${row.exit_date}`}
+          </span>
+        </div>
+      ),
+    },
+    {
+      id: 'standard_name',
+      header: 'Course / Class',
+      sortable: true,
+      render: (row) => <span className="text-slate-600 font-medium">{row.board_name} – {row.standard_name}</span>,
+    },
+    {
+      id: 'batch_name',
+      header: 'Batch',
+      sortable: true,
+      render: (row) => <span className="text-slate-600">{fallbackEmpty(row.batch_name)}</span>,
+    },
+    {
+      id: 'net_amount',
+      header: 'Fee Obligation',
+      sortable: true,
+      sortType: 'number',
+      align: 'right',
+      render: (row) => <span className="font-semibold text-slate-900 font-mono">{formatINR(row.net_amount)}</span>,
+    },
+    {
+      id: 'paid_amount',
+      header: 'Paid Amount',
+      sortable: true,
+      sortType: 'number',
+      align: 'right',
+      render: (row) => <span className="font-semibold text-emerald-700 font-mono">{formatINR(row.paid_amount)}</span>,
+    },
+    {
+      id: 'outstanding_amount',
+      header: 'Balance Due',
+      sortable: true,
+      sortType: 'number',
+      align: 'right',
+      render: (row) => <span className="font-bold text-orange-600 font-mono">{formatINR(row.outstanding_amount)}</span>,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      sortable: true,
+      align: 'center',
+      render: (row) => <InvoiceStatusBadge status={row.status} />,
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      pinned: 'right',
+      align: 'center',
+      width: '200px',
+      render: (row) => (
+        <div className="flex items-center justify-center gap-1.5 flex-wrap" onClick={(e) => e.stopPropagation()}>
+          {activeTab === 'invoicing' && canIssueFeeInvoice && (
+            <button
+              type="button"
+              disabled={!isEditMode}
+              onClick={() => openInvoiceModal(row.student_id, row.student_name)}
+              title={isEditMode ? 'Issue invoice for this student' : 'Activate Edit Mode to issue an invoice'}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                isEditMode
+                  ? 'bg-primary-50 text-primary-700 hover:bg-primary-600 hover:text-white'
+                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+              }`}
+            >
+              <span className="inline-flex items-center gap-1">
+                {!isEditMode && <Lock className="w-3 h-3" />}
+                Issue Invoice
+              </span>
+            </button>
+          )}
+          {row.outstanding_amount > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCollectStudentId(row.student_id)
+                setTab('collect')
+              }}
+              className="px-2.5 py-1 bg-primary-50 text-primary-700 hover:bg-primary-600 hover:text-white rounded-lg text-xs font-bold transition-all"
+            >
+              Collect
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedStudentName(row.student_name)
+              setSelectedInstallments(row.installments || [])
+            }}
+            className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-semibold"
+          >
+            Installments
+          </button>
+        </div>
+      ),
+    },
+  ], [isEditMode, activeTab, canIssueFeeInvoice])
+
+  const issuedInvoicesColumns: DataTableColumn<FeeInvoice>[] = useMemo(() => [
+    {
+      id: 'invoice_number',
+      header: 'Invoice',
+      sortable: true,
+      pinned: 'left',
+      width: '130px',
+      render: (inv) => <span className="font-mono font-bold text-slate-900">{inv.invoice_number}</span>,
+    },
+    {
+      id: 'student_name',
+      header: 'Student',
+      sortable: true,
+      render: (inv) => (
+        <div>
+          <span className="block font-semibold text-slate-900">{inv.student_name || `Student #${inv.student_id}`}</span>
+          <span className="text-[10px] text-slate-500 font-mono">{inv.admission_number || 'Admission no. unavailable'}</span>
+        </div>
+      ),
+    },
+    {
+      id: 'issue_date',
+      header: 'Issue Date',
+      sortable: true,
+      render: (inv) => <span className="font-mono text-slate-600">{formatFeeInvoiceDate(inv.issue_date)}</span>,
+    },
+    {
+      id: 'due_date',
+      header: 'Due Date',
+      sortable: true,
+      render: (inv) => <span className="font-mono text-slate-600">{formatFeeInvoiceDate(inv.due_date)}</span>,
+    },
+    {
+      id: 'net_amount',
+      header: 'Amount',
+      sortable: true,
+      sortType: 'number',
+      align: 'right',
+      render: (inv) => <span className="font-semibold text-slate-900 font-mono">{formatINR(inv.net_amount)}</span>,
+    },
+    {
+      id: 'paid_amount',
+      header: 'Paid',
+      sortable: true,
+      sortType: 'number',
+      align: 'right',
+      render: (inv) => <span className="font-semibold text-emerald-700 font-mono">{formatINR(inv.paid_amount)}</span>,
+    },
+    {
+      id: 'outstanding_amount',
+      header: 'Balance',
+      sortable: true,
+      sortType: 'number',
+      align: 'right',
+      render: (inv) => <span className="font-bold text-orange-700 font-mono">{formatINR(inv.outstanding_amount)}</span>,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      sortable: true,
+      align: 'center',
+      render: (inv) => <InvoiceStatusBadge status={inv.status} />,
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      pinned: 'right',
+      align: 'center',
+      render: (inv) => (
+        <button
+          type="button"
+          onClick={() => setSelectedInvoiceId(inv.id)}
+          className="inline-flex items-center gap-1 rounded-lg bg-primary-50 px-2.5 py-1.5 font-bold text-primary-700 hover:bg-primary-100"
+        >
+          <Eye className="h-3.5 w-3.5" />
+          Preview / Print
+        </button>
+      ),
+    },
+  ], [])
+
 
   const exportRegisterCsv = () => {
     if (!registerEntries.length) {
@@ -4311,176 +4524,16 @@ function FeesContent() {
           </div>
 
           {/* Ledger Table */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
-            {loadingRegister ? (
-              <div className="p-12 text-center text-xs text-slate-500">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-2" />
-                Loading fee register...
-              </div>
-            ) : sortedRegisterEntries.length === 0 ? (
-              <div className="p-12 text-center text-xs text-slate-400">
-                No fee register entries found for the selected criteria.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200/80">
-                    <tr>
-                      <SortableHeader
-                        columnKey="admission_number"
-                        label="Admission No"
-                        currentSortKey={registerSortKey}
-                        currentDirection={registerSortDirection}
-                        onSort={requestRegisterSort}
-                      />
-                      <SortableHeader
-                        columnKey="student_name"
-                        label="Student Name"
-                        currentSortKey={registerSortKey}
-                        currentDirection={registerSortDirection}
-                        onSort={requestRegisterSort}
-                      />
-                      <SortableHeader
-                        columnKey="standard_name"
-                        label="Course / Class"
-                        currentSortKey={registerSortKey}
-                        currentDirection={registerSortDirection}
-                        onSort={requestRegisterSort}
-                      />
-                      <SortableHeader
-                        columnKey="batch_name"
-                        label="Batch"
-                        currentSortKey={registerSortKey}
-                        currentDirection={registerSortDirection}
-                        onSort={requestRegisterSort}
-                      />
-                      <SortableHeader
-                        columnKey="net_amount"
-                        label="Fee Obligation"
-                        align="right"
-                        currentSortKey={registerSortKey}
-                        currentDirection={registerSortDirection}
-                        onSort={requestRegisterSort}
-                        sortType="number"
-                      />
-                      <SortableHeader
-                        columnKey="paid_amount"
-                        label="Paid Amount"
-                        align="right"
-                        currentSortKey={registerSortKey}
-                        currentDirection={registerSortDirection}
-                        onSort={requestRegisterSort}
-                        sortType="number"
-                      />
-                      <SortableHeader
-                        columnKey="outstanding_amount"
-                        label="Balance Due"
-                        align="right"
-                        currentSortKey={registerSortKey}
-                        currentDirection={registerSortDirection}
-                        onSort={requestRegisterSort}
-                        sortType="number"
-                      />
-                      <SortableHeader
-                        columnKey="status"
-                        label="Status"
-                        align="center"
-                        currentSortKey={registerSortKey}
-                        currentDirection={registerSortDirection}
-                        onSort={requestRegisterSort}
-                      />
-                      <th className="py-2.5 px-3 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {sortedRegisterEntries.map((row) => (
-                      <tr key={row.student_id} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="py-2.5 px-3 font-mono font-medium text-slate-600">
-                          {row.admission_number}
-                        </td>
-                        <td className="py-2.5 px-3">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-bold text-slate-900 block">{row.student_name}</span>
-                            {row.is_former && (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                                Former Student
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-[11px] text-slate-400">
-                            {row.phone}
-                            {row.exit_date && ` • Exited: ${row.exit_date}`}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 text-slate-600">
-                          {row.board_name} – {row.standard_name}
-                        </td>
-                        <td className="py-2.5 px-3 text-slate-600">
-                          {row.batch_name}
-                        </td>
-                        <td className="py-2.5 px-3 text-right font-semibold text-slate-900">
-                          {fmt(row.net_amount)}
-                        </td>
-                        <td className="py-2.5 px-3 text-right font-semibold text-emerald-700">
-                          {fmt(row.paid_amount)}
-                        </td>
-                        <td className="py-2.5 px-3 text-right font-extrabold text-orange-600">
-                          {fmt(row.outstanding_amount)}
-                        </td>
-                        <td className="py-2.5 px-3 text-center">
-                          <InvoiceStatusBadge status={row.status} />
-                        </td>
-                        <td className="py-2.5 px-3 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            {activeTab === 'invoicing' && canIssueFeeInvoice && (
-                              <button
-                                type="button"
-                                disabled={!isEditMode}
-                                onClick={() => openInvoiceModal(row.student_id, row.student_name)}
-                                title={isEditMode ? 'Issue invoice for this student' : 'Activate Edit Mode to issue an invoice'}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                                  isEditMode
-                                    ? 'bg-primary-50 text-primary-700 hover:bg-primary-600 hover:text-white'
-                                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                                }`}
-                              >
-                                <span className="inline-flex items-center gap-1">
-                                  {!isEditMode && <Lock className="w-3 h-3" />}
-                                  Issue Invoice
-                                </span>
-                              </button>
-                            )}
-                            {row.outstanding_amount > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedCollectStudentId(row.student_id)
-                                  setTab('collect')
-                                }}
-                                className="px-2.5 py-1 bg-primary-50 text-primary-700 hover:bg-primary-600 hover:text-white rounded-lg text-xs font-bold transition-all"
-                              >
-                                Collect
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedStudentName(row.student_name)
-                                setSelectedInstallments(row.installments || [])
-                              }}
-                              className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-semibold"
-                            >
-                              Installments
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          <EnterpriseDataTable<FeeRegisterEntry>
+            tableId="fees-register"
+            data={sortedRegisterEntries}
+            columns={feeRegisterColumns}
+            isLoading={loadingRegister}
+            emptyMessage="No fee register entries found for the selected criteria."
+            searchPlaceholder="Search fee register by student, admission no, or batch..."
+            getRowId={(row: FeeRegisterEntry) => String(row.student_id)}
+            pageSize={25}
+          />
             </>
           )}
 
@@ -4515,72 +4568,16 @@ function FeesContent() {
                 </span>
               </div>
 
-              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
-                {loadingIssuedInvoices ? (
-                  <div className="p-10 text-center text-xs text-slate-500">Loading issued invoices...</div>
-                ) : issuedInvoicesFailed ? (
-                  <div role="alert" className="p-10 text-center text-xs text-red-700">
-                    Issued invoices could not be loaded. Please retry.
-                  </div>
-                ) : filteredIssuedInvoices.length === 0 ? (
-                  <div className="p-10 text-center text-xs text-slate-500">
-                    No issued invoices match the selected filters.
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[900px] text-left text-xs">
-                      <thead className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                        <tr>
-                          <th className="px-3 py-3">Invoice</th>
-                          <th className="px-3 py-3">Student</th>
-                          <th className="px-3 py-3">Issue Date</th>
-                          <th className="px-3 py-3">Due Date</th>
-                          <th className="px-3 py-3 text-right">Amount</th>
-                          <th className="px-3 py-3 text-right">Paid</th>
-                          <th className="px-3 py-3 text-right">Balance</th>
-                          <th className="px-3 py-3 text-center">Status</th>
-                          <th className="px-3 py-3 text-center">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {filteredIssuedInvoices.map((invoice) => (
-                          <tr key={invoice.id} className="text-slate-700">
-                            <td className="px-3 py-3 font-mono font-bold text-slate-900">
-                              {invoice.invoice_number}
-                            </td>
-                            <td className="px-3 py-3">
-                              <span className="block font-semibold text-slate-900">
-                                {invoice.student_name || `Student #${invoice.student_id}`}
-                              </span>
-                              <span className="text-[10px] text-slate-500">
-                                {invoice.admission_number || 'Admission no. unavailable'}
-                              </span>
-                            </td>
-                            <td className="px-3 py-3">{formatFeeInvoiceDate(invoice.issue_date)}</td>
-                            <td className="px-3 py-3">{formatFeeInvoiceDate(invoice.due_date)}</td>
-                            <td className="px-3 py-3 text-right font-semibold">{fmt(invoice.net_amount)}</td>
-                            <td className="px-3 py-3 text-right text-emerald-700">{fmt(invoice.paid_amount)}</td>
-                            <td className="px-3 py-3 text-right font-semibold text-orange-700">{fmt(invoice.outstanding_amount)}</td>
-                            <td className="px-3 py-3 text-center">
-                              <InvoiceStatusBadge status={invoice.status} />
-                            </td>
-                            <td className="px-3 py-3 text-center">
-                              <button
-                                type="button"
-                                onClick={() => setSelectedInvoiceId(invoice.id)}
-                                className="inline-flex items-center gap-1 rounded-lg bg-primary-50 px-2.5 py-1.5 font-bold text-primary-700 hover:bg-primary-100"
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                                Preview / Print
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+              <EnterpriseDataTable<FeeInvoice>
+                tableId="fees-issued-invoices"
+                data={filteredIssuedInvoices}
+                columns={issuedInvoicesColumns}
+                isLoading={loadingIssuedInvoices}
+                emptyMessage="No issued invoices match the selected filters."
+                searchPlaceholder="Search invoices..."
+                getRowId={(inv: FeeInvoice) => String(inv.id)}
+                pageSize={25}
+              />
             </div>
           )}
         </div>

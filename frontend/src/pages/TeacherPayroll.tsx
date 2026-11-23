@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-22
+ * @updated     2026-11-23
  *
  * @description Complete Teacher Payroll & Payment Management workspace:
  */
@@ -29,7 +29,12 @@ import {
 import { teacherPayrollApi, divisionsApi, subjectsApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton, LockedIconButton, SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton } from '../components/common'
+import {
+  EditModeBar, LockedButton, LockedIconButton, SortableHeader,
+  TableSortSelect, TableSortOption, ContextualHelpButton,
+  EnterpriseDataTable, DataTableColumn
+} from '../components/common'
+import { formatINR, formatDateIN, fallbackEmpty } from '../utils/formatters'
 import { useTableSort } from '../hooks/useTableSort'
 import { PrintFooter, useUniversalPrint } from '../components/printing'
 import { PrintDocumentHeader } from '../components/PrintDocumentBranding'
@@ -365,6 +370,260 @@ export default function TeacherPayroll() {
     'July', 'August', 'September', 'October', 'November', 'December'
   ]
 
+  // ── Canonical EnterpriseDataTable Columns for Payroll Register ──
+  const payrollColumns: DataTableColumn<any>[] = useMemo(() => [
+    {
+      key: 'payroll_number',
+      header: 'Payroll #',
+      sortable: true,
+      pinned: 'left',
+      width: '140px',
+      render: (p) => (
+        <span className="font-mono text-xs font-semibold text-primary-900 bg-primary-50 px-2 py-0.5 rounded border border-primary-200">
+          {p.payroll_number}
+        </span>
+      ),
+    },
+    {
+      key: 'teacher_name',
+      header: 'Teacher Name',
+      sortable: true,
+      render: (p) => (
+        <div>
+          <span className="font-semibold text-slate-900">{p.teacher_name}</span>
+          <span className="block text-xs text-slate-400 font-mono">{p.teacher_email}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'payment_method',
+      header: 'Method',
+      render: (p) => (
+        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 capitalize">
+          {p.payment_method?.replace('_', ' ') || fallbackEmpty}
+        </span>
+      ),
+    },
+    {
+      key: 'total_teaching_hours',
+      header: 'Hours / Ltrs',
+      sortable: true,
+      sortType: 'number',
+      align: 'right',
+      render: (p) => (
+        <div className="text-right">
+          <span className="font-medium text-slate-900 font-mono">{p.total_teaching_hours} hrs</span>
+          <span className="block text-xs text-slate-400 font-mono">{p.total_completed_lectures} lect.</span>
+        </div>
+      ),
+    },
+    {
+      key: 'base_earnings',
+      header: 'Base (₹)',
+      sortable: true,
+      sortType: 'number',
+      align: 'right',
+      render: (p) => (
+        <span className="font-medium font-mono text-slate-800">
+          {formatINR(p.base_earnings)}
+        </span>
+      ),
+    },
+    {
+      key: 'approved_incentives',
+      header: 'Incentives',
+      align: 'right',
+      render: (p) => {
+        const val = Number(p.approved_incentives || 0) + Number(p.approved_additional_earnings || 0)
+        return (
+          <span className="text-emerald-600 font-medium font-mono">
+            +{formatINR(val)}
+          </span>
+        )
+      },
+    },
+    {
+      key: 'total_deductions',
+      header: 'Deductions',
+      align: 'right',
+      render: (p) => {
+        const val = Number(p.total_deductions || 0) + Number(p.withholdings || 0)
+        return (
+          <span className="text-rose-600 font-medium font-mono">
+            -{formatINR(val)}
+          </span>
+        )
+      },
+    },
+    {
+      key: 'net_payable',
+      header: 'Net Payable',
+      sortable: true,
+      sortType: 'number',
+      align: 'right',
+      render: (p) => (
+        <span className="font-bold font-mono text-slate-900">
+          {formatINR(p.net_payable)}
+        </span>
+      ),
+    },
+    {
+      key: 'paid_amount',
+      header: 'Paid',
+      sortable: true,
+      sortType: 'number',
+      align: 'right',
+      render: (p) => (
+        <span className="text-emerald-700 font-medium font-mono">
+          {formatINR(p.paid_amount)}
+        </span>
+      ),
+    },
+    {
+      key: 'pending_amount',
+      header: 'Pending',
+      align: 'right',
+      render: (p) => (
+        <span className="font-bold font-mono text-amber-600">
+          {formatINR(p.pending_amount)}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      sortable: true,
+      align: 'center',
+      render: (p) => (
+        <span
+          className={`px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
+            p.status === 'paid'
+              ? 'bg-emerald-100 text-emerald-800'
+              : p.status === 'finalized'
+              ? 'bg-primary-100 text-primary-800'
+              : p.status === 'approved'
+              ? 'bg-primary-100 text-primary-800'
+              : p.status === 'partially_paid'
+              ? 'bg-amber-100 text-amber-800'
+              : p.status === 'submitted'
+              ? 'bg-purple-100 text-purple-800'
+              : 'bg-slate-100 text-slate-800'
+          }`}
+        >
+          {p.status?.replace('_', ' ')}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      pinned: 'right',
+      align: 'center',
+      width: '180px',
+      render: (p) => {
+        const isLocked = p.status === 'finalized' || p.status === 'paid'
+        return (
+          <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+            {/* View Details */}
+            <button
+              type="button"
+              onClick={async () => {
+                const res = await teacherPayrollApi.getPayrollDetails(p.id)
+                setSelectedPayroll(res.data)
+                setShowDetailsModal(true)
+              }}
+              className="p-1 text-slate-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+              title="View Itemized Breakdown"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+
+            {/* Submit for Approval */}
+            {p.status === 'calculated' && (
+              <LockedIconButton
+                isEditMode={isEditMode}
+                onClick={() => submitMutation.mutate(p.id)}
+                icon={ArrowUpRight}
+                title="Submit for Approval"
+                tone="primary"
+              />
+            )}
+
+            {/* Approve */}
+            {(p.status === 'submitted' || p.status === 'calculated') && (
+              <LockedIconButton
+                isEditMode={isEditMode}
+                onClick={() => approveMutation.mutate(p.id)}
+                icon={CheckCircle2}
+                title="Approve Payroll"
+                tone="primary"
+              />
+            )}
+
+            {/* Finalize & Lock */}
+            {p.status === 'approved' && (
+              <LockedIconButton
+                isEditMode={isEditMode}
+                onClick={() => finalizeMutation.mutate(p.id)}
+                icon={Lock}
+                title="Finalize & Lock Payroll"
+                tone="primary"
+              />
+            )}
+
+            {/* Adjust */}
+            {!isLocked && (
+              <LockedIconButton
+                isEditMode={isEditMode}
+                onClick={() => {
+                  setSelectedPayroll(p)
+                  setAdjIncentives(String(p.approved_incentives))
+                  setAdjAdditional(String(p.approved_additional_earnings))
+                  setAdjDeductions(String(p.total_deductions))
+                  setAdjWithholdings(String(p.withholdings))
+                  setAdjNotes(p.notes || '')
+                  setShowAdjustModal(true)
+                }}
+                icon={Edit3}
+                title="Adjust Bonuses & Deductions"
+                tone="warning"
+              />
+            )}
+
+            {/* Record Payment Voucher */}
+            {Number(p.pending_amount) > 0 && (p.status === 'approved' || p.status === 'finalized' || p.status === 'partially_paid') && (
+              <LockedIconButton
+                isEditMode={isEditMode}
+                onClick={() => {
+                  setSelectedPayroll(p)
+                  setPayAmount(String(p.pending_amount))
+                  setShowPaymentModal(true)
+                }}
+                icon={CreditCard}
+                title="Record Payment Voucher"
+                tone="success"
+              />
+            )}
+
+            {/* Print Statement */}
+            <button
+              type="button"
+              onClick={async () => {
+                const res = await teacherPayrollApi.getPayrollDetails(p.id)
+                setSelectedPayroll(res.data)
+                setShowPrintStatementModal(true)
+              }}
+              className="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors"
+              title="Print Payment Statement"
+            >
+              <Printer className="w-4 h-4" />
+            </button>
+          </div>
+        )
+      },
+    },
+  ], [isEditMode, selectedMonth, selectedYear])
+
   return (
     <div className="space-y-6">
       {/* Global View-First & Explicit Edit Mode Governance Bar */}
@@ -563,26 +822,56 @@ export default function TeacherPayroll() {
             </div>
           </div>
 
-          {/* Monthly Payroll Grid Table */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            {isLoadingMonthly ? (
-              <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center gap-2">
-                <RefreshCw className="w-6 h-6 animate-spin text-primary-600" />
-                <span>Loading payroll calculations...</span>
-              </div>
-            ) : monthlyError ? (
-              <div className="p-8 text-center bg-rose-50 border border-rose-200 text-rose-700 m-4 rounded-xl flex flex-col items-center gap-2">
-                <AlertCircle className="w-8 h-8 text-rose-600" />
-                <p className="font-semibold text-base">Error Loading Monthly Payroll Data</p>
-                <p className="text-xs text-rose-600">{(monthlyError as any)?.response?.data?.detail || 'An unexpected error occurred while loading payroll records.'}</p>
-                <button
-                  onClick={() => refetchMonthly()}
-                  className="mt-2 px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-semibold"
+          {/* Monthly Payroll Grid Enterprise Table */}
+          <EnterpriseDataTable<any>
+            data={sortedPayrolls}
+            columns={payrollColumns}
+            rowKey="id"
+            isLoading={isLoadingMonthly}
+            loadingMessage="Loading payroll calculations..."
+            isEditMode={isEditMode}
+            searchPlaceholder="Search payroll by teacher, ID..."
+            customFilterBar={
+              <div className="flex items-center gap-2 flex-wrap py-1">
+                <a
+                  href={teacherPayrollApi.exportReportUrl('monthly-register', { month: selectedMonth, year: selectedYear })}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors"
                 >
-                  Retry Load
+                  <Download className="w-3.5 h-3.5 text-emerald-600" />
+                  Export Excel
+                </a>
+                <button
+                  type="button"
+                  onClick={() => refetchMonthly()}
+                  className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                  title="Refresh"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
                 </button>
               </div>
-            ) : sortedPayrolls.length === 0 ? (
+            }
+            exportConfig={{
+              filename: `teacher-payroll-${selectedMonth}-${selectedYear}`,
+              sheetName: 'Payroll',
+              title: `PrathamOne EduOS — Faculty Payroll (${monthNames[selectedMonth - 1]} ${selectedYear})`,
+              columns: [
+                { header: 'Payroll #', key: 'payroll_number', width: 18 },
+                { header: 'Teacher Name', key: 'teacher_name', width: 22 },
+                { header: 'Method', key: 'payment_method', width: 14 },
+                { header: 'Teaching Hours', key: 'total_teaching_hours', width: 14 },
+                { header: 'Base Pay', key: 'base_earnings', width: 14 },
+                { header: 'Incentives', key: 'approved_incentives', width: 14 },
+                { header: 'Deductions', key: 'total_deductions', width: 14 },
+                { header: 'Net Payable', key: 'net_payable', width: 14 },
+                { header: 'Paid Amount', key: 'paid_amount', width: 14 },
+                { header: 'Pending Amount', key: 'pending_amount', width: 14 },
+                { header: 'Status', key: 'status', width: 14 },
+              ],
+            }}
+            pageSize={15}
+            emptyState={
               <div className="p-12 text-center text-slate-500">
                 <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                 <p className="font-bold text-slate-800 text-base">No Payroll Generated for {monthNames[selectedMonth - 1]} {selectedYear}</p>
@@ -606,236 +895,8 @@ export default function TeacherPayroll() {
                   </button>
                 </div>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase">
-                    <tr>
-                      <SortableHeader
-                        columnKey="payroll_number"
-                        label="Payroll #"
-                        currentSortKey={payrollSortKey}
-                        currentDirection={payrollSortDirection}
-                        onSort={requestPayrollSort}
-                      />
-                      <SortableHeader
-                        columnKey="teacher_name"
-                        label="Teacher Name"
-                        currentSortKey={payrollSortKey}
-                        currentDirection={payrollSortDirection}
-                        onSort={requestPayrollSort}
-                      />
-                      <th className="py-3 px-4">Method</th>
-                      <SortableHeader
-                        columnKey="total_teaching_hours"
-                        label="Hours / Ltrs"
-                        align="right"
-                        currentSortKey={payrollSortKey}
-                        currentDirection={payrollSortDirection}
-                        onSort={requestPayrollSort}
-                        sortType="number"
-                      />
-                      <SortableHeader
-                        columnKey="base_earnings"
-                        label="Base (₹)"
-                        align="right"
-                        currentSortKey={payrollSortKey}
-                        currentDirection={payrollSortDirection}
-                        onSort={requestPayrollSort}
-                        sortType="number"
-                      />
-                      <th className="py-3 px-4 text-right">Incentives</th>
-                      <th className="py-3 px-4 text-right">Deductions</th>
-                      <SortableHeader
-                        columnKey="net_payable"
-                        label="Net Payable"
-                        align="right"
-                        currentSortKey={payrollSortKey}
-                        currentDirection={payrollSortDirection}
-                        onSort={requestPayrollSort}
-                        sortType="number"
-                      />
-                      <SortableHeader
-                        columnKey="paid_amount"
-                        label="Paid"
-                        align="right"
-                        currentSortKey={payrollSortKey}
-                        currentDirection={payrollSortDirection}
-                        onSort={requestPayrollSort}
-                        sortType="number"
-                      />
-                      <th className="py-3 px-4 text-right">Pending</th>
-                      <SortableHeader
-                        columnKey="status"
-                        label="Status"
-                        align="center"
-                        currentSortKey={payrollSortKey}
-                        currentDirection={payrollSortDirection}
-                        onSort={requestPayrollSort}
-                      />
-                      <th className="py-3 px-4 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {sortedPayrolls.map((p: any) => {
-                      const isLocked = p.status === 'finalized' || p.status === 'paid'
-                      return (
-                        <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3 px-4 font-mono text-xs font-semibold text-primary-900">
-                            {p.payroll_number}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="font-semibold text-slate-900">{p.teacher_name}</span>
-                            <span className="block text-xs text-slate-400">{p.teacher_email}</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 capitalize">
-                              {p.payment_method.replace('_', ' ')}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <span className="font-medium text-slate-900">{p.total_teaching_hours} hrs</span>
-                            <span className="block text-xs text-slate-400">{p.total_completed_lectures} lect.</span>
-                          </td>
-                          <td className="py-3 px-4 text-right font-medium text-slate-800">
-                            ₹{Number(p.base_earnings).toLocaleString()}
-                          </td>
-                          <td className="py-3 px-4 text-right text-emerald-600 font-medium">
-                            +₹{Number(p.approved_incentives + p.approved_additional_earnings).toLocaleString()}
-                          </td>
-                          <td className="py-3 px-4 text-right text-rose-600 font-medium">
-                            -₹{Number(p.total_deductions + p.withholdings).toLocaleString()}
-                          </td>
-                          <td className="py-3 px-4 text-right font-bold text-slate-900">
-                            ₹{Number(p.net_payable).toLocaleString()}
-                          </td>
-                          <td className="py-3 px-4 text-right text-emerald-700 font-medium">
-                            ₹{Number(p.paid_amount).toLocaleString()}
-                          </td>
-                          <td className="py-3 px-4 text-right font-bold text-amber-600">
-                            ₹{Number(p.pending_amount).toLocaleString()}
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
-                              p.status === 'paid'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : p.status === 'finalized'
-                                ? 'bg-primary-100 text-primary-800'
-                                : p.status === 'approved'
-                                ? 'bg-primary-100 text-primary-800'
-                                : p.status === 'partially_paid'
-                                ? 'bg-amber-100 text-amber-800'
-                                : p.status === 'submitted'
-                                ? 'bg-purple-100 text-purple-800'
-                                : 'bg-slate-100 text-slate-800'
-                            }`}>
-                              {p.status.replace('_', ' ')}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center justify-center gap-1.5">
-                              {/* View Details */}
-                              <button
-                                onClick={async () => {
-                                  const res = await teacherPayrollApi.getPayrollDetails(p.id)
-                                  setSelectedPayroll(res.data)
-                                  setShowDetailsModal(true)
-                                }}
-                                className="p-1 text-slate-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
-                                title="View Itemized Breakdown"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-
-                              {/* Submit for Approval */}
-                              {p.status === 'calculated' && (
-                                <LockedIconButton
-                                  isEditMode={isEditMode}
-                                  onClick={() => submitMutation.mutate(p.id)}
-                                  icon={ArrowUpRight}
-                                  title="Submit for Approval"
-                                  tone="primary"
-                                />
-                              )}
-
-                              {/* Approve */}
-                              {(p.status === 'submitted' || p.status === 'calculated') && (
-                                <LockedIconButton
-                                  isEditMode={isEditMode}
-                                  onClick={() => approveMutation.mutate(p.id)}
-                                  icon={CheckCircle2}
-                                  title="Approve Payroll"
-                                  tone="primary"
-                                />
-                              )}
-
-                              {/* Finalize & Lock */}
-                              {p.status === 'approved' && (
-                                <LockedIconButton
-                                  isEditMode={isEditMode}
-                                  onClick={() => finalizeMutation.mutate(p.id)}
-                                  icon={Lock}
-                                  title="Finalize & Lock Payroll"
-                                  tone="primary"
-                                />
-                              )}
-
-                              {/* Adjust */}
-                              {!isLocked && (
-                                <LockedIconButton
-                                  isEditMode={isEditMode}
-                                  onClick={() => {
-                                    setSelectedPayroll(p)
-                                    setAdjIncentives(String(p.approved_incentives))
-                                    setAdjAdditional(String(p.approved_additional_earnings))
-                                    setAdjDeductions(String(p.total_deductions))
-                                    setAdjWithholdings(String(p.withholdings))
-                                    setAdjNotes(p.notes || '')
-                                    setShowAdjustModal(true)
-                                  }}
-                                  icon={Edit3}
-                                  title="Adjust Bonuses & Deductions"
-                                  tone="warning"
-                                />
-                              )}
-
-                              {/* Record Payment Voucher */}
-                              {Number(p.pending_amount) > 0 && (p.status === 'approved' || p.status === 'finalized' || p.status === 'partially_paid') && (
-                                <LockedIconButton
-                                  isEditMode={isEditMode}
-                                  onClick={() => {
-                                    setSelectedPayroll(p)
-                                    setPayAmount(String(p.pending_amount))
-                                    setShowPaymentModal(true)
-                                  }}
-                                  icon={CreditCard}
-                                  title="Record Payment Voucher"
-                                  tone="success"
-                                />
-                              )}
-
-                              {/* Print Statement */}
-                              <button
-                                onClick={async () => {
-                                  const res = await teacherPayrollApi.getPayrollDetails(p.id)
-                                  setSelectedPayroll(res.data)
-                                  setShowPrintStatementModal(true)
-                                }}
-                                className="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors"
-                                title="Print Payment Statement"
-                              >
-                                <Printer className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+            }
+          />
         </div>
       )}
 

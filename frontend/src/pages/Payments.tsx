@@ -11,12 +11,12 @@
  *
  * @version     2.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-23
  *
  * @description Standalone payment transactions ledger, ERP payment workflow lifecycle, receipt supersession, audited corrections, and refund management.
  */
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
@@ -29,7 +29,11 @@ import ShareModal from '../components/ShareModal'
 import { paymentsApi } from '../api/endpoints'
 import { useAuthStore, isUserSysAdmin, hasPermission, canUserEditPosted } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton } from '../components/common'
+import {
+  EditModeBar, SortableHeader, TableSortSelect, TableSortOption,
+  ContextualHelpButton, EnterpriseDataTable, DataTableColumn
+} from '../components/common'
+import { formatINR, formatDateIN, fallbackEmpty } from '../utils/formatters'
 import { useTableSort } from '../hooks/useTableSort'
 import { Lock } from 'lucide-react'
 import CascadingFilters, { FilterState } from '../components/CascadingFilters'
@@ -212,6 +216,317 @@ export default function Payments() {
     initialDirection: 'desc',
     initialType: 'date',
   })
+
+  // Canonical EnterpriseDataTable Columns for Payment Transactions
+  const paymentColumns: DataTableColumn<PaymentTransactionItem>[] = useMemo(() => [
+    {
+      key: 'receipt_number',
+      header: 'Receipt #',
+      sortable: true,
+      pinned: 'left',
+      width: '140px',
+      render: (p: PaymentTransactionItem) => (
+        <span className="font-mono font-semibold text-primary-700">
+          {p.receipt_number ? (
+            <Link
+              to={`/receipts/${p.receipt_number}`}
+              className="hover:underline inline-flex items-center gap-1"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              {p.receipt_number}
+            </Link>
+          ) : (
+            <span className="text-xs text-gray-400 italic inline-flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              Pending Post
+            </span>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: 'student_name',
+      header: 'Student',
+      sortable: true,
+      render: (p: PaymentTransactionItem) => (
+        <div>
+          <Link
+            to={`/students/${p.student_id}`}
+            className="font-bold text-gray-900 hover:text-primary-600 block"
+          >
+            {p.student_name}
+          </Link>
+          <span className="block text-xs font-mono text-gray-400">
+            {fallbackEmpty(p.admission_number)}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'batch_name',
+      header: 'Batch / Course',
+      sortable: true,
+      render: (p: PaymentTransactionItem) => (
+        <div>
+          <span className="font-semibold text-gray-800 block">{fallbackEmpty(p.batch_name)}</span>
+          <span className="block text-xs text-gray-400">
+            {p.board_name} · {p.standard_name}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'amount',
+      header: 'Amount',
+      sortable: true,
+      sortType: 'number',
+      align: 'right',
+      render: (p: PaymentTransactionItem) => (
+        <span className="font-bold font-mono text-gray-900">
+          {formatINR(p.amount)}
+        </span>
+      ),
+    },
+    {
+      key: 'payment_date',
+      header: 'Date',
+      sortable: true,
+      sortType: 'date',
+      render: (p: PaymentTransactionItem) => <span className="text-xs text-gray-600 font-mono">{formatDateIN(p.payment_date)}</span>,
+    },
+    {
+      key: 'payment_method',
+      header: 'Method',
+      sortable: true,
+      render: (p: PaymentTransactionItem) => (
+        <span className="text-xs capitalize text-gray-600 font-medium">
+          {METHOD_LABELS[p.payment_method] || p.payment_method}
+        </span>
+      ),
+    },
+    {
+      key: 'transaction_reference',
+      header: 'Reference',
+      sortable: true,
+      render: (p: PaymentTransactionItem) => (
+        <span className="text-xs text-gray-500 font-mono">
+          {fallbackEmpty(p.transaction_reference)}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      sortable: true,
+      align: 'center',
+      render: (p: PaymentTransactionItem) => {
+        const isPosted = p.status === 'posted' || p.status === 'completed'
+        const isDraft = p.status === 'draft'
+        const isSubmitted = p.status === 'submitted'
+        const isApproved = p.status === 'approved'
+
+        return (
+          <div className="inline-flex items-center gap-1">
+            <span
+              className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${
+                isPosted
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : isApproved
+                  ? 'bg-purple-100 text-purple-800'
+                  : isSubmitted
+                  ? 'bg-primary-100 text-primary-800'
+                  : isDraft
+                  ? 'bg-slate-100 text-slate-700'
+                  : 'bg-red-100 text-red-800'
+              }`}
+            >
+              {isPosted ? 'Posted' : p.status}
+            </span>
+            {Boolean(p.edit_count && p.edit_count > 0) && (
+              <span
+                className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1 rounded font-bold"
+                title={`Payment modified ${p.edit_count} time(s)`}
+              >
+                v{Number(p.edit_count) + 1}
+              </span>
+            )}
+          </div>
+        )
+      },
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      pinned: 'right',
+      align: 'center',
+      width: '180px',
+      render: (p: PaymentTransactionItem) => {
+        const isPosted = p.status === 'posted' || p.status === 'completed'
+        const isDraft = p.status === 'draft'
+        const isSubmitted = p.status === 'submitted'
+
+        return (
+          <div className="flex items-center justify-center gap-1.5 flex-wrap" onClick={(e) => e.stopPropagation()}>
+            {/* DRAFT ACTIONS */}
+            {isDraft && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to submit payments.')
+                    submitMutation.mutate(p.id)
+                  }}
+                  disabled={submitMutation.isPending}
+                  className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1 text-primary-700 hover:text-primary-800"
+                  title="Submit draft payment for review/posting"
+                >
+                  <Send className="w-3 h-3 text-primary-600" />
+                  <span>Submit</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenEdit(p)}
+                  className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1 text-gray-700"
+                  title="Edit draft payment"
+                >
+                  <Edit3 className="w-3 h-3" />
+                  <span>Edit</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to post payments.')
+                    postMutation.mutate(p.id)
+                  }}
+                  disabled={postMutation.isPending}
+                  className="btn-primary text-xs py-1 px-2.5 inline-flex items-center gap-1 shadow-2xs"
+                  title="Post payment and issue official receipt"
+                >
+                  <CheckCheck className="w-3 h-3" />
+                  <span>Post</span>
+                </button>
+              </>
+            )}
+
+            {/* SUBMITTED ACTIONS */}
+            {isSubmitted && (
+              <>
+                {canApprove && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenApproval(p)}
+                    className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1 text-purple-700 hover:text-purple-800"
+                    title="Approve payment voucher"
+                  >
+                    <Sparkles className="w-3 h-3 text-purple-600" />
+                    <span>Approve</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to post payments.')
+                    postMutation.mutate(p.id)
+                  }}
+                  disabled={postMutation.isPending}
+                  className="btn-primary text-xs py-1 px-2 inline-flex items-center gap-1"
+                  title="Post payment directly"
+                >
+                  <CheckCheck className="w-3 h-3" />
+                  <span>Post</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenEdit(p)}
+                  className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1"
+                  title="Edit payment details (Audited)"
+                >
+                  <Edit3 className="w-3 h-3" />
+                  <span>Edit</span>
+                </button>
+              </>
+            )}
+
+            {/* POSTED ACTIONS */}
+            {isPosted && p.receipt_number && (
+              <>
+                <Link
+                  to={`/receipts/${p.receipt_number}`}
+                  className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="View / Print Official Receipt"
+                >
+                  <Printer className="w-4 h-4" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setSharingPayment(p)}
+                  className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Share Receipt (WhatsApp/Email/SMS)"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+                {canEditPosted && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEdit(p)}
+                    className="text-xs text-gray-700 hover:text-gray-900 font-medium py-1 px-2 border border-gray-200 rounded hover:bg-gray-50 inline-flex items-center gap-1"
+                    title="Audited correction on posted payment"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    <span>Edit</span>
+                  </button>
+                )}
+                {canRefund && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenRefund(p)}
+                    className="text-xs text-amber-700 hover:text-amber-900 font-medium py-1 px-2 border border-amber-200 rounded hover:bg-amber-50 inline-flex items-center gap-1"
+                    title="Process partial or full refund"
+                  >
+                    <Undo2 className="w-3 h-3 text-amber-600" />
+                    <span>Refund</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleOpenReverse(p)}
+                  className="text-xs text-red-600 hover:text-red-800 font-medium py-1 px-2 border border-red-200 rounded hover:bg-red-50 inline-flex items-center gap-1"
+                  title="Reverse Payment"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Reverse</span>
+                </button>
+              </>
+            )}
+
+            {/* CANCELLED / REVERSED ACTIONS */}
+            {(p.status === 'cancelled' || p.status === 'reversed') && p.receipt_number && (
+              <Link
+                to={`/receipts/${p.receipt_number}`}
+                className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1 text-gray-500 hover:text-gray-700"
+                title="Print / View Voided Historical Receipt"
+              >
+                <Printer className="w-3 h-3 text-gray-400" />
+                <span>Historical Receipt</span>
+              </Link>
+            )}
+
+            {/* AUDIT TRAIL ACTION */}
+            {canViewAudit && (
+              <button
+                type="button"
+                onClick={() => handleOpenAudit(p)}
+                className="p-1 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100"
+                title="View Lifecycle Audit Trail"
+              >
+                <History className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )
+      },
+    },
+  ], [isEditMode, canApprove, canEditPosted, canRefund, canViewAudit])
 
   // Query: Refunds queue
   const { data: refundsList = [] } = useQuery({
@@ -718,435 +1033,55 @@ export default function Payments() {
         </div>
       </div>
 
-      {/* Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm">
-        <div className="text-sm text-gray-600">
-          Showing <strong className="text-gray-900">{sortedPayments.length}</strong> transaction record(s)
-        </div>
-        <div className="flex items-center gap-3">
-          <TableSortSelect
-            options={PAYMENT_SORT_OPTIONS}
-            currentSortKey={paymentSortKey}
-            currentDirection={paymentSortDirection}
-            onSortChange={(key, dir) => {
-              const opt = PAYMENT_SORT_OPTIONS.find((o) => o.key === key)
-              setPaymentSort(key, dir, undefined, opt?.type || 'auto')
-            }}
-            onClear={clearPaymentSort}
-            placeholder="Sort Payments..."
-          />
-          <button
-            onClick={exportPaymentsCsv}
-            className="btn-secondary text-xs flex items-center gap-1.5"
-          >
-            <Download className="w-3.5 h-3.5 text-primary-600" />
-            Export CSV
-          </button>
-        </div>
-      </div>
 
-      {/* Payments Table */}
-      <div className="card bg-white border border-gray-200 shadow-sm overflow-hidden p-0">
-        {isLoading ? (
-          <div className="text-center py-16">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto" />
-            <p className="text-sm text-gray-500 mt-2">Loading payments ledger...</p>
+
+      {/* Payments Enterprise Table */}
+      <EnterpriseDataTable<PaymentTransactionItem>
+        data={sortedPayments}
+        columns={paymentColumns}
+        rowKey="id"
+        isLoading={isLoading}
+        loadingMessage="Loading payments ledger..."
+        isEditMode={isEditMode}
+        searchPlaceholder="Search payments by receipt, student, ref..."
+        customFilterBar={
+          <div className="flex items-center gap-2 py-1">
+            <button
+              type="button"
+              onClick={exportPaymentsCsv}
+              className="btn-secondary text-xs flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5 text-primary-600" />
+              Export CSV
+            </button>
           </div>
-        ) : sortedPayments.length === 0 ? (
+        }
+        exportConfig={{
+          filename: 'payments-ledger',
+          sheetName: 'Payments',
+          title: 'PrathamOne EduOS — Payment Transactions Ledger',
+          columns: [
+            { header: 'Receipt #', key: 'receipt_number', width: 18 },
+            { header: 'Student Name', key: 'student_name', width: 22 },
+            { header: 'Admission #', key: 'admission_number', width: 14 },
+            { header: 'Batch', key: 'batch_name', width: 18 },
+            { header: 'Amount', key: 'amount', width: 14 },
+            { header: 'Date', key: 'payment_date', width: 14 },
+            { header: 'Method', key: 'payment_method', width: 14 },
+            { header: 'Reference', key: 'transaction_reference', width: 18 },
+            { header: 'Status', key: 'status', width: 14 },
+          ],
+        }}
+        pageSize={20}
+        emptyState={
           <div className="text-center py-16 text-gray-400">
             <p className="text-base font-semibold text-gray-600">No payment transactions found.</p>
             <p className="text-xs text-gray-400 mt-1">
               Payments recorded from the Fee Register or Collect Fee terminal will appear here.
             </p>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-xs uppercase text-gray-500 font-semibold border-b border-gray-200">
-                <tr>
-                  <SortableHeader
-                    columnKey="receipt_number"
-                    label="Receipt #"
-                    currentSortKey={paymentSortKey}
-                    currentDirection={paymentSortDirection}
-                    onSort={requestPaymentSort}
-                  />
-                  <SortableHeader
-                    columnKey="student_name"
-                    label="Student"
-                    currentSortKey={paymentSortKey}
-                    currentDirection={paymentSortDirection}
-                    onSort={requestPaymentSort}
-                  />
-                  <SortableHeader
-                    columnKey="batch_name"
-                    label="Batch / Course"
-                    currentSortKey={paymentSortKey}
-                    currentDirection={paymentSortDirection}
-                    onSort={requestPaymentSort}
-                  />
-                  <SortableHeader
-                    columnKey="amount"
-                    label="Amount"
-                    align="right"
-                    currentSortKey={paymentSortKey}
-                    currentDirection={paymentSortDirection}
-                    onSort={requestPaymentSort}
-                    sortType="number"
-                  />
-                  <SortableHeader
-                    columnKey="payment_date"
-                    label="Date"
-                    currentSortKey={paymentSortKey}
-                    currentDirection={paymentSortDirection}
-                    onSort={requestPaymentSort}
-                    sortType="date"
-                  />
-                  <SortableHeader
-                    columnKey="payment_method"
-                    label="Method"
-                    currentSortKey={paymentSortKey}
-                    currentDirection={paymentSortDirection}
-                    onSort={requestPaymentSort}
-                  />
-                  <SortableHeader
-                    columnKey="transaction_reference"
-                    label="Reference"
-                    currentSortKey={paymentSortKey}
-                    currentDirection={paymentSortDirection}
-                    onSort={requestPaymentSort}
-                  />
-                  <SortableHeader
-                    columnKey="status"
-                    label="Status"
-                    align="center"
-                    currentSortKey={paymentSortKey}
-                    currentDirection={paymentSortDirection}
-                    onSort={requestPaymentSort}
-                  />
-                  <th className="py-3 px-4 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {sortedPayments.map((p) => {
-                  const isPosted = p.status === 'posted' || p.status === 'completed'
-                  const isDraft = p.status === 'draft'
-                  const isSubmitted = p.status === 'submitted'
-                  const isApproved = p.status === 'approved'
-                  const isReversed = p.status === 'reversed'
-
-                  return (
-                    <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-3.5 px-4 font-mono font-semibold text-primary-700">
-                        {p.receipt_number ? (
-                          <Link
-                            to={`/receipts/${p.receipt_number}`}
-                            className="hover:underline flex items-center gap-1"
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                            {p.receipt_number}
-                          </Link>
-                        ) : (
-                          <span className="text-xs text-gray-400 italic flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            Pending Post
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <Link
-                          to={`/students/${p.student_id}`}
-                          className="font-bold text-gray-900 hover:text-primary-600"
-                        >
-                          {p.student_name}
-                        </Link>
-                        <span className="block text-xs font-mono text-gray-400">
-                          {p.admission_number}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="font-semibold text-gray-800">{p.batch_name}</span>
-                        <span className="block text-xs text-gray-400">
-                          {p.board_name} · {p.standard_name}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-bold text-gray-900">
-                        {fmt(p.amount)}
-                      </td>
-                      <td className="py-3.5 px-4 text-xs text-gray-600">{p.payment_date}</td>
-                      <td className="py-3.5 px-4 text-xs capitalize text-gray-600">
-                        {METHOD_LABELS[p.payment_method] || p.payment_method}
-                      </td>
-                      <td className="py-3.5 px-4 text-xs text-gray-500 font-mono">
-                        {p.transaction_reference || '—'}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <div className="inline-flex items-center gap-1">
-                          <span
-                            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${isPosted
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : isApproved
-                                  ? 'bg-purple-100 text-purple-800'
-                                  : isSubmitted
-                                    ? 'bg-primary-100 text-primary-800'
-                                    : isDraft
-                                      ? 'bg-slate-100 text-slate-700'
-                                      : 'bg-red-100 text-red-800'
-                              }`}
-                          >
-                            {isPosted ? 'Posted' : p.status}
-                          </span>
-                          {Boolean(p.edit_count && p.edit_count > 0) && (
-                            <span
-                              className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1 rounded font-bold"
-                              title={`Payment modified ${p.edit_count} time(s)`}
-                            >
-                              v{Number(p.edit_count) + 1}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                          {/* DRAFT ACTIONS */}
-                          {isDraft && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to submit payments.')
-                                  submitMutation.mutate(p.id)
-                                }}
-                                disabled={submitMutation.isPending}
-                                className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1 text-primary-700 hover:text-primary-800"
-                                title="Submit draft payment for review/posting"
-                              >
-                                <Send className="w-3 h-3 text-primary-600" />
-                                <span>Submit</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEdit(p)}
-                                className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1 text-gray-700"
-                                title="Edit draft payment"
-                              >
-                                <Edit3 className="w-3 h-3" />
-                                <span>Edit</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to post payments.')
-                                  postMutation.mutate(p.id)
-                                }}
-                                disabled={postMutation.isPending}
-                                className="btn-primary text-xs py-1 px-2.5 inline-flex items-center gap-1 shadow-2xs"
-                                title="Post payment and issue official receipt"
-                              >
-                                <CheckCheck className="w-3 h-3" />
-                                <span>Post</span>
-                              </button>
-                              {canDeleteDraft && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to delete draft payments.')
-                                    setDeletingDraftPayment(p)
-                                  }}
-                                  className="text-xs text-red-600 hover:text-red-800 font-medium py-1 px-2 border border-red-200 rounded hover:bg-red-50 inline-flex items-center gap-1"
-                                  title="Permanently Delete Draft Payment"
-                                >
-                                  <Trash2 className="w-3 h-3 text-red-500" />
-                                  <span>Delete</span>
-                                </button>
-                              )}
-                            </>
-                          )}
-
-                          {/* SUBMITTED ACTIONS */}
-                          {isSubmitted && (
-                            <>
-                              {canApprove && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenApproval(p)}
-                                  className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1 text-purple-700 hover:text-purple-800"
-                                  title="Approve payment voucher"
-                                >
-                                  <Sparkles className="w-3 h-3 text-purple-600" />
-                                  <span>Approve</span>
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to post payments.')
-                                  postMutation.mutate(p.id)
-                                }}
-                                disabled={postMutation.isPending}
-                                className="btn-primary text-xs py-1 px-2 inline-flex items-center gap-1"
-                                title="Post payment directly"
-                              >
-                                <CheckCheck className="w-3 h-3" />
-                                <span>Post</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEdit(p)}
-                                className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1"
-                                title="Edit payment details (Audited)"
-                              >
-                                <Edit3 className="w-3 h-3" />
-                                <span>Edit</span>
-                              </button>
-                              {canCancel && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to cancel payments.')
-                                    setCancellingPayment(p)
-                                    setCancelReason('')
-                                  }}
-                                  className="text-xs text-amber-700 hover:text-amber-900 font-medium py-1 px-2 border border-amber-200 rounded hover:bg-amber-50 inline-flex items-center gap-1"
-                                  title="Cancel unposted payment transaction"
-                                >
-                                  <XCircle className="w-3 h-3 text-amber-600" />
-                                  <span>Cancel</span>
-                                </button>
-                              )}
-                            </>
-                          )}
-
-                          {/* APPROVED ACTIONS */}
-                          {isApproved && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to post payments.')
-                                  postMutation.mutate(p.id)
-                                }}
-                                disabled={postMutation.isPending}
-                                className="btn-primary text-xs py-1 px-2.5 inline-flex items-center gap-1 shadow-2xs"
-                                title="Post approved voucher and generate official receipt"
-                              >
-                                <CheckCheck className="w-3 h-3" />
-                                <span>Post & Issue Receipt</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEdit(p)}
-                                className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1"
-                                title="Edit approved payment"
-                              >
-                                <Edit3 className="w-3 h-3" />
-                                <span>Edit</span>
-                              </button>
-                              {canCancel && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to cancel payments.')
-                                    setCancellingPayment(p)
-                                    setCancelReason('')
-                                  }}
-                                  className="text-xs text-amber-700 hover:text-amber-900 font-medium py-1 px-2 border border-amber-200 rounded hover:bg-amber-50 inline-flex items-center gap-1"
-                                  title="Cancel unposted payment voucher"
-                                >
-                                  <XCircle className="w-3 h-3 text-amber-600" />
-                                  <span>Cancel</span>
-                                </button>
-                              )}
-                            </>
-                          )}
-
-                          {/* POSTED / COMPLETED ACTIONS */}
-                          {isPosted && (
-                            <>
-                              <Link
-                                to={`/receipts/${p.receipt_number}`}
-                                className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1"
-                                title="Print / View Receipt"
-                              >
-                                <Printer className="w-3 h-3 text-primary-600" />
-                                <span>Receipt</span>
-                              </Link>
-                              <button
-                                type="button"
-                                onClick={() => setSharingPayment(p)}
-                                className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800"
-                                title="Share Receipt"
-                              >
-                                <Share2 className="w-3 h-3 text-emerald-600" />
-                                <span>Share</span>
-                              </button>
-                              {canEditPosted && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenEdit(p)}
-                                  className="text-xs text-gray-700 hover:text-gray-900 font-medium py-1 px-2 border border-gray-200 rounded hover:bg-gray-50 inline-flex items-center gap-1"
-                                  title="Audited correction on posted payment"
-                                >
-                                  <Edit3 className="w-3 h-3" />
-                                  <span>Edit</span>
-                                </button>
-                              )}
-                              {canRefund && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenRefund(p)}
-                                  className="text-xs text-amber-700 hover:text-amber-900 font-medium py-1 px-2 border border-amber-200 rounded hover:bg-amber-50 inline-flex items-center gap-1"
-                                  title="Process partial or full refund"
-                                >
-                                  <Undo2 className="w-3 h-3 text-amber-600" />
-                                  <span>Refund</span>
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => handleOpenReverse(p)}
-                                className="text-xs text-red-600 hover:text-red-800 font-medium py-1 px-2 border border-red-200 rounded hover:bg-red-50 inline-flex items-center gap-1"
-                                title="Reverse Payment"
-                              >
-                                <RotateCcw className="w-3 h-3" />
-                                <span>Reverse</span>
-                              </button>
-                            </>
-                          )}
-
-                          {/* CANCELLED / REVERSED ACTIONS */}
-                          {(p.status === 'cancelled' || p.status === 'reversed') && p.receipt_number && (
-                            <Link
-                              to={`/receipts/${p.receipt_number}`}
-                              className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1 text-gray-500 hover:text-gray-700"
-                              title="Print / View Voided Historical Receipt"
-                            >
-                              <Printer className="w-3 h-3 text-gray-400" />
-                              <span>Historical Receipt</span>
-                            </Link>
-                          )}
-
-                          {/* AUDIT TRAIL ACTION (All payments) */}
-                          {canViewAudit && (
-                            <button
-                              type="button"
-                              onClick={() => handleOpenAudit(p)}
-                              className="p-1 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100"
-                              title="View Lifecycle Audit Trail"
-                            >
-                              <History className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+        }
+      />
 
       {/* Refunds Approval & Disbursement Ledger */}
       <div className="card bg-white border border-gray-200 shadow-sm overflow-hidden p-0">

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-23
  *
  * @description Attendance management workspace transforming daily batch roll call, QR terminals, registers, and absenteeism into dedicated functional views.
  */
@@ -61,7 +61,15 @@ import { standardsApi, divisionsApi, studentsApi, attendanceApi } from '../api/e
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton } from '../components/common'
+import {
+  EditModeBar,
+  SortableHeader,
+  TableSortSelect,
+  TableSortOption,
+  ContextualHelpButton,
+  EnterpriseDataTable,
+  DataTableColumn,
+} from '../components/common'
 import ReportIntelligenceBanner from '../components/reports/ReportIntelligenceBanner'
 import { useTableSort } from '../hooks/useTableSort'
 import toast from 'react-hot-toast'
@@ -383,6 +391,80 @@ function AttendanceContent() {
       prev.map((r) => (r.student_id === studentId ? { ...r, remarks } : r))
     )
   }
+
+  const attendanceColumns: DataTableColumn<StudentAttendanceRow>[] = useMemo(
+    () => [
+      {
+        id: 'admission_number',
+        header: 'Admission #',
+        accessorKey: 'admission_number',
+        sortable: true,
+        sticky: 'left',
+        width: 140,
+        cell: ({ value }) => (
+          <span className="font-mono text-primary-700 font-semibold">{value}</span>
+        ),
+      },
+      {
+        id: 'name',
+        header: 'Student Name',
+        accessorKey: 'name',
+        sortable: true,
+        cell: ({ value }) => (
+          <div className="font-semibold text-slate-900">{value}</div>
+        ),
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        accessorKey: 'status',
+        sortable: true,
+        align: 'center',
+        width: 250,
+        cell: ({ row: r }) => (
+          <div className="flex justify-center gap-1">
+            {(['present', 'absent', 'late', 'half_day'] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => updateRowStatus(r.student_id, s)}
+                className={`px-2 py-0.5 text-xs rounded-md font-semibold capitalize transition-all ${
+                  r.status === s
+                    ? s === 'present'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : s === 'absent'
+                      ? 'bg-rose-600 text-white shadow-xs'
+                      : s === 'late'
+                      ? 'bg-amber-500 text-white shadow-xs'
+                      : 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {s.replace('_', ' ')}
+              </button>
+            ))}
+          </div>
+        ),
+      },
+      {
+        id: 'remarks',
+        header: 'Remarks',
+        accessorKey: 'remarks',
+        sortable: false,
+        width: 200,
+        cell: ({ row: r }) => (
+          <input
+            type="text"
+            value={r.remarks}
+            onChange={(e) => updateRowRemarks(r.student_id, e.target.value)}
+            placeholder="Optional remarks"
+            className="w-full px-2 py-1 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500"
+          />
+        ),
+      },
+    ],
+    []
+  )
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
@@ -982,140 +1064,98 @@ function AttendanceContent() {
             </div>
           </div>
 
-          {/* Attendance Stats & Quick Actions */}
-          {rows.length > 0 && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200">
-              <div className="flex items-center gap-4 text-sm">
-                <span className="font-semibold text-gray-700">Total: {rows.length}</span>
-                <span className="text-green-600 font-semibold">Present: {presentCount}</span>
-                <span className="text-red-600 font-semibold">Absent: {absentCount}</span>
-                <span className="text-yellow-600 font-semibold">Late: {lateCount}</span>
-                <span className="text-primary-600 font-semibold">
-                  Attendance: {rows.length > 0 ? Math.round((presentCount / rows.length) * 100) : 0}%
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <TableSortSelect
-                  options={ATTENDANCE_SORT_OPTIONS}
-                  currentSortKey={attendanceSortKey}
-                  currentDirection={attendanceSortDirection}
-                  onSortChange={(key, dir) => {
-                    const opt = ATTENDANCE_SORT_OPTIONS.find((o) => o.key === key)
-                    setAttendanceSort(key, dir, undefined, opt?.type || 'auto')
-                  }}
-                  onClear={clearAttendanceSort}
-                  placeholder="Sort Roster..."
-                />
-                <button
-                  type="button"
-                  onClick={() => setAllStatus('present')}
-                  className="text-xs bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 font-medium py-1.5 px-3 rounded-lg"
-                >
-                  ✓ All Present
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAllStatus('absent')}
-                  className="text-xs bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 font-medium py-1.5 px-3 rounded-lg"
-                >
-                  ✕ All Absent
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Roster Table */}
+          {/* Roster Table Engine */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="card overflow-x-auto">
-              {!selectedStandardId ? (
-                <div className="text-center py-12 text-gray-400">
-                  <p>Please select a Standard above to load student roster.</p>
-                </div>
-              ) : loadingStudents ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto" />
-                  <p className="text-sm text-gray-500 mt-2">Loading students roster...</p>
-                </div>
-              ) : sortedRows.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">
-                  <p>No students enrolled in this standard/batch.</p>
-                </div>
-              ) : (
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="bg-gray-50 text-gray-600 border-b">
-                      <SortableHeader
-                        columnKey="admission_number"
-                        label="Admission #"
-                        currentSortKey={attendanceSortKey}
-                        currentDirection={attendanceSortDirection}
-                        onSort={requestAttendanceSort}
-                      />
-                      <SortableHeader
-                        columnKey="name"
-                        label="Student Name"
-                        currentSortKey={attendanceSortKey}
-                        currentDirection={attendanceSortDirection}
-                        onSort={requestAttendanceSort}
-                      />
-                      <SortableHeader
-                        columnKey="status"
-                        label="Status"
-                        align="center"
-                        currentSortKey={attendanceSortKey}
-                        currentDirection={attendanceSortDirection}
-                        onSort={requestAttendanceSort}
-                      />
-                      <th className="px-4 py-3 font-semibold">Remarks</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {sortedRows.map((r) => (
-                      <tr key={r.student_id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 font-mono text-gray-600 font-medium">
-                          {r.admission_number}
-                        </td>
-                        <td className="px-4 py-3 font-medium text-gray-900">{r.name}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex justify-center gap-1">
-                            {(['present', 'absent', 'late', 'half_day'] as const).map((s) => (
-                              <button
-                                key={s}
-                                type="button"
-                                onClick={() => updateRowStatus(r.student_id, s)}
-                                className={`px-2.5 py-1 text-xs rounded-md font-semibold capitalize transition-all ${
-                                  r.status === s
-                                    ? s === 'present'
-                                      ? 'bg-green-600 text-white shadow-sm'
-                                      : s === 'absent'
-                                      ? 'bg-red-600 text-white shadow-sm'
-                                      : s === 'late'
-                                      ? 'bg-yellow-500 text-white shadow-sm'
-                                      : 'bg-purple-600 text-white shadow-sm'
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                }`}
-                              >
-                                {s.replace('_', ' ')}
-                              </button>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <input
-                            type="text"
-                            value={r.remarks}
-                            onChange={(e) => updateRowRemarks(r.student_id, e.target.value)}
-                            placeholder="Optional remarks"
-                            className="input text-xs py-1 h-8"
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+            {!selectedStandardId ? (
+              <div className="card p-12 text-center text-slate-400 bg-white border border-slate-200 rounded-2xl">
+                <ClipboardList className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                <p className="text-sm font-medium text-slate-600">Please select a Standard above to load student roster.</p>
+                <p className="text-xs text-slate-400 mt-1">Roll call rosters are synchronized with live batch allocations.</p>
+              </div>
+            ) : (
+              <EnterpriseDataTable
+                tableId="attendance_daily_rollcall"
+                data={rows}
+                columns={attendanceColumns}
+                isLoading={loadingStudents}
+                loadingMessage="Loading student roster…"
+                emptyMessage="No students enrolled in this standard/batch."
+                searchable={true}
+                searchPlaceholder="Search scholar name or admission #…"
+                enableRowSelection={true}
+                getRowId={(r) => r.student_id}
+                bulkActions={(selectedIds) => (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRows((prev) =>
+                          prev.map((r) =>
+                            selectedIds.has(r.student_id) ? { ...r, status: 'present' } : r
+                          )
+                        )
+                        toast.success(`Marked ${selectedIds.size} scholars present`)
+                      }}
+                      className="px-2.5 py-1 text-xs font-semibold rounded bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                    >
+                      ✓ Mark Present
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRows((prev) =>
+                          prev.map((r) =>
+                            selectedIds.has(r.student_id) ? { ...r, status: 'absent' } : r
+                          )
+                        )
+                        toast.success(`Marked ${selectedIds.size} scholars absent`)
+                      }}
+                      className="px-2.5 py-1 text-xs font-semibold rounded bg-rose-600 text-white hover:bg-rose-700 transition"
+                    >
+                      ✕ Mark Absent
+                    </button>
+                  </div>
+                )}
+                exportConfig={{
+                  filename: `Attendance_RollCall_${attendanceDate}`,
+                  sheetName: 'RollCall',
+                  title: `Daily Roll Call Register - ${attendanceDate}`,
+                }}
+                customFilterBar={
+                  rows.length > 0 ? (
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                      <div className="flex items-center gap-3 text-xs">
+                        <span className="font-semibold text-slate-700">Total: {rows.length}</span>
+                        <span className="text-emerald-600 font-semibold">Present: {presentCount}</span>
+                        <span className="text-rose-600 font-semibold">Absent: {absentCount}</span>
+                        <span className="text-amber-600 font-semibold">Late: {lateCount}</span>
+                        <span className="text-primary-700 font-semibold font-mono">
+                          Presence: {rows.length > 0 ? Math.round((presentCount / rows.length) * 100) : 0}%
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setAllStatus('present')}
+                          className="text-xs bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 font-medium py-1 px-2.5 rounded-lg transition"
+                        >
+                          ✓ All Present
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAllStatus('absent')}
+                          className="text-xs bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 font-medium py-1 px-2.5 rounded-lg transition"
+                        >
+                          ✕ All Absent
+                        </button>
+                      </div>
+                    </div>
+                  ) : undefined
+                }
+                pageSize={50}
+                pageSizeOptions={[25, 50, 100, -1]}
+              />
+            )}
 
             {rows.length > 0 && (
               <div className="flex justify-end">
