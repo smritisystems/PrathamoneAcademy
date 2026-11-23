@@ -326,10 +326,9 @@ export function EnterpriseDataTable<T extends Record<string, any>>({
   // ─── 6. Client-Side Search & Multi-Column Filtering ─────────────────────────
   const filteredData = useMemo(() => {
     let result = data
-    if (serverSidePagination) return result
 
-    // A. Global Search
-    if (currentSearch.trim()) {
+    // A. Global Search (only run if client-side search is needed)
+    if (!serverSidePagination && currentSearch.trim()) {
       const query = currentSearch.toLowerCase().trim()
       result = result.filter((item) => {
         return normalizedColumns.some((col) => {
@@ -353,7 +352,9 @@ export function EnterpriseDataTable<T extends Record<string, any>>({
           if (Array.isArray(filterVal)) {
             if (filterVal.length === 0) return true
             if (cellVal === null || cellVal === undefined) return false
-            return filterVal.includes(String(cellVal))
+            return filterVal.some(
+              (fv) => String(fv).toLowerCase().trim() === String(cellVal).toLowerCase().trim()
+            )
           }
 
           if (typeof filterVal === 'object' && ('min' in filterVal || 'max' in filterVal)) {
@@ -421,15 +422,17 @@ export function EnterpriseDataTable<T extends Record<string, any>>({
 
   // ─── 6. Pagination Slice ────────────────────────────────────────────────────
   const totalItems = serverSidePagination
-    ? controlledTotalCount ?? data.length
+    ? activeFiltersCount > 0
+      ? sortedData.length
+      : controlledTotalCount ?? data.length
     : sortedData.length
 
   const paginatedData = useMemo(() => {
-    if (serverSidePagination) return sortedData
+    if (serverSidePagination && activeFiltersCount === 0) return sortedData
     if (currentPageSize === -1) return sortedData
     const start = (currentPage - 1) * currentPageSize
     return sortedData.slice(start, start + currentPageSize)
-  }, [sortedData, currentPage, currentPageSize, serverSidePagination])
+  }, [sortedData, currentPage, currentPageSize, serverSidePagination, activeFiltersCount])
 
   // ─── 7. Row Selection ───────────────────────────────────────────────────────
   const [internalSelectedIds, setInternalSelectedIds] = useState<Set<string | number>>(

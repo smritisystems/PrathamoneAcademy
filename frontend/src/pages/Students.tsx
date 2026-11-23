@@ -11,12 +11,12 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-23
+ * @updated     2026-11-24
  *
  * @description Dedicated multi-workspace hub for Students & Admissions Centre comprising Overview, Master Register, KYC Admissions, Batch Allocations, ID Cards, Activity History, Reactivation, and Admission Policies.
  */
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { Link, useNavigate, useLocation, useInRouterContext, MemoryRouter } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -138,6 +138,7 @@ function StudentsContent() {
   const [includeInactive, setIncludeInactive] = useState(false)
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'withdrawn' | 'completed' | 'graduated' | 'inactive'>('all')
   const [page, setPage] = useState(1)
+  const [columnFilters, setColumnFilters] = useState<Record<string, any>>({})
 
   // Modals state
   const [exitTargetStudent, setExitTargetStudent] = useState<Student | null>(null)
@@ -177,6 +178,53 @@ function StudentsContent() {
     staleTime: 5 * 60 * 1000,
     placeholderData: (prev) => prev,
   })
+
+  const handleColumnFilterChange = useCallback(
+    (filters: Record<string, any>) => {
+      setColumnFilters(filters)
+
+      // Sync Standard / Grade filter with server query
+      if (
+        filters.standard_name &&
+        Array.isArray(filters.standard_name) &&
+        filters.standard_name.length === 1
+      ) {
+        const selectedName = String(filters.standard_name[0]).toLowerCase().trim()
+        const matchedStd = standards.find(
+          (s) => s.name.toLowerCase().trim() === selectedName
+        )
+        if (matchedStd && matchedStd.id !== standardId) {
+          setStandardId(matchedStd.id)
+          setDivisionId(undefined)
+          setPage(1)
+        }
+      } else if (!filters.standard_name && standardId !== undefined) {
+        setStandardId(undefined)
+        setDivisionId(undefined)
+        setPage(1)
+      }
+
+      // Sync Division / Batch filter with server query
+      if (
+        filters.division_name &&
+        Array.isArray(filters.division_name) &&
+        filters.division_name.length === 1
+      ) {
+        const selectedDivName = String(filters.division_name[0]).toLowerCase().trim()
+        const matchedDiv = divisions.find(
+          (d) => d.name.toLowerCase().trim() === selectedDivName
+        )
+        if (matchedDiv && matchedDiv.id !== divisionId) {
+          setDivisionId(matchedDiv.id)
+          setPage(1)
+        }
+      } else if (!filters.division_name && divisionId !== undefined) {
+        setDivisionId(undefined)
+        setPage(1)
+      }
+    },
+    [standards, divisions, standardId, divisionId]
+  )
 
   // Students Master Query
   const { data: studentsData, isLoading: isLoadingStudents, refetch: refetchStudents } = useQuery({
@@ -1022,6 +1070,8 @@ function StudentsContent() {
               setSearch(val)
               setPage(1)
             }}
+            columnFilters={columnFilters}
+            onColumnFilterChange={handleColumnFilterChange}
             serverSidePagination={true}
             page={page}
             pageSize={20}
@@ -1038,9 +1088,21 @@ function StudentsContent() {
                 <select
                   value={standardId ?? ''}
                   onChange={(e) => {
-                    setStandardId(e.target.value ? Number(e.target.value) : undefined)
+                    const val = e.target.value ? Number(e.target.value) : undefined
+                    setStandardId(val)
                     setDivisionId(undefined)
                     setPage(1)
+                    const std = standards.find((s) => s.id === val)
+                    setColumnFilters((prev) => {
+                      const next = { ...prev }
+                      if (std) {
+                        next.standard_name = [std.name]
+                      } else {
+                        delete next.standard_name
+                      }
+                      delete next.division_name
+                      return next
+                    })
                   }}
                   className="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                 >
@@ -1056,8 +1118,19 @@ function StudentsContent() {
                   <select
                     value={divisionId ?? ''}
                     onChange={(e) => {
-                      setDivisionId(e.target.value ? Number(e.target.value) : undefined)
+                      const val = e.target.value ? Number(e.target.value) : undefined
+                      setDivisionId(val)
                       setPage(1)
+                      const div = divisions.find((d) => d.id === val)
+                      setColumnFilters((prev) => {
+                        const next = { ...prev }
+                        if (div) {
+                          next.division_name = [div.name]
+                        } else {
+                          delete next.division_name
+                        }
+                        return next
+                      })
                     }}
                     className="px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                   >

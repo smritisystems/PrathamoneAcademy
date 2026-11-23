@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-23
+ * @updated     2026-11-24
  *
  * @description Flagship Homework & Assignment Management workspace featuring Overview, Unified Assignment Creation, Physical Checking Register, Digital Submissions, Templates, and Daily Reports.
  */
@@ -1172,9 +1172,9 @@ export default function HomeworkWorkspace() {
             isEditMode={isEditMode}
             pageSize={50}
             exportConfig={{
-              filename: `Homework_${activeCheckingAssignment?.assignment_code || 'Register'}`,
+              filename: `Homework_${selectedAssignment?.assignment_code || 'Register'}`,
               sheetName: 'Checking Register',
-              title: `Homework Checking Register - ${activeCheckingAssignment?.title || ''}`,
+              title: `Homework Checking Register - ${selectedAssignment?.title || ''}`,
             }}
           />
         </div>
