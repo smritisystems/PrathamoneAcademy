@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-14
- * @updated     2026-11-23
+ * @updated     2026-11-24
  *
  * @description Institution-scoped activation and refresh of signed software licenses.
  */
@@ -72,6 +72,8 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
   >('idle')
   const [reactivationPhone, setReactivationPhone] = useState<string | null>(null)
   const [reactivationMessage, setReactivationMessage] = useState<string | null>(null)
+  const [surrenderConfirmed, setSurrenderConfirmed] = useState(false)
+  const [surrenderReason, setSurrenderReason] = useState('')
   const [registration, setRegistration] = useState<NonNullable<LicenseStatusResponse['registration']>>({
     institution_name: '',
     contact_name: '',
@@ -126,6 +128,8 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
     setReactivationStatus('idle')
     setReactivationPhone(null)
     setReactivationMessage(null)
+    setSurrenderConfirmed(false)
+    setSurrenderReason('')
   }, [institutionId])
 
   useEffect(() => {
@@ -146,6 +150,9 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
   )
 
   const activateLicenseMutation = useMutation({
+    onMutate: () => {
+      if (reactivationRequestId) setReactivationStatus('activating')
+    },
     mutationFn: (overridePayload?: { reactivation_request_id?: string }) => licenseApi.activate(
       overridePayload?.reactivation_request_id
         ? { reactivation_request_id: overridePayload.reactivation_request_id }
@@ -176,6 +183,7 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
         : 'Signed license verified and activated.')
     },
     onError: (error: any) => {
+      if (reactivationRequestId) setReactivationStatus('idle')
       const detail = error.response?.data?.detail || error.message || ''
       if (typeof detail === 'string' && detail.includes('License authority URL is not configured')) {
         toast.error('License authority URL is not configured on the server. Configure LICENSE_AUTHORITY_URL in server .env, or use the Offline Activation workflow below for air-gapped sites.')
@@ -227,6 +235,8 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
         selectedCustomerLicenseId,
         customerSessionToken || undefined,
         institutionId,
+        surrenderConfirmed,
+        surrenderReason.trim(),
       )
     },
     onSuccess: (res) => {
@@ -891,7 +901,7 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
               </div>
             )}
 
-            {isEditMode && !hasVerifiedLicense && (
+            {!hasVerifiedLicense && (
               <div className="mt-6 rounded-xl border border-indigo-200 bg-indigo-50/40 p-5 space-y-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -919,7 +929,7 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                         maxLength={254}
                         value={customerEmail}
                         onChange={(e) => setCustomerEmail(e.target.value)}
-                        disabled={!isEditMode || customerLoginMutation.isPending}
+                        disabled={customerLoginMutation.isPending}
                         aria-label="Customer account email"
                         placeholder="Account Email (e.g. customer@example.com)"
                         className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
@@ -929,7 +939,7 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                         maxLength={256}
                         value={customerPassword}
                         onChange={(e) => setCustomerPassword(e.target.value)}
-                        disabled={!isEditMode || customerLoginMutation.isPending}
+                        disabled={customerLoginMutation.isPending}
                         aria-label="Customer account password"
                         placeholder="Account Password"
                         className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
@@ -938,7 +948,7 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                     <button
                       type="button"
                       onClick={() => customerLoginMutation.mutate()}
-                      disabled={!isEditMode || !customerEmail.trim() || !customerPassword || customerLoginMutation.isPending}
+                      disabled={!customerEmail.trim() || !customerPassword || customerLoginMutation.isPending}
                       className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {customerLoginMutation.isPending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <UserCheck className="h-4 w-4" />}
@@ -947,6 +957,36 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    <label className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+                      <input
+                        type="checkbox"
+                        checked={surrenderConfirmed}
+                        onChange={(event) => {
+                          setSurrenderConfirmed(event.target.checked)
+                          if (!event.target.checked) setSurrenderReason('')
+                        }}
+                        className="mt-0.5"
+                        disabled={reactivationStatus === 'pending' || activateLicenseMutation.isPending}
+                      />
+                      <span>
+                        <strong>I surrendered or released the previous device/license.</strong>
+                        <span className="block mt-0.5 text-amber-800">
+                          This informs support that the standard 30-day transfer cooldown may not apply.
+                        </span>
+                      </span>
+                    </label>
+                    {surrenderConfirmed && (
+                      <input
+                        type="text"
+                        value={surrenderReason}
+                        onChange={(event) => setSurrenderReason(event.target.value)}
+                        maxLength={300}
+                        placeholder="Reason: surrendered device, replacement, lost machine..."
+                        aria-label="Surrender reason"
+                        className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                        disabled={reactivationStatus === 'pending' || activateLicenseMutation.isPending}
+                      />
+                    )}
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1">
                         Select an eligible license to reactivate
@@ -955,7 +995,7 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                         <select
                           value={selectedCustomerLicenseId || ''}
                           onChange={(e) => setSelectedCustomerLicenseId(e.target.value ? Number(e.target.value) : null)}
-                          disabled={!isEditMode || reactivationStatus === 'pending' || activateLicenseMutation.isPending}
+                          disabled={reactivationStatus === 'pending' || activateLicenseMutation.isPending}
                           aria-label="Select eligible license"
                           className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
                         >
@@ -1022,8 +1062,8 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                           type="button"
                           onClick={() => requestReactivationMutation.mutate()}
                           disabled={
-                            !isEditMode ||
                             !selectedCustomerLicenseId ||
+                            (surrenderConfirmed && surrenderReason.trim().length < 10) ||
                             requestReactivationMutation.isPending ||
                             activateLicenseMutation.isPending
                           }

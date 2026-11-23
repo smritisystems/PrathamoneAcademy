@@ -12,7 +12,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-19
-#  * @updated     2026-11-19
+#  * @updated     2026-11-24
 #  *
 #  * @description Lightweight native companion agent to read physical network MAC address and motherboard UUID for high-security device binding.
 #  */
@@ -29,6 +29,14 @@ import sys
 import uuid
 
 PORT = 9876
+ALLOWED_ORIGINS = {
+    "http://localhost",
+    "http://localhost:80",
+    "http://localhost:5173",
+    "http://127.0.0.1",
+    "http://127.0.0.1:80",
+    "http://127.0.0.1:5173",
+}
 
 
 def get_all_mac_addresses():
@@ -168,8 +176,10 @@ def get_hardware_payload():
 
 class HardwareAgentHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
-        # Enable CORS for browser access from local and institute web origins
-        self.send_header("Access-Control-Allow-Origin", "*")
+        origin = self.headers.get("Origin")
+        if origin in ALLOWED_ORIGINS:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
