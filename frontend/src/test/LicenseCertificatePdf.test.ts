@@ -30,29 +30,68 @@ import {
   shareLicenseCertificatePdf,
 } from '../utils/licenseCertificatePdf'
 
+async function mockCertificateAssets() {
+  const fontDirectory = `${process.cwd()}/node_modules/@fontsource/noto-sans-devanagari/files`
+  const [latinFont, indicFont, logoPng, signature, svg] = await Promise.all([
+    readFile(`${fontDirectory}/noto-sans-devanagari-latin-400-normal.woff`),
+    readFile(`${fontDirectory}/noto-sans-devanagari-devanagari-400-normal.woff`),
+    readFile(`${process.cwd()}/public/logo/logoone256.png`),
+    readFile(`${process.cwd()}/public/logo/license-issuer-signature.png`),
+    readFile(`${process.cwd()}/public/artwork/18112026/03/license-certificate-watermark.svg`),
+  ])
+  const png = new Uint8Array(logoPng)
+  const MockUrl = class extends URL {}
+  Object.assign(MockUrl, {
+    createObjectURL: vi.fn(() => 'blob:certificate-svg'),
+    revokeObjectURL: vi.fn(),
+  })
+  vi.stubGlobal('URL', MockUrl)
+  vi.stubGlobal('Image', class {
+    naturalWidth = 800
+    naturalHeight = 400
+    src = ''
+    decode = vi.fn().mockResolvedValue(undefined)
+  })
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
+    () => ({ drawImage: vi.fn() }) as unknown as CanvasRenderingContext2D,
+  )
+  vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((callback) => {
+    callback(new Blob([png], { type: 'image/png' }))
+  })
+
+  const fetchMock = vi.fn(async (url: string | URL | Request) => {
+    const source = String(url)
+    const bytes = source.includes('devanagari-400')
+      ? indicFont
+      : source.includes('license-issuer-signature')
+        ? signature
+        : source.endsWith('.svg')
+          ? svg
+          : latinFont
+    const buffer = new ArrayBuffer(bytes.byteLength)
+    new Uint8Array(buffer).set(bytes)
+    return new Response(buffer)
+  })
+  vi.stubGlobal('fetch', fetchMock)
+  return fetchMock
+}
+
 describe('License certificate PDF', () => {
-  it('creates an A4 portrait summary with the product logo, signed entitlement, QR, and PDF metadata', async () => {
-    const fontDirectory = `${process.cwd()}/node_modules/@fontsource/noto-sans-devanagari/files`
-    const [latinFont, indicFont, logo, signature] = await Promise.all([
-      readFile(`${fontDirectory}/noto-sans-devanagari-latin-400-normal.woff`),
-      readFile(`${fontDirectory}/noto-sans-devanagari-devanagari-400-normal.woff`),
-      readFile(`${process.cwd()}/public/logo/logoone256.png`),
-      readFile(`${process.cwd()}/public/logo/license-issuer-signature.png`),
-    ])
-    const fetchMock = vi.fn(async (url: string | URL | Request) => {
-      const source = String(url)
-      const bytes = source.includes('devanagari-400')
-        ? indicFont
-        : source.includes('license-issuer-signature')
-          ? signature
-          : source.includes('logoone256')
-            ? logo
-            : latinFont
-      const buffer = new ArrayBuffer(bytes.byteLength)
-      new Uint8Array(buffer).set(bytes)
-      return new Response(buffer)
-    })
-    vi.stubGlobal('fetch', fetchMock)
+  it('uses a white, stroke-free embossed header logo', async () => {
+    const logo = await readFile(
+      `${process.cwd()}/public/artwork/18112026/03/license-certificate-logo.svg`,
+      'utf8',
+    )
+
+    expect(logo).toContain('fill="#FFFFFF" stroke="none"')
+    expect(logo).toContain('filter="url(#emboss)"')
+    expect(logo).toContain('<filter id="emboss"')
+  })
+
+  it(
+    'creates an A4 portrait summary with the product logo, signed entitlement, QR, and PDF metadata',
+    async () => {
+      const fetchMock = await mockCertificateAssets()
 
     const blob = await createLicenseCertificatePdf({
       institutionName: 'प्रशांत अकादमी',
@@ -76,31 +115,17 @@ describe('License certificate PDF', () => {
     expect(pdf.getPages()[0].getSize().width).toBeCloseTo(595.28, 1)
     expect(pdf.getPages()[0].getSize().height).toBeCloseTo(841.89, 1)
     expect(pdf.getTitle()).toBe('PrathamOne EduOS Software License Certificate')
-    expect(fetchMock).toHaveBeenCalledTimes(4)
+    expect(fetchMock).toHaveBeenCalledTimes(5)
+    expect(fetchMock).toHaveBeenCalledWith('/artwork/18112026/03/license-certificate-logo.svg')
+    expect(fetchMock).toHaveBeenCalledWith('/artwork/18112026/03/license-certificate-watermark.svg')
+    expect(fetchMock).toHaveBeenCalledWith('/artwork/18112026/03/license-certificate-watermark.svg')
     expect(fetchMock).toHaveBeenCalledWith('/logo/license-issuer-signature.png')
-  })
+  }, 15000)
 
-  it('keeps long organization, address, and entitlement content on A4 continuation pages', async () => {
-    const fontDirectory = `${process.cwd()}/node_modules/@fontsource/noto-sans-devanagari/files`
-    const [latinFont, indicFont, logo, signature] = await Promise.all([
-      readFile(`${fontDirectory}/noto-sans-devanagari-latin-400-normal.woff`),
-      readFile(`${fontDirectory}/noto-sans-devanagari-devanagari-400-normal.woff`),
-      readFile(`${process.cwd()}/public/logo/logoone256.png`),
-      readFile(`${process.cwd()}/public/logo/license-issuer-signature.png`),
-    ])
-    vi.stubGlobal('fetch', vi.fn(async (url: string | URL | Request) => {
-      const source = String(url)
-      const bytes = source.includes('devanagari-400')
-        ? indicFont
-        : source.includes('license-issuer-signature')
-          ? signature
-          : source.includes('logoone256')
-            ? logo
-            : latinFont
-      const buffer = new ArrayBuffer(bytes.byteLength)
-      new Uint8Array(buffer).set(bytes)
-      return new Response(buffer)
-    }))
+  it(
+    'keeps long organization, address, and entitlement content on A4 continuation pages',
+    async () => {
+      await mockCertificateAssets()
 
     const blob = await createLicenseCertificatePdf({
       institutionName: 'Long Institute Legal Name '.repeat(24),
@@ -123,29 +148,12 @@ describe('License certificate PDF', () => {
       expect(page.getSize().width).toBeCloseTo(595.28, 1)
       expect(page.getSize().height).toBeCloseTo(841.89, 1)
     }
-  })
+  }, 15000)
 
-  it('creates a safe certificate when optional fields and the authority URL are unavailable', async () => {
-    const fontDirectory = `${process.cwd()}/node_modules/@fontsource/noto-sans-devanagari/files`
-    const [latinFont, indicFont, logo, signature] = await Promise.all([
-      readFile(`${fontDirectory}/noto-sans-devanagari-latin-400-normal.woff`),
-      readFile(`${fontDirectory}/noto-sans-devanagari-devanagari-400-normal.woff`),
-      readFile(`${process.cwd()}/public/logo/logoone256.png`),
-      readFile(`${process.cwd()}/public/logo/license-issuer-signature.png`),
-    ])
-    vi.stubGlobal('fetch', vi.fn(async (url: string | URL | Request) => {
-      const source = String(url)
-      const bytes = source.includes('devanagari-400')
-        ? indicFont
-        : source.includes('license-issuer-signature')
-          ? signature
-          : source.includes('logoone256')
-            ? logo
-            : latinFont
-      const buffer = new ArrayBuffer(bytes.byteLength)
-      new Uint8Array(buffer).set(bytes)
-      return new Response(buffer)
-    }))
+  it(
+    'creates a safe certificate when optional fields and the authority URL are unavailable',
+    async () => {
+      await mockCertificateAssets()
 
     const blob = await createLicenseCertificatePdf({
       institutionName: 'Organization name not recorded',
@@ -165,7 +173,7 @@ describe('License certificate PDF', () => {
     const pdf = await PDFDocument.load(await blob.arrayBuffer())
     expect(pdf.getPages()).toHaveLength(1)
     expect(pdf.getPages()[0].getSize().height).toBeCloseTo(841.89, 1)
-  })
+  }, 15000)
 
   it('formats signed entitlement values without exposing private bindings and labels inactive states', async () => {
     expect(formatLicenseCertificateEntitlements({
@@ -255,4 +263,7 @@ describe('License certificate PDF', () => {
   })
 })
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+})

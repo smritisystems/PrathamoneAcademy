@@ -52,7 +52,7 @@ export interface LicenseCertificateEntitlementGroup {
 
 const entitlementGroupDefinitions = [
   { label: 'Licensed Users', matches: /user|seat/ },
-  { label: 'Branches / locations', matches: /branch|location|site/ },
+  { label: 'Branches / locations', matches: /branch|location|site|campus|institute/ },
   { label: 'Licensed modules', matches: /module|feature/ },
   { label: 'Deployment type', matches: /deployment|hosting|environment/ },
 ]
@@ -315,10 +315,52 @@ async function fetchFont(url: string) {
   return new Uint8Array(await response.arrayBuffer())
 }
 
+async function fetchSvgAsPng(url: string, label: string) {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`Unable to load ${label} (${response.status}).`)
+  const imageUrl = URL.createObjectURL(new Blob([await response.arrayBuffer()], { type: 'image/svg+xml' }))
+  try {
+    const image = new Image()
+    image.src = imageUrl
+    await image.decode()
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(image.naturalWidth, 1)
+    canvas.height = Math.max(image.naturalHeight, 1)
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error(`Unable to prepare ${label} for PDF output.`)
+    context.drawImage(image, 0, 0)
+    const png = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error(`Unable to convert ${label} to PNG.`))),
+        'image/png',
+      )
+    })
+    return new Uint8Array(await png.arrayBuffer())
+  } finally {
+    URL.revokeObjectURL(imageUrl)
+  }
+}
+
 async function fetchProductLogo() {
-  const response = await fetch('/logo/logoone256.png')
-  if (!response.ok) throw new Error(`Unable to load the PrathamOne logo (${response.status}).`)
-  return new Uint8Array(await response.arrayBuffer())
+  return fetchSvgAsPng('/artwork/18112026/03/license-certificate-logo.svg', 'the PrathamOne logo')
+}
+
+async function fetchCertificateWatermark() {
+  return fetchSvgAsPng('/artwork/18112026/03/license-certificate-watermark.svg', 'the certificate watermark')
+}
+
+function drawWatermark(
+  page: PDFPage,
+  watermark: Awaited<ReturnType<PDFDocument['embedPng']>>,
+) {
+  const size = watermark.scaleToFit(440, 220)
+  page.drawImage(watermark, {
+    x: (PAGE_WIDTH - size.width) / 2,
+    y: (PAGE_HEIGHT - size.height) / 2,
+    width: size.width,
+    height: size.height,
+    opacity: 0.3,
+  })
 }
 
 async function fetchIssuerSignature() {
@@ -338,37 +380,103 @@ function drawHeader(
 ) {
   page.drawRectangle({ x: 0, y: 694, width: PAGE_WIDTH, height: 148, color: NAVY })
   page.drawRectangle({ x: 0, y: 689, width: PAGE_WIDTH, height: 5, color: ORANGE })
-  page.drawRectangle({ x: 36, y: 774, width: 214, height: 43, color: WHITE })
-  const logoSize = logo.scaleToFit(206, 35)
+  const logoSize = logo.scaleToFit(154, 64)
   page.drawImage(logo, {
-    x: 40 + (206 - logoSize.width) / 2,
-    y: 778 + (35 - logoSize.height) / 2,
+    x: LEFT,
+    y: 768 + (64 - logoSize.height) / 2,
     width: logoSize.width,
     height: logoSize.height,
   })
-  page.drawLine({
-    start: { x: 267, y: 772 },
-    end: { x: 267, y: 816 },
-    thickness: 0.7,
-    color: rgb(0.78, 0.84, 0.92),
+  page.drawRectangle({
+    x: 218,
+    y: 783,
+    width: 184,
+    height: 28,
+    color: rgb(0.07, 0.18, 0.36),
+    borderColor: rgb(0.27, 0.38, 0.56),
+    borderWidth: 0.7,
   })
-  const editionLines = wrapText((edition || 'EDITION NOT RECORDED').toUpperCase(), 145, 7.2, latin, indic).slice(0, 2)
+  page.drawRectangle({ x: 218, y: 783, width: 2, height: 28, color: GOLD })
+  drawText(page, 'PRODUCT EDITION', 229, 800, 5.4, rgb(0.74, 0.81, 0.9), latin, indic)
+  const editionLines = wrapText((edition || 'EDITION NOT RECORDED').toUpperCase(), 160, 7.2, latin, indic).slice(0, 2)
   editionLines.forEach((line, index) =>
-    drawText(page, line, 282, 800 - index * 10, 7.2, rgb(0.88, 0.91, 0.96), latin, indic),
+    drawText(page, line, 229, 790 - index * 8, 7.2, rgb(0.95, 0.96, 0.99), latin, indic),
   )
-  drawText(page, 'SOFTWARE LICENSE', 36, 754, 8.5, GOLD, latin, indic)
-  drawText(page, continuation ? 'License Certificate · Continued' : 'License Certificate', 36, 726, 21, WHITE, latin, indic)
-  drawText(page, 'Customer Copy · Issued by PrathamOne EduOS', 36, 705, 7.5, rgb(0.88, 0.91, 0.96), latin, indic)
 
-  page.drawCircle({ x: 526, y: 774, size: 42, color: GOLD, borderColor: rgb(1, 0.82, 0.35), borderWidth: 2 })
-  page.drawCircle({ x: 526, y: 774, size: 35, color: rgb(1, 0.79, 0.25), borderColor: rgb(0.61, 0.35, 0.02), borderWidth: 0.8 })
+  const sealX = RIGHT - 29
+  const sealY = 799
+  page.drawCircle({ x: sealX, y: sealY, size: 35, color: GOLD, borderColor: rgb(1, 0.82, 0.35), borderWidth: 1.6 })
+  page.drawCircle({ x: sealX, y: sealY, size: 29, color: rgb(1, 0.79, 0.25), borderColor: rgb(0.61, 0.35, 0.02), borderWidth: 0.7 })
+  for (let dot = 0; dot < 16; dot += 1) {
+    const angle = (Math.PI * 2 * dot) / 16
+    page.drawCircle({
+      x: sealX + Math.cos(angle) * 32,
+      y: sealY + Math.sin(angle) * 32,
+      size: 0.9,
+      color: rgb(0.61, 0.35, 0.02),
+    })
+  }
+  page.drawLine({
+    start: { x: sealX - 8, y: sealY + 22 },
+    end: { x: sealX - 5, y: sealY + 19 },
+    thickness: 1.1,
+    color: NAVY,
+  })
+  page.drawLine({
+    start: { x: sealX - 5, y: sealY + 19 },
+    end: { x: sealX - 3, y: sealY + 25 },
+    thickness: 1.1,
+    color: NAVY,
+  })
+  page.drawLine({
+    start: { x: sealX - 3, y: sealY + 25 },
+    end: { x: sealX, y: sealY + 19 },
+    thickness: 1.1,
+    color: NAVY,
+  })
+  page.drawLine({
+    start: { x: sealX, y: sealY + 19 },
+    end: { x: sealX + 3, y: sealY + 25 },
+    thickness: 1.1,
+    color: NAVY,
+  })
+  page.drawLine({
+    start: { x: sealX + 3, y: sealY + 25 },
+    end: { x: sealX + 5, y: sealY + 19 },
+    thickness: 1.1,
+    color: NAVY,
+  })
+  page.drawLine({
+    start: { x: sealX + 5, y: sealY + 19 },
+    end: { x: sealX + 8, y: sealY + 22 },
+    thickness: 1.1,
+    color: NAVY,
+  })
+  page.drawLine({
+    start: { x: sealX - 5, y: sealY + 19 },
+    end: { x: sealX + 5, y: sealY + 19 },
+    thickness: 1.1,
+    color: NAVY,
+  })
+  page.drawLine({
+    start: { x: LEFT, y: 756 },
+    end: { x: RIGHT, y: 756 },
+    thickness: 0.6,
+    color: rgb(0.2, 0.3, 0.47),
+  })
+  page.drawRectangle({ x: LEFT, y: 743, width: 19, height: 1.5, color: ORANGE })
+  drawText(page, 'SOFTWARE LICENSE', LEFT + 27, 740, 7.8, GOLD, latin, indic)
+  drawText(page, continuation ? 'License Certificate · Continued' : 'License Certificate', LEFT, 716, 20, WHITE, latin, indic)
+  const customerCopy = 'Customer Copy · Issued by PrathamOne EduOS'
+  drawText(page, customerCopy, RIGHT - textWidth(customerCopy, 7.2, latin, indic), 700, 7.2, rgb(0.88, 0.91, 0.96), latin, indic)
+
   const badgeLabel = model?.toLowerCase().includes('perpetual')
     ? 'PERPETUAL LICENSE'
     : formatModel(model).toUpperCase()
-  const modelLines = wrapText(badgeLabel, 61, 6.4, latin, indic).slice(0, 3)
+  const modelLines = wrapText(badgeLabel, 50, 5.8, latin, indic).slice(0, 2)
   modelLines.forEach((line, index) => {
-    const x = 526 - textWidth(line, 6.4, latin, indic) / 2
-    drawText(page, line, x, 781 - index * 8, 6.4, NAVY, latin, indic)
+    const x = sealX - textWidth(line, 5.8, latin, indic) / 2
+    drawText(page, line, x, 783 - index * 7, 5.8, NAVY, latin, indic)
   })
 }
 
@@ -408,20 +516,31 @@ function drawStatusMark(page: PDFPage, x: number, y: number, isActive: boolean) 
   page.drawCircle({ x, y: y - 5, size: 0.7, color: WHITE })
 }
 
+function verificationHost(verificationUrl: string | null): string {
+  if (!verificationUrl) return 'Licensing authority'
+  try {
+    return new URL(verificationUrl).host
+  } catch {
+    return 'Licensing authority'
+  }
+}
+
 export async function createLicenseCertificatePdf(data: LicenseCertificateData): Promise<Blob> {
   const pdf = await PDFDocument.create()
   pdf.registerFontkit(fontkit)
-  const [latinBytes, indicBytes, logoBytes, signatureBytes] = await Promise.all([
+  const [latinBytes, indicBytes, logoBytes, signatureBytes, watermarkBytes] = await Promise.all([
     fetchFont(latinFontUrl),
     fetchFont(devanagariFontUrl),
     fetchProductLogo(),
     fetchIssuerSignature(),
+    fetchCertificateWatermark(),
   ])
-  const [latin, indic, logo, issuerSignature] = await Promise.all([
+  const [latin, indic, logo, issuerSignature, watermark] = await Promise.all([
     pdf.embedFont(latinBytes, { subset: true }),
     pdf.embedFont(indicBytes, { subset: true }),
     pdf.embedPng(logoBytes),
     pdf.embedPng(signatureBytes),
+    pdf.embedPng(watermarkBytes),
   ])
   const qrDataUrl = data.verificationUrl
     ? await createLicenseVerificationQrDataUrl(data.verificationUrl)
@@ -462,7 +581,11 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
 
   ensureSpace(68, 160)
   drawText(page, 'LICENSED TO', LEFT, cursor, 7.5, BLUE, latin, indic)
-  const statusWidth = Math.min(155, Math.max(84, textWidth(status, 8, latin, indic) + 24))
+  const statusDescription = describeLicenseCertificateStatus(status)
+  const statusWidth = Math.min(
+    176,
+    Math.max(130, textWidth(status, 8, latin, indic) + 44, textWidth(statusDescription, 5.7, latin, indic) + 42),
+  )
   page.drawRectangle({
     x: RIGHT - statusWidth,
     y: cursor - 52,
@@ -478,7 +601,7 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
   page.drawCircle({ x: statusCenterX, y: statusCenterY, size: 9, color: statusColor.foreground })
   drawStatusMark(page, statusCenterX, statusCenterY, statusIsActive)
   drawText(page, status, RIGHT - statusWidth + 32, cursor - 27, 8, statusColor.foreground, latin, indic)
-  drawText(page, describeLicenseCertificateStatus(status), RIGHT - statusWidth + 32, cursor - 39, 5.7, TEXT, latin, indic)
+  drawText(page, statusDescription, RIGHT - statusWidth + 32, cursor - 39, 5.7, TEXT, latin, indic)
   cursor -= 17
   drawParagraph(data.institutionName || 'Organization name not recorded', LEFT, CONTENT_WIDTH - statusWidth - 25, 16, NAVY, 19)
   if (data.institutionAddress?.trim()) {
@@ -502,6 +625,7 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
     pair.forEach(([label], cardIndex) => {
       const x = LEFT + cardIndex * (cardWidth + summaryGap)
       const lines = valueLines[cardIndex]
+      const summaryIndex = index + cardIndex
       page.drawRectangle({
         x,
         y: cursor - cardHeight,
@@ -511,9 +635,15 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
         borderColor: rgb(0.79, 0.85, 0.96),
         borderWidth: 0.8,
       })
+      page.drawRectangle({
+        x,
+        y: cursor - cardHeight,
+        width: 2,
+        height: cardHeight,
+        color: summaryIndex === 0 ? ORANGE : BLUE,
+      })
       const iconCenterX = x + 18
       const iconCenterY = cursor - cardHeight / 2
-      const summaryIndex = index + cardIndex
       page.drawCircle({ x: iconCenterX, y: iconCenterY, size: 11, color: BLUE })
       if (summaryIndex === 0) {
         drawStatusMark(page, iconCenterX, iconCenterY, statusIsActive)
@@ -554,9 +684,9 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
           color: WHITE,
         })
       }
-      drawText(page, label, x + 36, cursor - 14, 6.7, BLUE, latin, indic)
+      drawText(page, label, x + 36, cursor - 14, 7, BLUE, latin, indic)
       lines.forEach((line, lineIndex) =>
-        drawText(page, line, x + 36, cursor - 27 - lineIndex * 10, 9, TEXT, latin, indic),
+        drawText(page, line, x + 36, cursor - 28 - lineIndex * 10, 9.5, TEXT, latin, indic),
       )
     })
     cursor -= cardHeight + 10
@@ -567,7 +697,7 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
   const entitlementValueLines = entitlementSummary.groups.map(({ value }) =>
     wrapText(value, entitlementColumnWidth - 15, 7.4, latin, indic),
   )
-  const entitlementHeight = Math.max(62, 22 + Math.max(...entitlementValueLines.map((lines) => lines.length)) * 9)
+  const entitlementHeight = Math.max(67, 24 + Math.max(...entitlementValueLines.map((lines) => lines.length)) * 10)
   ensureSpace(entitlementHeaderHeight + entitlementHeight, 155)
   page.drawRectangle({
     x: LEFT,
@@ -575,6 +705,13 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
     width: CONTENT_WIDTH,
     height: entitlementHeaderHeight,
     color: NAVY,
+  })
+  page.drawRectangle({
+    x: LEFT,
+    y: cursor - entitlementHeaderHeight,
+    width: 4,
+    height: entitlementHeaderHeight,
+    color: ORANGE,
   })
   drawText(page, 'LICENSE ENTITLEMENT DETAILS', LEFT + 10, cursor - 13, 7.2, WHITE, latin, indic)
   cursor -= entitlementHeaderHeight
@@ -597,9 +734,9 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
         color: rgb(0.75, 0.81, 0.9),
       })
     }
-    drawText(page, label.toUpperCase(), x + 7, cursor - 13, 5.7, BLUE, latin, indic)
+    drawText(page, label.toUpperCase(), x + 7, cursor - 14, 6.1, BLUE, latin, indic)
     entitlementValueLines[index].forEach((line, lineIndex) =>
-      drawText(page, line, x + 7, cursor - 27 - lineIndex * 9, 7.2, TEXT, latin, indic),
+      drawText(page, line, x + 7, cursor - 29 - lineIndex * 10, 7.7, TEXT, latin, indic),
     )
   })
   cursor -= entitlementHeight + 12
@@ -618,10 +755,10 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
     ['CERTIFICATE GENERATED ON', formatLicenseCertificateDateTime(generatedAt)],
     ...(data.issuedAt ? [['LICENSE ISSUED ON', formatDate(data.issuedAt, 'Not recorded')]] : []),
   ]
-  const qrCardHeight = 116
+  const qrCardHeight = 130
   ensureSpace(qrCardHeight, 145)
   const idSectionTop = cursor
-  const qrX = RIGHT - 106
+  const qrX = RIGHT - 126
   page.drawLine({
     start: { x: qrX - 10, y: idSectionTop + 3 },
     end: { x: qrX - 10, y: idSectionTop - qrCardHeight },
@@ -631,38 +768,39 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
   page.drawRectangle({
     x: qrX,
     y: idSectionTop - qrCardHeight,
-    width: 106,
+    width: 126,
     height: qrCardHeight,
     color: WHITE,
     borderColor: rgb(0.82, 0.87, 0.94),
     borderWidth: 0.7,
   })
-  drawText(page, 'VERIFY LICENSE', qrX + 12, idSectionTop - 12, 6.8, BLUE, latin, indic)
+  drawText(page, 'VERIFY LICENSE', qrX + 12, idSectionTop - 14, 7, BLUE, latin, indic)
   if (qrImage) {
-    page.drawImage(qrImage, { x: qrX + 19, y: idSectionTop - 93, width: 68, height: 68 })
-    drawText(page, 'Scan to verify', qrX + 24, idSectionTop - 103, 6, BLUE, latin, indic)
+    page.drawImage(qrImage, { x: qrX + 23, y: idSectionTop - 105, width: 80, height: 80 })
+    drawText(page, 'Scan to verify this license', qrX + 16, idSectionTop - 115, 5.8, BLUE, latin, indic)
+    drawText(page, verificationHost(data.verificationUrl), qrX + 21, idSectionTop - 125, 5.3, MUTED, latin, indic)
   } else {
-    drawText(page, 'Secure authority', qrX + 12, idSectionTop - 47, 6.4, MUTED, latin, indic)
-    drawText(page, 'verification QR', qrX + 12, idSectionTop - 58, 6.4, MUTED, latin, indic)
-    drawText(page, 'not configured', qrX + 12, idSectionTop - 69, 6.4, MUTED, latin, indic)
+    drawText(page, 'Secure authority', qrX + 12, idSectionTop - 52, 6.4, MUTED, latin, indic)
+    drawText(page, 'verification QR', qrX + 12, idSectionTop - 64, 6.4, MUTED, latin, indic)
+    drawText(page, 'not configured', qrX + 12, idSectionTop - 76, 6.4, MUTED, latin, indic)
   }
   const idLabelWidth = 153
   for (const [label, value] of identification) {
-    const lines = wrapText(value, qrX - LEFT - idLabelWidth - 16, 7.4, latin, indic)
-    const rowHeight = Math.max(13, lines.length * 9)
+    const lines = wrapText(value, qrX - LEFT - idLabelWidth - 16, 8, latin, indic)
+    const rowHeight = Math.max(14, lines.length * 9.5)
     ensureSpace(rowHeight, 145)
-    page.drawCircle({ x: LEFT + 4, y: cursor - 2, size: 3.2, color: BLUE })
-    drawText(page, label, LEFT + 13, cursor, 6.2, BLUE, latin, indic)
+    page.drawCircle({ x: LEFT + 4, y: cursor - 2, size: 3.3, color: ORANGE })
+    drawText(page, label, LEFT + 13, cursor, 6.5, BLUE, latin, indic)
     drawText(page, ':', LEFT + idLabelWidth, cursor, 7, MUTED, latin, indic)
     lines.forEach((line, lineIndex) =>
-      drawText(page, line, LEFT + idLabelWidth + 9, cursor - lineIndex * 9, 7.4, TEXT, latin, indic),
+      drawText(page, line, LEFT + idLabelWidth + 9, cursor - lineIndex * 9.5, 8, TEXT, latin, indic),
     )
     cursor -= rowHeight + 2
   }
   cursor = Math.min(cursor, idSectionTop - qrCardHeight - 4)
 
-  const noteLines = wrapText(DOCUMENT_NOTE, CONTENT_WIDTH - 44, 7.2, latin, indic)
-  const noteHeight = Math.max(54, 27 + noteLines.length * 11)
+  const noteLines = wrapText(DOCUMENT_NOTE, CONTENT_WIDTH - 48, 7.5, latin, indic)
+  const noteHeight = Math.max(58, 29 + noteLines.length * 11)
   ensureSpace(noteHeight + 8, 77)
   page.drawRectangle({
     x: LEFT,
@@ -673,14 +811,21 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
     borderColor: rgb(0.85, 0.89, 0.96),
     borderWidth: 0.6,
   })
+  page.drawRectangle({
+    x: LEFT,
+    y: cursor - noteHeight,
+    width: 3,
+    height: noteHeight,
+    color: GOLD,
+  })
   page.drawCircle({ x: LEFT + 15, y: cursor - 15, size: 7, color: BLUE })
   drawText(page, 'i', LEFT + 13.2, cursor - 18, 8, WHITE, latin, indic)
   drawText(page, 'DOCUMENT NOTE', LEFT + 28, cursor - 13, 6.8, BLUE, latin, indic)
   noteLines.forEach((line, index) =>
-    drawText(page, line, LEFT + 28, cursor - 25 - index * 9, 7.2, TEXT, latin, indic),
+    drawText(page, line, LEFT + 28, cursor - 26 - index * 10, 7.5, TEXT, latin, indic),
   )
   cursor -= noteHeight + 9
-  ensureSpace(72, 0)
+  ensureSpace(82, 0)
   page.drawLine({
     start: { x: LEFT, y: cursor },
     end: { x: RIGHT, y: cursor },
@@ -688,35 +833,31 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
     color: rgb(0.72, 0.8, 0.92),
   })
   const signerTop = cursor - 9
-  drawText(page, 'AUTHORIZED SIGNATORY', LEFT, signerTop, 6.8, BLUE, latin, indic)
-  drawText(page, 'Jawahar R. Mallah', LEFT, signerTop - 18, 12, NAVY, latin, indic)
-  drawText(page, 'Authorized issuer attribution', LEFT, signerTop - 30, 6.5, MUTED, latin, indic)
-
-  const issuerBadgeX = LEFT + 190
+  const issuerBadgeX = LEFT
   page.drawRectangle({
     x: issuerBadgeX,
     y: signerTop - 28,
-    width: 151,
-    height: 20,
+    width: 158,
+    height: 22,
     color: rgb(0.91, 0.97, 0.93),
     borderColor: rgb(0.62, 0.82, 0.7),
     borderWidth: 0.7,
   })
-  page.drawCircle({ x: issuerBadgeX + 11, y: signerTop - 18, size: 6, color: rgb(0.08, 0.47, 0.31) })
-  drawText(page, '✓', issuerBadgeX + 9.3, signerTop - 20.2, 5.5, WHITE, latin, indic)
-  drawText(page, 'Authorized License Issuer', issuerBadgeX + 22, signerTop - 20.5, 6.4, rgb(0.08, 0.38, 0.27), latin, indic)
-  drawText(page, 'For PrathamOne EduOS · Powered by SmritiSys', issuerBadgeX, signerTop - 39, 6.2, MUTED, latin, indic)
+  const issuerBadgeCenterY = signerTop - 17
+  page.drawCircle({ x: issuerBadgeX + 11, y: issuerBadgeCenterY, size: 6, color: rgb(0.08, 0.47, 0.31) })
+  drawStatusMark(page, issuerBadgeX + 11, issuerBadgeCenterY, true)
+  drawText(page, 'Authorized License Issuer', issuerBadgeX + 23, signerTop - 19.5, 6.5, rgb(0.08, 0.38, 0.27), latin, indic)
+  drawText(page, 'For PrathamOne EduOS · Powered by SmritiSys', issuerBadgeX, signerTop - 42, 6.3, MUTED, latin, indic)
 
-  page.drawLine({
-    start: { x: RIGHT - 142, y: signerTop + 5 },
-    end: { x: RIGHT - 142, y: signerTop - 43 },
-    thickness: 0.7,
-    color: rgb(0.72, 0.8, 0.92),
-  })
-  const signatureSize = issuerSignature.scaleToFit(105, 56)
+  const signatureSize = issuerSignature.scaleToFit(100, 38)
+  const signerNameWidth = textWidth('Jawahar R. Mallah', 13, latin, indic)
+  const signerX = RIGHT - signerNameWidth - 12 - signatureSize.width
+  drawText(page, 'AUTHORIZED SIGNATORY', signerX, signerTop, 6.8, BLUE, latin, indic)
+  drawText(page, 'Jawahar R. Mallah', signerX, signerTop - 20, 13, NAVY, latin, indic)
+  drawText(page, 'Authorized issuer attribution', signerX, signerTop - 34, 7, MUTED, latin, indic)
   page.drawImage(issuerSignature, {
-    x: RIGHT - 129,
-    y: signerTop - 48,
+    x: signerX + signerNameWidth + 12,
+    y: signerTop - 41,
     width: signatureSize.width,
     height: signatureSize.height,
   })
@@ -724,15 +865,17 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
 
   const pages = pdf.getPages()
   pages.forEach((currentPage, index) => {
-    currentPage.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: 51, color: NAVY })
-    currentPage.drawRectangle({ x: 0, y: 51, width: PAGE_WIDTH, height: 4, color: ORANGE })
-    drawText(currentPage, 'www.prathamone.com', LEFT, 16, 7, WHITE, latin, indic)
+    currentPage.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: 55, color: NAVY })
+    currentPage.drawRectangle({ x: 0, y: 55, width: PAGE_WIDTH, height: 4, color: ORANGE })
+    drawText(currentPage, 'www.prathamone.com', LEFT, 22, 7.2, WHITE, latin, indic)
     const footerLabel = pages.length > 1
       ? `PrathamOne EduOS · SmritiSys · ${index + 1} / ${pages.length}`
       : 'PrathamOne EduOS · SmritiSys'
-    drawText(currentPage, footerLabel, PAGE_WIDTH / 2 - textWidth(footerLabel, 7, latin, indic) / 2, 16, 7, WHITE, latin, indic)
-    drawText(currentPage, 'Powered by SmritiSys', RIGHT - 106, 16, 7, WHITE, latin, indic)
+    drawText(currentPage, footerLabel, PAGE_WIDTH / 2 - textWidth(footerLabel, 7.2, latin, indic) / 2, 22, 7.2, WHITE, latin, indic)
+    drawText(currentPage, 'Powered by SmritiSys', RIGHT - 106, 22, 7.2, WHITE, latin, indic)
   })
+
+  pages.forEach((currentPage) => drawWatermark(currentPage, watermark))
 
   pdf.setTitle('PrathamOne EduOS Software License Certificate')
   pdf.setAuthor('PrathamOne EduOS')

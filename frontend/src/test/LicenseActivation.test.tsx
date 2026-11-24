@@ -17,7 +17,7 @@
  */
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import LicenseActivation from '../pages/LicenseActivation'
@@ -184,7 +184,9 @@ describe('LicenseActivation', () => {
     expect(screen.queryByLabelText('License activation key')).toBeNull()
     expect(screen.getByText('Change registered license email')).toBeTruthy()
     expect(screen.getByText('license@example.test')).toBeTruthy()
-    expect((screen.getByLabelText('Current registered license email') as HTMLInputElement).value).toBe('license@example.test')
+    await waitFor(() => {
+      expect((screen.getByLabelText('Current registered license email') as HTMLInputElement).value).toBe('license@example.test')
+    })
     expect(screen.getByRole('button', { name: 'Deactivate this device' })).toBeTruthy()
     const certificate = screen.getByTestId('license-certificate')
     expect(certificate.textContent).toContain('Prashant Academy')
@@ -197,6 +199,19 @@ describe('LicenseActivation', () => {
     expect(certificate.textContent).not.toContain('private-binding')
     expect(certificate.textContent).not.toContain('do-not-share-hardware-id')
     expect(certificate.textContent).not.toContain('Digitally Signed')
+    expect(certificate.querySelector('img[alt="PrathamOne EduOS logo"][src="/artwork/18112026/03/license-certificate-logo.svg"]')).toBeTruthy()
+    expect(certificate.querySelector('img[src="/artwork/18112026/03/license-certificate-watermark.svg"]')).toBeTruthy()
+    const brandingRow = certificate.querySelector('[data-testid="certificate-branding-row"]')
+    const titleRow = certificate.querySelector('[data-testid="certificate-title-row"]')
+    expect(brandingRow?.parentElement?.children[2]).toBe(titleRow)
+    expect(titleRow?.textContent).toContain('License Certificate')
+    const signatoryGroup = certificate.querySelector('[data-testid="certificate-signatory-group"]')
+    const issuerBadge = certificate.querySelector('[data-testid="certificate-issuer-badge"]')
+    expect(signatoryGroup?.textContent).toContain('Jawahar R. Mallah')
+    expect(signatoryGroup?.querySelector('img[alt="Authorized issuer signature of Jawahar R. Mallah"]')).toBeTruthy()
+    expect(issuerBadge?.parentElement?.children[0]).toBe(issuerBadge)
+    expect(issuerBadge?.parentElement?.children[1]).toBe(signatoryGroup)
+    expect(issuerBadge?.parentElement?.className).toContain('sm:grid-cols-[minmax(0,1fr)_auto]')
     expect(await screen.findByAltText('Secure verification for license document signed-license-001')).toBeTruthy()
     expect(screen.getByAltText('Authorized issuer signature of Jawahar R. Mallah')).toBeTruthy()
 
