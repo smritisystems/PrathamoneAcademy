@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-05
- * @updated     2026-11-22
+ * @updated     2026-11-24
  *
  * @description Official A5 portrait fee receipt document featuring compact header, transaction metadata,
  */
@@ -40,6 +40,7 @@ import {
   MessageSquare,
 } from 'lucide-react'
 import ShareModal from './ShareModal'
+import toast from 'react-hot-toast'
 import { DetailedPaymentReceipt, Receipt } from '../types'
 import { printReceiptElement } from '../utils/printReceipt'
 import { numberToWordsINR } from '../pages/Fees'
@@ -261,16 +262,76 @@ export default function PaymentReceiptView({
     }
     setSendingWhatsApp(true)
     try {
+      // 1. Dispatch notification & generate secure tokenized receipt link
       const res = await communicationApi.dispatchPaymentReceiptNotification(paymentId, { channel: 'WHATSAPP' })
-      const waUrl = res.data?.receipt?.whatsapp_url
+      const rawMsg = res.data?.receipt?.message || 'Fee Payment Receipt Acknowledgement'
+      const pdfPath = res.data?.receipt?.pdf_download_path
+      const fullPdfUrl = pdfPath ? `${window.location.origin}${pdfPath}` : ''
+      const enrichedMsg = fullPdfUrl
+        ? `${rawMsg}\n\n📄 Download Official PDF Receipt:\n${fullPdfUrl}`
+        : rawMsg
+
+      const cleanPhone = res.data?.receipt?.phone || ''
+      const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone
+      const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(enrichedMsg)}`
+
+      // 2. Fetch the official PDF blob for direct attachment
+      const filename = sanitizeReceiptFilename(receipt.student_name, receipt.receipt_number)
+      let pdfBlob: Blob | null = null
+      try {
+        const pdfRes = await paymentsApi.downloadReceiptPdf(receipt.receipt_number)
+        pdfBlob = new Blob([pdfRes.data], { type: 'application/pdf' })
+      } catch (e) {
+        console.warn('Could not pre-fetch PDF blob for direct attachment sharing:', e)
+      }
+
+      // 3. Web Share API Level 2 (Direct PDF Attachment on Mobile & Supporting Desktops)
+      if (pdfBlob && typeof navigator !== 'undefined' && navigator.share && navigator.canShare) {
+        const file = new File([pdfBlob], filename, { type: 'application/pdf' })
+        if (navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: `Fee Receipt • ${receipt.receipt_number}`,
+              text: enrichedMsg,
+            })
+            setShareFeedback({
+              type: 'success',
+              title: 'Receipt PDF & Message Shared Directly',
+              message: `Official PDF (${filename}) and receipt acknowledgement dispatched via device share.`,
+            })
+            toast.success('Receipt PDF and message shared directly to WhatsApp!')
+            return
+          } catch (shareErr: any) {
+            if (shareErr?.name === 'AbortError') {
+              setShareFeedback({
+                type: 'info',
+                title: 'Share Cancelled',
+                message: 'Device share dialog was closed.',
+              })
+              return
+            }
+          }
+        }
+      }
+
+      // 4. Desktop Fallback:
+      // A) Automatically trigger download of the PDF so it's in the download shelf ready to drag & drop
+      if (pdfBlob) {
+        triggerBlobDownload(pdfBlob, filename)
+      }
+
+      // B) Open WhatsApp Web with the pre-populated message including the direct download link
+      window.open(waUrl, '_blank', 'noopener,noreferrer')
+
+      // C) Display prominent guidance banner and toast
+      const instructionMsg = `Receipt PDF (${filename}) has been downloaded! In WhatsApp Web, simply drag & drop the PDF from your download tray into the chat, or click 📎 (Attach Document) to send. The parent can also tap the instant download link included in the message.`
       setShareFeedback({
         type: 'success',
-        title: 'WhatsApp Receipt Dispatched',
-        message: `${res.data?.message || 'Receipt notification logged and prepared.'} ${waUrl ? 'Opening WhatsApp Web...' : ''}`,
+        title: 'Receipt PDF Downloaded & WhatsApp Web Opened',
+        message: instructionMsg,
       })
-      if (waUrl) {
-        window.open(waUrl, '_blank', 'noopener,noreferrer')
-      }
+      toast.success('PDF downloaded! Drag & drop it into WhatsApp Web or click 📎 to send.', { duration: 6000 })
     } catch (err: any) {
       setShareFeedback({
         type: 'error',
@@ -441,11 +502,11 @@ export default function PaymentReceiptView({
               type="button"
               onClick={handleSendWhatsAppNotification}
               disabled={sendingWhatsApp}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors disabled:opacity-50"
-              title="Dispatch instant WhatsApp receipt acknowledgement to parent"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+              title="Share receipt PDF and official payment acknowledgement via WhatsApp"
             >
               <MessageSquare className="w-4 h-4" />
-              <span>{sendingWhatsApp ? 'Sending...' : 'WhatsApp Receipt'}</span>
+              <span>{sendingWhatsApp ? 'Preparing PDF...' : 'WhatsApp Receipt'}</span>
             </button>
             {onClose && (
               <button
