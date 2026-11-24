@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-24 23:55:58<br>
-**Total Indexed Items:** 748<br>
+**Last Reindexed:** 2026-11-25 01:09:03<br>
+**Total Indexed Items:** 754<br>
 
 ---
 
@@ -41,7 +41,7 @@
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
 | `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **11** | Business Rules & SSOT Policy |
 | `26` | [26_ARCHIVED](#26_archived) | **13** | Archived & Superseded Documents |
-| `assets` | [assets/screenshots](#asset-galleries) | **257** | Verification UI captures, diagrams, attachments |
+| `assets` | [assets/screenshots](#asset-galleries) | **263** | Verification UI captures, diagrams, attachments |
 
 ---
 
@@ -60,7 +60,7 @@
 | **PrathamOne EduOS Institute Operations and Data Control Presentation Guide** | `GUIDE` | `1.0` | 2026-11-19 | `Draft` | [2026-11-19_PRODUCT-OVERVIEW_PRESENTATION-GUIDE_INSTITUTE-OPERATIONS-AND-DATA-CONTROL_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_PRESENTATION-GUIDE_INSTITUTE-OPERATIONS-AND-DATA-CONTROL_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS, 12_RBAC_SECURITY, 16_DATABASE_API, 18_TESTING_QA, 25_BUSINESS_REQUIREMENTS |
 | **PrathamOne EduOS Official Brand Identity & Logo Assets Specification** | `SPECIFICATION` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md](00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md) | 17_UI_UX_DESIGN, 14_PRINTING_DOCUMENTS |
 | **PrathamOne EduOS — 20-Module Enterprise Master Presentation & Verbatim Speaker Transcripts (Light Premium Edition)** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_REPORT_20-MODULES-EXECUTIVE-TRANSCRIPT_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_20-MODULES-EXECUTIVE-TRANSCRIPT_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS |
-| **PrathamOne EduOS — Centralized Documentation Hub** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [README.md](README.md) | - |
+| **PrathamOne EduOS — Centralized Documentation Hub** | `DOCUMENT` | `1.0` | 2026-11-16 | `Approved` | [README.md](README.md) | - |
 | **PrathamOne EduOS — Cinematic Television Advertisement Proof of Concept & Production Feasibility Report** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 17_UI_UX_DESIGN, 16_DATABASE_API |
 | **PrathamOne EduOS — Cinematic Television Advertisement Studio V2 Master Production Report** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 07_ATTENDANCE, 09_FEES_PAYMENTS |
 | **PrathamOne EduOS — Cinematic Television Advertisement Studio V3: Realistic Teacher Intro & Official Artwork Showcase** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_REPORT_TEACHER-INTRO-AND-OFFICIAL-ARTWORK-COMMERCIAL_V3.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_TEACHER-INTRO-AND-OFFICIAL-ARTWORK-COMMERCIAL_V3.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 07_ATTENDANCE, 09_FEES_PAYMENTS |
@@ -68,7 +68,7 @@
 | **PrathamOne EduOS — Commercial Executive Brief & Institutional One-Pager** | `REPORT` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_PRODUCT-OVERVIEW_BROCHURE_COMMERCIAL-EXECUTIVE-ONE-PAGER_V1.md](00_PRODUCT_OVERVIEW/2026-11-20_PRODUCT-OVERVIEW_BROCHURE_COMMERCIAL-EXECUTIVE-ONE-PAGER_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 09_FEES_PAYMENTS, 06_TEACHER_PAYROLL, 20_AUDITS_COMPLIANCE |
 | **PrathamOne EduOS — Commercial Go-To-Market Playbook & 48-Hour Institute Onboarding Blueprint** | `PLAN` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_PRODUCT-OVERVIEW_IMPLEMENTATION-PLAN_COMMERCIAL-GTM-AND-INSTITUTE-ONBOARDING-PLAYBOOK_V1.md](00_PRODUCT_OVERVIEW/2026-11-20_PRODUCT-OVERVIEW_IMPLEMENTATION-PLAN_COMMERCIAL-GTM-AND-INSTITUTE-ONBOARDING-PLAYBOOK_V1.md) | 00_PRODUCT_OVERVIEW, 02_INSTALLATION_DEPLOYMENT, 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS, 20_AUDITS_COMPLIANCE, 22_USER_MANUALS |
 | **PrathamOne EduOS — Commercial Short Preview Production Report: Institute Intro & Indian Academic Director Showcase** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_REPORT_INSTITUTE-COMMERCIAL-SHORT-PREVIEW_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_INSTITUTE-COMMERCIAL-SHORT-PREVIEW_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE |
-| **PrathamOne EduOS — Documentation Governance & Naming Rules** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [DOCUMENTATION_RULES.md](DOCUMENTATION_RULES.md) | - |
+| **PrathamOne EduOS — Documentation Governance & Naming Rules** | `DOCUMENT` | `1.0` | 2026-11-16 | `Approved` | [DOCUMENTATION_RULES.md](DOCUMENTATION_RULES.md) | - |
 | **PrathamOne EduOS — Google Flow & Veo 2 Scene Builder Prompt Pack and Commercial Studio Ingestion** | `SPECIFICATION` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_SPECIFICATION_GOOGLE-FLOW-VEO-PROMPT-PACK_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_SPECIFICATION_GOOGLE-FLOW-VEO-PROMPT-PACK_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE |
 | **PrathamOne EduOS — One-Click Showcase Demo Dataset Engine Guide** | `GUIDE` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_PRODUCT-OVERVIEW_GUIDE_ONE-CLICK-SHOWCASE-DEMO-DATASET-ENGINE_V1.md](00_PRODUCT_OVERVIEW/2026-11-20_PRODUCT-OVERVIEW_GUIDE_ONE-CLICK-SHOWCASE-DEMO-DATASET-ENGINE_V1.md) | 00_PRODUCT_OVERVIEW, 04_STUDENT_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 09_FEES_PAYMENTS |
 | **PrathamOne EduOS — Prospective Coaching Institute 20-Minute Live Demo Runbook** | `GUIDE` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_PRODUCT-OVERVIEW_GUIDE_PROSPECTIVE-INSTITUTE-DEMO-RUNBOOK_V1.md](00_PRODUCT_OVERVIEW/2026-11-20_PRODUCT-OVERVIEW_GUIDE_PROSPECTIVE-INSTITUTE-DEMO-RUNBOOK_V1.md) | 00_PRODUCT_OVERVIEW, 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS, 06_TEACHER_PAYROLL, 17_UI_UX_DESIGN, 20_AUDITS_COMPLIANCE |
@@ -642,13 +642,13 @@
 | **PrathamOne EduOS v1.88.0 — User Manuals & Documentation Refresh Report** | `REPORT` | `1.1` | 2026-11-12 | `Approved` | [2026-11-12_USER_MANUALS_IMPLEMENTATION-REPORT_V1-88-0-MANUAL-REFRESH_V1.md](22_USER_MANUALS/2026-11-12_USER_MANUALS_IMPLEMENTATION-REPORT_V1-88-0-MANUAL-REFRESH_V1.md) | 18_TESTING_QA, 22_USER_MANUALS, 24_AI_AGENT_KNOWLEDGE |
 | **PrathamOne EduOS — Help & About Centre Implementation & Delivery Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-11 | `Approved` | [2026-11-11_USER-MANUALS_IMPLEMENTATION-REPORT_HELP-AND-ABOUT-CENTRE_V1.md](22_USER_MANUALS/2026-11-11_USER-MANUALS_IMPLEMENTATION-REPORT_HELP-AND-ABOUT-CENTRE_V1.md) | 13_SYSADMIN_SETTINGS, 12_RBAC_SECURITY, 17_UI_UX_DESIGN, 20_AUDITS_COMPLIANCE |
 | **PrathamOne EduOS — Teacher & Staff Workforce Management, Universal Print & CodeX User Manual** | `USER-MANUAL` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md](22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md) | 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 14_PRINTING_DOCUMENTS, 12_RBAC_SECURITY |
-| **PrathamOne_Academy_Complete_User_Manual.docx** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [PrathamOne_Academy_Complete_User_Manual.docx](22_USER_MANUALS/PrathamOne_Academy_Complete_User_Manual.docx) | - |
-| **PrathamOne_Academy_Complete_User_Manual.pdf** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [PrathamOne_Academy_Complete_User_Manual.pdf](22_USER_MANUALS/PrathamOne_Academy_Complete_User_Manual.pdf) | - |
-| **PrathamOne_Academy_Quick_Start_Guide.pdf** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [PrathamOne_Academy_Quick_Start_Guide.pdf](22_USER_MANUALS/PrathamOne_Academy_Quick_Start_Guide.pdf) | - |
-| **PrathamOne_Academy_Sysadmin_Manual.pdf** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [PrathamOne_Academy_Sysadmin_Manual.pdf](22_USER_MANUALS/PrathamOne_Academy_Sysadmin_Manual.pdf) | - |
-| **complete_user_manual.html** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [complete_user_manual.html](22_USER_MANUALS/complete_user_manual.html) | - |
-| **quick_start_guide.html** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [quick_start_guide.html](22_USER_MANUALS/quick_start_guide.html) | - |
-| **sysadmin_manual.html** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [sysadmin_manual.html](22_USER_MANUALS/sysadmin_manual.html) | - |
+| **PrathamOne_Academy_Complete_User_Manual.docx** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [PrathamOne_Academy_Complete_User_Manual.docx](22_USER_MANUALS/PrathamOne_Academy_Complete_User_Manual.docx) | - |
+| **PrathamOne_Academy_Complete_User_Manual.pdf** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [PrathamOne_Academy_Complete_User_Manual.pdf](22_USER_MANUALS/PrathamOne_Academy_Complete_User_Manual.pdf) | - |
+| **PrathamOne_Academy_Quick_Start_Guide.pdf** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [PrathamOne_Academy_Quick_Start_Guide.pdf](22_USER_MANUALS/PrathamOne_Academy_Quick_Start_Guide.pdf) | - |
+| **PrathamOne_Academy_Sysadmin_Manual.pdf** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [PrathamOne_Academy_Sysadmin_Manual.pdf](22_USER_MANUALS/PrathamOne_Academy_Sysadmin_Manual.pdf) | - |
+| **complete_user_manual.html** | `DOCUMENT` | `1.0` | 2026-11-16 | `Approved` | [complete_user_manual.html](22_USER_MANUALS/complete_user_manual.html) | - |
+| **quick_start_guide.html** | `DOCUMENT` | `1.0` | 2026-11-16 | `Approved` | [quick_start_guide.html](22_USER_MANUALS/quick_start_guide.html) | - |
+| **sysadmin_manual.html** | `DOCUMENT` | `1.0` | 2026-11-16 | `Approved` | [sysadmin_manual.html](22_USER_MANUALS/sysadmin_manual.html) | - |
 
 
 ### <a id="23_development_guides"></a>23_DEVELOPMENT_GUIDES — Developer Manuals & Coding Standards
@@ -683,19 +683,19 @@
 
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
-| **Attendance and Examination Policy** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [ATTENDANCE_AND_TEST_POLICY.md](26_ARCHIVED/legacy_root/ATTENDANCE_AND_TEST_POLICY.md) | - |
-| **Coaching Business Rules** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [COACHING_BUSINESS_RULES.md](26_ARCHIVED/legacy_root/COACHING_BUSINESS_RULES.md) | - |
-| **Coaching Institute Policy Framework** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [COACHING_INSTITUTE_POLICY_FRAMEWORK.md](26_ARCHIVED/legacy_root/COACHING_INSTITUTE_POLICY_FRAMEWORK.md) | - |
-| **Course, Batch, and Enrollment Rules** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [COURSE_BATCH_ENROLLMENT_RULES.md](26_ARCHIVED/legacy_root/COURSE_BATCH_ENROLLMENT_RULES.md) | - |
-| **Data Privacy and Security Governance** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [DATA_PRIVACY_AND_SECURITY.md](26_ARCHIVED/legacy_root/DATA_PRIVACY_AND_SECURITY.md) | - |
-| **Detailed Workflow Specifications** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [WORKFLOW_SPECIFICATIONS.md](26_ARCHIVED/legacy_root/WORKFLOW_SPECIFICATIONS.md) | - |
-| **Fee Policy and Accounting Standard** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [FEE_POLICY_AND_ACCOUNTING.md](26_ARCHIVED/legacy_root/FEE_POLICY_AND_ACCOUNTING.md) | - |
-| **Policy Decision Register (PDR)** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [POLICY_DECISION_REGISTER.md](26_ARCHIVED/legacy_root/POLICY_DECISION_REGISTER.md) | - |
-| **Prashant Academy — Documentation Index** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [index.md](26_ARCHIVED/legacy_root/index.md) | - |
-| **Role and Permission Matrix** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [ROLE_PERMISSION_MATRIX.md](26_ARCHIVED/legacy_root/ROLE_PERMISSION_MATRIX.md) | - |
-| **Strategic Product Roadmap — Prashant Academy** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [ROADMAP.md](26_ARCHIVED/legacy_root/ROADMAP.md) | - |
-| **System Acceptance Criteria and Test Verification Matrix** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [ACCEPTANCE_CRITERIA.md](26_ARCHIVED/legacy_root/ACCEPTANCE_CRITERIA.md) | - |
-| **Technical Implementation Plan** | `DOCUMENT` | `1.0` | 2026-11-24 | `Approved` | [IMPLEMENTATION_PLAN.md](26_ARCHIVED/legacy_root/IMPLEMENTATION_PLAN.md) | - |
+| **Attendance and Examination Policy** | `DOCUMENT` | `1.0` | 2026-11-03 | `Approved` | [ATTENDANCE_AND_TEST_POLICY.md](26_ARCHIVED/legacy_root/ATTENDANCE_AND_TEST_POLICY.md) | - |
+| **Coaching Business Rules** | `DOCUMENT` | `1.0` | 2026-11-03 | `Approved` | [COACHING_BUSINESS_RULES.md](26_ARCHIVED/legacy_root/COACHING_BUSINESS_RULES.md) | - |
+| **Coaching Institute Policy Framework** | `DOCUMENT` | `1.0` | 2026-11-03 | `Approved` | [COACHING_INSTITUTE_POLICY_FRAMEWORK.md](26_ARCHIVED/legacy_root/COACHING_INSTITUTE_POLICY_FRAMEWORK.md) | - |
+| **Course, Batch, and Enrollment Rules** | `DOCUMENT` | `1.0` | 2026-11-03 | `Approved` | [COURSE_BATCH_ENROLLMENT_RULES.md](26_ARCHIVED/legacy_root/COURSE_BATCH_ENROLLMENT_RULES.md) | - |
+| **Data Privacy and Security Governance** | `DOCUMENT` | `1.0` | 2026-11-03 | `Approved` | [DATA_PRIVACY_AND_SECURITY.md](26_ARCHIVED/legacy_root/DATA_PRIVACY_AND_SECURITY.md) | - |
+| **Detailed Workflow Specifications** | `DOCUMENT` | `1.0` | 2026-11-03 | `Approved` | [WORKFLOW_SPECIFICATIONS.md](26_ARCHIVED/legacy_root/WORKFLOW_SPECIFICATIONS.md) | - |
+| **Fee Policy and Accounting Standard** | `DOCUMENT` | `1.0` | 2026-11-03 | `Approved` | [FEE_POLICY_AND_ACCOUNTING.md](26_ARCHIVED/legacy_root/FEE_POLICY_AND_ACCOUNTING.md) | - |
+| **Policy Decision Register (PDR)** | `DOCUMENT` | `1.0` | 2026-11-03 | `Approved` | [POLICY_DECISION_REGISTER.md](26_ARCHIVED/legacy_root/POLICY_DECISION_REGISTER.md) | - |
+| **Prashant Academy — Documentation Index** | `DOCUMENT` | `1.0` | 2026-11-04 | `Approved` | [index.md](26_ARCHIVED/legacy_root/index.md) | - |
+| **Role and Permission Matrix** | `DOCUMENT` | `1.0` | 2026-11-03 | `Approved` | [ROLE_PERMISSION_MATRIX.md](26_ARCHIVED/legacy_root/ROLE_PERMISSION_MATRIX.md) | - |
+| **Strategic Product Roadmap — Prashant Academy** | `DOCUMENT` | `1.0` | 2026-11-04 | `Approved` | [ROADMAP.md](26_ARCHIVED/legacy_root/ROADMAP.md) | - |
+| **System Acceptance Criteria and Test Verification Matrix** | `DOCUMENT` | `1.0` | 2026-11-04 | `Approved` | [ACCEPTANCE_CRITERIA.md](26_ARCHIVED/legacy_root/ACCEPTANCE_CRITERIA.md) | - |
+| **Technical Implementation Plan** | `DOCUMENT` | `1.0` | 2026-11-04 | `Approved` | [IMPLEMENTATION_PLAN.md](26_ARCHIVED/legacy_root/IMPLEMENTATION_PLAN.md) | - |
 
 
 ### <a id="asset-galleries"></a>assets — Visual Assets & Reference Attachments
@@ -761,12 +761,16 @@
 | `25_branding_settings_preview.png` | `assets/screenshots` | 478.4 KB | [25_branding_settings_preview.png](assets/screenshots/25_branding_settings_preview.png) |
 | `26_communication_center.png` | `assets/screenshots` | 338.5 KB | [26_communication_center.png](assets/screenshots/26_communication_center.png) |
 | `27_releases_and_version_audit.png` | `assets/screenshots` | 517.1 KB | [27_releases_and_version_audit.png](assets/screenshots/27_releases_and_version_audit.png) |
+| `PrashantAcademy_ICSE_Class10_Physics_Moment_Lecture_1080p.mp4` | `assets/commercial` | 5398.2 KB | [PrashantAcademy_ICSE_Class10_Physics_Moment_Lecture_1080p.mp4](assets/commercial/PrashantAcademy_ICSE_Class10_Physics_Moment_Lecture_1080p.mp4) |
+| `PrashantAcademy_ICSE_Class9_Mean_Lecture_1080p.mp4` | `assets/commercial` | 4148.2 KB | [PrashantAcademy_ICSE_Class9_Mean_Lecture_1080p.mp4](assets/commercial/PrashantAcademy_ICSE_Class9_Mean_Lecture_1080p.mp4) |
+| `PrashantAcademy_ICSE_Class9_Mean_Original_Lecture_1080p.mp4` | `assets/commercial` | 4272.2 KB | [PrashantAcademy_ICSE_Class9_Mean_Original_Lecture_1080p.mp4](assets/commercial/PrashantAcademy_ICSE_Class9_Mean_Original_Lecture_1080p.mp4) |
+| `PrathamOne_EduBoard_1Min_Physics_Lecture_1080p.mp4` | `assets/commercial` | 3544.1 KB | [PrathamOne_EduBoard_1Min_Physics_Lecture_1080p.mp4](assets/commercial/PrathamOne_EduBoard_1Min_Physics_Lecture_1080p.mp4) |
 | `PrathamOne_EduOS_20_Module_Guide.pdf` | `assets/commercial` | 3320.7 KB | [PrathamOne_EduOS_20_Module_Guide.pdf](assets/commercial/PrathamOne_EduOS_20_Module_Guide.pdf) |
 | `PrathamOne_EduOS_20_Module_Guide.pptx` | `assets/commercial` | 5742.0 KB | [PrathamOne_EduOS_20_Module_Guide.pptx](assets/commercial/PrathamOne_EduOS_20_Module_Guide.pptx) |
 | `PrathamOne_EduOS_20_Modules_Executive_Presentation.pdf` | `assets/commercial` | 912.8 KB | [PrathamOne_EduOS_20_Modules_Executive_Presentation.pdf](assets/commercial/PrathamOne_EduOS_20_Modules_Executive_Presentation.pdf) |
 | `PrathamOne_EduOS_20_Modules_Executive_Presentation.ppsx` | `assets/commercial` | 4426.5 KB | [PrathamOne_EduOS_20_Modules_Executive_Presentation.ppsx](assets/commercial/PrathamOne_EduOS_20_Modules_Executive_Presentation.ppsx) |
 | `PrathamOne_EduOS_20_Modules_Executive_Presentation.pptx` | `assets/commercial` | 3794.7 KB | [PrathamOne_EduOS_20_Modules_Executive_Presentation.pptx](assets/commercial/PrathamOne_EduOS_20_Modules_Executive_Presentation.pptx) |
-| `PrathamOne_EduOS_Commercial_One_Pager.html` | `assets/commercial` | 17.2 KB | [PrathamOne_EduOS_Commercial_One_Pager.html](assets/commercial/PrathamOne_EduOS_Commercial_One_Pager.html) |
+| `PrathamOne_EduOS_Commercial_One_Pager.html` | `assets/commercial` | 16.7 KB | [PrathamOne_EduOS_Commercial_One_Pager.html](assets/commercial/PrathamOne_EduOS_Commercial_One_Pager.html) |
 | `PrathamOne_EduOS_Commercial_One_Pager.png` | `assets/commercial` | 293.6 KB | [PrathamOne_EduOS_Commercial_One_Pager.png](assets/commercial/PrathamOne_EduOS_Commercial_One_Pager.png) |
 | `PrathamOne_EduOS_Institute_Operations_and_Data_Control.pdf` | `assets/commercial` | 231.5 KB | [PrathamOne_EduOS_Institute_Operations_and_Data_Control.pdf](assets/commercial/PrathamOne_EduOS_Institute_Operations_and_Data_Control.pdf) |
 | `PrathamOne_EduOS_Institute_Operations_and_Data_Control.pptx` | `assets/commercial` | 340.6 KB | [PrathamOne_EduOS_Institute_Operations_and_Data_Control.pptx](assets/commercial/PrathamOne_EduOS_Institute_Operations_and_Data_Control.pptx) |
@@ -913,6 +917,8 @@
 | `prathamone-symbol-icon-dark.png` | `assets/branding` | 111.8 KB | [prathamone-symbol-icon-dark.png](assets/branding/prathamone-symbol-icon-dark.png) |
 | `prathamone-symbol-icon-transparent.png` | `assets/branding` | 17.4 KB | [prathamone-symbol-icon-transparent.png](assets/branding/prathamone-symbol-icon-transparent.png) |
 | `prathamone-symbol-icon.png` | `assets/branding` | 17.4 KB | [prathamone-symbol-icon.png](assets/branding/prathamone-symbol-icon.png) |
+| `prathamone_cinematic_commercial_poc_24s.mp4` | `assets/commercial` | 27760.3 KB | [prathamone_cinematic_commercial_poc_24s.mp4](assets/commercial/prathamone_cinematic_commercial_poc_24s.mp4) |
+| `prathamone_commercial_master_1080p.mp4` | `assets/commercial` | 172819.2 KB | [prathamone_commercial_master_1080p.mp4](assets/commercial/prathamone_commercial_master_1080p.mp4) |
 | `reports.jpg` | `assets/commercial/module_screenshots` | 263.7 KB | [reports.jpg](assets/commercial/module_screenshots/reports.jpg) |
 | `reports.png` | `assets/commercial/module_screenshots` | 294.1 KB | [reports.png](assets/commercial/module_screenshots/reports.png) |
 | `results.jpg` | `assets/commercial/module_screenshots` | 264.9 KB | [results.jpg](assets/commercial/module_screenshots/results.jpg) |
