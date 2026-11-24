@@ -631,7 +631,7 @@ async def dispatch_fee_payment_receipt_notification(
         expires_at=expires_at,
         max_views=100,
         institution_id=institution_id,
-        created_by_user_id=sender_id,
+        created_by_id=sender_id,
     )
     db.add(shared_token)
 

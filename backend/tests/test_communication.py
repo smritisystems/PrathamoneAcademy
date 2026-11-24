@@ -206,7 +206,7 @@ async def test_search_communication_recipients(client: AsyncClient, admin_user: 
 
 
 @pytest.mark.asyncio
-async def test_shared_receipt_pdf_download(client: AsyncClient, db: AsyncSession, test_institution: Institution):
+async def test_shared_receipt_pdf_download(client: AsyncClient, db: AsyncSession, admin_user: User, test_institution: Institution):
     """Verifies public token-authorized PDF download for receipts sent via WhatsApp / SMS."""
     from datetime import datetime, timezone, timedelta, date
     from app.models.payment import Payment, PaymentReceipt
@@ -282,5 +282,19 @@ async def test_shared_receipt_pdf_download(client: AsyncClient, db: AsyncSession
     assert res.headers["content-type"] == "application/pdf"
     assert "attachment" in res.headers["content-disposition"]
     assert len(res.content) > 500  # Valid non-empty PDF bytes
+
+    # Test the dispatch endpoint which creates a token and formats WhatsApp payload
+    from app.core.security import create_access_token
+    admin_token = create_access_token({"sub": str(admin_user.id), "institution_id": test_institution.id})
+    disp_res = await client.post(
+        f"/api/v1/communication/automation/dispatch-payment-receipt/{payment.id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"channel": "WHATSAPP"},
+    )
+    assert disp_res.status_code == 200
+    disp_data = disp_res.json()
+    assert disp_data["status"] == "success"
+    assert "pdf_download_path" in disp_data["receipt"]
+    assert "whatsapp_url" in disp_data["receipt"]
 
 
