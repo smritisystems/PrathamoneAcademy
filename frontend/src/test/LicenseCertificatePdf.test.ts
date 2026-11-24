@@ -24,6 +24,8 @@ import {
   createLicenseCertificateFilename,
   createLicenseCertificatePdf,
   formatLicenseCertificateEntitlements,
+  formatLicenseCertificateDateTime,
+  groupLicenseCertificateEntitlements,
   getLicenseCertificateStatus,
   shareLicenseCertificatePdf,
 } from '../utils/licenseCertificatePdf'
@@ -31,14 +33,21 @@ import {
 describe('License certificate PDF', () => {
   it('creates an A4 portrait summary with the product logo, signed entitlement, QR, and PDF metadata', async () => {
     const fontDirectory = `${process.cwd()}/node_modules/@fontsource/noto-sans-devanagari/files`
-    const [latinFont, indicFont, logo] = await Promise.all([
+    const [latinFont, indicFont, logo, signature] = await Promise.all([
       readFile(`${fontDirectory}/noto-sans-devanagari-latin-400-normal.woff`),
       readFile(`${fontDirectory}/noto-sans-devanagari-devanagari-400-normal.woff`),
       readFile(`${process.cwd()}/public/logo/logoone256.png`),
+      readFile(`${process.cwd()}/public/logo/license-issuer-signature.png`),
     ])
     const fetchMock = vi.fn(async (url: string | URL | Request) => {
       const source = String(url)
-      const bytes = source.includes('devanagari-400') ? indicFont : source.includes('logoone256') ? logo : latinFont
+      const bytes = source.includes('devanagari-400')
+        ? indicFont
+        : source.includes('license-issuer-signature')
+          ? signature
+          : source.includes('logoone256')
+            ? logo
+            : latinFont
       const buffer = new ArrayBuffer(bytes.byteLength)
       new Uint8Array(buffer).set(bytes)
       return new Response(buffer)
@@ -67,19 +76,27 @@ describe('License certificate PDF', () => {
     expect(pdf.getPages()[0].getSize().width).toBeCloseTo(595.28, 1)
     expect(pdf.getPages()[0].getSize().height).toBeCloseTo(841.89, 1)
     expect(pdf.getTitle()).toBe('PrathamOne EduOS Software License Certificate')
-    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(fetchMock).toHaveBeenCalledTimes(4)
+    expect(fetchMock).toHaveBeenCalledWith('/logo/license-issuer-signature.png')
   })
 
   it('keeps long organization, address, and entitlement content on A4 continuation pages', async () => {
     const fontDirectory = `${process.cwd()}/node_modules/@fontsource/noto-sans-devanagari/files`
-    const [latinFont, indicFont, logo] = await Promise.all([
+    const [latinFont, indicFont, logo, signature] = await Promise.all([
       readFile(`${fontDirectory}/noto-sans-devanagari-latin-400-normal.woff`),
       readFile(`${fontDirectory}/noto-sans-devanagari-devanagari-400-normal.woff`),
       readFile(`${process.cwd()}/public/logo/logoone256.png`),
+      readFile(`${process.cwd()}/public/logo/license-issuer-signature.png`),
     ])
     vi.stubGlobal('fetch', vi.fn(async (url: string | URL | Request) => {
       const source = String(url)
-      const bytes = source.includes('devanagari-400') ? indicFont : source.includes('logoone256') ? logo : latinFont
+      const bytes = source.includes('devanagari-400')
+        ? indicFont
+        : source.includes('license-issuer-signature')
+          ? signature
+          : source.includes('logoone256')
+            ? logo
+            : latinFont
       const buffer = new ArrayBuffer(bytes.byteLength)
       new Uint8Array(buffer).set(bytes)
       return new Response(buffer)
@@ -110,14 +127,21 @@ describe('License certificate PDF', () => {
 
   it('creates a safe certificate when optional fields and the authority URL are unavailable', async () => {
     const fontDirectory = `${process.cwd()}/node_modules/@fontsource/noto-sans-devanagari/files`
-    const [latinFont, indicFont, logo] = await Promise.all([
+    const [latinFont, indicFont, logo, signature] = await Promise.all([
       readFile(`${fontDirectory}/noto-sans-devanagari-latin-400-normal.woff`),
       readFile(`${fontDirectory}/noto-sans-devanagari-devanagari-400-normal.woff`),
       readFile(`${process.cwd()}/public/logo/logoone256.png`),
+      readFile(`${process.cwd()}/public/logo/license-issuer-signature.png`),
     ])
     vi.stubGlobal('fetch', vi.fn(async (url: string | URL | Request) => {
       const source = String(url)
-      const bytes = source.includes('devanagari-400') ? indicFont : source.includes('logoone256') ? logo : latinFont
+      const bytes = source.includes('devanagari-400')
+        ? indicFont
+        : source.includes('license-issuer-signature')
+          ? signature
+          : source.includes('logoone256')
+            ? logo
+            : latinFont
       const buffer = new ArrayBuffer(bytes.byteLength)
       new Uint8Array(buffer).set(bytes)
       return new Response(buffer)
@@ -157,6 +181,28 @@ describe('License certificate PDF', () => {
     ])
     expect(getLicenseCertificateStatus('SUSPENDED', 'evaluation', null)).toBe('SUSPENDED')
     expect(getLicenseCertificateStatus('ACTIVE', 'evaluation', '2000-01-01')).toBe('EXPIRED')
+  })
+
+  it('groups only recorded signed entitlement values into the reference layout', () => {
+    expect(groupLicenseCertificateEntitlements([
+      { key: 'users', value: '25' },
+      { key: 'allowed_branches', value: '2' },
+      { key: 'modules', value: 'fees, reports' },
+      { key: 'deployment_type', value: 'on-premise' },
+      { key: 'Offline Lease Days', value: '14' },
+    ])).toEqual({
+      groups: [
+        { label: 'Licensed Users', value: '25' },
+        { label: 'Branches / locations', value: '2' },
+        { label: 'Licensed modules', value: 'fees, reports' },
+        { label: 'Deployment type', value: 'on-premise' },
+      ],
+      other: [{ key: 'Offline Lease Days', value: '14' }],
+    })
+    expect(groupLicenseCertificateEntitlements([]).groups.every(({ value }) =>
+      value === 'Not recorded in signed snapshot',
+    )).toBe(true)
+    expect(formatLicenseCertificateDateTime('2026-11-24T09:00:00Z')).toContain('IST')
   })
 
   it('generates QR codes only for secure verification URLs', async () => {

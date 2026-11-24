@@ -64,6 +64,9 @@ vi.mock('../utils/licenseCertificatePdf', () => ({
   createLicenseCertificateFilename: vi.fn(() => 'prathamone-license-test.pdf'),
   createLicenseCertificatePdf: createCertificateMock,
   createLicenseVerificationQrDataUrl: vi.fn().mockResolvedValue('data:image/png;base64,dGVzdA=='),
+  describeLicenseCertificateStatus: vi.fn((status: string) => status.startsWith('ACTIVE')
+    ? 'License is valid and in use'
+    : 'Authority status not recorded'),
   downloadLicenseCertificatePdf: downloadCertificateMock,
   formatLicenseCertificateEntitlements: vi.fn((entitlements: Record<string, unknown> | null) =>
     Object.entries(entitlements || {})
@@ -74,6 +77,16 @@ vi.mock('../utils/licenseCertificatePdf', () => ({
       })),
   ),
   formatLicenseCertificateDate: vi.fn((value: string | null, fallback = 'Not recorded') => value || fallback),
+  formatLicenseCertificateDateTime: vi.fn((value: string | null) => value || 'Not recorded'),
+  groupLicenseCertificateEntitlements: vi.fn((entitlements: Array<{ key: string; value: string }>) => ({
+    groups: [
+      { label: 'Licensed Users', value: entitlements.find(({ key }) => key === 'Users')?.value || 'Not recorded in signed snapshot' },
+      { label: 'Branches / locations', value: 'Not recorded in signed snapshot' },
+      { label: 'Licensed modules', value: 'Not recorded in signed snapshot' },
+      { label: 'Deployment type', value: 'Not recorded in signed snapshot' },
+    ],
+    other: entitlements.filter(({ key }) => key !== 'Users'),
+  })),
   getLicenseCertificateStatus: vi.fn((status: string | null, mode: string) => status || mode.toUpperCase()),
   shareLicenseCertificatePdf: shareCertificateMock,
 }))
@@ -178,9 +191,14 @@ describe('LicenseActivation', () => {
     expect(certificate.textContent).toContain('signed-license-001')
     expect(certificate.textContent).toContain('license-1042')
     expect(certificate.textContent).toContain('Users')
+    expect(certificate.textContent).toContain('License entitlement details')
+    expect(certificate.textContent).toContain('Certificate generated on')
+    expect(certificate.textContent).not.toContain('Support validity')
     expect(certificate.textContent).not.toContain('private-binding')
     expect(certificate.textContent).not.toContain('do-not-share-hardware-id')
+    expect(certificate.textContent).not.toContain('Digitally Signed')
     expect(await screen.findByAltText('Secure verification for license document signed-license-001')).toBeTruthy()
+    expect(screen.getByAltText('Authorized issuer signature of Jawahar R. Mallah')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Print license certificate' }))
     expect(printCertificateMock).toHaveBeenCalledWith(expect.objectContaining({
