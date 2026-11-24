@@ -1873,6 +1873,33 @@ export const sysadminApi = {
     ),
 }
 
+export interface LicenseActivationHistoryItem {
+  activation_id: number
+  device_label: string
+  status: 'active' | 'released' | 'deactivated'
+  activated_at: string | null
+  last_seen_at: string | null
+  deactivated_at: string | null
+  release_source: 'customer' | 'support' | null
+}
+
+export interface LicenseActivationOption {
+  license_id: number
+  serial_number: string | null
+  seats: number
+  activation_count: number
+  active_activation_count?: number
+  product_name?: string | null
+  product_code?: string | null
+  edition?: string | null
+  license_model?: string | null
+  status?: string
+  expires_at?: string | null
+  transfer_available_at?: string | null
+  transfer_cooldown_active?: boolean | number
+  activation_history?: LicenseActivationHistoryItem[]
+}
+
 export const licenseApi = {
   getStatus: (institution_id?: number) =>
     apiClient.get<LicenseStatusResponse>('/license/status', {
@@ -1905,15 +1932,7 @@ export const licenseApi = {
   getCustomerReactivations: (session_token?: string, institution_id?: number) =>
     apiClient.get<{
       ok: boolean
-      licenses: Array<{
-        license_id: number
-        serial_number: string | null
-        seats: number
-        activation_count: number
-        edition?: string
-        license_model?: string
-        status?: string
-      }>
+      licenses: LicenseActivationOption[]
     }>('/license/customer/reactivations', {
       params: institution_id ? { institution_id } : undefined,
       headers: session_token ? { 'X-License-Session': session_token } : undefined,
@@ -1924,6 +1943,7 @@ export const licenseApi = {
     institution_id?: number,
     surrender_confirmed = false,
     surrender_reason?: string,
+    surrendered_activation_id?: number,
   ) =>
     apiClient.post<{
       ok: boolean
@@ -1938,6 +1958,9 @@ export const licenseApi = {
         session_token,
         surrender_confirmed,
         ...(surrender_confirmed && surrender_reason ? { surrender_reason } : {}),
+        ...(surrender_confirmed && surrendered_activation_id
+          ? { surrendered_activation_id }
+          : {}),
       },
       {
         params: institution_id ? { institution_id } : undefined,
@@ -1974,7 +1997,7 @@ export const licenseApi = {
       ok: boolean
       stage: 'target_email' | 'complete'
       registered_email?: string
-      licenses?: Array<{ license_id: number; serial_number: string | null; seats: number; activation_count: number }>
+      licenses?: LicenseActivationOption[]
       message?: string
     }>(
       '/license/email/verify',

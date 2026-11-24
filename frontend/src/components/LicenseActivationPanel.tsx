@@ -20,7 +20,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Download, KeyRound, Mail, RefreshCw, ShieldOff, Upload, UserCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { licenseApi } from '../api/endpoints'
+import { licenseApi, type LicenseActivationOption } from '../api/endpoints'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
 import type { LicenseStatusResponse } from '../types'
@@ -32,6 +32,118 @@ interface LicenseActivationPanelProps {
 
 function isJsonObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function formatActivationHistoryDate(value: string | null | undefined) {
+  if (!value) return 'date not recorded'
+  const timestamp = Date.parse(value)
+  return Number.isNaN(timestamp) ? value : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(timestamp)
+}
+
+function LicenseChoiceCards({
+  licenses,
+  selectedLicenseId,
+  onSelect,
+  disabled,
+  legend,
+  radioName,
+}: {
+  licenses: LicenseActivationOption[]
+  selectedLicenseId: number | null
+  onSelect: (licenseId: number | null) => void
+  disabled: boolean
+  legend: string
+  radioName: string
+}) {
+  return (
+    <fieldset className="space-y-2">
+      <legend className="mb-2 text-xs font-semibold text-slate-700">{legend}</legend>
+      <div className="space-y-2">
+        {licenses.map((license) => {
+          const selected = selectedLicenseId === license.license_id
+          const activeCount = license.activation_count ?? license.active_activation_count ?? 0
+          const activationHistory = license.activation_history
+          return (
+            <label
+              key={license.license_id}
+              className={`block cursor-pointer rounded-xl border p-3 transition ${
+                selected
+                  ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-200'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
+              } ${disabled ? 'cursor-not-allowed opacity-70' : ''}`}
+            >
+              <span className="flex items-start gap-3">
+                <input
+                  type="radio"
+                  name={radioName}
+                  value={license.license_id}
+                  checked={selected}
+                  onChange={() => onSelect(license.license_id)}
+                  disabled={disabled}
+                  className="mt-1 accent-primary-600"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <strong className="text-sm text-slate-900">
+                      {license.product_name || 'PrathamOne EduOS'}
+                      {license.edition ? ` · ${license.edition}` : ''}
+                    </strong>
+                    <span className="text-xs font-semibold text-slate-700">
+                      {activeCount} of {license.seats} devices active
+                    </span>
+                  </span>
+                  <span className="mt-1 block text-xs text-slate-600">
+                    Serial: {license.serial_number || `License ${license.license_id}`}
+                    {license.license_model ? ` · ${license.license_model.replace(/[_-]/g, ' ')}` : ''}
+                  </span>
+                  <span className="mt-1 block text-xs text-slate-600">
+                    {license.status ? `Status: ${license.status.toLowerCase()}` : 'Status: active'}
+                    {' · '}
+                    {license.expires_at
+                      ? `Valid through ${formatActivationHistoryDate(license.expires_at)}`
+                      : 'No expiry date'}
+                  </span>
+                  {Boolean(license.transfer_cooldown_active) && (
+                    <span className="mt-1 block text-xs font-semibold text-amber-800">
+                      Transfer cooldown through {formatActivationHistoryDate(license.transfer_available_at)}.
+                    </span>
+                  )}
+                  <span className="mt-2 block border-t border-slate-200 pt-2">
+                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      Device history
+                    </span>
+                    {activationHistory === undefined ? (
+                      <span className="mt-1 block text-xs text-slate-600">
+                        Release history is unavailable; a previous device release cannot be confirmed here.
+                      </span>
+                    ) : activationHistory.length === 0 ? (
+                      <span className="mt-1 block text-xs text-slate-600">
+                        No device activation history recorded.
+                      </span>
+                    ) : (
+                      <span className="mt-1 block space-y-1">
+                        {activationHistory.map((activation) => (
+                          <span key={activation.activation_id} className="block text-xs text-slate-700">
+                            <strong>{activation.device_label}</strong>
+                            {' · '}
+                            {activation.status === 'active'
+                              ? `Active${activation.last_seen_at ? ` · last seen ${formatActivationHistoryDate(activation.last_seen_at)}` : ''}`
+                              : activation.status === 'released'
+                                ? `${activation.release_source === 'customer' ? 'Released by customer' : 'Released by support'} · ${formatActivationHistoryDate(activation.deactivated_at)}`
+                                : `Deactivated; release reason not recorded · ${formatActivationHistoryDate(activation.deactivated_at)}`}
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </span>
+                </span>
+              </span>
+            </label>
+          )
+        })}
+      </div>
+    </fieldset>
+  )
 }
 
 export default function LicenseActivationPanel({ institutionId, editScope }: LicenseActivationPanelProps) {
@@ -47,24 +159,12 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
   const [emailChallengeId, setEmailChallengeId] = useState('')
   const [emailPurpose, setEmailPurpose] = useState<'activation' | 'email_change'>('activation')
   const [emailChangeTargetStep, setEmailChangeTargetStep] = useState(false)
-  const [emailLicenseChoices, setEmailLicenseChoices] = useState<
-    Array<{ license_id: number; serial_number: string | null; seats: number; activation_count: number }>
-  >([])
+  const [emailLicenseChoices, setEmailLicenseChoices] = useState<LicenseActivationOption[]>([])
   const [selectedEmailLicenseId, setSelectedEmailLicenseId] = useState<number | null>(null)
   const [customerEmail, setCustomerEmail] = useState('')
   const [customerPassword, setCustomerPassword] = useState('')
   const [customerSessionToken, setCustomerSessionToken] = useState<string | null>(null)
-  const [customerLicenses, setCustomerLicenses] = useState<
-    Array<{
-      license_id: number
-      serial_number: string | null
-      seats: number
-      activation_count: number
-      edition?: string
-      license_model?: string
-      status?: string
-    }>
-  >([])
+  const [customerLicenses, setCustomerLicenses] = useState<LicenseActivationOption[]>([])
   const [selectedCustomerLicenseId, setSelectedCustomerLicenseId] = useState<number | null>(null)
   const [reactivationRequestId, setReactivationRequestId] = useState<string | null>(null)
   const [reactivationStatus, setReactivationStatus] = useState<
@@ -74,6 +174,7 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
   const [reactivationMessage, setReactivationMessage] = useState<string | null>(null)
   const [surrenderConfirmed, setSurrenderConfirmed] = useState(false)
   const [surrenderReason, setSurrenderReason] = useState('')
+  const [surrenderedActivationId, setSurrenderedActivationId] = useState<number | null>(null)
   const [registration, setRegistration] = useState<NonNullable<LicenseStatusResponse['registration']>>({
     institution_name: '',
     contact_name: '',
@@ -212,8 +313,13 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
     onSuccess: (res) => {
       const list = res.data.licenses || []
       setCustomerLicenses(list)
+      setSurrenderConfirmed(false)
+      setSurrenderReason('')
+      setSurrenderedActivationId(null)
       if (list.length === 1) {
         setSelectedCustomerLicenseId(list[0].license_id)
+      } else {
+        setSelectedCustomerLicenseId(null)
       }
       if (list.length === 0) {
         toast.error('No eligible licenses found for this customer account.')
@@ -237,6 +343,7 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
         institutionId,
         surrenderConfirmed,
         surrenderReason.trim(),
+        surrenderConfirmed ? surrenderedActivationId || undefined : undefined,
       )
     },
     onSuccess: (res) => {
@@ -430,6 +537,14 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
   const canActivateEmail = Boolean(
     emailPurpose === 'activation' && emailChallengeId && emailLicenseChoices.length > 0 && selectedEmailLicenseId,
   )
+
+  const selectedCustomerLicense = customerLicenses.find(
+    (license) => license.license_id === selectedCustomerLicenseId,
+  )
+  const hasSelectedLicenseHistory = Array.isArray(selectedCustomerLicense?.activation_history)
+  const verifiedReleasedActivations = selectedCustomerLicense?.activation_history?.filter(
+    (activation) => activation.status === 'released' && activation.release_source !== null,
+  ) || []
 
   return (
     <div className="max-w-3xl space-y-5">
@@ -705,22 +820,14 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                     </div>
                     {emailLicenseChoices.length > 0 && (
                       <>
-                        <label className="block text-xs font-semibold text-slate-700">
-                          License to activate
-                          <select
-                            value={selectedEmailLicenseId || ''}
-                            onChange={(event) => setSelectedEmailLicenseId(event.target.value ? Number(event.target.value) : null)}
-                            disabled={!isEditMode}
-                            className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal disabled:bg-slate-50"
-                          >
-                            <option value="">Select a license</option>
-                            {emailLicenseChoices.map((choice) => (
-                              <option key={choice.license_id} value={choice.license_id}>
-                                {choice.serial_number || `License ${choice.license_id}`} · {choice.activation_count}/{choice.seats} devices
-                              </option>
-                            ))}
-                          </select>
-                        </label>
+                        <LicenseChoiceCards
+                          licenses={emailLicenseChoices}
+                          selectedLicenseId={selectedEmailLicenseId}
+                          onSelect={setSelectedEmailLicenseId}
+                          disabled={!isEditMode}
+                          legend="Choose the license that matches your records"
+                          radioName="email-license-code"
+                        />
                         <button
                           type="button"
                           onClick={() => activateLicenseMutation.mutate()}
@@ -806,21 +913,14 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                       </button>
                     </div>
                     {emailLicenseChoices.length > 0 && (
-                      <label className="block text-xs font-semibold text-slate-700">
-                        License to activate
-                        <select
-                          value={selectedEmailLicenseId || ''}
-                          onChange={(event) => setSelectedEmailLicenseId(event.target.value ? Number(event.target.value) : null)}
-                          className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal"
-                        >
-                          <option value="">Select a license</option>
-                          {emailLicenseChoices.map((choice) => (
-                            <option key={choice.license_id} value={choice.license_id}>
-                              {choice.serial_number || `License ${choice.license_id}`} · {choice.activation_count}/{choice.seats} devices
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                      <LicenseChoiceCards
+                        licenses={emailLicenseChoices}
+                        selectedLicenseId={selectedEmailLicenseId}
+                        onSelect={setSelectedEmailLicenseId}
+                        disabled={!isEditMode}
+                        legend="Choose the license that matches your records"
+                        radioName="email-license-registration"
+                      />
                     )}
                   </div>
                 )}
@@ -957,61 +1057,90 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <label className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
-                      <input
-                        type="checkbox"
-                        checked={surrenderConfirmed}
-                        onChange={(event) => {
-                          setSurrenderConfirmed(event.target.checked)
-                          if (!event.target.checked) setSurrenderReason('')
-                        }}
-                        className="mt-0.5"
-                        disabled={reactivationStatus === 'pending' || activateLicenseMutation.isPending}
-                      />
-                      <span>
-                        <strong>I surrendered or released the previous device/license.</strong>
-                        <span className="block mt-0.5 text-amber-800">
-                          This informs support that the standard 30-day transfer cooldown may not apply.
-                        </span>
-                      </span>
-                    </label>
-                    {surrenderConfirmed && (
-                      <input
-                        type="text"
-                        value={surrenderReason}
-                        onChange={(event) => setSurrenderReason(event.target.value)}
-                        maxLength={300}
-                        placeholder="Reason: surrendered device, replacement, lost machine..."
-                        aria-label="Surrender reason"
-                        className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-                        disabled={reactivationStatus === 'pending' || activateLicenseMutation.isPending}
-                      />
-                    )}
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Select an eligible license to reactivate
-                      </label>
                       {customerLicenses.length > 0 ? (
-                        <select
-                          value={selectedCustomerLicenseId || ''}
-                          onChange={(e) => setSelectedCustomerLicenseId(e.target.value ? Number(e.target.value) : null)}
+                        <LicenseChoiceCards
+                          licenses={customerLicenses}
+                          selectedLicenseId={selectedCustomerLicenseId}
+                          onSelect={(licenseId) => {
+                            setSelectedCustomerLicenseId(licenseId)
+                            setSurrenderConfirmed(false)
+                            setSurrenderReason('')
+                            setSurrenderedActivationId(null)
+                          }}
                           disabled={reactivationStatus === 'pending' || activateLicenseMutation.isPending}
-                          aria-label="Select eligible license"
-                          className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
-                        >
-                          <option value="">-- Choose an eligible license --</option>
-                          {customerLicenses.map((lic) => (
-                            <option key={lic.license_id} value={lic.license_id}>
-                              {lic.serial_number ? `Serial: ${lic.serial_number}` : `License #${lic.license_id}`} · {lic.edition || 'Standard'} ({lic.activation_count}/{lic.seats} devices active)
-                            </option>
-                          ))}
-                        </select>
+                          legend="Choose the license that matches your records"
+                          radioName="customer-reactivation-license"
+                        />
                       ) : (
                         <p className="text-xs text-slate-500 italic">
                           {loadCustomerLicensesMutation.isPending ? 'Loading eligible licenses…' : 'No eligible licenses found for this account.'}
                         </p>
                       )}
                     </div>
+                    {verifiedReleasedActivations.length > 0 ? (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950">
+                        <label className="flex items-start gap-2">
+                          <input
+                            type="checkbox"
+                            checked={surrenderConfirmed}
+                            onChange={(event) => {
+                              setSurrenderConfirmed(event.target.checked)
+                              if (!event.target.checked) {
+                                setSurrenderReason('')
+                                setSurrenderedActivationId(null)
+                              }
+                            }}
+                            className="mt-0.5"
+                            disabled={!selectedCustomerLicense || reactivationStatus === 'pending' || activateLicenseMutation.isPending}
+                          />
+                          <span>
+                            <strong>Ask support to review a previously released device for this license.</strong>
+                            <span className="mt-0.5 block text-amber-800">
+                              This records your claim; it does not bypass seat limits or the transfer cooldown.
+                            </span>
+                          </span>
+                        </label>
+                        {surrenderConfirmed && (
+                          <div className="mt-3 space-y-2">
+                            <label className="block font-semibold text-amber-950">
+                              Which released device?
+                              <select
+                                value={surrenderedActivationId || ''}
+                                onChange={(event) => setSurrenderedActivationId(
+                                  event.target.value ? Number(event.target.value) : null,
+                                )}
+                                disabled={reactivationStatus === 'pending' || activateLicenseMutation.isPending}
+                                className="mt-1 block w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm font-normal text-slate-900"
+                              >
+                                <option value="">Select a released device</option>
+                                {verifiedReleasedActivations.map((activation) => (
+                                  <option key={activation.activation_id} value={activation.activation_id}>
+                                    {activation.device_label} · {formatActivationHistoryDate(activation.deactivated_at)}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <input
+                              type="text"
+                              value={surrenderReason}
+                              onChange={(event) => setSurrenderReason(event.target.value)}
+                              maxLength={300}
+                              placeholder="Brief reason for this device release"
+                              aria-label="Surrender reason"
+                              className="block w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-slate-900"
+                              disabled={reactivationStatus === 'pending' || activateLicenseMutation.isPending}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ) : selectedCustomerLicense && (
+                      <p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+                        {hasSelectedLicenseHistory
+                          ? 'No verified device-release event is recorded for this license. You can still submit a standard request; support will review it if required.'
+                          : 'Device-release history is unavailable for this license. You can still submit a standard request; support will review it if required.'}
+                      </p>
+                    )}
 
                     {reactivationStatus === 'pending' ? (
                       <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950 space-y-2">
@@ -1063,7 +1192,10 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                           onClick={() => requestReactivationMutation.mutate()}
                           disabled={
                             !selectedCustomerLicenseId ||
-                            (surrenderConfirmed && surrenderReason.trim().length < 10) ||
+                            (surrenderConfirmed && (
+                              !surrenderedActivationId ||
+                              surrenderReason.trim().length < 10
+                            )) ||
                             requestReactivationMutation.isPending ||
                             activateLicenseMutation.isPending
                           }
