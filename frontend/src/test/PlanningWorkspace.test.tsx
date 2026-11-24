@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-17
- * @updated     2026-11-18
+ * @updated     2026-11-25
  *
  * @description Regression tests for Planning workspace accessibility and linked schedule projections.
  */
@@ -19,7 +19,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 import { academicYearsApi, divisionsApi, planningApi, standardsApi, subjectsApi } from '../api/endpoints'
 import type { PlanningItem } from '../types'
 import PlanningWorkspace from '../pages/PlanningWorkspace'
@@ -58,6 +58,8 @@ vi.mock('../api/endpoints', () => ({
 
 describe('Planning workspace view switcher accessibility', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-18T10:00:00Z'))
     mockPlanningData.items = []
     useAuthStore.setState({
       user: {
@@ -74,6 +76,10 @@ describe('Planning workspace view switcher accessibility', () => {
       selectedAcademicYearId: 8,
     })
     useEditModeStore.setState({ scopes: { 'planning:workspace': true } })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('names each view control and exposes the selected mobile default', () => {

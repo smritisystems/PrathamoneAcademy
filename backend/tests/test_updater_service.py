@@ -11,16 +11,20 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-18
-#  * @updated     2026-11-18
+#  * @updated     2026-11-25
 #  *
 #  * @description Test suite for automated 1-click update engine and zero-data-loss rollback protection.
 #  */
 
 import hashlib
+from types import SimpleNamespace
+
 import pytest
+from fastapi import HTTPException
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.endpoints import releases as releases_endpoint
 from app.services.updater_service import UpdateProgressState, UpdaterService, update_tracker
 
 
@@ -76,6 +80,7 @@ async def test_updater_service_check_for_updates(db: AsyncSession):
     assert "update_available" in res
     assert "backup_engine_ready" in res
     assert res["backup_engine_ready"] is True
+    assert res["can_auto_update"] is False
 
 
 @pytest.mark.asyncio
@@ -96,6 +101,7 @@ async def test_updater_api_endpoints(client: AsyncClient, auth_headers: dict):
     assert "current_version" in check_data
     assert "latest_version" in check_data
     assert "update_available" in check_data
+    assert check_data["can_auto_update"] is False
 
     # 3. Reset update status endpoint
     res_reset = await client.post("/api/v1/releases/reset-update-status", headers=auth_headers)
@@ -105,14 +111,29 @@ async def test_updater_api_endpoints(client: AsyncClient, auth_headers: dict):
 
 
 @pytest.mark.asyncio
-async def test_run_update_pipeline_executes_without_permission_error():
-    """Verify run_update_pipeline completes backup and migration steps without Permission denied: '/backups'."""
+async def test_apply_update_endpoint_returns_503_until_verification_is_ready(monkeypatch):
+    monkeypatch.setattr(releases_endpoint, "AUTO_UPDATE_VERIFICATION_READY", False)
+    monkeypatch.setattr(releases_endpoint, "is_authorized_release_manager", lambda _user: True)
+
+    with pytest.raises(HTTPException) as unavailable:
+        await releases_endpoint.apply_system_update(
+            payload=releases_endpoint.ApplyUpdateRequest(target_version="1.134.1"),
+            current_user=SimpleNamespace(id=1, role="sysadmin"),
+        )
+
+    assert unavailable.value.status_code == 503
+    assert "signed release metadata" in unavailable.value.detail
+
+
+@pytest.mark.asyncio
+async def test_run_update_pipeline_fails_closed_without_verified_release_package():
     await UpdaterService.run_update_pipeline(
         target_version="1.134.1",
         user_id=1,
     )
     state = await update_tracker.get_state()
-    assert "Permission denied: '/backups'" not in str(state.get("error"))
-    assert state["status"] == "success"
-    assert state["progress_percent"] == 100
+    assert state["status"] == "failed"
+    assert state["progress_percent"] == 0
+    assert state["snapshot_path"] is None
+    assert "signed release metadata" in state["error"]
 

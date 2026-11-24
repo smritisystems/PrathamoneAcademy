@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-21
+#  * @updated     2026-11-25
 #  *
 #  * @description Focused signature validation and license-mode tests.
 #  */
@@ -466,6 +466,56 @@ def test_license_module_routes_are_mapped_and_unknown_routes_fail_closed():
     assert denied.value.status_code == 423
 
 
+@pytest.mark.asyncio
+async def test_shadow_rollout_metadata_does_not_bypass_license_enforcement(monkeypatch):
+    class FakeDatabase:
+        async def get(self, _model, _institution_id):
+            return SimpleNamespace(code="ACADEMY-41")
+
+    async def enforce_institution_access(**_kwargs):
+        return 41
+
+    async def load_shadow_context(_db, _institution_id, _company_binding):
+        return {
+            "mode": "evaluation",
+            "rollout_stage": "shadow",
+            "payload": {
+                "entitlements": {},
+                "evaluation_policy": {
+                    "allow_dashboard": True,
+                    "allow_read_only_records": True,
+                    "allow_reports": True,
+                    "allow_backups": True,
+                    "allow_exports": True,
+                    "locked_modules": [],
+                },
+            },
+        }
+
+    monkeypatch.setattr(license_endpoint, "enforce_institution_access", enforce_institution_access)
+    monkeypatch.setattr(license_endpoint, "_load_license_context", load_shadow_context)
+    request = Request({
+        "type": "http",
+        "method": "POST",
+        "path": "/api/v1/students",
+        "headers": [],
+        "query_string": b"",
+        "server": ("test", 80),
+        "client": ("127.0.0.1", 1),
+    })
+    request.scope["path_params"] = {}
+
+    with pytest.raises(HTTPException) as denied:
+        await license_endpoint.enforce_license_request(
+            request=request,
+            current_user=SimpleNamespace(),
+            db=FakeDatabase(),
+            data_environment="PRODUCTION",
+        )
+
+    assert denied.value.status_code == 423
+
+
 def test_evaluation_mode_allows_only_configured_read_and_recovery_paths():
     policy = {
         "allow_dashboard": True,
@@ -616,10 +666,10 @@ async def test_reactivation_refreshes_snapshot_without_changing_installation_ide
         async def __aexit__(self, exc_type, exc_value, traceback):
             return None
 
-        async def post(self, url, json):
+        async def post(self, url, json=None, headers=None, **kwargs):
             nonlocal artifact_number
             artifact_number += 1
-            authority_calls.append({"url": url, "body": json})
+            authority_calls.append({"url": url, "body": json, "headers": headers})
             return FakeResponse(f"artifact-{artifact_number}")
 
     async def get_setting(db, institution_id, key):
@@ -716,8 +766,8 @@ async def test_batch_activation_forwards_registration_and_never_persists_activat
         async def __aexit__(self, exc_type, exc_value, traceback):
             return None
 
-        async def post(self, url, json):
-            authority_calls.append({"url": url, "body": json})
+        async def post(self, url, json=None, headers=None, **kwargs):
+            authority_calls.append({"url": url, "body": json, "headers": headers})
             return FakeResponse()
 
     async def save_setting(db, institution_id, user, key, value, description):

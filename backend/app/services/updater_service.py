@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-18
-#  * @updated     2026-11-18
+#  * @updated     2026-11-25
 #  *
 #  * @description Automated 1-Click System Update and Zero-Data-Loss Rollback Engine. Orchestrates pre-flight checks, automated transactional database snapshots, migration verification, asset staging, healthchecks, and automatic self-healing rollback.
 #  */
@@ -56,6 +56,7 @@ def resolve_scripts_dir() -> Path:
 
 BACKUPS_DIR = resolve_backups_dir()
 RELEASE_MANIFEST_PATH = Path(__file__).resolve().parent.parent / "release_manifest.json"
+AUTO_UPDATE_VERIFICATION_READY = False
 
 
 class UpdateProgressState:
@@ -176,7 +177,7 @@ class UpdaterService:
                     "Optimized database performance & faster workspace loads.",
                 ],
                 "is_critical_security": latest_rel.is_critical_security,
-                "can_auto_update": True,
+                "can_auto_update": AUTO_UPDATE_VERIFICATION_READY,
                 "backup_engine_ready": True,
             }
 
@@ -199,7 +200,7 @@ class UpdaterService:
                 "Zero data loss fail-safe protection active.",
             ],
             "is_critical_security": False,
-            "can_auto_update": True,
+            "can_auto_update": AUTO_UPDATE_VERIFICATION_READY,
             "backup_engine_ready": True,
         }
 
@@ -239,6 +240,24 @@ class UpdaterService:
         update_tracker.target_version = target_version
         update_tracker.error = None
         update_tracker.logs = []
+
+        if not AUTO_UPDATE_VERIFICATION_READY:
+            message = (
+                "Automatic updates are disabled until signed release metadata, "
+                "package verification, and the migration installer are implemented."
+            )
+            update_tracker.completed_at = datetime.now(timezone.utc).isoformat()
+            await update_tracker.update(
+                percent=0,
+                step="package_verification",
+                step_num=3,
+                msg=message,
+                log_entry=message,
+                status="failed",
+                error=message,
+            )
+            update_tracker.active = False
+            return
 
         snapshot_created: Optional[Path] = None
 

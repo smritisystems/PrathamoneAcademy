@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-18
+#  * @updated     2026-11-25
 #  *
 #  * @description API endpoints for Release & Change Management, automated release notes, version tracking, pre-flight validations, and production approvals.
 #  */
@@ -29,7 +29,7 @@ from app.core.deps import get_current_active_user, require_role
 from app.models.release import SystemRelease
 from app.models.user import User, AuditLog
 from app.services.release_service import ReleaseService
-from app.services.updater_service import UpdaterService, update_tracker
+from app.services.updater_service import AUTO_UPDATE_VERIFICATION_READY, UpdaterService, update_tracker
 
 router = APIRouter()
 
@@ -110,6 +110,14 @@ async def apply_system_update(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access forbidden: Initiating system updates requires SuperAdmin or SysAdmin authority.",
+        )
+    if not AUTO_UPDATE_VERIFICATION_READY:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Automatic updates are disabled until signed release metadata, "
+                "package verification, and the migration installer are implemented."
+            ),
         )
 
     state = await update_tracker.get_state()

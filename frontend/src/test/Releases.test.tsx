@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-18
+ * @updated     2026-11-25
  *
  * @description Comprehensive unit and specification tests verifying the Enterprise Release & Change Management workspace, tabs, quality gates, and approval lifecycles.
  */
@@ -274,19 +274,19 @@ describe('Release & Change Management Workspace Specifications', () => {
     expect(screen.getByPlaceholderText('e.g. 6.99.2 or 7.0.0')).toBeDefined()
   })
 
-  it('renders 1-Click System Update banner and opens update modal when Edit Mode is active', async () => {
+  it('explains that one-click updates are disabled and opens the update status modal', async () => {
     renderComponent()
 
     expect(await screen.findByText(/PrathamOne EduOS is Fully Up to Date/i)).toBeDefined()
-    expect(screen.getByText(/Zero Downtime Armed/i)).toBeDefined()
+    expect(screen.getByText(/One-click updates remain disabled/i)).toBeDefined()
 
-    // Enable Edit Mode to open update modal
     fireEvent.click(screen.getByRole('button', { name: /Enable Edit Mode/i }))
     const updateBtn = screen.getByRole('button', { name: /Inspect Update Engine & Logs/i })
     fireEvent.click(updateBtn)
 
     expect(await screen.findByText('PrathamOne EduOS System Update')).toBeDefined()
-    expect(screen.getByText('Pre-flight checks & storage verified')).toBeDefined()
-    expect(screen.getByText('Full safe backup of student and fee data created')).toBeDefined()
+    expect(screen.getByText(/One-click updates are disabled/i)).toBeDefined()
+    expect(screen.queryByText('Pre-flight checks & storage verified')).toBeNull()
+    expect(screen.queryByRole('button', { name: /Start Update/i })).toBeNull()
   })
 })

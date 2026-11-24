@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-15
-#  * @updated     2026-11-21
+#  * @updated     2026-11-25
 #  *
 #  * @description Automated build pipeline: compiles React frontend, stages embedded runtimes,
 #  */
@@ -179,8 +179,9 @@ def stage_hardened_backend(root_dir: Path, staging_dir: Path):
        - Compiles every .py to optimized .pyc (optimize=2: strips docstrings & asserts).
        - Purges every plaintext .py file in backend/app/. Zero plaintext code remains.
     3. Bytecode-compiles seed.py -> seed.pyc and removes seed.py.
-    4. Computes SHA-256 HMAC cryptographic integrity manifest for all bytecode modules.
-    This prevents code inspection, Notepad editing, decompilation, and bytecode tampering.
+    4. Computes a local SHA-256 integrity manifest for bytecode modules.
+    This may deter casual tampering but is not a security boundary: the verifier
+    and its embedded salt ship with the client and can be inspected or patched.
     """
     import hashlib
     import json

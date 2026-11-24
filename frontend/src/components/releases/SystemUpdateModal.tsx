@@ -11,9 +11,9 @@
  *
  * @version     1.0.0
  * @created     2026-11-18
- * @updated     2026-11-18
+ * @updated     2026-11-25
  *
- * @description Non-technical 1-click system update modal with live progress bar (0-100%), automated pre-update database snapshot, step-by-step checklist, plain-English logs, and automated zero-data-loss rollback protection.
+ * @description Release update status modal. Installation is enabled only when signed package verification is configured.
  */
 
 import React, { useEffect, useState } from 'react'
@@ -91,7 +91,8 @@ export default function SystemUpdateModal({
 
   if (!isOpen) return null
 
-  const targetVersion = updateInfo?.latest_version || updateInfo?.next_target_version || '1.134.0'
+  const targetVersion = updateInfo?.latest_version || updateInfo?.next_target_version || 'Not available'
+  const canAutoUpdate = updateInfo?.can_auto_update === true
   const isComplete = statusData?.status === 'success'
   const isRolledBack = statusData?.status === 'rolled_back'
   const isFailed = statusData?.status === 'failed'
@@ -143,7 +144,7 @@ export default function SystemUpdateModal({
               </h2>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Automated zero-data-loss installation with transactional database backup and self-healing rollback.
+              Release installation is enabled only after signed-package verification is configured.
             </p>
           </div>
 
@@ -226,6 +227,15 @@ export default function SystemUpdateModal({
             </div>
           )}
 
+          {!canAutoUpdate && !isApplying && !isComplete && !isRolledBack && !isFailed && (
+            <div role="status" className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+              <p className="text-xs leading-relaxed">
+                One-click updates are disabled because this installation has no trusted signed release manifest and verified package installer. Do not install an unverified package; contact support for an approved signed installer.
+              </p>
+            </div>
+          )}
+
           {/* Live Progress Bar */}
           {(isApplying || isComplete || isRolledBack || isFailed) && (
             <div className="space-y-2">
@@ -255,49 +265,51 @@ export default function SystemUpdateModal({
           )}
 
           {/* Step-by-Step Milestone Checklist */}
-          <div className="space-y-2 border border-slate-200 rounded-xl p-4 bg-slate-50/50">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-              6-Step Fail-Safe Verification Checklist
-            </div>
-            <div className="space-y-2.5">
-              {UPDATE_STEPS.map((step, idx) => {
-                const stepNum = idx + 1
-                const currentNum = statusData?.step_number || 0
-                const isStepFinished = isComplete || currentNum > stepNum
-                const isStepActive = isApplying && currentNum === stepNum
+          {canAutoUpdate && (
+            <div className="space-y-2 border border-slate-200 rounded-xl p-4 bg-slate-50/50">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                6-Step Update Verification Checklist
+              </div>
+              <div className="space-y-2.5">
+                {UPDATE_STEPS.map((step, idx) => {
+                  const stepNum = idx + 1
+                  const currentNum = statusData?.step_number || 0
+                  const isStepFinished = isComplete || currentNum > stepNum
+                  const isStepActive = isApplying && currentNum === stepNum
 
-                return (
-                  <div key={step.step} className="flex items-center gap-3 text-xs">
-                    {isStepFinished ? (
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                      </span>
-                    ) : isStepActive ? (
-                      <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 animate-pulse">
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      </span>
-                    ) : (
-                      <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center shrink-0 font-bold text-[10px]">
-                        {stepNum}
-                      </span>
-                    )}
+                  return (
+                    <div key={step.step} className="flex items-center gap-3 text-xs">
+                      {isStepFinished ? (
+                        <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        </span>
+                      ) : isStepActive ? (
+                        <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 animate-pulse">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        </span>
+                      ) : (
+                        <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center shrink-0 font-bold text-[10px]">
+                          {stepNum}
+                        </span>
+                      )}
 
-                    <span
-                      className={`font-medium ${
-                        isStepFinished
-                          ? 'text-slate-800'
-                          : isStepActive
-                          ? 'text-indigo-700 font-bold'
-                          : 'text-slate-400'
-                      }`}
-                    >
-                      {step.label}
-                    </span>
-                  </div>
-                )
-              })}
+                      <span
+                        className={`font-medium ${
+                          isStepFinished
+                            ? 'text-slate-800'
+                            : isStepActive
+                            ? 'text-indigo-700 font-bold'
+                            : 'text-slate-400'
+                        }`}
+                      >
+                        {step.label}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Collapsible Human-Readable Logs */}
           <div className="border border-slate-200 rounded-xl overflow-hidden">
@@ -322,7 +334,9 @@ export default function SystemUpdateModal({
                     </div>
                   ))
                 ) : (
-                  <div className="text-slate-500 italic">No activity recorded yet. Click Start Update below.</div>
+                  <div className="text-slate-500 italic">
+                    {canAutoUpdate ? 'No activity recorded yet. Click Start Update below.' : 'No update activity; secure installation is not configured.'}
+                  </div>
                 )}
               </div>
             )}
@@ -332,8 +346,8 @@ export default function SystemUpdateModal({
         {/* Modal Footer Controls */}
         <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
           <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Guaranteed Zero Data Loss &amp; Historical Ledger Immutability</span>
+            <ShieldCheck className="w-4 h-4 text-amber-600" />
+            <span>Installations stay disabled until package authenticity and migration safety are verified.</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -347,7 +361,7 @@ export default function SystemUpdateModal({
               </button>
             )}
 
-            {!isApplying && !isComplete && (
+            {!isApplying && !isComplete && canAutoUpdate && (
               <button
                 type="button"
                 onClick={handleStartUpdate}

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-24
+#  * @updated     2026-11-25
 #  *
 #  * @description Global application settings, environment variables, security secrets, and CORS policies.
 #  */
@@ -43,8 +43,8 @@ class Settings(BaseSettings):
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "COACHING MANAGEMENT. SIMPLIFIED."
-    VERSION: str = "1.174.0"
-    BUILD_NUMBER: str = "2026.11.24-REV-314-v1.174.0-118268C6"
+    VERSION: str = "1.180.1"
+    BUILD_NUMBER: str = "2026.11.24-REV-324-v1.180.1-C4124E98"
     RELEASE_CHANNEL: str = "Release Candidate"
     RELEASE_STATUS: str = "Minor Release Candidate"
     BUILD_DATE: str = "2026-11-24"
@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     LICENSE_AUTHORITY_URL: str = "https://smritisys.com"
     LICENSE_PRODUCT_CODE: str = "prathamone-eduos"
     LICENSE_PUBLIC_KEYS_JSON: str = '{"smritisys-ed25519-2026-11":"GWsJlKHUjTYmSDpi8JmsGb43NoR6S1qL1jIy1jzBC4w"}'
-    LICENSE_ENFORCEMENT_STAGE: str = "shadow"
+    LICENSE_ENFORCEMENT_STAGE: str = "enforced"
     DEBUG: bool = False
 
     # PRATHAMONE CodeX — Mandatory Default Directives (Opt-in only, System Default: DISABLED)

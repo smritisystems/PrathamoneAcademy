@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-09
- * @updated     2026-11-18
+ * @updated     2026-11-25
  *
  * @description Vitest test suite validating dedicated functional workspaces for Study Materials & Digital Content across all 8 submenus, URL synchronization, and Rule 010 View-First governance.
  */
@@ -72,8 +72,38 @@ vi.mock('../api/endpoints', () => ({
             file_size_bytes: 4096000,
             created_at: '2026-11-02T12:00:00Z',
           },
+          {
+            id: 3,
+            standard_id: 12,
+            standard_name: 'Standard 12',
+            subject_id: 101,
+            subject_name: 'Physics',
+            division_id: null,
+            division_name: null,
+            title: 'Rotational Dynamics & Moment of Inertia Masterclass',
+            description: 'Faculty masterclass recording on rotational dynamics',
+            file_type: 'Video',
+            file_url: '/materials/rotational_dynamics.mp4',
+            file_size_bytes: 104857600,
+            created_at: '2026-11-03T10:00:00Z',
+          },
+          {
+            id: 4,
+            standard_id: 12,
+            standard_name: 'Standard 12',
+            subject_id: 102,
+            subject_name: 'Chemistry',
+            division_id: null,
+            division_name: null,
+            title: 'Chemical Equilibrium & Le Chatelier Principle',
+            description: 'Animated visual demonstration of Le Chatelier principle',
+            file_type: 'Video',
+            file_url: '/materials/chemical_equilibrium.mp4',
+            file_size_bytes: 83886080,
+            created_at: '2026-11-04T10:00:00Z',
+          },
         ],
-        total: 2,
+        total: 4,
         skip: 0,
         limit: 100,
       },
@@ -229,7 +259,7 @@ describe('Study Materials & Digital Content Dedicated Workspaces Suite', () => {
     renderWithRoute('/courses/video-lectures')
 
     expect(await screen.findByText('Recorded Lectures & Video Stream Centre')).toBeDefined()
-    expect(screen.getByText('Rotational Dynamics & Moment of Inertia Masterclass')).toBeDefined()
+    expect(await screen.findByText('Rotational Dynamics & Moment of Inertia Masterclass')).toBeDefined()
     expect(screen.getByText('Chemical Equilibrium & Le Chatelier Principle')).toBeDefined()
   })
 

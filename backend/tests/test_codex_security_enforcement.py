@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-23
+#  * @updated     2026-11-25
 #  *
 #  * @description Automated security and cross-module enforcement test suite verifying all 4 visibility modes, backend data masking, persistent PIN brute-force lockout, genuine zero vs masked distinction, and export leakage prevention.
 #  */
@@ -253,13 +253,16 @@ async def test_codex_export_csv_masking_prevention():
         res = await client.get("/api/v1/reports/fee-collection/export?format=csv", headers=headers)
         assert res.status_code == 200
         csv_text = res.text.lstrip("\ufeff")
-        # Header line should exist
-        assert "admission_number,student_name,total_fees,paid,outstanding" in csv_text
+        # Header line should exist (includes academic coordinates: standard_name, division_name, board_name)
+        assert "admission_number,student_name" in csv_text and "total_fees,paid,outstanding" in csv_text
         lines = [l for l in csv_text.splitlines() if l.strip() and not l.startswith("admission_number") and "PrathamOne" not in l]
         for line in lines:
             parts = line.split(",")
-            if len(parts) >= 5:
-                # fees, paid, outstanding should be CX- encoded
+            if len(parts) >= 8:
+                # fees, paid, outstanding are at index 5, 6, 7 when academic coordinates are present
+                total_fees_val = parts[5]
+                assert total_fees_val.startswith("CX-")
+            elif len(parts) >= 5:
                 total_fees_val = parts[2]
                 assert total_fees_val.startswith("CX-")
 

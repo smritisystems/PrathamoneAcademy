@@ -24,11 +24,15 @@
       ],
       "allowed_artwork_directories": [
         "artwork/CSM",
-        "artwork/16112026/001"
+        "artwork/16112026/001",
+        "artwork/18112026/03"
       ],
       "allowed_artwork_files": [
         "artwork/prathamone.svg",
-        "artwork/16112026/001/2.svg"
+        "artwork/16112026/001/2.svg",
+        "artwork/18112026/03/license-certificate-logo.svg",
+        "artwork/18112026/03/license-certificate-watermark.svg",
+        "artwork/18112026/03/batch_g2.svg"
       ],
       "allowed_media_files": [
         "media/premium-login-mockup.svg",
@@ -111,7 +115,6 @@
       "media/commercial",
       "media/studio",
       "media/motion",
-      "artwork/18112026",
       "artwork/15112026",
       "artwork/14112026",
       "artwork/VIDEOS",

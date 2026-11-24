@@ -49,6 +49,6 @@ This source update adds pre-generated activation-code inventory, registration-at
 
 ## Operational limits and rollout
 
-The `LICENSE_SIGNER` service binding is the intended boundary for artifact signing. A concrete KMS/HSM provider, signing key, migration application, deployment, activation-code revocation UI, transfer workflow, and signed installer/update pipeline remain pending. Do not enable production issuance until the isolated signer and key lifecycle controls are deployed and validated. Continue shadow/warn rollout before any enforcement expansion. License expiry or revocation must not delete customer data or cause destructive lockout.
+The `LICENSE_SIGNER` service binding is the intended boundary for artifact signing. A concrete KMS/HSM provider, signing key, migration application, deployment, activation-code revocation UI, transfer workflow, and signed installer/update pipeline remain pending. Do not enable production issuance until the isolated signer and key lifecycle controls are deployed and validated. Production artifacts must use enforced entitlement checks; shadow metadata must not bypass enforcement. License expiry or revocation must not delete customer data or cause destructive lockout.
 
 No signing infrastructure was provisioned and no application was deployed.

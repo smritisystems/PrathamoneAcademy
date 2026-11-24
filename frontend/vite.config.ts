@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-25
  *
  * @description Vite build configuration setting up React plugin, test runner environment, and dev proxy.
  */
@@ -22,6 +22,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    fs: {
+      allow: ['..', 'F:/PrashantAcademy/frontend/node_modules'],
+    },
     port: 5173,
     proxy: {
       '/api': {

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-24
-#  * @updated     2026-11-24
+#  * @updated     2026-11-25
 #  *
 #  * @description Rigorous automated acceptance test suite for Daily Expense Management and Automated Cash Opening, Closing, and Reconciliation.
 #  */
@@ -39,7 +39,7 @@ from app.services.finance_service import FinanceService
 
 
 @pytest.mark.asyncio
-async def test_acceptance_scenario_and_cash_lifecycle():
+async def test_acceptance_scenario_and_cash_lifecycle(admin_user, test_student, test_academic_year):
     """
     K. ACCEPTANCE TEST:
     Verify the primary acceptance scenario specified in directive:
@@ -54,9 +54,10 @@ async def test_acceptance_scenario_and_cash_lifecycle():
     """
     async with AsyncSessionLocal() as db:
         # Resolve test user & institution
-        user = (await db.execute(select(User).limit(1))).scalar_one()
-        student = (await db.execute(select(Student).limit(1))).scalar_one()
-        acad_year = (await db.execute(select(AcademicYear).limit(1))).scalar_one()
+        user = await db.get(User, admin_user.id)
+        student = await db.get(Student, test_student.id)
+        acad_year = await db.get(AcademicYear, test_academic_year.id)
+        inst_id = user.institution_id or 1
 
         test_day_1 = date(2026, 12, 1)
         test_day_2 = date(2026, 12, 2)
@@ -70,7 +71,7 @@ async def test_acceptance_scenario_and_cash_lifecycle():
 
         # Step 1: Ensure Cash Register exists
         cash_reg = await FinanceService.get_or_create_daily_register(
-            db, institution_id=1, register_date=test_day_1, user_id=user.id
+            db, institution_id=inst_id, register_date=test_day_1, user_id=user.id
         )
         reg_id = cash_reg.cash_register_id
 
@@ -95,7 +96,12 @@ async def test_acceptance_scenario_and_cash_lifecycle():
         await db.commit()
 
         # Step 3: Record Approved Cash Expense of ₹2,500
-        cat = (await db.execute(select(ExpenseCategory).limit(1))).scalar_one()
+        cat = (await db.execute(select(ExpenseCategory).where(ExpenseCategory.institution_id == inst_id))).scalars().first()
+        if not cat:
+            cat = ExpenseCategory(name="Office & Stationery", code="EXP-STAT", institution_id=inst_id)
+            db.add(cat)
+            await db.commit()
+            await db.refresh(cat)
         expense_data = {
             "category_id": cat.id,
             "title": "Classroom Stationery & Test Printing",
@@ -105,7 +111,7 @@ async def test_acceptance_scenario_and_cash_lifecycle():
             "paid_to_vendor": "Shree Ganesh Stationers",
             "status": "approved",
         }
-        expense = await FinanceService.create_expense(db, 1, expense_data, user.id)
+        expense = await FinanceService.create_expense(db, inst_id, expense_data, user.id)
         assert expense.amount == Decimal("2500.00")
         assert expense.status == "approved"
 
@@ -174,7 +180,7 @@ async def test_acceptance_scenario_and_cash_lifecycle():
         # Day 2 must automatically initialize with verified physical closing ₹14,300!
         day_2_reg = await FinanceService.get_or_create_daily_register(
             db=db,
-            institution_id=1,
+            institution_id=inst_id,
             register_date=test_day_2,
             cash_register_id=reg_id,
             user_id=user.id,
@@ -184,7 +190,7 @@ async def test_acceptance_scenario_and_cash_lifecycle():
         assert day_2_reg.status == "open"
 
         # Step 9: Verify Daily Cash Book Output for Day 1
-        cashbook = await FinanceService.get_daily_cashbook(db, 1, test_day_1, reg_id)
+        cashbook = await FinanceService.get_daily_cashbook(db, inst_id, test_day_1, reg_id)
         assert cashbook["opening_balance"] == 5000.0
         assert cashbook["total_inflows"] == 12000.0
         assert cashbook["total_outflows"] == 2500.0

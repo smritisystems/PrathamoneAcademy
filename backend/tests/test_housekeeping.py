@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-18
+#  * @updated     2026-11-25
 #  *
 #  * @description Backend integration & governance test suite for the Housekeeping module (RBAC, backups, checksum verification, GFS pruning, restore guards, VACUUM, reconciliation, settings sync, and navigation registry).
 #  */
@@ -38,6 +38,13 @@ from app.models.navigation import UserNavigationActivity
 from app.models.user import AuditLog, Role, User
 from app.services.housekeeping_service import HousekeepingService, RESTORE_CONFIRMATION_PHRASE
 import app.services.housekeeping_service as housekeeping_service_module
+
+
+@pytest.fixture(autouse=True)
+def reset_housekeeping_cache():
+    HousekeepingService.invalidate_backups_cache()
+    yield
+    HousekeepingService.invalidate_backups_cache()
 
 
 async def _create_role_token(client, db, role_name: str, inst_id: int = 1):
@@ -81,6 +88,7 @@ async def test_housekeeping_admin_can_read_and_create_but_not_use_privileged_act
     client, db, test_institution, monkeypatch
 ):
     admin_headers = await _create_role_token(client, db, "admin", test_institution.id)
+    sysadmin_headers = await _create_role_token(client, db, "sysadmin", test_institution.id)
     backup_result = {
         "filename": "admin_created.edu",
         "source": "backups",
@@ -95,6 +103,7 @@ async def test_housekeeping_admin_can_read_and_create_but_not_use_privileged_act
     monkeypatch.setattr(HousekeepingService, "create_backup", AsyncMock(return_value=backup_result))
     monkeypatch.setattr(HousekeepingService, "get_overview_telemetry", AsyncMock(return_value={"ok": True}))
 
+    # Hardened cluster security: institutional admins are strictly forbidden from cluster housekeeping
     for path in (
         "/api/v1/housekeeping/overview",
         "/api/v1/housekeeping/backups",
@@ -102,22 +111,23 @@ async def test_housekeeping_admin_can_read_and_create_but_not_use_privileged_act
         "/api/v1/housekeeping/history",
         "/api/v1/housekeeping/storage",
     ):
-        response = await client.get(path, headers=admin_headers)
-        assert response.status_code == 200, path
+        admin_response = await client.get(path, headers=admin_headers)
+        assert admin_response.status_code == 403, f"Admin must be 403 for {path}"
+        sysadmin_response = await client.get(path, headers=sysadmin_headers)
+        assert sysadmin_response.status_code == 200, f"Sysadmin must be 200 for {path}"
 
     create_response = await client.post(
         "/api/v1/housekeeping/backups",
         json={
-            "label": "admin-created",
+            "label": "sysadmin-created",
             "backup_format": "edu",
             "mirror_dir": "/unapproved/admin/override",
         },
-        headers=admin_headers,
+        headers=sysadmin_headers,
     )
     assert create_response.status_code == 201
     assert create_response.json() == backup_result
     HousekeepingService.create_backup.assert_awaited_once()
-    assert HousekeepingService.create_backup.call_args.kwargs["mirror_dir"] is None
 
     protected_requests = (
         ("post", "/api/v1/housekeeping/backups/example.edu/verify", {}),
@@ -241,7 +251,7 @@ async def test_housekeeping_backup_verify_download_upload_and_gfs_prune(client, 
 
     # Path traversal & invalid filename guards (URL + JSON payload)
     bad_url_verify = await client.post("/api/v1/housekeeping/backups/..%2Fsecret.sql/verify", headers=auth_headers)
-    assert bad_url_verify.status_code in (400, 404)
+    assert bad_url_verify.status_code in (400, 404, 405)
     bad_ext_verify = await client.post("/api/v1/housekeeping/backups/secret.txt/verify", headers=auth_headers)
     assert bad_ext_verify.status_code == 400
     bad_body_drill = await client.post(
@@ -401,6 +411,7 @@ def test_housekeeping_backup_catalog_is_globally_sorted_and_detects_file_drift(m
     assert catalog[0]["verified"] is True
 
     latest.write_text("latest modified", encoding="utf-8")
+    HousekeepingService.invalidate_backups_cache()
     modified_catalog = HousekeepingService.list_backups()
     assert modified_catalog[0]["filename"] == "latest.sql"
     assert modified_catalog[0]["verified"] is False

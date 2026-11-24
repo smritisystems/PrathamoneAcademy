@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-12
- * @updated     2026-11-16
+ * @updated     2026-11-25
  *
  * @description Vitest test suite for PrathamOne EduBoard workspace, Konva/React-Konva canvas tools, View-First governance, 409 conflict UI, read-only Student view, and scoped IndexedDB crash recovery.
  */
@@ -19,7 +19,7 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import EduBoardWorkspace from '../pages/EduBoardWorkspace'
 import EduBoardCanvas from '../components/eduboard/EduBoardCanvas'
@@ -245,7 +245,9 @@ describe('PrathamOne EduBoard Suite', () => {
     const firstRender = render(
       <QueryClientProvider client={qc}>
         <MemoryRouter initialEntries={['/eduboard/101']}>
-          <EduBoardWorkspace />
+          <Routes>
+            <Route path="/eduboard/:boardId" element={<EduBoardWorkspace />} />
+          </Routes>
         </MemoryRouter>
       </QueryClientProvider>,
     )
@@ -266,7 +268,9 @@ describe('PrathamOne EduBoard Suite', () => {
     render(
       <QueryClientProvider client={qc2}>
         <MemoryRouter initialEntries={['/eduboard/101']}>
-          <EduBoardWorkspace />
+          <Routes>
+            <Route path="/eduboard/:boardId" element={<EduBoardWorkspace />} />
+          </Routes>
         </MemoryRouter>
       </QueryClientProvider>,
     )

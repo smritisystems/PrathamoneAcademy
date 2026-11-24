@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-25
  *
  * @description Vitest test suite verifying Academic Workspace navigation, KPIs, batch cards, and roster modals.
  */
@@ -357,7 +357,7 @@ describe('Academic Structure & Batch Management Workspace Specification', () => 
     fireEvent.click(timetableTabBtn)
 
     await waitFor(() => {
-      expect(screen.getByText(/Institute.*Timetable/i)).toBeDefined()
+      expect(screen.getByText(/Timetable.*Studio|Institute.*Timetable/i)).toBeDefined()
       expect(screen.getByText('Add Session')).toBeDefined()
       expect(screen.getByText('Monday')).toBeDefined()
     })

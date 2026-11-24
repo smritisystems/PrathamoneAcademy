@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-23
+ * @updated     2026-11-25
  *
  * @description Examinations flagship workspace featuring 7 dedicated submenus: overview, schedules, marks entry, analytics, report cards, question papers, and settings.
  */
@@ -224,7 +224,7 @@ function ExaminationsContent() {
   } = useQuery({
     queryKey: ['exam-marks', effectiveMarksExamId],
     queryFn: () => examinationsApi.getMarks(effectiveMarksExamId!).then((r) => r.data),
-    enabled: !!effectiveMarksExamId && (activeTab === 'marks-entry' || activeTab === 'report-cards'),
+    enabled: !!effectiveMarksExamId && (activeTab === 'marks-entry' || activeTab === 'report-cards' || !!activeMarksExam),
     staleTime: 2 * 60 * 1000,
     placeholderData: (prev) => prev,
   })

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-18
+ * @updated     2026-11-25
  *
  * @description Enterprise Release & Change Management workspace governing change tracking, automated release notes, pre-flight validations, approvals, and deployment lifecycles.
  */
@@ -128,6 +128,8 @@ export default function Releases() {
     queryKey: ['system-update-check'],
     queryFn: () => releasesApi.checkUpdate().then((r) => r.data),
   })
+  const updateAvailable = Boolean(updateCheck?.update_available)
+  const canAutoUpdate = updateAvailable && Boolean(updateCheck?.can_auto_update)
 
   // ─── Mutations ─────────────────────────────────────────────────────────────
 
@@ -397,7 +399,7 @@ export default function Releases() {
 
       {/* ─── 1-Click System Update & Safe Rollback Engine Card ──────────────── */}
       <div className={`rounded-2xl border p-5 shadow-sm transition overflow-hidden ${
-        updateCheck?.update_available
+        canAutoUpdate
           ? 'bg-gradient-to-r from-indigo-900/10 via-primary-900/10 to-purple-900/10 border-indigo-200'
           : 'bg-white border-slate-200/80'
       }`}>
@@ -405,35 +407,43 @@ export default function Releases() {
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
               <span className={`p-1.5 rounded-lg border ${
-                updateCheck?.update_available
+                canAutoUpdate
                   ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
                   : 'bg-emerald-50 text-emerald-700 border-emerald-200'
               }`}>
-                {updateCheck?.update_available ? (
+                {canAutoUpdate ? (
                   <DownloadCloud className="w-4 h-4 text-indigo-600 animate-bounce" />
                 ) : (
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
                 )}
               </span>
               <h2 className="text-base font-bold text-slate-900">
-                {updateCheck?.update_available
-                  ? `Verified Release Update Ready · v${updateCheck.latest_version}`
+                {canAutoUpdate
+                  ? `Signed Release Update Ready · v${updateCheck?.latest_version}`
+                  : updateAvailable
+                  ? `Update Listed · Secure Installer Unavailable · v${updateCheck?.latest_version}`
                   : `PrathamOne EduOS is Fully Up to Date · v${currentRelease?.version || branding.version}`}
               </h2>
-              {updateCheck?.update_available ? (
+              {canAutoUpdate ? (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
                   Update Ready
                 </span>
+              ) : updateAvailable ? (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-100 text-rose-800 border border-rose-200">
+                  Installer Unavailable
+                </span>
               ) : (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  Zero Downtime Armed
+                  Secure Updates Disabled
                 </span>
               )}
             </div>
             <p className="text-xs text-slate-600 max-w-3xl leading-relaxed">
-              {updateCheck?.update_available
-                ? `A new verified version is ready for installation. Non-technical 1-click update automatically takes a safe snapshot of all student, fee, and academic data before executing backward-compatible migrations with automatic rollback protection.`
-                : `Your system is running the latest verified production build. The automated database backup snapshot and safe rollback protection engine are continuously active.`}
+              {canAutoUpdate
+                ? `A signed release package is ready for installation. The updater verifies its signed manifest and package before creating a backup or running migrations.`
+                : updateAvailable
+                ? `A newer release is listed, but no signed package and verified migration installer are configured. One-click installation is disabled; contact support for an approved signed installer.`
+                : `No newer release is listed. One-click updates remain disabled until signed release metadata, package verification, and the migration installer are available.`}
             </p>
           </div>
 
@@ -447,15 +457,20 @@ export default function Releases() {
                 setUpdateModalOpen(true)
               }}
               className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition ${
-                updateCheck?.update_available
+                canAutoUpdate
                   ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300'
               }`}
             >
-              {updateCheck?.update_available ? (
+              {canAutoUpdate ? (
                 <>
                   <Zap className="w-4 h-4 text-amber-300" />
                   Install Update Now (1-Click)
+                </>
+              ) : updateAvailable ? (
+                <>
+                  <AlertTriangle className="w-4 h-4 text-rose-600" />
+                  Review Release Status
                 </>
               ) : (
                 <>

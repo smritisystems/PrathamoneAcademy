@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-24
+#  * @updated     2026-11-25
 #  *
 #  * @description License activation, signed snapshot storage, status, and API enforcement.
 #  */
@@ -719,16 +719,8 @@ async def enforce_license_request(
     context = await _load_license_context(db, institution_id, institution.code)
     request.state.license_mode = context["mode"]
     request.state.license_rollout_stage = context["rollout_stage"]
-    if context["rollout_stage"] == "shadow":
-        if context["mode"] not in {"active", "grace"} and request.method.upper() not in {"GET", "HEAD"}:
-            logger.warning(
-                "License shadow enforcement: write allowed for institution_id=%s mode=%s path=%s",
-                institution_id,
-                context["mode"],
-                request.url.path,
-            )
-        return
 
+    # Rollout metadata must never bypass entitlement checks on customer installations.
     payload = context["payload"]
     entitlements = payload.get("entitlements", {}) if payload else {}
     module = _enforce_module_entitlement(request.url.path, entitlements)

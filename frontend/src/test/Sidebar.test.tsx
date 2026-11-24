@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-19
+ * @updated     2026-11-25
  *
  * @description Vitest test suite verifying sidebar collapse/expand states, keyboard shortcuts, and active links.
  */
@@ -101,7 +101,7 @@ describe('Collapsible & Responsive Sidebar Component', () => {
     expect(screen.getByRole('link', { name: /attendance/i })).toBeDefined()
     expect(screen.getByRole('link', { name: /tests & results/i })).toBeDefined()
     expect(screen.getByRole('link', { name: /fees & payments/i })).toBeDefined()
-    expect(screen.getByRole('link', { name: /planning & activities/i })).toBeDefined()
+    expect(screen.getByRole('link', { name: /tasks & planning center|planning/i })).toBeDefined()
     expect(screen.getByRole('link', { name: /users & roles/i })).toBeDefined()
 
     // Action controls

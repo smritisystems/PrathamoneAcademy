@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-23
+#  * @updated     2026-11-25
 #  *
 #  * @description Pytest configuration fixtures providing test database session, test client, and auth helpers.
 #  */
@@ -30,8 +30,16 @@ os.environ.setdefault("DEBUG", "True")
 os.environ.setdefault("SECRET_KEY", "pytest_ephemeral_signing_secret_not_for_production_deployment_2026")
 os.environ.setdefault(
     "DATABASE_URL",
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/prashant_academy_test",
+    "postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/prashant_academy_test",
 )
+
+# Ensure postgresql client binaries (pg_dump, psql) are in PATH for test environment if available
+for candidate_bin in [
+    r"F:\PrashantAcademy\build_staging\pgsql\bin",
+    r"C:\Program Files\PostgreSQL\16\bin",
+]:
+    if os.path.isdir(candidate_bin) and candidate_bin not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = f"{candidate_bin};{os.environ.get('PATH', '')}"
 
 from app.main import app
 from app.core.database import Base, get_db
@@ -58,7 +66,7 @@ from sqlalchemy.pool import NullPool
 limiter.enabled = False
 
 db_url = os.getenv("DATABASE_URL", "")
-default_test_host = "db" if "@db:" in db_url else "localhost"
+default_test_host = "db" if "@db:" in db_url else "127.0.0.1"
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
     f"postgresql+asyncpg://postgres:postgres@{default_test_host}:5432/prashant_academy_test"
@@ -217,6 +225,14 @@ async def db_setup():
                     VALUES (:rid, :res, :act, NOW());
                 """), {"rid": rid, "res": res, "act": act})
 
+        # Seed default admin user (id=1) for tests relying on admin user 1
+        await conn.execute(text("""
+            INSERT INTO users (id, institution_id, username, email, hashed_password, first_name, last_name, role, role_id, is_active, created_at, updated_at)
+            VALUES (1, 1, 'admin', 'admin@example.com', :hp, 'Admin', 'User', 'admin', :rid, true, NOW(), NOW())
+            ON CONFLICT (id) DO NOTHING;
+        """), {"hp": get_password_hash("testpassword"), "rid": role_map.get("admin")})
+        await conn.execute(text("SELECT setval('users_id_seq', (SELECT GREATEST(MAX(id), 1) FROM users));"))
+
     yield
     async with test_engine.begin() as conn:
         await conn.execute(text("DROP VIEW IF EXISTS v_unified_audit_logs CASCADE;"))
@@ -233,6 +249,15 @@ async def db():
             await session.close()
 
 
+@pytest.fixture(autouse=True)
+def setup_test_license_override():
+    """Autouse fixture ensuring test execution is not blocked by licensing lock."""
+    from app.api.v1.endpoints.license import enforce_license_request
+    app.dependency_overrides[enforce_license_request] = lambda: None
+    yield
+    app.dependency_overrides.pop(enforce_license_request, None)
+
+
 @pytest.fixture
 async def client(db):
     async def override_get_db():
@@ -241,7 +266,7 @@ async def client(db):
     app.dependency_overrides[get_db] = override_get_db
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
-    app.dependency_overrides.clear()
+    app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.fixture

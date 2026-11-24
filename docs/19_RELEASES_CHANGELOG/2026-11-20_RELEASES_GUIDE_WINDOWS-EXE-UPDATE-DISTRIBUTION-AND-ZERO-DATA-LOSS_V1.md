@@ -11,7 +11,7 @@ created_date: "2026-11-20"
 updated_date: "2026-11-20"
 author: "Jawahar R Mallah"
 organization: "Smritisys & AITDL Networks"
-status: "Approved"
+status: "Superseded by secure update policy"
 tags: ["exe-updates", "inno-setup", "zero-data-loss", "patch-management", "offline-update", "hardware-locking", "sysadmin"]
 entities: ["SystemRelease", "UpdaterService", "LicenseRegistration"]
 api_routes: ["/api/v1/updater/progress", "/api/v1/updater/run", "/api/v1/license/status"]
@@ -19,6 +19,8 @@ related_modules: ["13_SYSADMIN_SETTINGS", "19_RELEASES_CHANGELOG", "22_USER_MANU
 ---
 
 # Windows Desktop & Server EXE Version Update Distribution & Zero-Data-Loss Architecture
+
+> **Security correction (2026-11-24):** This guide describes a target design, not verified updater behavior. The current updater does not download, authenticate, install, migrate, or roll back a release package. Automatic installation is disabled until signed release metadata, package verification, and a tested migration installer are implemented. Follow the [Windows EXE, Licensing, Secure Update, and Migration Policy](./2026-11-24_RELEASES_POLICY_WINDOWS-EXE-LICENSING-SECURE-UPDATE-AND-MIGRATION_V1.md) for release decisions. Do not rely on the success, checksum, or zero-data-loss claims below as evidence of implemented behavior.
 
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Baseline Version:** 1.0.0  

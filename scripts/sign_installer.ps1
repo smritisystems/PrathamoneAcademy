@@ -13,13 +13,15 @@
 #  * @created     2026-11-15
 #  * @updated     2026-11-16
 #  *
-#  * @description Code-signing automation utility for PrathamOne EduOS installer.
-#  *              Applies Authenticode digital signatures and exports local root certificates.
+#  * @description Signs and verifies release binaries using a trusted production
+#  *              Authenticode certificate; refuses self-signed certificates.
 #  */
 
 [CmdletBinding()]
 param(
     [string]$InstallerPath = "dist\PrathamOne-EduOS-Setup-v1.0.0.exe",
+    [Parameter(Mandatory = $true)]
+    [string]$CertificateThumbprint,
     [string]$TimestampServer = "http://timestamp.digicert.com"
 )
 
@@ -35,25 +37,42 @@ Write-Host "====================================================================
 Write-Host "       PRATHAMONE EduOS -- AUTHENTICODE CODE SIGNING UTILITY          " -ForegroundColor Cyan
 Write-Host "======================================================================" -ForegroundColor Cyan
 
-# 1. Look for existing Smritisys & AITDL Networks Code Signing Certificate in Local User Store
-$cert = Get-ChildItem -Path Cert:\CurrentUser\My -CodeSigningCert | Where-Object { $_.Subject -like "*Smritisys*" } | Select-Object -First 1
-
-if (-not $cert) {
-    Write-Host "[SIGN] Generating new 'Smritisys & AITDL Networks' Code Signing Certificate in Local User Store..." -ForegroundColor Yellow
-    $certParams = @{
-        Type = "CodeSigning"
-        Subject = 'CN=Smritisys & AITDL Networks, O=Smritisys & AITDL Networks, C=IN'
-        CertStoreLocation = "Cert:\CurrentUser\My"
-        NotAfter = (Get-Date).AddYears(5)
-        FriendlyName = "Smritisys & AITDL Networks Code Signing"
-    }
-    $cert = New-SelfSignedCertificate @certParams
-    Write-Host "[SIGN] Generated certificate thumbprint: $($cert.Thumbprint)" -ForegroundColor Green
-} else {
-    Write-Host "[SIGN] Using existing Smritisys & AITDL Networks certificate: $($cert.Thumbprint)" -ForegroundColor Green
+if (($CertificateThumbprint -replace '\s', '') -notmatch '^[A-Fa-f0-9]{40}$') {
+    throw "Provide the thumbprint of the trusted production code-signing certificate."
 }
 
-# 2. Sign binaries (Launchers & Installer)
+$normalizedThumbprint = $CertificateThumbprint -replace '\s', ''
+$cert = Get-ChildItem -Path Cert:\CurrentUser\My -CodeSigningCert |
+    Where-Object { $_.Thumbprint -eq $normalizedThumbprint } |
+    Select-Object -First 1
+if (-not $cert) {
+    throw "The requested code-signing certificate was not found in the current user's Personal store."
+}
+if (-not $cert.HasPrivateKey) {
+    throw "The requested code-signing certificate has no accessible private key."
+}
+if ($cert.Subject -eq $cert.Issuer) {
+    throw "Self-signed certificates are prohibited for customer release binaries."
+}
+
+$chain = New-Object System.Security.Cryptography.X509Certificates.X509Chain
+if (-not $chain.Build($cert)) {
+    throw "The code-signing certificate chain is not trusted or is not currently valid."
+}
+
+$signToolCommand = Get-Command signtool.exe -ErrorAction SilentlyContinue
+$signToolPath = if ($signToolCommand) { $signToolCommand.Source } else { $null }
+if (-not $signToolPath) {
+    $windowsKitsBin = Join-Path ([Environment]::GetFolderPath("ProgramFilesX86")) "Windows Kits\10\bin\*\x64\signtool.exe"
+    $signToolPath = Get-ChildItem -Path $windowsKitsBin -ErrorAction SilentlyContinue |
+        Sort-Object FullName -Descending |
+        Select-Object -First 1 -ExpandProperty FullName
+}
+if (-not $signToolPath) {
+    throw "SignTool was not found. Install the Windows SDK before signing release binaries."
+}
+
+# Sign and verify binaries (launchers and installer).
 $binariesToSign = @($fullInstallerPath)
 $launcherExe = Join-Path $PSScriptRoot "..\installer\files\PrathamOne.exe"
 $stopExe = Join-Path $PSScriptRoot "..\installer\files\StopPrathamOne.exe"
@@ -62,26 +81,16 @@ if (Test-Path $stopExe) { $binariesToSign += $stopExe }
 
 foreach ($binPath in $binariesToSign) {
     $binName = Split-Path -Leaf $binPath
-    Write-Host "[SIGN] Applying Authenticode signature to $binName..." -ForegroundColor Yellow
-    try {
-        $sigResult = Set-AuthenticodeSignature -FilePath $binPath -Certificate $cert -TimestampServer $TimestampServer
-    } catch {
-        Write-Host "[SIGN WARN] Timestamp server unreachable, signing without timestamp..." -ForegroundColor DarkYellow
-        $sigResult = Set-AuthenticodeSignature -FilePath $binPath -Certificate $cert
+    Write-Host "[SIGN] Signing $binName with SHA-256 and a trusted timestamp..." -ForegroundColor Yellow
+    & $signToolPath sign /sha1 $normalizedThumbprint /s My /fd SHA256 /tr $TimestampServer /td SHA256 $binPath
+    if ($LASTEXITCODE -ne 0) {
+        throw "SignTool failed to sign $binName."
     }
-    Write-Host "[SIGN STATUS] $binName - $($sigResult.Status): $($sigResult.StatusMessage)" -ForegroundColor Green
+
+    & $signToolPath verify /pa /all /v $binPath
+    if ($LASTEXITCODE -ne 0) {
+        throw "Authenticode verification failed for $binName."
+    }
 }
 
-# 3. Export Public Certificate for Local Windows Trust
-$distDir = Split-Path -Parent $fullInstallerPath
-$certExportPath = Join-Path $distDir "Smritisys_AITDL_Networks_CA.cer"
-Export-Certificate -Cert $cert -FilePath $certExportPath -Force | Out-Null
-Write-Host "[SIGN] Public certificate exported to: $certExportPath" -ForegroundColor Cyan
-
-# 4. Local machine installation instructions
-Write-Host "`n----------------------------------------------------------------------" -ForegroundColor DarkGray
-Write-Host "LOCAL MACHINE TRUST INSTRUCTIONS (To eliminate Unknown Publisher):" -ForegroundColor White
-Write-Host "Run this single command in PowerShell (Run as Administrator):" -ForegroundColor Yellow
-Write-Host "  Import-Certificate -FilePath `"$certExportPath`" -CertStoreLocation `"Cert:\LocalMachine\Root`"" -ForegroundColor Green
-Write-Host "Once imported, Windows UAC will show: Verified Publisher: Smritisys & AITDL Networks" -ForegroundColor White
-Write-Host "----------------------------------------------------------------------`n" -ForegroundColor DarkGray
+Write-Host "[SIGN SUCCESS] All release binaries are signed and verified." -ForegroundColor Green
