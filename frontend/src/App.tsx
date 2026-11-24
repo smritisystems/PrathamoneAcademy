@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-24
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -37,6 +37,7 @@ const AttendancePage = lazyWithRetry(() => import('./pages/Attendance'), 'Attend
 const ExaminationsPage = lazyWithRetry(() => import('./pages/Examinations'), 'Examinations')
 const FeesPage = lazyWithRetry(() => import('./pages/Fees'), 'Fees')
 const FeeCollectionPage = lazyWithRetry(() => import('./pages/FeeCollection'), 'FeeCollection')
+const FinanceExpenseWorkspacePage = lazyWithRetry(() => import('./pages/FinanceExpenseWorkspace'), 'FinanceExpenseWorkspace')
 const PaymentsPage = lazyWithRetry(() => import('./pages/Payments'), 'Payments')
 const ReceiptPage = lazyWithRetry(() => import('./pages/Receipt'), 'Receipt')
 const ReportsPage = lazyWithRetry(() => import('./pages/Reports'), 'Reports')
@@ -268,6 +269,14 @@ export default function App() {
             <Route path="fees/plans" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
             <Route path="fees/settings" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
             <Route path="payments" element={<Suspense fallback={<PageLoader />}><PaymentsPage /></Suspense>} />
+            <Route path="expenses" element={<Suspense fallback={<PageLoader />}><FinanceExpenseWorkspacePage /></Suspense>} />
+            <Route path="expenses/register" element={<Suspense fallback={<PageLoader />}><FinanceExpenseWorkspacePage /></Suspense>} />
+            <Route path="expenses/daily" element={<Suspense fallback={<PageLoader />}><FinanceExpenseWorkspacePage /></Suspense>} />
+            <Route path="expenses/cash-register" element={<Suspense fallback={<PageLoader />}><FinanceExpenseWorkspacePage /></Suspense>} />
+            <Route path="finance/expenses" element={<Suspense fallback={<PageLoader />}><FinanceExpenseWorkspacePage /></Suspense>} />
+            <Route path="finance/cash-register" element={<Suspense fallback={<PageLoader />}><FinanceExpenseWorkspacePage /></Suspense>} />
+            <Route path="cash-register" element={<Suspense fallback={<PageLoader />}><FinanceExpenseWorkspacePage /></Suspense>} />
+            <Route path="cashbook" element={<Suspense fallback={<PageLoader />}><FinanceExpenseWorkspacePage /></Suspense>} />
           </Route>
 
           {/* Teacher Payroll Routes */}

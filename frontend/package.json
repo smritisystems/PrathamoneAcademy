@@ -1,7 +1,7 @@
 {
   "name": "prashant-academy",
   "private": true,
-  "version": "1.175.0",
+  "version": "1.175.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -34,6 +34,7 @@
     "react-konva": "^18.2.16",
     "react-router-dom": "^7.18.5",
     "recharts": "^2.12.7",
+    "regenerator-runtime": "^0.14.1",
     "write-excel-file": "^4.1.1",
     "zod": "^4.6.7",
     "zustand": "^4.5.2"

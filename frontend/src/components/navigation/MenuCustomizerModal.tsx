@@ -11,9 +11,9 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-16
+ * @updated     2026-11-24
  *
- * @description Comprehensive My Menu customization studio supporting mode selection, pin reordering, custom groups, and live preview.
+ * @description Comprehensive My Menu customization studio supporting role presets, HTML5 drag-and-drop reordering, mode selection, personal groups, and live preview.
  */
 
 import React, { useState, useMemo } from 'react'
@@ -37,15 +37,82 @@ import {
   LayoutTemplate,
   Sliders,
   ChevronRight,
+  ChevronDown,
   Search,
   CheckCircle2,
   AlertCircle,
+  GripVertical,
+  Star,
+  Shield,
+  CreditCard,
+  GraduationCap,
+  UserCheck,
+  Zap,
 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { useNavigationStore } from '../../store/navigationStore'
 import { getAuthorizedModules } from '../../config/modules'
 import { useBranding } from '../../config/branding'
 import type { NavigationMode } from '../../types'
+
+interface RolePreset {
+  id: string
+  title: string
+  subtitle: string
+  roleTag: string
+  icon: React.ComponentType<{ className?: string }>
+  color: string
+  bgLight: string
+  badgeText: string
+  items: string[]
+}
+
+const ROLE_PRESETS: RolePreset[] = [
+  {
+    id: 'admin',
+    title: 'Director / School Admin',
+    subtitle: 'Revenue, Student Strength, Faculty & Master Reports',
+    roleTag: 'Director / Principal',
+    icon: Shield,
+    color: 'text-indigo-600 dark:text-indigo-400',
+    bgLight: 'bg-indigo-50/70 hover:bg-indigo-100/70 border-indigo-200 dark:bg-indigo-950/30 dark:border-indigo-800/60',
+    badgeText: 'Complete Oversight',
+    items: ['dashboard', 'fees', 'students', 'crm', 'academic', 'teachers', 'attendance', 'reports', 'settings'],
+  },
+  {
+    id: 'accountant',
+    title: 'Accountant / Cash Desk',
+    subtitle: 'Counter Payments, Invoices, Defaulters & Registers',
+    roleTag: 'Cashier / Finance',
+    icon: CreditCard,
+    color: 'text-emerald-600 dark:text-emerald-400',
+    bgLight: 'bg-emerald-50/70 hover:bg-emerald-100/70 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/60',
+    badgeText: 'Fee Focused',
+    items: ['dashboard', 'fees', 'fees_collection', 'fees_invoicing', 'fees_defaulters', 'fees_reports', 'reports'],
+  },
+  {
+    id: 'teacher',
+    title: 'Teacher / Faculty',
+    subtitle: 'Daily Roll Call, Homework, Test Marks & Study Content',
+    roleTag: 'Educator / Teacher',
+    icon: GraduationCap,
+    color: 'text-purple-600 dark:text-purple-400',
+    bgLight: 'bg-purple-50/70 hover:bg-purple-100/70 border-purple-200 dark:bg-purple-950/30 dark:border-purple-800/60',
+    badgeText: 'Classroom Daily',
+    items: ['dashboard', 'attendance_daily', 'homework', 'examinations', 'exam_marks', 'courses', 'students'],
+  },
+  {
+    id: 'counselor',
+    title: 'Front Desk / Admissions',
+    subtitle: 'Inquiries, Lead Pipeline, Follow-ups & New Admissions',
+    roleTag: 'Reception / CRM',
+    icon: UserCheck,
+    color: 'text-amber-600 dark:text-amber-400',
+    bgLight: 'bg-amber-50/70 hover:bg-amber-100/70 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800/60',
+    badgeText: 'Front Desk Best',
+    items: ['dashboard', 'crm_pipeline', 'crm_followups', 'students_admission', 'fees_collection', 'attendance'],
+  },
+]
 
 export default function MenuCustomizerModal() {
   const branding = useBranding()
@@ -58,12 +125,13 @@ export default function MenuCustomizerModal() {
     pinnedItems,
     hiddenItems,
     customGroups,
-    itemOrder,
     togglePinItem,
     pinItem,
     unpinItem,
     toggleHideItem,
     reorderPinnedItems,
+    setPinnedItems,
+    clearPinnedItems,
     addCustomGroup,
     renameCustomGroup,
     deleteCustomGroup,
@@ -84,7 +152,11 @@ export default function MenuCustomizerModal() {
   const [newGroupName, setNewGroupName] = useState('')
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null)
   const [editingGroupName, setEditingGroupName] = useState('')
-  const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
+  const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null)
+  const [expandedSubmodules, setExpandedSubmodules] = useState<Set<string>>(new Set())
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+  const [activePresetId, setActivePresetId] = useState<string | null>(null)
 
   const authorizedModules = useMemo(() => getAuthorizedModules(user), [user])
 
@@ -107,12 +179,47 @@ export default function MenuCustomizerModal() {
     if (window.confirm('Reset your personal menu preferences to the institute role default?')) {
       try {
         await resetToDefaults(selectedInstitutionId || 1)
+        setActivePresetId(null)
         setStatusMessage({ text: 'Preferences reset to role defaults', type: 'success' })
         setTimeout(() => setStatusMessage(null), 2000)
       } catch (err: any) {
         setStatusMessage({ text: 'Failed to reset preferences', type: 'error' })
       }
     }
+  }
+
+  // Apply a 1-click role preset
+  const handleApplyPreset = (preset: RolePreset) => {
+    setPinnedItems(preset.items)
+    setNavigationMode('hybrid')
+    setActivePresetId(preset.id)
+    setStatusMessage({
+      text: `Applied "${preset.title}" preset (${preset.items.length} shortcuts in Hybrid Mode)`,
+      type: 'info',
+    })
+    setTimeout(() => setStatusMessage(null), 3000)
+  }
+
+  // Clear all pinned items
+  const handleClearAllPinned = () => {
+    if (pinnedItems.length === 0) return
+    clearPinnedItems()
+    setActivePresetId(null)
+    setStatusMessage({ text: 'All pinned shortcuts cleared', type: 'info' })
+    setTimeout(() => setStatusMessage(null), 2000)
+  }
+
+  // Toggle expand submodule
+  const toggleExpandSubmodule = (modId: string) => {
+    setExpandedSubmodules((prev) => {
+      const next = new Set(prev)
+      if (next.has(modId)) {
+        next.delete(modId)
+      } else {
+        next.add(modId)
+      }
+      return next
+    })
   }
 
   // Move pinned item up
@@ -133,6 +240,40 @@ export default function MenuCustomizerModal() {
     newOrder[index + 1] = newOrder[index]
     newOrder[index] = temp
     reorderPinnedItems(newOrder)
+  }
+
+  // HTML5 Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(index))
+  }
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index)
+    }
+  }
+
+  const handleDrop = (targetIndex: number) => {
+    if (draggedIndex === null || draggedIndex === targetIndex) {
+      setDraggedIndex(null)
+      setDragOverIndex(null)
+      return
+    }
+    const newOrder = [...pinnedItems]
+    const [movedItem] = newOrder.splice(draggedIndex, 1)
+    newOrder.splice(targetIndex, 0, movedItem)
+    reorderPinnedItems(newOrder)
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null)
+    setDragOverIndex(null)
   }
 
   // Filter modules
@@ -160,41 +301,46 @@ export default function MenuCustomizerModal() {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Studio Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-900/60">
+        <div className="px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-900/60">
           <div className="flex items-center gap-3">
             <div
               style={{
                 background: `linear-gradient(135deg, ${branding.colors.primary} 0%, ${branding.colors.secondary} 100%)`,
               }}
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md flex-shrink-0"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-md flex-shrink-0"
             >
               <Sliders className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+              <h2 className="text-base font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
                 <span>My Menu & Navigation Studio</span>
                 <span className="text-[10px] px-2 py-0.5 bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 rounded-full font-bold">
                   Personalized
                 </span>
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Configure your navigation mode, pin essential modules, organize custom groups, and review intelligent suggestions.
+                Configure your navigation mode, apply role-based presets, and customize pinned quick shortcuts.
               </p>
             </div>
           </div>
 
           <button
             onClick={closeCustomizer}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Navigation Mode Selector Bar */}
-        <div className="px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-950/40">
-          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-            Select Navigation Experience Mode
+        <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-950/40">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              Select Navigation Experience Mode
+            </span>
+            <span className="text-[10px] text-slate-400 hidden sm:inline">
+              Choose how your sidebar renders daily shortcuts
+            </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             {/* Standard Mode Card */}
@@ -215,29 +361,35 @@ export default function MenuCustomizerModal() {
                 )}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                Full institutional menu hierarchy with all authorized sections and submenus.
+                Full institutional hierarchy with all authorized sections and expandable submenus.
               </p>
             </div>
 
-            {/* Hybrid Mode Card */}
+            {/* Hybrid Mode Card (RECOMMENDED) */}
             <div
               onClick={() => setNavigationMode('hybrid')}
-              className={`p-3 rounded-2xl border-2 cursor-pointer transition-all ${
+              className={`p-3 rounded-2xl border-2 cursor-pointer transition-all relative overflow-hidden ${
                 navigationMode === 'hybrid'
-                  ? 'border-primary-600 bg-primary-50/60 dark:bg-primary-950/30 shadow-xs'
-                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300'
+                  ? 'border-primary-600 bg-primary-50/60 dark:bg-primary-950/30 shadow-xs ring-1 ring-primary-500'
+                  : 'border-amber-300/80 dark:border-amber-900/60 bg-amber-50/20 dark:bg-amber-950/10 hover:border-amber-400'
               }`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
-                  B. Hybrid Menu
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
+                    B. Hybrid Menu
+                  </span>
+                  <span className="px-1.5 py-0.2 bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-extrabold text-[9px] rounded uppercase tracking-wider flex items-center gap-0.5">
+                    <Star className="w-2.5 h-2.5 fill-current" />
+                    Recommended
+                  </span>
+                </div>
                 {navigationMode === 'hybrid' && (
                   <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                 )}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                Pinned My Menu shortcuts displayed prominently at the top, with standard navigation below.
+                Fastest daily productivity: Pinned My Menu shortcuts stay on top, with standard menu below.
               </p>
             </div>
 
@@ -257,15 +409,20 @@ export default function MenuCustomizerModal() {
               }`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
-                  C. My Menu Only
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
+                    C. My Menu Only
+                  </span>
+                  <span className="px-1.5 py-0.2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-[9px] rounded">
+                    Focused
+                  </span>
+                </div>
                 {navigationMode === 'my_menu_only' && (
                   <CheckCircle2 className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                 )}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                Clean, focused workspace showing only your pinned items. Standard menu is hidden.
+                Clean, distraction-free workspace showing only your pinned shortcuts. Best for dedicated desks.
               </p>
             </div>
           </div>
@@ -275,7 +432,7 @@ export default function MenuCustomizerModal() {
         <div className="px-6 border-b border-slate-200 dark:border-slate-800 flex items-center gap-4 text-xs font-bold overflow-x-auto">
           <button
             onClick={() => setActiveTab('modules')}
-            className={`py-3 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+            className={`py-2.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
               activeTab === 'modules'
                 ? 'border-primary-600 text-primary-600 dark:text-primary-400'
                 : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
@@ -287,7 +444,7 @@ export default function MenuCustomizerModal() {
 
           <button
             onClick={() => setActiveTab('groups')}
-            className={`py-3 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+            className={`py-2.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
               activeTab === 'groups'
                 ? 'border-primary-600 text-primary-600 dark:text-primary-400'
                 : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
@@ -299,7 +456,7 @@ export default function MenuCustomizerModal() {
 
           <button
             onClick={() => setActiveTab('suggestions')}
-            className={`py-3 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+            className={`py-2.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
               activeTab === 'suggestions'
                 ? 'border-primary-600 text-primary-600 dark:text-primary-400'
                 : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
@@ -316,7 +473,7 @@ export default function MenuCustomizerModal() {
 
           <button
             onClick={() => setActiveTab('preview')}
-            className={`py-3 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+            className={`py-2.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
               activeTab === 'preview'
                 ? 'border-primary-600 text-primary-600 dark:text-primary-400'
                 : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
@@ -328,229 +485,352 @@ export default function MenuCustomizerModal() {
         </div>
 
         {/* Tab Content Body */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-4">
           {/* TAB 1: MODULES & SHORTCUTS */}
           {activeTab === 'modules' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left Column: All Available Modules */}
-              <div className="lg:col-span-7 flex flex-col space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs uppercase tracking-wider text-slate-500">
-                    1. Authorized Modules Catalog
-                  </span>
-                  <span className="text-xs text-slate-400">
-                    {filteredModules.length} modules available
-                  </span>
-                </div>
-
-                {/* Filter and Search */}
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Filter modules..."
-                      className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    />
+            <div className="space-y-4">
+              {/* 1-Click Role-Based Quick Presets Ribbon */}
+              <div className="p-3.5 rounded-2xl bg-slate-50/90 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Zap className="w-4 h-4 text-amber-500" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">
+                      Recommended 1-Click Setup Presets
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded font-bold">
+                      Non-Technical Friendly
+                    </span>
                   </div>
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs focus:outline-none"
-                  >
-                    <option value="all">All Categories</option>
-                    <option value="core">Core</option>
-                    <option value="academic">Academic</option>
-                    <option value="students">Students & CRM</option>
-                    <option value="finance">Finance</option>
-                    <option value="workforce">Workforce</option>
-                    <option value="operations">Operations</option>
-                    <option value="admin">Admin</option>
-                  </select>
+                  <span className="text-[11px] text-slate-400">
+                    Click any role to instantly configure best-suited shortcuts
+                  </span>
                 </div>
 
-                {/* Modules List */}
-                <div className="space-y-2 max-h-[420px] overflow-y-auto custom-scrollbar pr-1">
-                  {filteredModules.map((mod) => {
-                    const IconComp = mod.icon
-                    const isPinned = pinnedItems.includes(mod.id)
-                    const isHidden = hiddenItems.includes(mod.id)
-
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                  {ROLE_PRESETS.map((preset) => {
+                    const PresetIcon = preset.icon
+                    const isSelected = activePresetId === preset.id
                     return (
-                      <div
-                        key={mod.id}
-                        className={`p-3 rounded-2xl border transition-all ${
-                          isPinned
-                            ? 'border-primary-300 dark:border-primary-800 bg-primary-50/30 dark:bg-primary-950/20'
-                            : isHidden
-                            ? 'border-slate-200 dark:border-slate-800 opacity-60 bg-slate-50 dark:bg-slate-950'
-                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300'
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => handleApplyPreset(preset)}
+                        className={`text-left p-2.5 rounded-xl border transition-all relative flex flex-col justify-between group ${preset.bgLight} ${
+                          isSelected ? 'ring-2 ring-primary-500 shadow-xs' : ''
                         }`}
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 flex-shrink-0">
-                              <IconComp className="w-4 h-4" />
-                            </div>
-                            <div className="min-w-0">
-                              <div className="font-bold text-xs text-slate-900 dark:text-white truncate">
-                                {mod.label}
-                              </div>
-                              <div className="text-[10px] text-slate-400 capitalize">{mod.category}</div>
-                            </div>
-                          </div>
-
-                          {/* Quick Pin / Hide Actions */}
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            {institutionPolicy.allow_hiding && (
-                              <button
-                                type="button"
-                                onClick={() => toggleHideItem(mod.id)}
-                                title={isHidden ? 'Unhide from standard menu' : 'Hide from standard menu'}
-                                className={`p-1.5 rounded-lg border text-xs font-semibold transition-colors ${
-                                  isHidden
-                                    ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border-amber-300'
-                                    : 'text-slate-400 hover:text-slate-700 border-transparent hover:border-slate-200'
-                                }`}
-                              >
-                                {isHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                              </button>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={() => togglePinItem(mod.id)}
-                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${
-                                isPinned
-                                  ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
-                                  : 'bg-slate-100 dark:bg-slate-800 hover:bg-primary-50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-                              }`}
-                            >
-                              <Pin className={`w-3.5 h-3.5 ${isPinned ? 'fill-current' : ''}`} />
-                              <span>{isPinned ? 'Pinned' : 'Pin'}</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Sub-item shortcuts if module has subItems */}
-                        {mod.subItems.length > 0 && (
-                          <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                            <span className="text-[10px] font-bold text-slate-400 block mb-1">
-                              Sub-Page Direct Shortcuts:
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                              {preset.roleTag}
                             </span>
-                            <div className="flex flex-wrap gap-1">
-                              {mod.subItems.map((sub) => {
-                                const isSubPinned = pinnedItems.includes(sub.id)
-                                return (
-                                  <button
-                                    key={sub.id}
-                                    type="button"
-                                    onClick={() => togglePinItem(sub.id)}
-                                    className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors border ${
-                                      isSubPinned
-                                        ? 'bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 border-primary-300 dark:border-primary-700 font-bold'
-                                        : 'bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-400'
-                                    }`}
-                                  >
-                                    {isSubPinned ? '✓ ' : '+ '}
-                                    {sub.label}
-                                  </button>
-                                )
-                              })}
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+                              {preset.badgeText}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <PresetIcon className={`w-4 h-4 ${preset.color} flex-shrink-0`} />
+                            <div className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                              {preset.title}
                             </div>
                           </div>
-                        )}
-                      </div>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                            {preset.subtitle}
+                          </p>
+                        </div>
+                        <div className="mt-2 pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[10px] font-bold">
+                          <span className="text-slate-400">{preset.items.length} Shortcuts</span>
+                          <span className="text-primary-600 dark:text-primary-400 group-hover:underline flex items-center gap-0.5">
+                            {isSelected ? '✓ Active Preset' : 'Apply Preset →'}
+                          </span>
+                        </div>
+                      </button>
                     )
                   })}
                 </div>
               </div>
 
-              {/* Right Column: Pinned Items & Reordering */}
-              <div className="lg:col-span-5 flex flex-col space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs uppercase tracking-wider text-slate-500">
-                    2. Pinned Shortcuts & Sequence ({pinnedItems.length})
-                  </span>
-                  <span className="text-[11px] text-slate-400">Drag or use arrows</span>
-                </div>
+              {/* Two Column Layout: Catalog & Pinned Items */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                {/* Left Column: Authorized Modules Catalog */}
+                <div className="lg:col-span-7 flex flex-col space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs uppercase tracking-wider text-slate-500">
+                      1. Authorized Modules Catalog
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      {filteredModules.length} modules available
+                    </span>
+                  </div>
 
-                <div className="p-3 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 flex-1 flex flex-col max-h-[465px] overflow-y-auto custom-scrollbar space-y-1.5">
-                  {pinnedItems.length === 0 ? (
-                    <div className="py-12 text-center text-slate-400 my-auto">
-                      <PinOff className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                      <p className="text-xs font-bold">No pinned items selected</p>
-                      <p className="text-[11px] mt-1">Pin modules from the catalog on the left to build your menu</p>
+                  {/* Filter and Search */}
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search modules or sub-pages..."
+                        className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
                     </div>
-                  ) : (
-                    pinnedItems.map((itemId, idx) => {
-                      // Lookup title
-                      let title = itemId
-                      let iconName = 'LayoutDashboard'
-                      const directMod = moduleMap.get(itemId)
-                      if (directMod) {
-                        title = directMod.label
-                        iconName = directMod.iconName
-                      } else {
-                        // Look inside subItems
-                        for (const m of authorizedModules) {
-                          const sub = m.subItems.find((s) => s.id === itemId)
-                          if (sub) {
-                            title = `${m.label} → ${sub.label}`
-                            iconName = m.iconName
-                            break
-                          }
-                        }
-                      }
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs focus:outline-none font-medium"
+                    >
+                      <option value="all">All Categories</option>
+                      <option value="core">Core</option>
+                      <option value="academic">Academic</option>
+                      <option value="students">Students & CRM</option>
+                      <option value="finance">Finance</option>
+                      <option value="workforce">Workforce</option>
+                      <option value="operations">Operations</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+
+                  {/* Modules List with Collapsible Sub-Items */}
+                  <div className="space-y-2 max-h-[420px] overflow-y-auto custom-scrollbar pr-1">
+                    {filteredModules.map((mod) => {
+                      const IconComp = mod.icon
+                      const isPinned = pinnedItems.includes(mod.id)
+                      const isHidden = hiddenItems.includes(mod.id)
+                      const hasSubItems = mod.subItems && mod.subItems.length > 0
+                      const isExpanded = expandedSubmodules.has(mod.id)
+                      const pinnedSubCount = hasSubItems
+                        ? mod.subItems.filter((s) => pinnedItems.includes(s.id)).length
+                        : 0
 
                       return (
                         <div
-                          key={itemId}
-                          className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs group"
+                          key={mod.id}
+                          className={`p-2.5 rounded-2xl border transition-all ${
+                            isPinned
+                              ? 'border-primary-300 dark:border-primary-800 bg-primary-50/20 dark:bg-primary-950/20'
+                              : isHidden
+                              ? 'border-slate-200 dark:border-slate-800 opacity-60 bg-slate-50 dark:bg-slate-950'
+                              : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300'
+                          }`}
                         >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <span className="w-5 text-center text-xs font-mono font-bold text-slate-400">
-                              {idx + 1}
-                            </span>
-                            <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
-                              {title}
-                            </span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 flex-shrink-0">
+                                <IconComp className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                                  {mod.label}
+                                </div>
+                                <div className="text-[10px] text-slate-400 capitalize flex items-center gap-2">
+                                  <span>{mod.category}</span>
+                                  {pinnedSubCount > 0 && (
+                                    <span className="text-primary-600 font-bold">
+                                      • {pinnedSubCount} sub-shortcuts pinned
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Quick Pin / Hide Actions */}
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              {institutionPolicy.allow_hiding && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleHideItem(mod.id)}
+                                  title={isHidden ? 'Unhide from standard menu' : 'Hide from standard menu'}
+                                  className={`p-1.5 rounded-lg border text-xs font-semibold transition-colors ${
+                                    isHidden
+                                      ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border-amber-300'
+                                      : 'text-slate-400 hover:text-slate-700 border-transparent hover:border-slate-200'
+                                  }`}
+                                >
+                                  {isHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => togglePinItem(mod.id)}
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${
+                                  isPinned
+                                    ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
+                                    : 'bg-slate-100 dark:bg-slate-800 hover:bg-primary-50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                }`}
+                              >
+                                <Pin className={`w-3.5 h-3.5 ${isPinned ? 'fill-current' : ''}`} />
+                                <span>{isPinned ? 'Pinned' : 'Pin'}</span>
+                              </button>
+                            </div>
                           </div>
 
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => handleMoveUp(idx)}
-                              disabled={idx === 0}
-                              className="p-1 rounded text-slate-400 hover:text-slate-700 disabled:opacity-20 transition-colors"
-                              title="Move up"
-                            >
-                              <ArrowUp className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleMoveDown(idx)}
-                              disabled={idx === pinnedItems.length - 1}
-                              className="p-1 rounded text-slate-400 hover:text-slate-700 disabled:opacity-20 transition-colors"
-                              title="Move down"
-                            >
-                              <ArrowDown className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => unpinItem(itemId)}
-                              className="p-1 rounded text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors ml-1"
-                              title="Unpin"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                          {/* Collapsible Sub-Page Direct Shortcuts (Rule 014 Anti-Bloat) */}
+                          {hasSubItems && (
+                            <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
+                              <button
+                                type="button"
+                                onClick={() => toggleExpandSubmodule(mod.id)}
+                                className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors py-0.5"
+                              >
+                                <span>
+                                  {isExpanded
+                                    ? `Hide ${mod.subItems.length} sub-page shortcuts`
+                                    : `View ${mod.subItems.length} sub-page shortcuts`}
+                                </span>
+                                <ChevronDown
+                                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                                    isExpanded ? 'rotate-180 text-primary-600' : ''
+                                  }`}
+                                />
+                                {pinnedSubCount > 0 && !isExpanded && (
+                                  <span className="px-1.5 py-0.2 bg-primary-100 text-primary-700 dark:bg-primary-950 dark:text-primary-300 rounded font-bold text-[9px]">
+                                    {pinnedSubCount} active
+                                  </span>
+                                )}
+                              </button>
+
+                              {isExpanded && (
+                                <div className="flex flex-wrap gap-1 mt-1.5 pt-1 border-t border-dashed border-slate-200 dark:border-slate-800 animate-fadeIn">
+                                  {mod.subItems.map((sub) => {
+                                    const isSubPinned = pinnedItems.includes(sub.id)
+                                    return (
+                                      <button
+                                        key={sub.id}
+                                        type="button"
+                                        onClick={() => togglePinItem(sub.id)}
+                                        className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors border ${
+                                          isSubPinned
+                                            ? 'bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 border-primary-300 dark:border-primary-700 font-bold'
+                                            : 'bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-400'
+                                        }`}
+                                      >
+                                        {isSubPinned ? '✓ ' : '+ '}
+                                        {sub.label}
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )
-                    })
-                  )}
+                    })}
+                  </div>
+                </div>
+
+                {/* Right Column: Pinned Items & HTML5 Drag/Arrow Reordering */}
+                <div className="lg:col-span-5 flex flex-col space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs uppercase tracking-wider text-slate-500">
+                      2. Pinned Shortcuts & Sequence ({pinnedItems.length})
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleClearAllPinned}
+                        disabled={pinnedItems.length === 0}
+                        className="text-[11px] font-semibold text-rose-500 hover:text-rose-700 disabled:opacity-40 transition-colors"
+                        title="Clear all pinned shortcuts"
+                      >
+                        Clear All
+                      </button>
+                      <span className="text-slate-300">|</span>
+                      <span className="text-[11px] text-slate-400">Drag grip or arrows</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 flex-1 flex flex-col max-h-[465px] overflow-y-auto custom-scrollbar space-y-1.5">
+                    {pinnedItems.length === 0 ? (
+                      <div className="py-12 text-center text-slate-400 my-auto">
+                        <PinOff className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                        <p className="text-xs font-bold text-slate-600 dark:text-slate-300">No pinned items selected</p>
+                        <p className="text-[11px] mt-1 max-w-xs mx-auto">
+                          Click any 1-Click Role Preset above, or pin modules from the catalog on the left.
+                        </p>
+                      </div>
+                    ) : (
+                      pinnedItems.map((itemId, idx) => {
+                        // Lookup title
+                        let title = itemId
+                        const directMod = moduleMap.get(itemId)
+                        if (directMod) {
+                          title = directMod.label
+                        } else {
+                          // Look inside subItems
+                          for (const m of authorizedModules) {
+                            const sub = m.subItems.find((s) => s.id === itemId)
+                            if (sub) {
+                              title = `${m.label} → ${sub.label}`
+                              break
+                            }
+                          }
+                        }
+
+                        const isDragged = draggedIndex === idx
+                        const isOver = dragOverIndex === idx
+
+                        return (
+                          <div
+                            key={itemId}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, idx)}
+                            onDragOver={(e) => handleDragOver(e, idx)}
+                            onDrop={() => handleDrop(idx)}
+                            onDragEnd={handleDragEnd}
+                            className={`flex items-center justify-between p-2 rounded-xl border transition-all cursor-move select-none group ${
+                              isDragged
+                                ? 'opacity-30 border-dashed border-primary-500 bg-primary-50/40'
+                                : isOver
+                                ? 'border-2 border-primary-600 bg-primary-50/80 dark:bg-primary-950/60 scale-[1.01]'
+                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-2xs hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <GripVertical className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 cursor-grab active:cursor-grabbing flex-shrink-0" />
+                              <span className="w-4 text-center text-xs font-mono font-bold text-slate-400">
+                                {idx + 1}
+                              </span>
+                              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                                {title}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-0.5 flex-shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleMoveUp(idx)}
+                                disabled={idx === 0}
+                                className="p-1 rounded text-slate-400 hover:text-slate-700 disabled:opacity-20 transition-colors"
+                                title="Move up"
+                              >
+                                <ArrowUp className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleMoveDown(idx)}
+                                disabled={idx === pinnedItems.length - 1}
+                                className="p-1 rounded text-slate-400 hover:text-slate-700 disabled:opacity-20 transition-colors"
+                                title="Move down"
+                              >
+                                <ArrowDown className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => unpinItem(itemId)}
+                                className="p-1 rounded text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors ml-0.5"
+                                title="Unpin"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -893,7 +1173,7 @@ export default function MenuCustomizerModal() {
         </div>
 
         {/* Footer Actions */}
-        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 flex items-center justify-between">
+        <div className="px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 flex items-center justify-between">
           <button
             type="button"
             onClick={handleReset}
@@ -906,8 +1186,12 @@ export default function MenuCustomizerModal() {
           <div className="flex items-center gap-3">
             {statusMessage && (
               <span
-                className={`text-xs font-semibold ${
-                  statusMessage.type === 'success' ? 'text-emerald-600' : 'text-rose-600'
+                className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
+                  statusMessage.type === 'success'
+                    ? 'text-emerald-700 bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-300'
+                    : statusMessage.type === 'info'
+                    ? 'text-primary-700 bg-primary-50 dark:bg-primary-950 dark:text-primary-300'
+                    : 'text-rose-700 bg-rose-50 dark:bg-rose-950 dark:text-rose-300'
                 }`}
               >
                 {statusMessage.text}

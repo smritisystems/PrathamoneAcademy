@@ -18,12 +18,21 @@
 
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Download, KeyRound, Mail, RefreshCw, ShieldOff, Upload, UserCheck } from 'lucide-react'
+import { Download, KeyRound, Mail, Printer, RefreshCw, Share2, ShieldCheck, ShieldOff, Upload, UserCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { licenseApi } from '../api/endpoints'
+import { APP_CONFIG } from '../config/appConfig'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
 import type { LicenseStatusResponse } from '../types'
+import { printReceiptElement } from '../utils/printReceipt'
+import {
+  createLicenseCertificateFilename,
+  createLicenseCertificatePdf,
+  downloadLicenseCertificatePdf,
+  formatLicenseCertificateDate,
+  shareLicenseCertificatePdf,
+} from '../utils/licenseCertificatePdf'
 
 interface LicenseActivationPanelProps {
   institutionId?: number
@@ -87,6 +96,7 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
     website: '',
   })
   const [registrationConfirmed, setRegistrationConfirmed] = useState(false)
+  const [isCertificateBusy, setIsCertificateBusy] = useState(false)
   const registrationInitialized = useRef(false)
 
   const {
@@ -430,6 +440,53 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
   const canActivateEmail = Boolean(
     emailPurpose === 'activation' && emailChallengeId && emailLicenseChoices.length > 0 && selectedEmailLicenseId,
   )
+  const certificateInstitutionName =
+    licenseStatus?.registration?.institution_name?.trim() || APP_CONFIG.defaultTenantName
+  const certificateData = licenseStatus?.document_id
+    ? {
+        institutionName: certificateInstitutionName,
+        mode: licenseStatus.mode,
+        documentId: licenseStatus.document_id,
+        serialNumber: licenseStatus.serial_number,
+        edition: licenseStatus.edition,
+        licenseModel: licenseStatus.license_model,
+        expiresAt: licenseStatus.expires_at,
+        issuedAt: licenseStatus.issued_at,
+      }
+    : null
+
+  const handleDownloadCertificate = async () => {
+    if (!certificateData) return
+    setIsCertificateBusy(true)
+    try {
+      const blob = await createLicenseCertificatePdf(certificateData)
+      downloadLicenseCertificatePdf(blob, createLicenseCertificateFilename(certificateData))
+      toast.success('License certificate PDF downloaded.')
+    } catch (error) {
+      toast.error(`Could not create the license certificate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsCertificateBusy(false)
+    }
+  }
+
+  const handleShareCertificate = async () => {
+    if (!certificateData) return
+    setIsCertificateBusy(true)
+    try {
+      const blob = await createLicenseCertificatePdf(certificateData)
+      const result = await shareLicenseCertificatePdf(
+        blob,
+        createLicenseCertificateFilename(certificateData),
+        certificateData.institutionName,
+      )
+      if (result === 'shared') toast.success('License certificate shared.')
+      if (result === 'downloaded') toast('PDF saved. Attach it in your messaging or email app to share.')
+    } catch (error) {
+      toast.error(`Could not share the license certificate: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsCertificateBusy(false)
+    }
+  }
 
   return (
     <div className="max-w-3xl space-y-5">
@@ -501,6 +558,124 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
               <p className="mt-1 text-xs text-slate-500">
                 Signed snapshot issued: {licenseStatus.issued_at || 'Unknown'}
               </p>
+            )}
+            {certificateData && licenseStatus && (
+              <section className="mt-5 space-y-3" aria-label="License certificate">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">Branded license certificate</h4>
+                    <p className="mt-0.5 text-xs text-slate-500">A clean, shareable customer copy of the verified license summary.</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => printReceiptElement({
+                        elementId: 'license-certificate-print-content',
+                        documentTitle: 'PrathamOne EduOS License Certificate',
+                        paperSize: 'A4',
+                      })}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      aria-label="Print license certificate"
+                    >
+                      <Printer className="h-3.5 w-3.5" />
+                      Print
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownloadCertificate}
+                      disabled={isCertificateBusy}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary-700 px-3 py-2 text-xs font-semibold text-white hover:bg-primary-800 disabled:cursor-wait disabled:opacity-60"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      {isCertificateBusy ? 'Preparing…' : 'Download PDF'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleShareCertificate}
+                      disabled={isCertificateBusy}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
+                    >
+                      <Share2 className="h-3.5 w-3.5" />
+                      Share PDF
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  id="license-certificate-print-content"
+                  data-testid="license-certificate"
+                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-sm"
+                >
+                  <div className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-blue-900 px-6 py-6 text-white">
+                    <div className="absolute -right-8 -top-12 h-40 w-40 rounded-full border border-white/10" />
+                    <div className="absolute -right-2 -top-6 h-28 w-28 rounded-full border border-amber-300/30" />
+                    <div className="relative flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">PrathamOne EduOS</p>
+                        <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.15em] text-blue-100">Coaching Institute Edition</p>
+                        <h5 className="mt-5 text-2xl font-bold tracking-tight">Software License Certificate</h5>
+                        <p className="mt-1 text-xs text-blue-100">Customer copy · Verified license summary</p>
+                      </div>
+                      <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full border border-amber-300/70 text-sm font-bold text-amber-200">
+                        P1
+                      </span>
+                    </div>
+                    <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-orange-500 via-amber-300 to-orange-500" />
+                  </div>
+
+                  <div className="space-y-5 px-6 py-5">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Licensed to</p>
+                        <p className="mt-1 text-lg font-bold text-slate-900">{certificateInstitutionName}</p>
+                      </div>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold capitalize ${
+                        licenseStatus.mode === 'active'
+                          ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                          : licenseStatus.mode === 'grace'
+                            ? 'border-amber-200 bg-amber-50 text-amber-800'
+                            : 'border-rose-200 bg-rose-50 text-rose-800'
+                      }`}>
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        {licenseStatus.mode} license
+                      </span>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {[
+                        ['Product edition', licenseStatus.edition || 'Not specified'],
+                        ['License model', licenseStatus.license_model?.replace(/_/g, ' ') || 'Not specified'],
+                        ['Valid through', formatLicenseCertificateDate(licenseStatus.expires_at, 'No expiry date recorded')],
+                        ['Issued on', formatLicenseCertificateDate(licenseStatus.issued_at)],
+                      ].map(([label, value]) => (
+                        <div key={label} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{label}</p>
+                          <p className="mt-1 text-sm font-semibold capitalize text-slate-900">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="grid gap-3 border-t border-slate-200 pt-4 sm:grid-cols-2">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">License serial</p>
+                        <p className="mt-1 break-all font-mono text-xs font-semibold text-slate-800">{licenseStatus.serial_number || 'Not recorded'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Signed document reference</p>
+                        <p className="mt-1 break-all font-mono text-xs font-semibold text-slate-800">{licenseStatus.document_id}</p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[10px] leading-relaxed text-slate-600">
+                      This branded summary is for customer reference and does not replace the signed license artifact. License validity is determined by the verified signed snapshot and licensing authority.
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-[10px] font-medium text-slate-500">
+                      <span>PrathamOne EduOS · prathamone.com</span>
+                      <span>Powered by SmritiSys</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
             )}
             {licenseStatus?.hardware_fingerprint && (
               <div className="mt-3 flex items-center justify-between p-3 rounded-xl border border-indigo-200 bg-indigo-50/50 text-xs">

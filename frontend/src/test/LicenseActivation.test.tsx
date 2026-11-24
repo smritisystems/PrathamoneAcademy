@@ -11,21 +11,25 @@
  *
  * @version     1.0.0
  * @created     2026-11-16
- * @updated     2026-11-16
+ * @updated     2026-11-24
  *
  * @description Tests the Institution Admin license activation entry point and institution scoping.
  */
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import LicenseActivation from '../pages/LicenseActivation'
 import { useAuthStore } from '../store/authStore'
 import { useEnvironmentStore } from '../store/environmentStore'
 
-const { getStatusMock } = vi.hoisted(() => ({
+const { getStatusMock, printCertificateMock, createCertificateMock, downloadCertificateMock, shareCertificateMock } = vi.hoisted(() => ({
   getStatusMock: vi.fn(),
+  printCertificateMock: vi.fn(),
+  createCertificateMock: vi.fn(),
+  downloadCertificateMock: vi.fn(),
+  shareCertificateMock: vi.fn(),
 }))
 
 function renderLicenseActivationPage() {
@@ -52,6 +56,18 @@ vi.mock('../api/endpoints', async (importOriginal) => {
   }
 })
 
+vi.mock('../utils/printReceipt', () => ({
+  printReceiptElement: printCertificateMock,
+}))
+
+vi.mock('../utils/licenseCertificatePdf', () => ({
+  createLicenseCertificateFilename: vi.fn(() => 'prathamone-license-test.pdf'),
+  createLicenseCertificatePdf: createCertificateMock,
+  downloadLicenseCertificatePdf: downloadCertificateMock,
+  formatLicenseCertificateDate: vi.fn((value: string | null, fallback = 'Not recorded') => value || fallback),
+  shareLicenseCertificatePdf: shareCertificateMock,
+}))
+
 describe('LicenseActivation', () => {
   beforeEach(() => {
     useAuthStore.setState({
@@ -71,6 +87,10 @@ describe('LicenseActivation', () => {
     })
     useEnvironmentStore.getState().exitTrainingMode()
     getStatusMock.mockReset()
+    printCertificateMock.mockReset()
+    createCertificateMock.mockReset().mockResolvedValue(new Blob(['%PDF'], { type: 'application/pdf' }))
+    downloadCertificateMock.mockReset()
+    shareCertificateMock.mockReset().mockResolvedValue('shared')
     getStatusMock.mockResolvedValue({
       data: {
         mode: 'unactivated',
@@ -101,6 +121,7 @@ describe('LicenseActivation', () => {
       data: {
         mode: 'active',
         document_id: 'signed-license-001',
+        hardware_fingerprint: 'do-not-share-hardware-id',
         serial_number: '123456789',
         registered_email: 'license@example.test',
         license_model: 'on_premise_perpetual',
@@ -138,6 +159,30 @@ describe('LicenseActivation', () => {
     expect(screen.getByText('license@example.test')).toBeTruthy()
     expect((screen.getByLabelText('Current registered license email') as HTMLInputElement).value).toBe('license@example.test')
     expect(screen.getByRole('button', { name: 'Deactivate this device' })).toBeTruthy()
+    const certificate = screen.getByTestId('license-certificate')
+    expect(certificate.textContent).toContain('Prashant Academy')
+    expect(certificate.textContent).toContain('signed-license-001')
+    expect(certificate.textContent).not.toContain('do-not-share-hardware-id')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Print license certificate' }))
+    expect(printCertificateMock).toHaveBeenCalledWith(expect.objectContaining({
+      elementId: 'license-certificate-print-content',
+      paperSize: 'A4',
+    }))
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Download PDF' }))
+    })
+    expect(downloadCertificateMock).toHaveBeenCalled()
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Share PDF' }))
+    })
+    expect(shareCertificateMock).toHaveBeenCalledWith(
+      expect.any(Blob),
+      'prathamone-license-test.pdf',
+      'Prashant Academy',
+    )
   })
 
   it('reactivates a previously registered license by email without showing registration or key fields', async () => {

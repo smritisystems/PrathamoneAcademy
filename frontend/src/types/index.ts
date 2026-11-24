@@ -735,6 +735,263 @@ export interface BatchMonthlyMatrixResponse {
   }
 }
 
+export interface MonthMatrixMonthTab {
+  key: string
+  month_name: string
+  year: number
+  academic_order: number
+  total_target: number
+  total_collected: number
+  recovery_rate: number
+  status_color: 'emerald' | 'amber' | 'rose' | 'slate'
+}
+
+export interface MonthBatchSummaryItem {
+  batch_id: number
+  batch_name: string
+  standard_name: string
+  board_name: string
+  enrolled_count: number
+  target_amount: number
+  collected_amount: number
+  pending_amount: number
+  defaulters_count: number
+  students_count: number
+  recovery_pct: number
+}
+
+export interface MonthStudentItem {
+  student_id: number
+  admission_number: string
+  student_name: string
+  batch_id: number
+  batch_name: string
+  standard_name: string
+  package_fee: number
+  month_due: number
+  paid_amount: number
+  payment_date: string | null
+  receipt_number: string | null
+  payment_method: string | null
+  balance_due: number
+  status: 'paid' | 'partial' | 'overdue' | 'upcoming'
+}
+
+export interface MonthCollectionMatrixResponse {
+  months: MonthMatrixMonthTab[]
+  active_month: {
+    key: string
+    month_name: string
+    year: number
+  }
+  kpis: {
+    month_target: number
+    month_collected: number
+    month_pending: number
+    realization_rate: number
+    defaulters_count: number
+    mode_split: {
+      upi: number
+      cash: number
+      bank: number
+      other: number
+    }
+  }
+  batch_summaries: MonthBatchSummaryItem[]
+  students: MonthStudentItem[]
+  total_students: number
+}
+
+export interface AnnualDimensionItem {
+  academic_year_id: number
+  academic_year_name: string
+  is_current: boolean
+  enrolled_students: number
+  target_amount: number
+  collected_amount: number
+  pending_amount: number
+  recovery_rate: number
+  defaulters_count: number
+}
+
+export interface BoardDimensionItem {
+  board_id: number
+  board_name: string
+  enrolled_students: number
+  standards_count: number
+  batches_count: number
+  target_amount: number
+  collected_amount: number
+  pending_amount: number
+  recovery_rate: number
+  defaulters_count: number
+  status_color: 'emerald' | 'amber' | 'rose'
+}
+
+export interface StandardDimensionItem {
+  standard_id: number
+  standard_name: string
+  level: number
+  board_name: string
+  enrolled_students: number
+  batches_count: number
+  target_amount: number
+  collected_amount: number
+  pending_amount: number
+  recovery_rate: number
+  defaulters_count: number
+  status_color: 'emerald' | 'amber' | 'rose'
+}
+
+export interface DimensionStudentItem {
+  student_id: number
+  admission_number: string
+  student_name: string
+  batch_id: number
+  batch_name: string
+  standard_id: number
+  standard_name: string
+  board_id: number
+  board_name: string
+  academic_year_id: number
+  package_fee: number
+  month_due: number
+  paid_amount: number
+  balance_due: number
+  status: 'paid' | 'partial' | 'overdue' | 'upcoming'
+  payment_date: string | null
+  receipt_number: string | null
+  payment_method: string | null
+}
+
+export interface MonthlyPivotMonthDef {
+  key: string
+  label: string
+  name: string
+}
+
+export interface MonthlyPivotRowItem {
+  board_id?: number
+  board_name?: string
+  standard_id?: number
+  standard_name?: string
+  batch_id?: number
+  batch_name?: string
+  enrolled_students: number
+  target_amount: number
+  monthly_collections: Record<string, number>
+  total_realized: number
+  pending_amount: number
+  recovery_rate: number
+}
+
+export interface AnnualMonthlyPivotData {
+  months: MonthlyPivotMonthDef[]
+  by_board: MonthlyPivotRowItem[]
+  by_standard: MonthlyPivotRowItem[]
+  by_batch: MonthlyPivotRowItem[]
+  totals: {
+    monthly_realized: Record<string, number>
+    total_target: number
+    total_realized: number
+    total_pending: number
+    recovery_rate: number
+  }
+}
+
+export interface FeeDimensionAnalyticsResponse {
+  kpis: {
+    total_target: number
+    total_collected: number
+    total_pending: number
+    realization_rate: number
+    total_students: number
+    total_defaulters: number
+    mode_split: {
+      upi: number
+      cash: number
+      bank: number
+      other: number
+    }
+  }
+  annual_breakdown: AnnualDimensionItem[]
+  board_breakdown: BoardDimensionItem[]
+  standard_breakdown: StandardDimensionItem[]
+  monthly_pivot?: AnnualMonthlyPivotData
+  students: DimensionStudentItem[]
+  total_students: number
+}
+
+export interface StudentPivotPaymentDetail {
+  id: number
+  amount: number
+  payment_date: string
+  payment_method: string
+  receipt_number: string
+}
+
+export interface StudentPivotMonthCell {
+  amount: number
+  payments_count: number
+  is_pending: boolean
+  pending_amount: number
+  status: 'paid' | 'pending' | 'unpaid' | 'none'
+  payments: StudentPivotPaymentDetail[]
+}
+
+export interface StudentMonthlyPivotRow {
+  student_id: number
+  admission_number: string
+  student_name: string
+  phone: string
+  board_id?: number
+  board_name: string
+  standard_id?: number
+  standard_name: string
+  division_id?: number
+  division_name: string
+  batch_name: string
+  package_fee: number
+  months: Record<string, StudentPivotMonthCell>
+  total_collected: number
+  balance: number
+  collection_rate: number
+  status: 'paid' | 'partial' | 'overdue' | 'upcoming'
+  student_status: 'active' | 'former' | 'inactive'
+  invoice_id?: number
+  remark?: string
+  priority?: 'urgent' | 'high' | 'normal' | 'low' | string
+  follow_up_status?: 'follow_up_required' | 'promise_to_pay' | 'disputed' | 'under_review' | 'cleared' | string
+}
+
+export interface StudentPivotSummary {
+  total_students: number
+  total_agreed_package: number
+  total_collected: number
+  total_balance: number
+  collection_percentage: number
+  defaulters_count: number
+  pending_installments_count: number
+}
+
+export interface StudentPivotFilterOptions {
+  academic_years: { id: number; name: string; is_current: boolean }[]
+  boards: { id: number; name: string; code?: string }[]
+  standards: { id: number; name: string; level?: number }[]
+  divisions: { id: number; name: string; standard_id?: number; board_id?: number }[]
+  payment_methods: string[]
+  payment_statuses: { id: string; label: string }[]
+  student_statuses: { id: string; label: string }[]
+}
+
+export interface StudentMonthlyPivotResponse {
+  summary: StudentPivotSummary
+  months: { key: string; name: string; short_name: string; year: number }[]
+  students: StudentMonthlyPivotRow[]
+  monthly_totals: Record<string, number>
+  filter_options: StudentPivotFilterOptions
+}
+
 export interface FormerStudentRecoveryRecord {
   student_id: number
   admission_number: string

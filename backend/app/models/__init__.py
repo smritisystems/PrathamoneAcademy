@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-19
+#  * @updated     2026-11-24
 #  *
 #  * @description SQLAlchemy ORM models package exporting all database entity definitions.
 #  */
@@ -93,6 +93,9 @@ from app.models.chat import (
 from app.models.planning import (
     Activity, ActivityAssignee, ActivityAttachment, ActivityReference,
     ActivityRecurrenceException,
+)
+from app.models.finance import (
+    ExpenseCategory, Expense, CashRegister, DailyCashRegister, CashTransaction
 )
 
 
@@ -200,5 +203,10 @@ __all__ = [
     "ActivityAttachment",
     "ActivityReference",
     "ActivityRecurrenceException",
+    "ExpenseCategory",
+    "Expense",
+    "CashRegister",
+    "DailyCashRegister",
+    "CashTransaction",
 ]
 
