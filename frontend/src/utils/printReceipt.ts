@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-04
- * @updated     2026-11-23
+ * @updated     2026-11-24
  *
  * @description Isolated receipt printing utility for high-fidelity A5 portrait voucher generation.
  */
@@ -56,6 +56,7 @@ export function printReceiptElement(
   }
 
   const detectedPaperSize = receiptEl.getAttribute('data-paper-size');
+  const allowContentOverflow = receiptEl.getAttribute('data-print-overflow') === 'visible';
   const explicitPaperSize =
     typeof elementIdOrOptions === 'object' && elementIdOrOptions.paperSize && elementIdOrOptions.paperSize !== 'auto'
       ? elementIdOrOptions.paperSize
@@ -594,10 +595,17 @@ export function printReceiptElement(
           .print-hidden, .no-print, button {
             display: none !important;
           }
+          ${allowContentOverflow ? `
+          #print-root[data-print-overflow="visible"],
+          #print-root[data-print-overflow="visible"] .receipt-print-sheet {
+            overflow: visible !important;
+            page-break-inside: auto !important;
+            break-inside: auto !important;
+          }` : ''}
         </style>
       </head>
       <body>
-        <div id="print-root" data-paper-size="${paperSize}">
+        <div id="print-root" data-paper-size="${paperSize}"${allowContentOverflow ? ' data-print-overflow="visible"' : ''}>
           <div id="${escapeHtml(elementId)}" data-paper-size="${paperSize}" class="receipt-print-sheet">
             ${clonedReceipt.innerHTML}
           </div>

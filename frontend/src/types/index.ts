@@ -49,9 +49,13 @@ export interface LicenseStatusResponse {
   mode: 'active' | 'grace' | 'evaluation' | 'unactivated' | 'invalid'
   rollout_stage: 'shadow' | 'enforced'
   document_id: string | null
+  license_id: string | null
   serial_number: string | null
   registered_email: string | null
   license_model: string | null
+  license_status: string | null
+  entitlements: Record<string, unknown> | null
+  verification_url: string | null
   edition: string | null
   expires_at: string | null
   issued_at: string | null

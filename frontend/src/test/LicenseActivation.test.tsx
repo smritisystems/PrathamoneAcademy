@@ -63,8 +63,18 @@ vi.mock('../utils/printReceipt', () => ({
 vi.mock('../utils/licenseCertificatePdf', () => ({
   createLicenseCertificateFilename: vi.fn(() => 'prathamone-license-test.pdf'),
   createLicenseCertificatePdf: createCertificateMock,
+  createLicenseVerificationQrDataUrl: vi.fn().mockResolvedValue('data:image/png;base64,dGVzdA=='),
   downloadLicenseCertificatePdf: downloadCertificateMock,
+  formatLicenseCertificateEntitlements: vi.fn((entitlements: Record<string, unknown> | null) =>
+    Object.entries(entitlements || {})
+      .filter(([key]) => key !== 'company.binding')
+      .map(([key, value]) => ({
+        key: key.replace(/[._-]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
+        value: String(value),
+      })),
+  ),
   formatLicenseCertificateDate: vi.fn((value: string | null, fallback = 'Not recorded') => value || fallback),
+  getLicenseCertificateStatus: vi.fn((status: string | null, mode: string) => status || mode.toUpperCase()),
   shareLicenseCertificatePdf: shareCertificateMock,
 }))
 
@@ -121,10 +131,14 @@ describe('LicenseActivation', () => {
       data: {
         mode: 'active',
         document_id: 'signed-license-001',
+        license_id: 'license-1042',
         hardware_fingerprint: 'do-not-share-hardware-id',
         serial_number: '123456789',
         registered_email: 'license@example.test',
         license_model: 'on_premise_perpetual',
+        license_status: 'ACTIVE',
+        entitlements: { users: 25, 'company.binding': 'private-binding' },
+        verification_url: 'https://smritisys.com/api/license/verify?document_id=signed-license-001',
         edition: 'coaching-institute',
         rollout_stage: 'enforced',
         expires_at: null,
@@ -162,7 +176,11 @@ describe('LicenseActivation', () => {
     const certificate = screen.getByTestId('license-certificate')
     expect(certificate.textContent).toContain('Prashant Academy')
     expect(certificate.textContent).toContain('signed-license-001')
+    expect(certificate.textContent).toContain('license-1042')
+    expect(certificate.textContent).toContain('Users')
+    expect(certificate.textContent).not.toContain('private-binding')
     expect(certificate.textContent).not.toContain('do-not-share-hardware-id')
+    expect(await screen.findByAltText('Secure verification for license document signed-license-001')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Print license certificate' }))
     expect(printCertificateMock).toHaveBeenCalledWith(expect.objectContaining({
@@ -183,6 +201,37 @@ describe('LicenseActivation', () => {
       'prathamone-license-test.pdf',
       'Prashant Academy',
     )
+  })
+
+  it('does not invent organization data or render a decorative QR when optional verification data is absent', async () => {
+    getStatusMock.mockResolvedValueOnce({
+      data: {
+        mode: 'active',
+        document_id: 'signed-license-without-verifier',
+        license_id: null,
+        serial_number: null,
+        license_model: null,
+        license_status: null,
+        entitlements: null,
+        verification_url: null,
+        edition: null,
+        expires_at: null,
+        issued_at: null,
+        registration: null,
+        refresh_status: 'up_to_date',
+        evaluation_policy: null,
+        error: null,
+      },
+    })
+
+    renderLicenseActivationPage()
+
+    const certificate = await screen.findByTestId('license-certificate')
+    expect(certificate.textContent).toContain('Organization name not recorded')
+    expect(certificate.textContent).toContain('Authority verification URL is not available')
+    expect(certificate.querySelector('img[alt^="Secure verification"]')).toBeNull()
+    expect(certificate.textContent).not.toContain('Digitally Signed')
+    expect(certificate.textContent).not.toContain('Support valid')
   })
 
   it('reactivates a previously registered license by email without showing registration or key fields', async () => {

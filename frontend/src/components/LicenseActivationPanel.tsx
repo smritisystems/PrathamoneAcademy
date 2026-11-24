@@ -29,8 +29,11 @@ import { printReceiptElement } from '../utils/printReceipt'
 import {
   createLicenseCertificateFilename,
   createLicenseCertificatePdf,
+  createLicenseVerificationQrDataUrl,
   downloadLicenseCertificatePdf,
+  formatLicenseCertificateEntitlements,
   formatLicenseCertificateDate,
+  getLicenseCertificateStatus,
   shareLicenseCertificatePdf,
 } from '../utils/licenseCertificatePdf'
 
@@ -97,6 +100,8 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
   })
   const [registrationConfirmed, setRegistrationConfirmed] = useState(false)
   const [isCertificateBusy, setIsCertificateBusy] = useState(false)
+  const [certificateQrDataUrl, setCertificateQrDataUrl] = useState<string | null>(null)
+  const [certificateQrError, setCertificateQrError] = useState<string | null>(null)
   const registrationInitialized = useRef(false)
 
   const {
@@ -441,19 +446,63 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
     emailPurpose === 'activation' && emailChallengeId && emailLicenseChoices.length > 0 && selectedEmailLicenseId,
   )
   const certificateInstitutionName =
-    licenseStatus?.registration?.institution_name?.trim() || APP_CONFIG.defaultTenantName
+    licenseStatus?.registration?.institution_name?.trim() || 'Organization name not recorded'
+  const certificateInstitutionAddress = licenseStatus?.registration
+    ? [
+        licenseStatus.registration.address?.trim(),
+        [
+          licenseStatus.registration.city?.trim(),
+          licenseStatus.registration.state?.trim(),
+          licenseStatus.registration.pincode?.trim(),
+        ].filter(Boolean).join(', '),
+      ].filter(Boolean).join(', ')
+    : ''
+  const verificationUrl = licenseStatus?.verification_url || null
   const certificateData = licenseStatus?.document_id
     ? {
         institutionName: certificateInstitutionName,
+        institutionAddress: certificateInstitutionAddress || null,
         mode: licenseStatus.mode,
+        licenseStatus: licenseStatus.license_status,
+        licenseId: licenseStatus.license_id,
         documentId: licenseStatus.document_id,
         serialNumber: licenseStatus.serial_number,
-        edition: licenseStatus.edition,
+        edition: licenseStatus.edition === 'coaching-institute'
+          ? APP_CONFIG.edition
+          : licenseStatus.edition,
         licenseModel: licenseStatus.license_model,
         expiresAt: licenseStatus.expires_at,
         issuedAt: licenseStatus.issued_at,
+        entitlements: formatLicenseCertificateEntitlements(licenseStatus.entitlements),
+        verificationUrl,
       }
     : null
+  const certificateStatus = certificateData
+    ? getLicenseCertificateStatus(certificateData.licenseStatus, certificateData.mode, certificateData.expiresAt)
+    : 'NOT RECORDED'
+  const certificateVerificationHost = (() => {
+    try {
+      return verificationUrl ? new URL(verificationUrl).host : null
+    } catch {
+      return 'Licensing authority'
+    }
+  })()
+
+  useEffect(() => {
+    let active = true
+    setCertificateQrDataUrl(null)
+    setCertificateQrError(null)
+    if (!verificationUrl) return () => { active = false }
+
+    createLicenseVerificationQrDataUrl(verificationUrl)
+      .then((dataUrl) => {
+        if (active) setCertificateQrDataUrl(dataUrl)
+      })
+      .catch((error: unknown) => {
+        if (active) setCertificateQrError(error instanceof Error ? error.message : 'QR generation failed.')
+      })
+    return () => { active = false }
+  }, [verificationUrl])
 
   const handleDownloadCertificate = async () => {
     if (!certificateData) return
@@ -564,7 +613,7 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <h4 className="text-sm font-bold text-slate-900">Branded license certificate</h4>
-                    <p className="mt-0.5 text-xs text-slate-500">A clean, shareable customer copy of the verified license summary.</p>
+                    <p className="mt-0.5 text-xs text-slate-500">A print-ready customer copy of the verified signed license snapshot.</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -604,70 +653,133 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                 <div
                   id="license-certificate-print-content"
                   data-testid="license-certificate"
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-sm"
+                  data-paper-size="A4"
+                  data-print-overflow="visible"
+                  className="mx-auto max-w-[680px] overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-sm"
                 >
-                  <div className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-blue-900 px-6 py-6 text-white">
-                    <div className="absolute -right-8 -top-12 h-40 w-40 rounded-full border border-white/10" />
-                    <div className="absolute -right-2 -top-6 h-28 w-28 rounded-full border border-amber-300/30" />
-                    <div className="relative flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">PrathamOne EduOS</p>
-                        <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.15em] text-blue-100">Coaching Institute Edition</p>
-                        <h5 className="mt-5 text-2xl font-bold tracking-tight">Software License Certificate</h5>
-                        <p className="mt-1 text-xs text-blue-100">Customer copy · Verified license summary</p>
+                  <div className="relative overflow-hidden border-b-4 border-orange-500 bg-gradient-to-br from-slate-950 via-blue-950 to-blue-900 px-6 py-6 text-white">
+                    <div className="absolute -right-10 -top-12 h-44 w-44 rounded-full border border-white/10" />
+                    <div className="relative flex items-center justify-between gap-4">
+                      <div className="flex min-w-0 items-center gap-4">
+                        <img
+                          src="/logo/logoone256.png"
+                          alt="PrathamOne logo"
+                          className="h-14 w-14 shrink-0 rounded-lg bg-white p-1 object-contain"
+                        />
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold uppercase tracking-[0.14em] text-amber-300">PrathamOne EduOS</p>
+                          <p className="mt-1 break-words text-[10px] font-medium uppercase tracking-[0.15em] text-blue-100">{certificateData.edition || 'Edition not recorded'}</p>
+                          <p className="mt-4 text-[9px] font-bold uppercase tracking-[0.18em] text-amber-200">Software License</p>
+                          <h5 className="mt-1 text-xl font-bold tracking-tight">License Certificate</h5>
+                          <p className="mt-1 text-[10px] text-blue-100">Customer copy</p>
+                        </div>
                       </div>
-                      <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full border border-amber-300/70 text-sm font-bold text-amber-200">
-                        P1
-                      </span>
+                      <div className="relative grid h-20 w-20 shrink-0 place-items-center rounded-full border-2 border-amber-300/80 p-2 text-center text-[8px] font-bold uppercase leading-tight text-amber-100">
+                        <span className="absolute inset-1 rounded-full border border-white/30" />
+                        <span className="relative">
+                          <span className="block text-[6px] tracking-wide text-amber-300">License model</span>
+                          {licenseStatus.license_model?.replace(/[_-]/g, ' ') || 'Not recorded'}
+                        </span>
+                      </div>
                     </div>
-                    <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-orange-500 via-amber-300 to-orange-500" />
                   </div>
 
-                  <div className="space-y-5 px-6 py-5">
+                  <div className="space-y-5 px-6 py-5 sm:px-8">
                     <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Licensed to</p>
-                        <p className="mt-1 text-lg font-bold text-slate-900">{certificateInstitutionName}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Licensed organization</p>
+                        <p className="mt-1 break-words text-lg font-bold leading-snug text-slate-900">{certificateInstitutionName}</p>
+                        {certificateInstitutionAddress && (
+                          <p className="mt-1 break-words text-xs leading-relaxed text-slate-600">{certificateInstitutionAddress}</p>
+                        )}
                       </div>
-                      <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold capitalize ${
-                        licenseStatus.mode === 'active'
+                      <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold ${
+                        certificateStatus.startsWith('ACTIVE')
                           ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                          : licenseStatus.mode === 'grace'
+                          : certificateStatus.includes('GRACE') || certificateStatus === 'PENDING RENEWAL'
                             ? 'border-amber-200 bg-amber-50 text-amber-800'
                             : 'border-rose-200 bg-rose-50 text-rose-800'
                       }`}>
                         <ShieldCheck className="h-3.5 w-3.5" />
-                        {licenseStatus.mode} license
+                        {certificateStatus}
                       </span>
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
                       {[
-                        ['Product edition', licenseStatus.edition || 'Not specified'],
-                        ['License model', licenseStatus.license_model?.replace(/_/g, ' ') || 'Not specified'],
+                        ['License status', certificateStatus],
+                        ['Product edition', certificateData.edition || 'Not recorded'],
+                        ['License model', licenseStatus.license_model?.replace(/[_-]/g, ' ') || 'Not recorded'],
                         ['Valid through', formatLicenseCertificateDate(licenseStatus.expires_at, 'No expiry date recorded')],
-                        ['Issued on', formatLicenseCertificateDate(licenseStatus.issued_at)],
                       ].map(([label, value]) => (
-                        <div key={label} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <div key={label} className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                           <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{label}</p>
-                          <p className="mt-1 text-sm font-semibold capitalize text-slate-900">{value}</p>
+                          <p className="mt-1 break-words text-sm font-semibold capitalize text-slate-900">{value}</p>
                         </div>
                       ))}
                     </div>
 
-                    <div className="grid gap-3 border-t border-slate-200 pt-4 sm:grid-cols-2">
+                    <div className="space-y-3 border-t border-slate-200 pt-4">
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">License serial</p>
-                        <p className="mt-1 break-all font-mono text-xs font-semibold text-slate-800">{licenseStatus.serial_number || 'Not recorded'}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Signed document reference</p>
-                        <p className="mt-1 break-all font-mono text-xs font-semibold text-slate-800">{licenseStatus.document_id}</p>
+                        <h6 className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-900">Signed license entitlements</h6>
+                        {certificateData.entitlements.length ? (
+                          <dl className="mt-2 grid gap-x-6 gap-y-2 sm:grid-cols-2">
+                            {certificateData.entitlements.map(({ key, value }) => (
+                              <div key={key} className="min-w-0">
+                                <dt className="text-[9px] font-bold uppercase tracking-wide text-slate-500">{key}</dt>
+                                <dd className="mt-0.5 break-words text-xs font-semibold text-slate-800">{value}</dd>
+                              </div>
+                            ))}
+                          </dl>
+                        ) : (
+                          <p className="mt-2 text-xs text-slate-500">No additional signed entitlements are recorded in this snapshot.</p>
+                        )}
                       </div>
                     </div>
 
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[10px] leading-relaxed text-slate-600">
-                      This branded summary is for customer reference and does not replace the signed license artifact. License validity is determined by the verified signed snapshot and licensing authority.
+                    <div className="grid gap-3 border-t border-slate-200 pt-4 sm:grid-cols-2">
+                      {[
+                        ['License serial', licenseStatus.serial_number || 'Not recorded'],
+                        ['Unique license ID', licenseStatus.license_id || 'Not recorded'],
+                        ['Signed document reference', licenseStatus.document_id],
+                        ['Certificate issued', formatLicenseCertificateDate(licenseStatus.issued_at)],
+                      ].map(([label, value]) => (
+                        <div key={label} className="min-w-0">
+                          <p className="text-[9px] font-bold uppercase tracking-wide text-slate-500">{label}</p>
+                          <p className="mt-1 break-all font-mono text-[11px] font-semibold text-slate-800">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="grid gap-4 border-t border-slate-200 pt-4 sm:grid-cols-[130px_minmax(0,1fr)]">
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
+                        <p className="text-[9px] font-bold uppercase tracking-wide text-blue-900">Verify license</p>
+                        {certificateQrDataUrl ? (
+                          <img
+                            src={certificateQrDataUrl}
+                            alt={`Secure verification for license document ${licenseStatus.document_id}`}
+                            className="mx-auto mt-2 h-24 w-24"
+                          />
+                        ) : (
+                          <p className="mt-3 text-[10px] leading-relaxed text-slate-500">
+                            {certificateQrError || (verificationUrl ? 'Preparing secure QR…' : 'Authority verification URL is not available.')}
+                          </p>
+                        )}
+                        {verificationUrl && (
+                          <p className="mt-2 break-all text-[8px] text-slate-500">{certificateVerificationHost}</p>
+                        )}
+                      </div>
+                      <div className="flex min-w-0 flex-col justify-between gap-3">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[10px] leading-relaxed text-slate-600">
+                          This branded summary is provided for customer reference and is not a replacement for the signed license artifact. License validity is determined by the verified signed snapshot and licensing authority.
+                        </div>
+                        <div className="border-t border-slate-200 pt-3">
+                          <p className="text-sm font-bold text-slate-900">Jawahar R. Mallah</p>
+                          <p className="mt-0.5 text-[10px] font-semibold text-slate-700">Authorized License Issuer</p>
+                          <p className="text-[10px] text-slate-600">For PrathamOne EduOS</p>
+                          <p className="text-[10px] font-medium text-slate-500">Powered by SmritiSys</p>
+                        </div>
+                      </div>
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-[10px] font-medium text-slate-500">
                       <span>PrathamOne EduOS · prathamone.com</span>

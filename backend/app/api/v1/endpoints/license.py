@@ -22,6 +22,7 @@ import re
 import time
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
+from urllib.parse import urlencode
 from uuid import uuid4
 
 import httpx
@@ -372,6 +373,24 @@ def _license_registration(institution: Institution, user: User) -> dict[str, str
         "pincode": institution.pincode,
         "tax_id": institution.tax_id,
         "website": institution.website,
+    }
+
+
+def _license_verification_url(document_id: str | None) -> str | None:
+    authority_url = settings.LICENSE_AUTHORITY_URL.strip().rstrip("/")
+    if not document_id or not authority_url:
+        return None
+    return f"{authority_url}/api/license/verify?{urlencode({'document_id': document_id})}"
+
+
+def _license_certificate_fields(payload: dict[str, Any] | None) -> dict[str, Any]:
+    entitlements = payload.get("entitlements") if payload else None
+    document_id = payload.get("document_id") if payload else None
+    return {
+        "license_id": payload.get("license_id") if payload else None,
+        "license_status": payload.get("status") if payload else None,
+        "entitlements": entitlements if isinstance(entitlements, dict) else None,
+        "verification_url": _license_verification_url(document_id),
     }
 
 
@@ -753,6 +772,7 @@ async def get_license_status(
         "mode": context["mode"],
         "rollout_stage": context["rollout_stage"],
         "document_id": payload.get("document_id") if payload else None,
+        **_license_certificate_fields(payload),
         "serial_number": payload.get("serial_number") if payload else (serial_setting.value if serial_setting else None),
         "registered_email": registered_email_setting.value if registered_email_setting else None,
         "license_model": payload.get("license_model") if payload else None,

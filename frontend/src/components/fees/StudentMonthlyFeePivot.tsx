@@ -25,10 +25,10 @@ import {
   CreditCard, School, Building2, Layers, Check,
   ArrowUpDown, ExternalLink, HelpCircle, Printer,
   Plus, Clock, ArrowUpRight, DollarSign, ArrowRight,
-  MessageSquare
+  MessageSquare, MessageCircle, Send
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { feesApi, paymentsApi } from '../../api/endpoints'
+import { feesApi, paymentsApi, communicationApi } from '../../api/endpoints'
 import { formatINR } from '../../utils/formatters'
 import { exportToExcel, downloadCsvRows, downloadBlob } from '../../utils/reportExport'
 import Modal from '../Modal'
@@ -216,6 +216,62 @@ export const StudentMonthlyFeePivot: React.FC<StudentMonthlyFeePivotProps> = ({
     setRemarkText(student.remark || '')
     setRemarkPriority(student.priority || 'normal')
     setRemarkFollowUpStatus(student.follow_up_status || 'follow_up_required')
+  }
+
+  // ─── WhatsApp & SMS Fee Reminder Handlers ───────────────────────────────────
+  const handleSendWhatsAppReminder = (student: StudentMonthlyPivotRow) => {
+    const rawPhone = student.phone || ''
+    const cleanPhone = rawPhone.replace(/\D/g, '')
+    if (!cleanPhone || cleanPhone.length < 10) {
+      toast.error(`No valid phone number recorded for ${student.student_name}`)
+      return
+    }
+    const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone
+    const message = `Dear Parent / Student,
+This is a gentle fee reminder from Prashant Academy for *${student.student_name}* (Adm No: *${student.admission_number}*).
+
+📋 Course: ${student.board_name} - ${student.standard_name} (${student.batch_name})
+💰 Agreed Package: ₹${student.package_fee.toLocaleString('en-IN')}
+✅ Realized Collection: ₹${student.total_collected.toLocaleString('en-IN')}
+⚠️ Outstanding Balance: ₹${student.balance.toLocaleString('en-IN')}
+
+Kindly arrange payment at your earliest convenience to maintain continuous academic access.
+For online fee payment coordinates or receipt assistance, please contact our administrative desk.
+Thank you,
+Prashant Academy Coaching Institute`
+
+    const url = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`
+    window.open(url, '_blank', 'noopener,noreferrer')
+    toast.success(`WhatsApp reminder initiated for ${student.student_name}`)
+  }
+
+  const handleDispatchSmsReminder = async (student: StudentMonthlyPivotRow) => {
+    const rawPhone = student.phone || ''
+    const cleanPhone = rawPhone.replace(/\D/g, '')
+    if (!cleanPhone || cleanPhone.length < 10) {
+      toast.error(`No valid phone number recorded for ${student.student_name}`)
+      return
+    }
+    const toastId = `sms-reminder-${student.student_id}`
+    try {
+      toast.loading(`Dispatching SMS reminder to ${student.phone}...`, { id: toastId })
+      const message = `Fee Reminder from Prashant Academy: Dear Parent, balance due for ${student.student_name} (Adm: ${student.admission_number}) is Rs. ${student.balance.toLocaleString('en-IN')}. Please settle dues promptly.`
+      await communicationApi.sendMessage({
+        channel: 'sms',
+        message,
+        recipients: [
+          {
+            recipient_type: 'student',
+            recipient_id: student.student_id,
+            name: student.student_name,
+            destination: cleanPhone,
+          },
+        ],
+      })
+      toast.success(`SMS reminder dispatched to ${student.student_name} (${student.phone})`, { id: toastId })
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || `Failed to dispatch SMS reminder`, { id: toastId })
+    }
   }
 
   // ─── Export Functions ───────────────────────────────────────────────────────
@@ -697,6 +753,17 @@ export const StudentMonthlyFeePivot: React.FC<StudentMonthlyFeePivotProps> = ({
                               <MessageSquare className="w-3 h-3" />
                             </button>
                           )}
+                          {/* Quick WhatsApp Reminder when balance > 0 */}
+                          {st.balance > 0 && st.phone && st.phone !== '—' && (
+                            <button
+                              type="button"
+                              onClick={() => handleSendWhatsAppReminder(st)}
+                              className="p-1 rounded text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer"
+                              title={`Send instant WhatsApp fee reminder to ${st.student_name} (${st.phone})`}
+                            >
+                              <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -891,6 +958,17 @@ export const StudentMonthlyFeePivot: React.FC<StudentMonthlyFeePivotProps> = ({
 
                 {/* Primary Quick Action Buttons */}
                 <div className="flex items-center gap-2">
+                  {currentDrilldownStudent && currentDrilldownStudent.balance > 0 && currentDrilldownStudent.phone && currentDrilldownStudent.phone !== '—' && (
+                    <button
+                      type="button"
+                      onClick={() => handleSendWhatsAppReminder(currentDrilldownStudent)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs transition-all cursor-pointer"
+                      title={`Send WhatsApp fee reminder (Balance: ₹${currentDrilldownStudent.balance.toLocaleString('en-IN')})`}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>WhatsApp Reminder</span>
+                    </button>
+                  )}
                   {drilldownData.payments.length === 1 ? (
                     <>
                       <button
@@ -1242,6 +1320,44 @@ export const StudentMonthlyFeePivot: React.FC<StudentMonthlyFeePivotProps> = ({
                 className="w-full bg-slate-50 border border-slate-200/90 rounded-xl p-3 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:outline-hidden placeholder:text-slate-400"
               />
             </div>
+
+            {/* Instant WhatsApp & SMS Fee Reminder Dispatch */}
+            {remarkModalData.student.balance > 0 && (
+              <div className="p-3 bg-emerald-50/60 border border-emerald-200/90 rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900">
+                    <MessageCircle className="w-4 h-4 text-emerald-600" />
+                    <span>Instant Fee Reminder Dispatch</span>
+                  </div>
+                  <span className="font-mono text-xs text-slate-500">
+                    📱 {remarkModalData.student.phone || 'No phone'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600">
+                  Send automated payment reminder with outstanding balance (₹{remarkModalData.student.balance.toLocaleString('en-IN')}) directly to the parent.
+                </p>
+                <div className="flex items-center gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => handleSendWhatsAppReminder(remarkModalData.student)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-all cursor-pointer"
+                    title="Open in WhatsApp Web / App"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>Send WhatsApp</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDispatchSmsReminder(remarkModalData.student)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-2xs transition-all cursor-pointer"
+                    title="Dispatch official SMS"
+                  >
+                    <Send className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Dispatch SMS</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
