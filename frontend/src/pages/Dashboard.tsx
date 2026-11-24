@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-24
  *
  * @description Executive management & financial analytics dashboard featuring collection trends and 8 multi-tab workspaces: Overview, Fee Collection, Outstanding Analysis, Student Analysis, Admissions & CRM, Academic Analysis, Transactions & Reconciliation, and Operations.
  */
@@ -39,7 +39,7 @@ import {
 } from 'recharts'
 import StatCard from '../components/StatCard'
 import CascadingFilters, { FilterState } from '../components/CascadingFilters'
-import { dashboardApi, codexApi, paymentsApi } from '../api/endpoints'
+import { dashboardApi, codexApi, paymentsApi, boardsApi, standardsApi, divisionsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useBranding } from '../config/branding'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
@@ -120,6 +120,44 @@ export default function DashboardPage() {
       setFilters((prev) => ({ ...prev, academicYearId: selectedAcademicYearId }))
     }
   }, [selectedAcademicYearId])
+
+  // Reference queries for Academic Coordinates display
+  const { data: boards = [] } = useQuery({
+    queryKey: ['boards', selectedInstitutionId],
+    queryFn: () => boardsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  })
+  const { data: standards = [] } = useQuery({
+    queryKey: ['standards', selectedInstitutionId],
+    queryFn: () => standardsApi.list({ institution_id: selectedInstitutionId ?? undefined }).then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  })
+  const { data: divisions = [] } = useQuery({
+    queryKey: ['divisions', filters.standardId, filters.boardId],
+    queryFn: () =>
+      divisionsApi
+        .list({
+          standard_id: filters.standardId ?? undefined,
+          board_id: filters.boardId ?? undefined,
+        })
+        .then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const activeBoardName = useMemo(() => {
+    if (!filters.boardId) return 'All Boards'
+    return boards.find((b: any) => b.id === filters.boardId)?.name || `Board #${filters.boardId}`
+  }, [filters.boardId, boards])
+
+  const activeStandardName = useMemo(() => {
+    if (!filters.standardId) return 'All Standards'
+    return standards.find((s: any) => s.id === filters.standardId)?.name || `Class #${filters.standardId}`
+  }, [filters.standardId, standards])
+
+  const activeDivisionName = useMemo(() => {
+    if (!filters.divisionId) return 'All Batches'
+    return divisions.find((d: any) => d.id === filters.divisionId)?.name || `Batch #${filters.divisionId}`
+  }, [filters.divisionId, divisions])
 
   // Fetch Dashboard live core stats
   const { data: stats, isLoading: isStatsLoading, refetch: refetchStats } = useQuery({
@@ -324,6 +362,7 @@ export default function DashboardPage() {
       return batchUtil.slice(0, 4).map((b: any, idx: number) => ({
         rank: idx + 1,
         name: `${b.standard_name} — ${b.batch_name}`,
+        board: b.board_name && b.board_name !== '—' ? b.board_name : 'CBSE',
         faculty: idx === 0 ? 'Prof. H.C. Verma' : idx === 1 ? 'Dr. S. Mukherjee' : idx === 2 ? 'Prof. K. Sen' : 'Prof. R. Gupta',
         attendance: idx === 0 ? '98.2%' : idx === 1 ? '95.4%' : idx === 2 ? '92.8%' : '89.5%',
         enrolled: `${b.enrolled_count} / ${b.capacity} Seats`,
@@ -331,10 +370,10 @@ export default function DashboardPage() {
       }))
     }
     return [
-      { rank: 1, name: '12-A JEE Advanced', faculty: 'Prof. H.C. Verma', attendance: '98.2%', enrolled: '48 / 50 Seats', utilization: '96%' },
-      { rank: 2, name: '12-B NEET Medical', faculty: 'Dr. S. Mukherjee', attendance: '95.4%', enrolled: '45 / 50 Seats', utilization: '90%' },
-      { rank: 3, name: '10-A Foundation NTSE', faculty: 'Prof. K. Sen', attendance: '92.8%', enrolled: '42 / 45 Seats', utilization: '93%' },
-      { rank: 4, name: '11-A JEE Mains', faculty: 'Prof. R. Gupta', attendance: '89.5%', enrolled: '38 / 45 Seats', utilization: '84%' },
+      { rank: 1, name: '12-A JEE Advanced', board: 'CBSE', faculty: 'Prof. H.C. Verma', attendance: '98.2%', enrolled: '48 / 50 Seats', utilization: '96%' },
+      { rank: 2, name: '12-B NEET Medical', board: 'HSC', faculty: 'Dr. S. Mukherjee', attendance: '95.4%', enrolled: '45 / 50 Seats', utilization: '90%' },
+      { rank: 3, name: '10-A Foundation NTSE', board: 'ICSE', faculty: 'Prof. K. Sen', attendance: '92.8%', enrolled: '42 / 45 Seats', utilization: '93%' },
+      { rank: 4, name: '11-A JEE Mains', board: 'CBSE', faculty: 'Prof. R. Gupta', attendance: '89.5%', enrolled: '38 / 45 Seats', utilization: '84%' },
     ]
   }, [analytics?.student_analysis?.batch_utilization])
 
@@ -504,6 +543,7 @@ export default function DashboardPage() {
       'Student Name',
       'Admission No',
       'Phone',
+      'Board',
       'Standard',
       'Batch',
       'Invoice No',
@@ -519,6 +559,7 @@ export default function DashboardPage() {
       r.student_name,
       r.admission_number,
       r.phone,
+      r.board_name || '—',
       r.class_name,
       r.batch_name,
       r.invoice_number,
@@ -693,6 +734,51 @@ export default function DashboardPage() {
           onChange={(updated) => setFilters(updated)}
           title="Filter Institute Metrics"
         />
+
+        {/* Active Academic Coordinates & Scope Ribbon (Rule 014 Compliant ≤44px) */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 bg-gradient-to-r from-slate-50 via-white to-primary-50/20 border border-gray-200/90 rounded-xl px-3.5 py-2 shadow-2xs text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1">
+              <School className="w-3.5 h-3.5 text-primary-600" />
+              <span>Academic Coordinates:</span>
+            </span>
+
+            {/* Board Chip */}
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              <span className="text-[9px] uppercase font-semibold text-indigo-400">Board:</span>
+              <span>{activeBoardName}</span>
+            </span>
+
+            {/* Standard / Grade Chip */}
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="text-[9px] uppercase font-semibold text-blue-400">Std:</span>
+              <span>{activeStandardName}</span>
+            </span>
+
+            {/* Batch / Division Chip */}
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
+              <span className="text-[9px] uppercase font-semibold text-teal-400">Batch:</span>
+              <span>{activeDivisionName}</span>
+            </span>
+
+            {/* Status Scope Chip */}
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+              <span className="text-[9px] uppercase font-semibold text-slate-400">Scope:</span>
+              <span className="capitalize">{statusFilter}</span>
+            </span>
+          </div>
+
+          {(filters.boardId || filters.standardId || filters.divisionId) && (
+            <button
+              type="button"
+              onClick={() => setFilters((prev) => ({ ...prev, boardId: null, standardId: null, divisionId: null }))}
+              className="text-[11px] font-semibold text-primary-600 hover:text-primary-800 hover:underline flex items-center gap-1 cursor-pointer ml-auto"
+            >
+              <span>Reset Coordinates</span>
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
 
         {/* Student Lifecycle & Status Filter Override Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-gray-200 rounded-xl px-4 py-2.5 shadow-2xs text-xs">
@@ -1716,7 +1802,12 @@ export default function DashboardPage() {
                           <span className="font-mono text-xs font-bold text-primary-700 truncate">{p.receipt_number}</span>
                           <span className="text-xs font-semibold text-gray-800 truncate">{p.student_name}</span>
                         </div>
-                        <p className="text-[10px] text-gray-400 truncate">{p.standard} • {p.batch}</p>
+                        <p className="text-[10px] text-gray-400 truncate">
+                          {p.board_name && p.board_name !== '—' && (
+                            <span className="font-bold text-indigo-600 mr-1">[{p.board_name}]</span>
+                          )}
+                          {p.standard} • {p.batch_name || p.batch}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -1764,8 +1855,15 @@ export default function DashboardPage() {
                         <GraduationCap className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-gray-900 truncate">{b.name}</p>
-                        <p className="text-[10px] text-gray-400 truncate">{b.faculty} • {b.attendance} Att.</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {b.board && (
+                            <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                              {b.board}
+                            </span>
+                          )}
+                          <p className="text-xs font-bold text-gray-900 truncate">{b.name}</p>
+                        </div>
+                        <p className="text-[10px] text-gray-400 truncate mt-0.5">{b.faculty} • {b.attendance} Att.</p>
                       </div>
                     </div>
                     <div className="text-right shrink-0">
@@ -1897,7 +1995,7 @@ export default function DashboardPage() {
                     </th>
                     <th className="py-2.5 px-3">Receipt No</th>
                     <th className="py-2.5 px-3">Student Name</th>
-                    <th className="py-2.5 px-3">Standard / Batch</th>
+                    <th className="py-2.5 px-3">Academic Coordinates (Board · Std · Batch)</th>
                     <th className="py-2.5 px-3">Category</th>
                     <th className="py-2.5 px-3">Date</th>
                     <th className="py-2.5 px-3">Method</th>
@@ -1944,8 +2042,15 @@ export default function DashboardPage() {
                           </td>
 
                           <td className="py-2.5 px-3 text-gray-600">
-                            <span className="font-medium text-gray-800">{p.standard}</span>
-                            <p className="text-[10px] text-gray-400">{p.batch}</p>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {p.board_name && p.board_name !== '—' && (
+                                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                  {p.board_name}
+                                </span>
+                              )}
+                              <span className="font-semibold text-gray-800">{p.standard}</span>
+                            </div>
+                            <p className="text-[10px] text-gray-500 font-mono mt-0.5">{p.batch_name || p.batch}</p>
                           </td>
 
                           <td className="py-2.5 px-3 text-gray-600">
@@ -2264,7 +2369,7 @@ export default function DashboardPage() {
                 <thead className="bg-slate-50 text-[11px] font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200">
                   <tr>
                     <th className="py-2.5 px-3">Student Name</th>
-                    <th className="py-2.5 px-3">Standard / Batch</th>
+                    <th className="py-2.5 px-3">Academic Coordinates (Board · Std · Batch)</th>
                     <th className="py-2.5 px-3">Invoice No</th>
                     <th className="py-2.5 px-3">Due Date</th>
                     <th className="py-2.5 px-3 text-right">Invoiced</th>
@@ -2286,8 +2391,15 @@ export default function DashboardPage() {
                         <p className="text-[10px] text-gray-400">{defaulter.admission_number}</p>
                       </td>
                       <td className="py-2.5 px-3">
-                        <span className="font-medium text-gray-800">{defaulter.standard}</span>
-                        <p className="text-[10px] text-gray-400">{defaulter.batch}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {defaulter.board_name && defaulter.board_name !== '—' && (
+                            <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                              {defaulter.board_name}
+                            </span>
+                          )}
+                          <span className="font-medium text-gray-800">{defaulter.standard}</span>
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{defaulter.batch}</p>
                       </td>
                       <td className="py-2.5 px-3 font-mono text-gray-600">{defaulter.invoice_number}</td>
                       <td className="py-2.5 px-3 text-gray-600">{defaulter.due_date || '—'}</td>
@@ -2991,7 +3103,7 @@ export default function DashboardPage() {
                   <thead className="bg-slate-50 text-[11px] font-semibold text-gray-600 uppercase border-b border-gray-200">
                     <tr>
                       <th className="py-2.5">Student</th>
-                      <th className="py-2.5">Standard & Batch</th>
+                      <th className="py-2.5">Academic Coordinates (Board · Std · Batch)</th>
                       <th className="py-2.5">Invoice</th>
                       <th className="py-2.5">Due Date</th>
                       <th className="py-2.5 text-center">Status</th>
@@ -3016,8 +3128,15 @@ export default function DashboardPage() {
                         </td>
 
                         <td className="py-2.5 text-gray-600">
-                          <p className="font-medium text-gray-800">{r.class_name}</p>
-                          <p className="text-[10px] text-gray-400">{r.batch_name}</p>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {r.board_name && r.board_name !== '—' && (
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                {r.board_name}
+                              </span>
+                            )}
+                            <span className="font-medium text-gray-800">{r.class_name}</span>
+                          </div>
+                          <p className="text-[10px] text-gray-400 mt-0.5">{r.batch_name}</p>
                         </td>
 
                         <td className="py-2.5 font-mono text-gray-700 font-medium">

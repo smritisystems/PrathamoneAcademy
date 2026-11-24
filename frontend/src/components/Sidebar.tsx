@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-24
  *
  * @description Collapsible multi-state sidebar navigation supporting expanded, icon-rail, and mobile drawer modes.
  */
@@ -52,6 +52,7 @@ const getSubItemsForModule = (moduleId: string) => {
 const academicSubItems = getSubItemsForModule('academic')
 const crmSubItems = getSubItemsForModule('crm')
 const feesSubItems = getSubItemsForModule('fees')
+const expensesSubItems = getSubItemsForModule('expenses')
 const examSubItems = getSubItemsForModule('examinations')
 const attendanceSubItems = getSubItemsForModule('attendance')
 const teachersSubItems = getSubItemsForModule('teachers')
@@ -70,6 +71,7 @@ const SECONDARY_MODULE_IDS = [
   'attendance',
   'examinations',
   'fees',
+  'expenses',
   'homework',
   'planning',
   'eduboard',

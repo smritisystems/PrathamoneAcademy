@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-18
+#  * @updated     2026-11-24
 #  *
 #  * @description Test suite for Communication Center, templates CRUD, expiring shared links, dispatch adapters, and delivery logs.
 #  */
@@ -203,4 +203,98 @@ async def test_search_communication_recipients(client: AsyncClient, admin_user: 
         assert res.status_code == 200
         items = res.json()
         assert isinstance(items, list)
+
+
+@pytest.mark.asyncio
+async def test_shared_receipt_pdf_download(client: AsyncClient, db: AsyncSession, admin_user: User, test_institution: Institution):
+    """Verifies public token-authorized PDF download for receipts sent via WhatsApp / SMS."""
+    from datetime import datetime, timezone, timedelta, date
+    from app.models.payment import Payment, PaymentReceipt
+    from app.models.student import Student
+    from app.models.academic_year import AcademicYear
+
+    ay = (await db.execute(select(AcademicYear).where(AcademicYear.institution_id == test_institution.id))).scalars().first()
+    if not ay:
+        ay = AcademicYear(
+            name="2026-27",
+            start_date=date(2026, 4, 1),
+            end_date=date(2027, 3, 31),
+            institution_id=test_institution.id,
+            is_current=True,
+        )
+        db.add(ay)
+        await db.flush()
+
+    student = Student(
+        institution_id=test_institution.id,
+        first_name="Roudrita",
+        last_name="Roy",
+        date_of_birth=date(2010, 5, 15),
+        gender="Female",
+        admission_date=date(2026, 4, 1),
+        admission_number=f"TEST-ADM-{datetime.now().microsecond}",
+        phone="+919876543210",
+        is_active=True,
+    )
+    db.add(student)
+    await db.flush()
+
+    payment = Payment(
+        student_id=student.id,
+        academic_year_id=ay.id,
+        amount=8500.0,
+        payment_method="bank_transfer",
+        payment_date=datetime.now(timezone.utc).date(),
+        status="posted",
+    )
+    db.add(payment)
+    await db.flush()
+
+    receipt = PaymentReceipt(
+        payment_id=payment.id,
+        student_id=student.id,
+        receipt_number=f"RCP-TEST-{payment.id}",
+        amount=8500.0,
+        payment_date=datetime.now(timezone.utc).date(),
+        payment_method="bank_transfer",
+        status="valid",
+    )
+    db.add(receipt)
+    await db.flush()
+
+    token_str = f"test_tok_{payment.id}_{datetime.now().microsecond}"
+    shared_token = SharedDocumentToken(
+        token=token_str,
+        document_type="RECEIPT",
+        record_id=payment.id,
+        recipient_name="Parent of Roudrita",
+        recipient_phone="9876543210",
+        expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+        max_views=50,
+        institution_id=test_institution.id,
+    )
+    db.add(shared_token)
+    await db.commit()
+
+    # Public download without any authorization header
+    res = await client.get(f"/api/v1/communication/shared-doc/{token_str}/pdf")
+    assert res.status_code == 200
+    assert res.headers["content-type"] == "application/pdf"
+    assert "attachment" in res.headers["content-disposition"]
+    assert len(res.content) > 500  # Valid non-empty PDF bytes
+
+    # Test the dispatch endpoint which creates a token and formats WhatsApp payload
+    from app.core.security import create_access_token
+    admin_token = create_access_token({"sub": str(admin_user.id), "institution_id": test_institution.id})
+    disp_res = await client.post(
+        f"/api/v1/communication/automation/dispatch-payment-receipt/{payment.id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"channel": "WHATSAPP"},
+    )
+    assert disp_res.status_code == 200
+    disp_data = disp_res.json()
+    assert disp_data["status"] == "success"
+    assert "pdf_download_path" in disp_data["receipt"]
+    assert "whatsapp_url" in disp_data["receipt"]
+
 

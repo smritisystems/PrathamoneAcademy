@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-21
+#  * @updated     2026-11-24
 #  *
 #  * @description Service layer providing message templating, channel dispatch adapters (WhatsApp, Email, SMS), automated fee reminders, attendance alerts, homework notifications, examination schedules, and secure document sharing.
 #  */
@@ -618,6 +618,25 @@ async def dispatch_fee_payment_receipt_notification(
     student_name = f"{student.first_name} {student.last_name}".strip()
     pay_date = payment.payment_date.strftime("%d-%b-%Y") if hasattr(payment.payment_date, "strftime") else str(payment.payment_date)
 
+    # Generate secure expiring digital receipt token for WhatsApp/SMS access
+    token_str = generate_secure_share_token()
+    now_utc = datetime.now(timezone.utc)
+    expires_at = now_utc + timedelta(days=30)
+    shared_token = SharedDocumentToken(
+        token=token_str,
+        document_type="RECEIPT",
+        record_id=payment.id,
+        recipient_name=guardian_name,
+        recipient_phone=clean_phone,
+        expires_at=expires_at,
+        max_views=100,
+        institution_id=institution_id,
+        created_by_id=sender_id,
+    )
+    db.add(shared_token)
+
+    pdf_download_path = f"/api/v1/communication/shared-doc/{token_str}/pdf"
+
     message = (
         f"Fee Receipt Acknowledgement: Dear {guardian_name}, thank you! We have received fee payment of "
         f"₹{float(payment.amount):,.2f} via {payment.payment_method.upper()} for your ward {student_name} "
@@ -669,6 +688,8 @@ async def dispatch_fee_payment_receipt_notification(
         "message": message,
         "whatsapp_url": wa_url,
         "status": status_code,
+        "share_token": token_str,
+        "pdf_download_path": pdf_download_path,
     }
 
 

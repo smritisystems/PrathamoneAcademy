@@ -31,7 +31,8 @@ import type {
   StudentPortalDashboard, StudentAdminProfile, TimetableSlot, StudyMaterialItem, StudyMaterialStats,
   StudentDocumentItem, TestResultItem, UpcomingTestItem,
   FeeOverviewData, FeeRegisterEntry, PaymentReceiptListItem, PaymentTransactionItem,
-  FormerStudentRecoveryResponse, BatchMonthlyMatrixResponse,
+  FormerStudentRecoveryResponse, BatchMonthlyMatrixResponse, MonthCollectionMatrixResponse,
+  FeeDimensionAnalyticsResponse, StudentMonthlyPivotResponse,
   AcademicOverviewResponse, BatchRosterResponse,
   SupportedEntity, ImportPreviewResponse, ImportExecuteResult, ImportHistoryItem,
   ImportHistoryDetail, ExportFilterParams,
@@ -590,7 +591,53 @@ export const feesApi = {
     academic_year_id?: number | string
     division_id?: number | string
     standard_id?: number | string
+    board_id?: number | string
   }) => apiClient.get<BatchMonthlyMatrixResponse>('/fees/batch-monthly-matrix', { params }),
+
+  getMonthCollectionMatrix: (params?: {
+    academic_year_id?: number | string
+    month_key?: string
+    division_id?: number | string
+    standard_id?: number | string
+    board_id?: number | string
+  }) => apiClient.get<MonthCollectionMatrixResponse>('/fees/month-collection-matrix', { params }),
+
+  getDimensionAnalytics: (params?: {
+    academic_year_id?: number | string
+    board_id?: number | string
+    standard_id?: number | string
+    division_id?: number | string
+  }) => apiClient.get<FeeDimensionAnalyticsResponse>('/fees/dimension-analytics', { params }),
+
+  getStudentMonthlyPivot: (params?: {
+    academic_year_id?: number | string
+    board_id?: string
+    standard_id?: string
+    division_id?: string
+    payment_status?: string
+    student_status?: string
+    payment_method?: string
+    search?: string
+    start_date?: string
+    end_date?: string
+  }) => apiClient.get<StudentMonthlyPivotResponse>('/fees/student-monthly-pivot', { params }),
+
+  saveStudentCollectionRemark: (data: {
+    student_id: number
+    invoice_id?: number
+    academic_year_id?: number
+    remark: string
+    priority?: string
+    follow_up_status?: string
+    follow_up_date?: string
+  }) => apiClient.post<{
+    status: string
+    message: string
+    student_id: number
+    priority: string
+    follow_up_status: string
+    remark: string
+  }>('/fees/student-collection-remark', data),
 
   getFormerStudentsRecovery: (params?: {
     academic_year_id?: number | string
@@ -1873,6 +1920,33 @@ export const sysadminApi = {
     ),
 }
 
+export interface LicenseActivationHistoryItem {
+  activation_id: number
+  device_label: string
+  status: 'active' | 'released' | 'deactivated'
+  activated_at: string | null
+  last_seen_at: string | null
+  deactivated_at: string | null
+  release_source: 'customer' | 'support' | null
+}
+
+export interface LicenseActivationOption {
+  license_id: number
+  serial_number: string | null
+  seats: number
+  activation_count: number
+  active_activation_count?: number
+  product_name?: string | null
+  product_code?: string | null
+  edition?: string | null
+  license_model?: string | null
+  status?: string
+  expires_at?: string | null
+  transfer_available_at?: string | null
+  transfer_cooldown_active?: boolean | number
+  activation_history?: LicenseActivationHistoryItem[]
+}
+
 export const licenseApi = {
   getStatus: (institution_id?: number) =>
     apiClient.get<LicenseStatusResponse>('/license/status', {
@@ -1905,15 +1979,7 @@ export const licenseApi = {
   getCustomerReactivations: (session_token?: string, institution_id?: number) =>
     apiClient.get<{
       ok: boolean
-      licenses: Array<{
-        license_id: number
-        serial_number: string | null
-        seats: number
-        activation_count: number
-        edition?: string
-        license_model?: string
-        status?: string
-      }>
+      licenses: LicenseActivationOption[]
     }>('/license/customer/reactivations', {
       params: institution_id ? { institution_id } : undefined,
       headers: session_token ? { 'X-License-Session': session_token } : undefined,
@@ -1924,6 +1990,7 @@ export const licenseApi = {
     institution_id?: number,
     surrender_confirmed = false,
     surrender_reason?: string,
+    surrendered_activation_id?: number,
   ) =>
     apiClient.post<{
       ok: boolean
@@ -1938,6 +2005,9 @@ export const licenseApi = {
         session_token,
         surrender_confirmed,
         ...(surrender_confirmed && surrender_reason ? { surrender_reason } : {}),
+        ...(surrender_confirmed && surrendered_activation_id
+          ? { surrendered_activation_id }
+          : {}),
       },
       {
         params: institution_id ? { institution_id } : undefined,
@@ -1974,7 +2044,7 @@ export const licenseApi = {
       ok: boolean
       stage: 'target_email' | 'complete'
       registered_email?: string
-      licenses?: Array<{ license_id: number; serial_number: string | null; seats: number; activation_count: number }>
+      licenses?: LicenseActivationOption[]
       message?: string
     }>(
       '/license/email/verify',
@@ -3471,6 +3541,219 @@ export const chatApi = {
 export const catalogueApi = {
   getOverview: (params?: { institution_id?: number | string; academic_year_id?: number | string }) =>
     apiClient.get<CatalogueOverviewResponse>('/catalogue/overview', { params }),
+}
+
+export interface ExpenseItem {
+  id: number
+  expense_number: string
+  expense_date: string
+  title: string
+  description?: string
+  amount: number
+  category_id: number
+  category_name: string
+  payment_mode: string
+  paid_to_vendor: string
+  vendor_contact?: string
+  invoice_reference?: string
+  attachment_url?: string
+  attachment_name?: string
+  status: string
+  is_recurring: boolean
+  recurring_frequency?: string
+  recorded_by_name?: string
+  created_at: string
+}
+
+export interface ExpenseCategoryItem {
+  id: number
+  name: string
+  code: string
+  description?: string
+  is_active: boolean
+}
+
+export interface ExpenseOverviewData {
+  today_expenses: number
+  today_count: number
+  this_month_expenses: number
+  month_count: number
+  pending_approval_amount: number
+  pending_approval_count: number
+  total_transactions: number
+  categories_breakdown: Array<{
+    category: string
+    amount: number
+    count: number
+    percentage: number
+  }>
+}
+
+export interface DailyCashRegisterData {
+  id: number
+  cash_register_id: number
+  register_name: string
+  register_date: string
+  status: string
+  business_day_start_time: string
+  opening_balance: number
+  opening_notes?: string
+  opening_adjusted: boolean
+  cash_inflows_fees: number
+  cash_inflows_other: number
+  cash_inflows_bank_withdrawal: number
+  cash_inflows_transfers: number
+  total_cash_inflows: number
+  cash_outflows_expenses: number
+  cash_outflows_refunds: number
+  cash_outflows_bank_deposit: number
+  cash_outflows_transfers: number
+  total_cash_outflows: number
+  expected_closing_balance: number
+  physical_closing_balance: number
+  difference_amount: number
+  difference_type: string
+  difference_reason?: string
+  denominations: Record<string, number>
+  is_locked: boolean
+  closed_at?: string
+  verified_at?: string
+}
+
+export interface DailyCashBookEntry {
+  timestamp: string
+  type: string
+  category: string
+  reference: string
+  description: string
+  inflow: number
+  outflow: number
+  running_balance: number
+}
+
+export interface DailyCashBookData {
+  register_date: string
+  cash_register_id: number
+  opening_balance: number
+  total_inflows: number
+  total_outflows: number
+  expected_closing: number
+  physical_closing: number
+  difference: number
+  status: string
+  is_locked: boolean
+  entries_count: number
+  entries: DailyCashBookEntry[]
+}
+
+export const financeApi = {
+  getExpenses: (params?: {
+    search?: string
+    category_id?: number
+    payment_mode?: string
+    status?: string
+    date_from?: string
+    date_to?: string
+    skip?: number
+    limit?: number
+    institution_id?: number
+  }) =>
+    apiClient.get<{ total: number; items: ExpenseItem[]; skip: number; limit: number }>('/finance/expenses', {
+      params,
+    }),
+
+  getExpenseOverview: (institution_id = 1) =>
+    apiClient.get<ExpenseOverviewData>('/finance/expenses/overview', { params: { institution_id } }),
+
+  getExpenseCategories: (institution_id = 1) =>
+    apiClient.get<ExpenseCategoryItem[]>('/finance/expenses/categories', { params: { institution_id } }),
+
+  createExpense: (
+    payload: {
+      category_id: number
+      title: string
+      amount: number
+      expense_date?: string
+      payment_mode?: string
+      paid_to_vendor: string
+      vendor_contact?: string
+      invoice_reference?: string
+      description?: string
+      attachment_url?: string
+      attachment_name?: string
+      status?: string
+      is_recurring?: boolean
+      recurring_frequency?: string
+      notes?: string
+    },
+    institution_id = 1,
+  ) =>
+    apiClient.post<{ message: string; id: number; expense_number: string }>('/finance/expenses', payload, {
+      params: { institution_id },
+    }),
+
+  updateExpense: (id: number, payload: Partial<ExpenseItem>) =>
+    apiClient.put<{ message: string; id: number }>(`/finance/expenses/${id}`, payload),
+
+  deleteExpense: (id: number) => apiClient.delete<{ message: string }>(`/finance/expenses/${id}`),
+
+  approveExpense: (id: number) =>
+    apiClient.post<{ message: string; id: number; status: string }>(`/finance/expenses/${id}/approve`),
+
+  payExpense: (id: number) =>
+    apiClient.post<{ message: string; id: number; status: string }>(`/finance/expenses/${id}/pay`),
+
+  getCurrentCashRegister: (params?: { institution_id?: number; target_date?: string; register_id?: number }) =>
+    apiClient.get<DailyCashRegisterData>('/finance/cash-register/current', { params }),
+
+  submitDailyClosing: (payload: {
+    daily_register_id: number
+    denominations: Record<string, number>
+    difference_reason?: string
+  }) =>
+    apiClient.post<{
+      message: string
+      daily_register_id: number
+      status: string
+      expected_closing: number
+      physical_closing: number
+      difference: number
+      difference_type: string
+    }>('/finance/cash-register/close', payload),
+
+  verifyDailyClosing: (daily_register_id: number) =>
+    apiClient.post<{ message: string; daily_register_id: number; status: string; is_locked: boolean }>(
+      '/finance/cash-register/verify',
+      { daily_register_id },
+    ),
+
+  reopenDailyClosing: (daily_register_id: number, reason: string) =>
+    apiClient.post<{ message: string; daily_register_id: number; status: string; is_locked: boolean }>(
+      '/finance/cash-register/reopen',
+      { daily_register_id, reason },
+    ),
+
+  getCashRegisterHistory: (institution_id = 1, limit = 30) =>
+    apiClient.get<any[]>('/finance/cash-register/history', { params: { institution_id, limit } }),
+
+  getDailyCashBook: (params?: { institution_id?: number; target_date?: string; register_id?: number }) =>
+    apiClient.get<DailyCashBookData>('/finance/cash-register/cashbook', { params }),
+
+  createCashTransaction: (
+    payload: {
+      cash_register_id?: number
+      transaction_date?: string
+      transaction_type: string
+      amount: number
+      reference_number?: string
+      description?: string
+      destination_or_source?: string
+    },
+    institution_id = 1,
+  ) =>
+    apiClient.post<{ message: string; id: number }>('/finance/cash-transactions', payload, {
+      params: { institution_id },
+    }),
 }
 
 export type { EduBoardPageItem }

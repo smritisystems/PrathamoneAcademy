@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-23
+#  * @updated     2026-11-24
 #  *
 #  * @description API endpoints for fee obligations, payment collections, receipts, trends, and ledger reconciliation.
 #  */
@@ -1890,6 +1890,7 @@ async def get_batch_monthly_matrix(
     academic_year_id: Optional[int] = None,
     division_id: Optional[int] = None,
     standard_id: Optional[int] = None,
+    board_id: Optional[int] = None,
     data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role(*FEE_STAFF_VIEW_ROLES)),
@@ -1923,6 +1924,10 @@ async def get_batch_monthly_matrix(
         div_query = div_query.where(Student.is_demo.is_(is_demo_filter))
     if academic_year_id:
         div_query = div_query.where(StudentEnrollment.academic_year_id == academic_year_id)
+    if board_id:
+        div_query = div_query.where(Division.board_id == board_id)
+    if standard_id:
+        div_query = div_query.where(Division.standard_id == standard_id)
 
     div_query = div_query.group_by(
         Division.id,
@@ -2172,6 +2177,1268 @@ async def get_batch_monthly_matrix(
             "total_outstanding": total_batch_outstanding,
             "recovery_rate": overall_recovery,
         },
+    }
+
+
+@router.get("/month-collection-matrix")
+async def get_month_collection_matrix(
+    academic_year_id: Optional[int] = None,
+    month_key: Optional[str] = "2026-08",
+    division_id: Optional[int] = None,
+    standard_id: Optional[int] = None,
+    board_id: Optional[int] = None,
+    data_env: str = Depends(get_data_environment),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role(*FEE_STAFF_VIEW_ROLES)),
+):
+    """
+    Month-Centric Collection Matrix (Cross-Batch Daybook & Defaulter Ledger).
+    Organized by Month: Select any month (e.g. August 2026) to see institute-wide realization,
+    batch-wise cross-tabulation performance, and individual student collection roster.
+    """
+    from datetime import datetime
+    is_demo_filter = True if data_env == "TRAINING" else (False if data_env == "PRODUCTION" else None)
+
+    # 1. Standard 12 Academic Months
+    months_def = [
+        {"key": "2026-04", "month_name": "April", "year": 2026, "academic_order": 1},
+        {"key": "2026-05", "month_name": "May", "year": 2026, "academic_order": 2},
+        {"key": "2026-06", "month_name": "June", "year": 2026, "academic_order": 3},
+        {"key": "2026-07", "month_name": "July", "year": 2026, "academic_order": 4},
+        {"key": "2026-08", "month_name": "August", "year": 2026, "academic_order": 5},
+        {"key": "2026-09", "month_name": "September", "year": 2026, "academic_order": 6},
+        {"key": "2026-10", "month_name": "October", "year": 2026, "academic_order": 7},
+        {"key": "2026-11", "month_name": "November", "year": 2026, "academic_order": 8},
+        {"key": "2026-12", "month_name": "December", "year": 2026, "academic_order": 9},
+        {"key": "2027-01", "month_name": "January", "year": 2027, "academic_order": 10},
+        {"key": "2027-02", "month_name": "February", "year": 2027, "academic_order": 11},
+        {"key": "2027-03", "month_name": "March", "year": 2027, "academic_order": 12},
+    ]
+
+    selected_month = next((m for m in months_def if m["key"] == month_key), months_def[4])
+    curr_month_key = datetime.now().strftime("%Y-%m")
+    if curr_month_key < "2026-04":
+        curr_month_key = "2026-11"
+
+    # Query all active divisions/batches
+    div_query = (
+        select(
+            Division.id,
+            Division.name.label("division_name"),
+            Division.standard_id,
+            Standard.name.label("standard_name"),
+            Board.name.label("board_name"),
+            func.count(StudentEnrollment.id).label("student_count"),
+        )
+        .join(Standard, Division.standard_id == Standard.id)
+        .outerjoin(Board, Division.board_id == Board.id)
+        .join(StudentEnrollment, StudentEnrollment.division_id == Division.id)
+        .join(Student, StudentEnrollment.student_id == Student.id)
+    )
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        div_query = div_query.where(Student.institution_id == current_user.institution_id)
+    if is_demo_filter is not None:
+        div_query = div_query.where(Student.is_demo.is_(is_demo_filter))
+    if academic_year_id:
+        div_query = div_query.where(StudentEnrollment.academic_year_id == academic_year_id)
+    if board_id:
+        div_query = div_query.where(Division.board_id == board_id)
+    if standard_id:
+        div_query = div_query.where(Division.standard_id == standard_id)
+    if division_id:
+        div_query = div_query.where(Division.id == division_id)
+
+    div_query = div_query.group_by(
+        Division.id,
+        Division.name,
+        Division.standard_id,
+        Standard.name,
+        Board.name,
+    ).having(func.count(StudentEnrollment.id) > 0).order_by(Division.id.asc())
+
+    div_rows = (await db.execute(div_query)).all()
+
+    # Query all enrolled students and their fee packages across all batches
+    stud_query = (
+        select(
+            Student,
+            FeeInvoice,
+            Division,
+            Standard,
+            Board,
+        )
+        .join(StudentEnrollment, StudentEnrollment.student_id == Student.id)
+        .outerjoin(
+            FeeInvoice,
+            (FeeInvoice.student_id == Student.id)
+            & (FeeInvoice.status != "cancelled")
+            & ((FeeInvoice.academic_year_id == academic_year_id) if academic_year_id else True),
+        )
+        .join(Division, StudentEnrollment.division_id == Division.id)
+        .join(Standard, Division.standard_id == Standard.id)
+        .outerjoin(Board, Division.board_id == Board.id)
+    )
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        stud_query = stud_query.where(Student.institution_id == current_user.institution_id)
+    if is_demo_filter is not None:
+        stud_query = stud_query.where(Student.is_demo.is_(is_demo_filter))
+    if academic_year_id:
+        stud_query = stud_query.where(StudentEnrollment.academic_year_id == academic_year_id)
+    if board_id:
+        stud_query = stud_query.where(Division.board_id == board_id)
+    if standard_id:
+        stud_query = stud_query.where(Division.standard_id == standard_id)
+    if division_id:
+        stud_query = stud_query.where(StudentEnrollment.division_id == division_id)
+
+    stud_query = stud_query.order_by(Division.id.asc(), Student.id.asc())
+    all_stud_rows = (await db.execute(stud_query)).all()
+
+    # Deduplicate students
+    seen_ids = set()
+    all_students = []
+    student_ids = []
+    for st, inv, div, std, brd in all_stud_rows:
+        if st.id in seen_ids:
+            continue
+        seen_ids.add(st.id)
+        student_ids.append(st.id)
+        all_students.append((st, inv, div, std, brd))
+
+    # Query all payments
+    payments_by_student_month = {}  # (student_id, month_key) -> list of payments
+    month_totals = {m["key"]: {"total_collected": 0.0, "total_target": 0.0} for m in months_def}
+
+    if student_ids:
+        pay_query = (
+            select(
+                Payment,
+                PaymentReceipt.receipt_number,
+            )
+            .outerjoin(
+                PaymentReceipt,
+                (PaymentReceipt.payment_id == Payment.id) & (PaymentReceipt.status == "valid"),
+            )
+            .where(
+                Payment.student_id.in_(student_ids),
+                Payment.status.in_(["posted", "completed"]),
+            )
+            .order_by(Payment.payment_date.asc())
+        )
+        if academic_year_id:
+            pay_query = pay_query.where(Payment.academic_year_id == academic_year_id)
+        pay_rows = (await db.execute(pay_query)).all()
+
+        for p, r_num in pay_rows:
+            p_date_str = str(p.payment_date)
+            p_ym = p_date_str[:7]
+            if p_ym <= "2026-03":
+                p_ym = "2026-04"
+            key = (p.student_id, p_ym)
+            if key not in payments_by_student_month:
+                payments_by_student_month[key] = []
+            payments_by_student_month[key].append({
+                "id": p.id,
+                "amount": float(p.amount),
+                "payment_date": p_date_str,
+                "payment_method": p.payment_method,
+                "receipt_number": r_num or f"RCP-{p.id:04d}",
+            })
+            if p_ym in month_totals:
+                month_totals[p_ym]["total_collected"] += float(p.amount)
+
+    # Compute targets for each month across enrolled students
+    total_inst_target_per_month = 0.0
+    for st, inv, div, std, brd in all_students:
+        pkg_fee = float(inv.net_amount) if inv else 0.0
+        m_due = round(pkg_fee / 12.0, 2)
+        total_inst_target_per_month += m_due
+
+    for m in months_def:
+        m["total_target"] = round(total_inst_target_per_month, 2)
+        m["total_collected"] = round(month_totals[m["key"]]["total_collected"], 2)
+        target = m["total_target"]
+        col = m["total_collected"]
+        rate = round((col / target * 100.0), 1) if target > 0 else 0.0
+        m["recovery_rate"] = rate
+        if m["key"] > curr_month_key:
+            m["status_color"] = "slate"
+        elif rate >= 85:
+            m["status_color"] = "emerald"
+        elif rate >= 50:
+            m["status_color"] = "amber"
+        else:
+            m["status_color"] = "rose"
+
+    # Batch Performance Summaries for Selected Month
+    batch_map = {}
+    for d_id, d_name, std_id, std_name, brd_name, st_cnt in div_rows:
+        batch_map[d_id] = {
+            "batch_id": d_id,
+            "batch_name": d_name,
+            "standard_name": std_name,
+            "board_name": brd_name or "General",
+            "enrolled_count": st_cnt,
+            "target_amount": 0.0,
+            "collected_amount": 0.0,
+            "pending_amount": 0.0,
+            "defaulters_count": 0,
+            "students_count": 0,
+            "recovery_pct": 0.0,
+        }
+
+    # Student Roster for Selected Month
+    students_roster = []
+    month_target_total = 0.0
+    month_collected_total = 0.0
+    defaulters_count_total = 0
+    mode_split = {"upi": 0.0, "cash": 0.0, "bank": 0.0, "other": 0.0}
+
+    for st, inv, div, std, brd in all_students:
+        pkg_fee = float(inv.net_amount) if inv else 0.0
+        month_due = round(pkg_fee / 12.0, 2)
+        month_target_total += month_due
+
+        pays = payments_by_student_month.get((st.id, selected_month["key"]), [])
+        paid_amount = sum(p["amount"] for p in pays)
+        month_collected_total += paid_amount
+
+        for p in pays:
+            m_meth = (p["payment_method"] or "").upper()
+            if "UPI" in m_meth or "QR" in m_meth:
+                mode_split["upi"] += p["amount"]
+            elif "CASH" in m_meth:
+                mode_split["cash"] += p["amount"]
+            elif "BANK" in m_meth or "NEFT" in m_meth or "RTGS" in m_meth or "CHEQUE" in m_meth:
+                mode_split["bank"] += p["amount"]
+            else:
+                mode_split["other"] += p["amount"]
+
+        bal_due = max(0.0, round(month_due - paid_amount, 2))
+        is_past_or_current = selected_month["key"] <= curr_month_key
+
+        if paid_amount >= month_due and month_due > 0:
+            status = "paid"
+        elif paid_amount > 0:
+            status = "partial"
+        elif is_past_or_current:
+            status = "overdue"
+            defaulters_count_total += 1
+        else:
+            status = "upcoming"
+
+        p_date = pays[0]["payment_date"] if pays else None
+        p_receipt = pays[0]["receipt_number"] if pays else None
+        p_method = pays[0]["payment_method"] if pays else None
+
+        # Add to batch summary
+        if div.id in batch_map:
+            batch_map[div.id]["target_amount"] += month_due
+            batch_map[div.id]["collected_amount"] += paid_amount
+            batch_map[div.id]["students_count"] += 1
+            if status == "overdue":
+                batch_map[div.id]["defaulters_count"] += 1
+
+        students_roster.append({
+            "student_id": st.id,
+            "admission_number": st.admission_number,
+            "student_name": f"{st.first_name} {st.last_name}",
+            "batch_id": div.id,
+            "batch_name": div.name,
+            "standard_name": std.name,
+            "package_fee": pkg_fee,
+            "month_due": month_due,
+            "paid_amount": paid_amount,
+            "payment_date": p_date,
+            "receipt_number": p_receipt,
+            "payment_method": p_method,
+            "balance_due": bal_due,
+            "status": status,
+        })
+
+    # Finalize batch recovery rates
+    batch_summaries = []
+    for b_id, b_data in batch_map.items():
+        b_tgt = b_data["target_amount"]
+        b_col = b_data["collected_amount"]
+        b_data["pending_amount"] = max(0.0, round(b_tgt - b_col, 2))
+        b_data["recovery_pct"] = round((b_col / b_tgt * 100.0), 1) if b_tgt > 0 else 0.0
+        batch_summaries.append(b_data)
+
+    # Enrich months_def with total_target, total_collected, recovery_rate, status_color
+    enriched_months = []
+    for m in months_def:
+        m_k = m["key"]
+        m_tgt = 0.0
+        m_col = 0.0
+        for st, inv, _, _, _ in all_students:
+            pkg = float(inv.net_amount) if inv else 0.0
+            m_tgt += round(pkg / 12.0, 2)
+            pays = payments_by_student_month.get((st.id, m_k), [])
+            m_col += sum(p["amount"] for p in pays)
+
+        m_rate = round((m_col / m_tgt * 100.0), 1) if m_tgt > 0 else 0.0
+        if m_rate >= 80.0:
+            color = "emerald"
+        elif m_rate >= 40.0:
+            color = "amber"
+        elif m_k <= curr_month_key:
+            color = "rose"
+        else:
+            color = "slate"
+
+        enriched_months.append({
+            **m,
+            "total_target": round(m_tgt, 2),
+            "total_collected": round(m_col, 2),
+            "recovery_rate": m_rate,
+            "status_color": color,
+        })
+
+    month_pending_total = max(0.0, round(month_target_total - month_collected_total, 2))
+    overall_rate = (
+        round((month_collected_total / month_target_total * 100.0), 1)
+        if month_target_total > 0
+        else 0.0
+    )
+
+    return {
+        "months": enriched_months,
+        "active_month": {
+            "key": selected_month["key"],
+            "month_name": f"{selected_month['month_name']} {selected_month['year']}",
+            "year": selected_month["year"],
+        },
+        "kpis": {
+            "month_target": round(month_target_total, 2),
+            "month_collected": round(month_collected_total, 2),
+            "month_pending": month_pending_total,
+            "realization_rate": overall_rate,
+            "defaulters_count": defaulters_count_total,
+            "mode_split": {
+                "upi": round(mode_split["upi"], 2),
+                "cash": round(mode_split["cash"], 2),
+                "bank": round(mode_split["bank"], 2),
+                "other": round(mode_split["other"], 2),
+            },
+        },
+        "batch_summaries": batch_summaries,
+        "students": students_roster,
+        "total_students": len(students_roster),
+    }
+
+
+@router.get("/dimension-analytics")
+async def get_dimension_analytics(
+    academic_year_id: Optional[int] = None,
+    board_id: Optional[int] = None,
+    standard_id: Optional[int] = None,
+    division_id: Optional[int] = None,
+    data_env: str = Depends(get_data_environment),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role(*FEE_STAFF_VIEW_ROLES)),
+):
+    """
+    Multi-Dimensional Fee Collection & Realization Matrix:
+    - Annual / Academic Year-wise Performance & Multi-Year Trends
+    - Educational Board-wise Cross-Tabulation (ICSE, CBSE, SSC, State Board, etc.)
+    - Standard / Grade-wise Performance & Realization Ledger
+    """
+    is_demo_filter = True if data_env == "TRAINING" else (False if data_env == "PRODUCTION" else None)
+
+    # 1. Fetch all Academic Years for Multi-Year Annual Comparison
+    ay_query = select(AcademicYear).order_by(AcademicYear.id.desc())
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        ay_query = ay_query.where(AcademicYear.institution_id == current_user.institution_id)
+    all_ays = (await db.execute(ay_query)).scalars().all()
+
+    # Query all enrollments & invoices across all AYs for multi-year comparison
+    all_ay_query = (
+        select(
+            StudentEnrollment.student_id,
+            StudentEnrollment.academic_year_id,
+            func.coalesce(func.sum(FeeInvoice.net_amount), 0).label("pkg_fee"),
+        )
+        .join(Student, StudentEnrollment.student_id == Student.id)
+        .outerjoin(
+            FeeInvoice,
+            (FeeInvoice.student_id == Student.id)
+            & (FeeInvoice.status != "cancelled")
+            & (FeeInvoice.academic_year_id == StudentEnrollment.academic_year_id),
+        )
+    )
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        all_ay_query = all_ay_query.where(Student.institution_id == current_user.institution_id)
+    if is_demo_filter is not None:
+        all_ay_query = all_ay_query.where(Student.is_demo.is_(is_demo_filter))
+    all_ay_query = all_ay_query.group_by(StudentEnrollment.student_id, StudentEnrollment.academic_year_id)
+    all_ay_stud_rows = (await db.execute(all_ay_query)).all()
+
+    # Query all completed payments across all AYs
+    all_ay_pay_query = (
+        select(
+            Payment.student_id,
+            Payment.academic_year_id,
+            func.coalesce(func.sum(Payment.amount), 0).label("total_paid"),
+        )
+        .join(Student, Payment.student_id == Student.id)
+        .where(Payment.status.in_(["completed", "verified", "reconciled", "posted"]))
+    )
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        all_ay_pay_query = all_ay_pay_query.where(Student.institution_id == current_user.institution_id)
+    if is_demo_filter is not None:
+        all_ay_pay_query = all_ay_pay_query.where(Student.is_demo.is_(is_demo_filter))
+    all_ay_pay_query = all_ay_pay_query.group_by(Payment.student_id, Payment.academic_year_id)
+    all_ay_pay_rows = (await db.execute(all_ay_pay_query)).all()
+    all_ay_pay_map = {(r.student_id, r.academic_year_id): float(r.total_paid) for r in all_ay_pay_rows}
+
+    # Build multi-year annual breakdown across all academic years
+    annual_breakdown = []
+    selected_effective_ay = academic_year_id or (all_ays[0].id if all_ays else 1)
+    for ay in all_ays:
+        ay_students = [r for r in all_ay_stud_rows if r.academic_year_id == ay.id]
+        tgt = sum(float(r.pkg_fee) for r in ay_students)
+        col = sum(all_ay_pay_map.get((r.student_id, ay.id), 0.0) for r in ay_students)
+        defaulters = sum(1 for r in ay_students if float(r.pkg_fee) > all_ay_pay_map.get((r.student_id, ay.id), 0.0) and float(r.pkg_fee) > 0)
+        rate = round((col / tgt * 100.0), 1) if tgt > 0 else 0.0
+        annual_breakdown.append({
+            "academic_year_id": ay.id,
+            "academic_year_name": ay.name,
+            "is_current": ay.is_current,
+            "is_selected": ay.id == selected_effective_ay,
+            "enrolled_students": len(ay_students),
+            "target_amount": round(tgt, 2),
+            "collected_amount": round(col, 2),
+            "pending_amount": max(0.0, round(tgt - col, 2)),
+            "recovery_rate": rate,
+            "defaulters_count": defaulters,
+        })
+    annual_breakdown.sort(key=lambda x: x["academic_year_id"], reverse=True)
+
+    # 2. Query all enrolled students and their academic coordinates
+    stud_query = (
+        select(
+            Student.id,
+            Student.first_name,
+            Student.last_name,
+            Student.admission_number,
+            Division.id.label("division_id"),
+            Division.name.label("division_name"),
+            Standard.id.label("standard_id"),
+            Standard.name.label("standard_name"),
+            Standard.level.label("standard_level"),
+            Board.id.label("board_id"),
+            Board.name.label("board_name"),
+            StudentEnrollment.academic_year_id,
+            AcademicYear.name.label("academic_year_name"),
+            FeeInvoice.net_amount,
+        )
+        .join(StudentEnrollment, StudentEnrollment.student_id == Student.id)
+        .join(AcademicYear, StudentEnrollment.academic_year_id == AcademicYear.id)
+        .join(Division, StudentEnrollment.division_id == Division.id)
+        .join(Standard, Division.standard_id == Standard.id)
+        .outerjoin(Board, Division.board_id == Board.id)
+        .outerjoin(
+            FeeInvoice,
+            (FeeInvoice.student_id == Student.id)
+            & (FeeInvoice.status != "cancelled")
+            & (FeeInvoice.academic_year_id == StudentEnrollment.academic_year_id),
+        )
+    )
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        stud_query = stud_query.where(Student.institution_id == current_user.institution_id)
+    if is_demo_filter is not None:
+        stud_query = stud_query.where(Student.is_demo.is_(is_demo_filter))
+
+    if academic_year_id:
+        stud_query = stud_query.where(StudentEnrollment.academic_year_id == academic_year_id)
+    if board_id:
+        stud_query = stud_query.where(Division.board_id == board_id)
+    if standard_id:
+        stud_query = stud_query.where(Division.standard_id == standard_id)
+    if division_id:
+        stud_query = stud_query.where(Division.id == division_id)
+
+    stud_rows = (await db.execute(stud_query)).all()
+
+    # Query all completed payments for enrolled students
+    pay_query = (
+        select(
+            Payment.student_id,
+            Payment.academic_year_id,
+            Payment.amount,
+            Payment.payment_method,
+            Payment.payment_date,
+            PaymentReceipt.receipt_number,
+        )
+        .join(Student, Payment.student_id == Student.id)
+        .outerjoin(PaymentReceipt, PaymentReceipt.payment_id == Payment.id)
+        .where(Payment.status.in_(["completed", "verified", "reconciled"]))
+    )
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        pay_query = pay_query.where(Student.institution_id == current_user.institution_id)
+    if is_demo_filter is not None:
+        pay_query = pay_query.where(Student.is_demo.is_(is_demo_filter))
+    if academic_year_id:
+        pay_query = pay_query.where(Payment.academic_year_id == academic_year_id)
+
+    pay_rows = (await db.execute(pay_query)).all()
+
+    payments_by_student = {}
+    mode_split = {"upi": 0.0, "cash": 0.0, "bank": 0.0, "other": 0.0}
+    for p_sid, p_ayid, p_amt, p_meth, p_dt, p_rcpt in pay_rows:
+        p_val = float(p_amt)
+        if p_sid not in payments_by_student:
+            payments_by_student[p_sid] = []
+        payments_by_student[p_sid].append({
+            "amount": p_val,
+            "method": p_meth,
+            "date": str(p_dt) if p_dt else None,
+            "receipt": p_rcpt,
+            "academic_year_id": p_ayid,
+        })
+        m_str = (p_meth or "").upper()
+        if "UPI" in m_str or "QR" in m_str:
+            mode_split["upi"] += p_val
+        elif "CASH" in m_str:
+            mode_split["cash"] += p_val
+        elif "BANK" in m_str or "NEFT" in m_str or "RTGS" in m_str or "CHEQUE" in m_str:
+            mode_split["bank"] += p_val
+        else:
+            mode_split["other"] += p_val
+
+    # Deduplicate students across enrollments to prevent multiple count anomalies
+    student_dict = {}
+    for r in stud_rows:
+        if r.id not in student_dict:
+            student_dict[r.id] = r
+
+    # 12-Month Pivot definitions (March to February as per coaching cycle)
+    pivot_months_def = [
+        {"key": "2026-03", "label": "Mar 26", "name": "March"},
+        {"key": "2026-04", "label": "Apr 26", "name": "April"},
+        {"key": "2026-05", "label": "May 26", "name": "May"},
+        {"key": "2026-06", "label": "Jun 26", "name": "June"},
+        {"key": "2026-07", "label": "Jul 26", "name": "July"},
+        {"key": "2026-08", "label": "Aug 26", "name": "August"},
+        {"key": "2026-09", "label": "Sep 26", "name": "September"},
+        {"key": "2026-10", "label": "Oct 26", "name": "October"},
+        {"key": "2026-11", "label": "Nov 26", "name": "November"},
+        {"key": "2026-12", "label": "Dec 26", "name": "December"},
+        {"key": "2027-01", "label": "Jan 27", "name": "January"},
+        {"key": "2027-02", "label": "Feb 27", "name": "February"},
+    ]
+    pivot_month_keys = [m["key"] for m in pivot_months_def]
+
+    board_map = {}
+    standard_map = {}
+    batch_map = {}
+    students_roster = []
+
+    pivot_monthly_totals = {k: 0.0 for k in pivot_month_keys}
+
+    for s_id, r in student_dict.items():
+        s_name = f"{r.first_name} {r.last_name or ''}".strip()
+        b_id = r.board_id or 0
+        b_name = r.board_name or "General / Other"
+        std_id = r.standard_id
+        std_name = r.standard_name
+        std_level = r.standard_level
+        div_id = r.division_id
+        div_name = r.division_name
+        ay_id = r.academic_year_id
+        pkg_fee = float(r.net_amount or 0.0)
+
+        # Student payments
+        st_pays = payments_by_student.get(s_id, [])
+        paid_val = sum(p["amount"] for p in st_pays if not academic_year_id or p["academic_year_id"] == ay_id)
+        bal_due = max(0.0, round(pkg_fee - paid_val, 2))
+        is_defaulter = 1 if bal_due > 0 and pkg_fee > 0 else 0
+
+        # Monthly payment map for this student
+        st_months_paid = {k: 0.0 for k in pivot_month_keys}
+        for p in st_pays:
+            if not academic_year_id or p["academic_year_id"] == ay_id:
+                p_dt = p["date"] or ""
+                ym = p_dt[:7]
+                if ym in st_months_paid:
+                    st_months_paid[ym] += p["amount"]
+                    pivot_monthly_totals[ym] += p["amount"]
+
+        if paid_val >= pkg_fee and pkg_fee > 0:
+            status = "paid"
+        elif paid_val > 0:
+            status = "partial"
+        elif pkg_fee > 0:
+            status = "overdue"
+        else:
+            status = "upcoming"
+
+        # 1. Board map
+        if b_id not in board_map:
+            board_map[b_id] = {
+                "board_id": b_id,
+                "board_name": b_name,
+                "enrolled_students": set(),
+                "standards_set": set(),
+                "batches_set": set(),
+                "target_amount": 0.0,
+                "collected_amount": 0.0,
+                "defaulters_count": 0,
+                "monthly_collections": {k: 0.0 for k in pivot_month_keys},
+            }
+        board_map[b_id]["enrolled_students"].add(s_id)
+        board_map[b_id]["standards_set"].add(std_id)
+        board_map[b_id]["batches_set"].add(div_id)
+        board_map[b_id]["target_amount"] += pkg_fee
+        board_map[b_id]["collected_amount"] += paid_val
+        board_map[b_id]["defaulters_count"] += is_defaulter
+        for k, v in st_months_paid.items():
+            board_map[b_id]["monthly_collections"][k] += v
+
+        # 2. Standard map
+        if std_id not in standard_map:
+            standard_map[std_id] = {
+                "standard_id": std_id,
+                "standard_name": std_name,
+                "level": std_level,
+                "board_name": b_name,
+                "enrolled_students": set(),
+                "batches_set": set(),
+                "target_amount": 0.0,
+                "collected_amount": 0.0,
+                "defaulters_count": 0,
+                "monthly_collections": {k: 0.0 for k in pivot_month_keys},
+            }
+        standard_map[std_id]["enrolled_students"].add(s_id)
+        standard_map[std_id]["batches_set"].add(div_id)
+        standard_map[std_id]["target_amount"] += pkg_fee
+        standard_map[std_id]["collected_amount"] += paid_val
+        standard_map[std_id]["defaulters_count"] += is_defaulter
+        for k, v in st_months_paid.items():
+            standard_map[std_id]["monthly_collections"][k] += v
+
+        # 3. Batch map
+        if div_id not in batch_map:
+            batch_map[div_id] = {
+                "batch_id": div_id,
+                "batch_name": div_name,
+                "standard_name": std_name,
+                "board_name": b_name,
+                "enrolled_students": set(),
+                "target_amount": 0.0,
+                "collected_amount": 0.0,
+                "defaulters_count": 0,
+                "monthly_collections": {k: 0.0 for k in pivot_month_keys},
+            }
+        batch_map[div_id]["enrolled_students"].add(s_id)
+        batch_map[div_id]["target_amount"] += pkg_fee
+        batch_map[div_id]["collected_amount"] += paid_val
+        batch_map[div_id]["defaulters_count"] += is_defaulter
+        for k, v in st_months_paid.items():
+            batch_map[div_id]["monthly_collections"][k] += v
+
+        # 4. Student Roster item
+        p_first = st_pays[0] if st_pays else None
+        students_roster.append({
+            "student_id": s_id,
+            "admission_number": r.admission_number,
+            "student_name": s_name,
+            "batch_id": div_id,
+            "batch_name": div_name,
+            "standard_id": std_id,
+            "standard_name": std_name,
+            "board_id": b_id,
+            "board_name": b_name,
+            "academic_year_id": ay_id,
+            "package_fee": pkg_fee,
+            "month_due": round(pkg_fee / 12.0, 2),
+            "paid_amount": paid_val,
+            "balance_due": bal_due,
+            "status": status,
+            "payment_date": p_first["date"] if p_first else None,
+            "receipt_number": p_first["receipt"] if p_first else None,
+            "payment_method": p_first["method"] if p_first else None,
+        })
+
+    # Finalize Board Breakdown
+    board_breakdown = []
+    for b_id, b_data in board_map.items():
+        tgt = round(b_data["target_amount"], 2)
+        col = round(b_data["collected_amount"], 2)
+        rate = round((col / tgt * 100.0), 1) if tgt > 0 else 0.0
+        color = "emerald" if rate >= 80.0 else ("amber" if rate >= 40.0 else "rose")
+        board_breakdown.append({
+            "board_id": b_data["board_id"],
+            "board_name": b_data["board_name"],
+            "enrolled_students": len(b_data["enrolled_students"]),
+            "standards_count": len(b_data["standards_set"]),
+            "batches_count": len(b_data["batches_set"]),
+            "target_amount": tgt,
+            "collected_amount": col,
+            "pending_amount": max(0.0, round(tgt - col, 2)),
+            "recovery_rate": rate,
+            "defaulters_count": b_data["defaulters_count"],
+            "status_color": color,
+        })
+    board_breakdown.sort(key=lambda x: x["target_amount"], reverse=True)
+
+    # Finalize Standard Breakdown
+    standard_breakdown = []
+    for s_id, s_data in standard_map.items():
+        tgt = round(s_data["target_amount"], 2)
+        col = round(s_data["collected_amount"], 2)
+        rate = round((col / tgt * 100.0), 1) if tgt > 0 else 0.0
+        color = "emerald" if rate >= 80.0 else ("amber" if rate >= 40.0 else "rose")
+        standard_breakdown.append({
+            "standard_id": s_data["standard_id"],
+            "standard_name": s_data["standard_name"],
+            "level": s_data["level"],
+            "board_name": s_data["board_name"],
+            "enrolled_students": len(s_data["enrolled_students"]),
+            "batches_count": len(s_data["batches_set"]),
+            "target_amount": tgt,
+            "collected_amount": col,
+            "pending_amount": max(0.0, round(tgt - col, 2)),
+            "recovery_rate": rate,
+            "defaulters_count": s_data["defaulters_count"],
+            "status_color": color,
+        })
+    standard_breakdown.sort(key=lambda x: x["level"])
+
+    # Global KPI calculation
+    total_target = sum(b["target_amount"] for b in board_breakdown)
+    total_collected = sum(b["collected_amount"] for b in board_breakdown)
+    total_pending = max(0.0, round(total_target - total_collected, 2))
+    overall_rate = round((total_collected / total_target * 100.0), 1) if total_target > 0 else 0.0
+    total_defaulters = sum(b["defaulters_count"] for b in board_breakdown)
+
+    # Finalize Monthly Pivot by Board, Standard, and Batch
+    pivot_by_board = []
+    for b_id, b_data in board_map.items():
+        tgt = round(b_data["target_amount"], 2)
+        col = round(b_data["collected_amount"], 2)
+        rate = round((col / tgt * 100.0), 1) if tgt > 0 else 0.0
+        pivot_by_board.append({
+            "board_id": b_data["board_id"],
+            "board_name": b_data["board_name"],
+            "enrolled_students": len(b_data["enrolled_students"]),
+            "target_amount": tgt,
+            "monthly_collections": {k: round(v, 2) for k, v in b_data["monthly_collections"].items()},
+            "total_realized": col,
+            "pending_amount": max(0.0, round(tgt - col, 2)),
+            "recovery_rate": rate,
+        })
+    pivot_by_board.sort(key=lambda x: x["target_amount"], reverse=True)
+
+    pivot_by_standard = []
+    for s_id, s_data in standard_map.items():
+        tgt = round(s_data["target_amount"], 2)
+        col = round(s_data["collected_amount"], 2)
+        rate = round((col / tgt * 100.0), 1) if tgt > 0 else 0.0
+        pivot_by_standard.append({
+            "standard_id": s_data["standard_id"],
+            "standard_name": s_data["standard_name"],
+            "board_name": s_data["board_name"],
+            "batches_count": len(s_data["batches_set"]),
+            "enrolled_students": len(s_data["enrolled_students"]),
+            "target_amount": tgt,
+            "monthly_collections": {k: round(v, 2) for k, v in s_data["monthly_collections"].items()},
+            "total_realized": col,
+            "pending_amount": max(0.0, round(tgt - col, 2)),
+            "recovery_rate": rate,
+        })
+    pivot_by_standard.sort(key=lambda x: x["target_amount"], reverse=True)
+
+    pivot_by_batch = []
+    for b_id, b_data in batch_map.items():
+        tgt = round(b_data["target_amount"], 2)
+        col = round(b_data["collected_amount"], 2)
+        rate = round((col / tgt * 100.0), 1) if tgt > 0 else 0.0
+        pivot_by_batch.append({
+            "batch_id": b_data["batch_id"],
+            "batch_name": b_data["batch_name"],
+            "standard_name": b_data["standard_name"],
+            "board_name": b_data["board_name"],
+            "enrolled_students": len(b_data["enrolled_students"]),
+            "target_amount": tgt,
+            "monthly_collections": {k: round(v, 2) for k, v in b_data["monthly_collections"].items()},
+            "total_realized": col,
+            "pending_amount": max(0.0, round(tgt - col, 2)),
+            "recovery_rate": rate,
+        })
+    pivot_by_batch.sort(key=lambda x: x["target_amount"], reverse=True)
+
+    monthly_pivot = {
+        "months": pivot_months_def,
+        "by_board": pivot_by_board,
+        "by_standard": pivot_by_standard,
+        "by_batch": pivot_by_batch,
+        "totals": {
+            "monthly_realized": {k: round(v, 2) for k, v in pivot_monthly_totals.items()},
+            "total_target": total_target,
+            "total_realized": total_collected,
+            "total_pending": total_pending,
+            "recovery_rate": overall_rate,
+        },
+    }
+
+    return {
+        "kpis": {
+            "total_target": total_target,
+            "total_collected": total_collected,
+            "total_pending": total_pending,
+            "realization_rate": overall_rate,
+            "total_students": len(students_roster),
+            "total_defaulters": total_defaulters,
+            "mode_split": {
+                "upi": round(mode_split["upi"], 2),
+                "cash": round(mode_split["cash"], 2),
+                "bank": round(mode_split["bank"], 2),
+                "other": round(mode_split["other"], 2),
+            },
+        },
+        "annual_breakdown": annual_breakdown,
+        "board_breakdown": board_breakdown,
+        "standard_breakdown": standard_breakdown,
+        "monthly_pivot": monthly_pivot,
+        "students": students_roster,
+        "total_students": len(students_roster),
+    }
+
+
+@router.get("/student-monthly-pivot")
+async def get_student_monthly_pivot(
+    academic_year_id: Optional[int] = None,
+    board_id: Optional[str] = None,
+    standard_id: Optional[str] = None,
+    division_id: Optional[str] = None,
+    payment_status: Optional[str] = None,
+    student_status: Optional[str] = None,
+    payment_method: Optional[str] = None,
+    search: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    data_env: str = Depends(get_data_environment),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role(*FEE_STAFF_VIEW_ROLES)),
+):
+    """
+    Dynamic Student-wise Fee Collection Pivot with Advanced Multi-Dimensional Filters:
+    - Rows: Student name, admission #, board, standard/grade, division, batch, package fee
+    - Columns: 12 months (March to February), Total Collected, Balance
+    - Individual payment amounts with drilldown transaction details
+    - Summary metrics: total students, agreed package, total collected, balance, collection %, defaulters
+    """
+    is_demo_filter = True if data_env == "TRAINING" else (False if data_env == "PRODUCTION" else None)
+    inst_id = getattr(current_user, "institution_id", None) if not is_sysadmin(current_user) else None
+
+    # 1. Resolve Academic Year
+    if not academic_year_id:
+        curr_ay_query = select(AcademicYear).where(AcademicYear.is_current.is_(True))
+        if inst_id:
+            curr_ay_query = curr_ay_query.where(AcademicYear.institution_id == inst_id)
+        curr_ay = (await db.execute(curr_ay_query)).scalars().first()
+        effective_ay_id = curr_ay.id if curr_ay else 1
+    else:
+        effective_ay_id = academic_year_id
+
+    # 2. Fetch Filter Master Options
+    ay_q = select(AcademicYear).order_by(AcademicYear.id.desc())
+    bd_q = select(Board).order_by(Board.name.asc())
+    std_q = select(Standard).order_by(Standard.level.asc(), Standard.name.asc())
+    div_q = select(Division).order_by(Division.name.asc())
+
+    if inst_id:
+        ay_q = ay_q.where(AcademicYear.institution_id == inst_id)
+        bd_q = bd_q.where(Board.institution_id == inst_id)
+        std_q = std_q.where(Standard.institution_id == inst_id)
+
+    all_ays = (await db.execute(ay_q)).scalars().all()
+    all_bds = (await db.execute(bd_q)).scalars().all()
+    all_stds = (await db.execute(std_q)).scalars().all()
+    all_divs = (await db.execute(div_q)).scalars().all()
+
+    filter_options = {
+        "academic_years": [{"id": a.id, "name": a.name, "is_current": a.is_current} for a in all_ays],
+        "boards": [{"id": b.id, "name": b.name, "code": b.code} for b in all_bds],
+        "standards": [{"id": s.id, "name": s.name, "level": s.level} for s in all_stds],
+        "divisions": [{"id": d.id, "name": d.name, "standard_id": d.standard_id, "board_id": d.board_id} for d in all_divs],
+        "payment_methods": ["CASH", "UPI", "BANK_TRANSFER", "CHEQUE", "CARD", "DEMAND_DRAFT"],
+        "payment_statuses": [
+            {"id": "all", "label": "All Payment Statuses"},
+            {"id": "paid", "label": "Fully Paid"},
+            {"id": "partial", "label": "Partially Paid"},
+            {"id": "overdue", "label": "Overdue Defaulters"},
+            {"id": "upcoming", "label": "Upcoming / No Dues"},
+        ],
+        "student_statuses": [
+            {"id": "all", "label": "All Students"},
+            {"id": "active", "label": "Active Students"},
+            {"id": "former", "label": "Former / Inactive"},
+        ],
+    }
+
+    # 3. Parse Multi-Select Filter Lists
+    def parse_int_list(val: Optional[str]) -> List[int]:
+        if not val or val.strip().lower() in ("all", ""):
+            return []
+        res = []
+        for p in val.split(","):
+            p = p.strip()
+            if p.isdigit():
+                res.append(int(p))
+        return res
+
+    selected_bds = parse_int_list(board_id)
+    selected_stds = parse_int_list(standard_id)
+    selected_divs = parse_int_list(division_id)
+    selected_statuses = [s.strip().lower() for s in (payment_status or "").split(",") if s.strip() and s.strip().lower() != "all"]
+
+    # 4. Query Enrolled Students for Selected AY
+    stud_q = (
+        select(
+            Student.id,
+            Student.admission_number,
+            Student.first_name,
+            Student.last_name,
+            Student.phone,
+            Student.is_active,
+            Student.admission_date,
+            StudentEnrollment.status.label("enrollment_status"),
+            Division.id.label("division_id"),
+            Division.name.label("division_name"),
+            Standard.id.label("standard_id"),
+            Standard.name.label("standard_name"),
+            Board.id.label("board_id"),
+            Board.name.label("board_name"),
+            FeeInvoice.id.label("invoice_id"),
+            FeeInvoice.net_amount,
+            FeeInvoice.due_date,
+            FeeInvoice.outstanding_amount,
+            FeeInvoice.notes.label("invoice_notes"),
+        )
+        .join(StudentEnrollment, StudentEnrollment.student_id == Student.id)
+        .join(Division, StudentEnrollment.division_id == Division.id)
+        .join(Standard, Division.standard_id == Standard.id)
+        .outerjoin(Board, Division.board_id == Board.id)
+        .outerjoin(
+            FeeInvoice,
+            (FeeInvoice.student_id == Student.id)
+            & (FeeInvoice.status != "cancelled")
+            & (FeeInvoice.academic_year_id == effective_ay_id),
+        )
+        .where(StudentEnrollment.academic_year_id == effective_ay_id)
+    )
+    if inst_id:
+        stud_q = stud_q.where(Student.institution_id == inst_id)
+    if is_demo_filter is not None:
+        stud_q = stud_q.where(Student.is_demo.is_(is_demo_filter))
+
+    # Apply Dependent Multi-Select Filters
+    if selected_bds:
+        stud_q = stud_q.where(Division.board_id.in_(selected_bds))
+    if selected_stds:
+        stud_q = stud_q.where(Division.standard_id.in_(selected_stds))
+    if selected_divs:
+        stud_q = stud_q.where(Division.id.in_(selected_divs))
+
+    # Student Status Filter
+    if student_status and student_status.lower() != "all":
+        if student_status.lower() == "active":
+            stud_q = stud_q.where(Student.is_active.is_(True))
+        elif student_status.lower() in ("former", "inactive"):
+            stud_q = stud_q.where(Student.is_active.is_(False))
+
+    # Search filter
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        stud_q = stud_q.where(
+            or_(
+                Student.first_name.ilike(term),
+                Student.last_name.ilike(term),
+                Student.admission_number.ilike(term),
+                Student.phone.ilike(term),
+            )
+        )
+
+    stud_q = stud_q.order_by(StudentEnrollment.id.desc())
+    stud_rows = (await db.execute(stud_q)).all()
+
+    # Deduplicate students
+    student_dict = {}
+    for r in stud_rows:
+        if r.id not in student_dict:
+            student_dict[r.id] = r
+
+    student_ids = list(student_dict.keys())
+
+    # 5. Query Completed Payments for these students
+    payments_by_student = {}
+    if student_ids:
+        pay_q = (
+            select(
+                Payment.id,
+                Payment.student_id,
+                Payment.amount,
+                Payment.payment_date,
+                Payment.payment_method,
+                Payment.status,
+                PaymentReceipt.receipt_number,
+            )
+            .outerjoin(
+                PaymentReceipt,
+                (PaymentReceipt.payment_id == Payment.id) & (PaymentReceipt.status == "valid"),
+            )
+            .where(
+                Payment.student_id.in_(student_ids),
+                Payment.academic_year_id == effective_ay_id,
+                Payment.status.in_(["completed", "verified", "reconciled", "posted"]),
+            )
+            .order_by(Payment.payment_date.asc())
+        )
+        if payment_method and payment_method.strip().lower() != "all":
+            pay_q = pay_q.where(Payment.payment_method.ilike(f"%{payment_method.strip()}%"))
+        if start_date:
+            pay_q = pay_q.where(Payment.payment_date >= start_date)
+        if end_date:
+            pay_q = pay_q.where(Payment.payment_date <= end_date)
+
+        pay_rows = (await db.execute(pay_q)).all()
+        for p in pay_rows:
+            payments_by_student.setdefault(p.student_id, []).append({
+                "id": p.id,
+                "amount": float(p.amount),
+                "payment_date": str(p.payment_date),
+                "payment_method": p.payment_method or "CASH",
+                "receipt_number": p.receipt_number or f"RCP-{p.id:04d}",
+            })
+
+    # 6. Define 12 Months (March through February)
+    months_def = [
+        {"key": "2026-03", "name": "March", "short_name": "Mar", "year": 2026},
+        {"key": "2026-04", "name": "April", "short_name": "Apr", "year": 2026},
+        {"key": "2026-05", "name": "May", "short_name": "May", "year": 2026},
+        {"key": "2026-06", "name": "June", "short_name": "Jun", "year": 2026},
+        {"key": "2026-07", "name": "July", "short_name": "Jul", "year": 2026},
+        {"key": "2026-08", "name": "August", "short_name": "Aug", "year": 2026},
+        {"key": "2026-09", "name": "September", "short_name": "Sep", "year": 2026},
+        {"key": "2026-10", "name": "October", "short_name": "Oct", "year": 2026},
+        {"key": "2026-11", "name": "November", "short_name": "Nov", "year": 2026},
+        {"key": "2026-12", "name": "December", "short_name": "Dec", "year": 2026},
+        {"key": "2027-01", "name": "January", "short_name": "Jan", "year": 2027},
+        {"key": "2027-02", "name": "February", "short_name": "Feb", "year": 2027},
+    ]
+    month_keys = [m["key"] for m in months_def]
+    monthly_col_totals = {m["key"]: 0.0 for m in months_def}
+
+    # 7. Build Student Pivot Rows
+    pivot_students = []
+    total_agreed = 0.0
+    total_col = 0.0
+    total_bal = 0.0
+    defaulters_cnt = 0
+    pending_installments_cnt = 0
+
+    today_ym = "2026-11"  # Current institute operating cycle
+
+    for s_id, r in student_dict.items():
+        s_name = f"{r.first_name} {r.last_name or ''}".strip()
+        pkg_fee = float(r.net_amount or 0.0)
+        st_pays = payments_by_student.get(s_id, [])
+        paid_val = sum(p["amount"] for p in st_pays)
+        bal_due = max(0.0, round(pkg_fee - paid_val, 2))
+
+        # Monthly breakdown
+        months_data = {}
+        for m in months_def:
+            m_key = m["key"]
+            m_pays = [p for p in st_pays if p["payment_date"][:7] == m_key]
+            m_amt = sum(p["amount"] for p in m_pays)
+
+            # Check if pending installment exists in this month
+            is_pending = False
+            pending_amt = 0.0
+            if r.due_date and str(r.due_date)[:7] == m_key and bal_due > 0 and m_key <= today_ym:
+                is_pending = True
+                pending_amt = bal_due
+
+            if m_amt > 0:
+                cell_status = "paid"
+            elif is_pending:
+                cell_status = "pending"
+            elif m_key <= today_ym and bal_due > 0:
+                cell_status = "unpaid"
+            else:
+                cell_status = "none"
+
+            months_data[m_key] = {
+                "amount": round(m_amt, 2),
+                "payments_count": len(m_pays),
+                "is_pending": is_pending,
+                "pending_amount": round(pending_amt, 2),
+                "status": cell_status,
+                "payments": m_pays,
+            }
+            monthly_col_totals[m_key] += m_amt
+
+        if bal_due <= 0 and pkg_fee > 0:
+            calc_status = "paid"
+        elif paid_val > 0:
+            calc_status = "partial"
+        elif pkg_fee > 0:
+            calc_status = "overdue"
+            defaulters_cnt += 1
+        else:
+            calc_status = "upcoming"
+
+        if any(v["is_pending"] for v in months_data.values()):
+            pending_installments_cnt += 1
+
+        # Check Payment Status filter
+        if selected_statuses and calc_status not in selected_statuses:
+            continue
+
+        total_agreed += pkg_fee
+        total_col += paid_val
+        total_bal += bal_due
+
+        student_st_str = "active" if r.is_active else "former"
+
+        # Parse collection remark & priority from invoice notes
+        raw_notes = getattr(r, "invoice_notes", None) or ""
+        parsed_priority = None
+        parsed_status = "follow_up_required"
+        parsed_remark = ""
+        if raw_notes:
+            parsed_remark = raw_notes
+            if "[PRIORITY:" in raw_notes:
+                import re
+                p_match = re.search(r"\[PRIORITY:\s*(\w+)\]", raw_notes, re.IGNORECASE)
+                if p_match:
+                    parsed_priority = p_match.group(1).lower()
+                s_match = re.search(r"\[STATUS:\s*(\w+)\]", raw_notes, re.IGNORECASE)
+                if s_match:
+                    parsed_status = s_match.group(1).lower()
+                clean_rem = re.sub(r"\[PRIORITY:[^\]]+\]", "", raw_notes)
+                clean_rem = re.sub(r"\[STATUS:[^\]]+\]", "", clean_rem)
+                clean_rem = re.sub(r"\(by [^\)]+\)", "", clean_rem)
+                parsed_remark = clean_rem.strip()
+            else:
+                parsed_priority = "normal"
+
+        pivot_students.append({
+            "student_id": s_id,
+            "admission_number": r.admission_number,
+            "student_name": s_name,
+            "phone": r.phone or "—",
+            "board_id": r.board_id,
+            "board_name": r.board_name or "General",
+            "standard_id": r.standard_id,
+            "standard_name": r.standard_name,
+            "division_id": r.division_id,
+            "division_name": r.division_name,
+            "batch_name": r.division_name,
+            "package_fee": pkg_fee,
+            "months": months_data,
+            "total_collected": round(paid_val, 2),
+            "balance": round(bal_due, 2),
+            "collection_rate": round((paid_val / pkg_fee * 100.0), 1) if pkg_fee > 0 else 0.0,
+            "status": calc_status,
+            "student_status": student_st_str,
+            "invoice_id": getattr(r, "invoice_id", None),
+            "remark": parsed_remark,
+            "priority": parsed_priority,
+            "follow_up_status": parsed_status,
+        })
+
+    col_pct = round((total_col / total_agreed * 100.0), 1) if total_agreed > 0 else 0.0
+
+    return {
+        "summary": {
+            "total_students": len(pivot_students),
+            "total_agreed_package": round(total_agreed, 2),
+            "total_collected": round(total_col, 2),
+            "total_balance": round(total_bal, 2),
+            "collection_percentage": col_pct,
+            "defaulters_count": defaulters_cnt,
+            "pending_installments_count": pending_installments_cnt,
+        },
+        "months": months_def,
+        "students": pivot_students,
+        "monthly_totals": {k: round(v, 2) for k, v in monthly_col_totals.items()},
+        "filter_options": filter_options,
+    }
+
+
+class StudentCollectionRemarkPayload(BaseModel):
+    student_id: int
+    invoice_id: Optional[int] = None
+    academic_year_id: Optional[int] = None
+    remark: str = Field(..., min_length=1, max_length=500)
+    priority: str = Field("normal")  # urgent, high, normal, low
+    follow_up_status: str = Field("follow_up_required")  # follow_up_required, promise_to_pay, disputed, under_review, cleared
+    follow_up_date: Optional[str] = None
+
+
+@router.post("/student-collection-remark")
+async def save_student_collection_remark(
+    data: StudentCollectionRemarkPayload,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role(*FEE_STAFF_VIEW_ROLES)),
+):
+    """
+    Record or update an operational follow-up remark and priority on a student fee account.
+    Persists to the student's active FeeInvoice.notes and FeeInvoice.remarks with audit attribution.
+    """
+    student = await db.get(Student, data.student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    check_institution_access(student.institution_id, current_user)
+
+    invoice = None
+    if data.invoice_id:
+        invoice = await db.get(FeeInvoice, data.invoice_id)
+    if not invoice:
+        inv_q = (
+            select(FeeInvoice)
+            .where(
+                FeeInvoice.student_id == data.student_id,
+                FeeInvoice.status != "cancelled",
+            )
+        )
+        if data.academic_year_id:
+            inv_q = inv_q.where(FeeInvoice.academic_year_id == data.academic_year_id)
+        inv_q = inv_q.order_by(FeeInvoice.id.desc())
+        invoice = (await db.execute(inv_q)).scalars().first()
+
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    username = getattr(current_user, "username", "staff")
+    formatted_entry = f"[PRIORITY: {data.priority.upper()}] [STATUS: {data.follow_up_status.upper()}] {data.remark.strip()} (by {username} on {now_str})"
+
+    if invoice:
+        invoice.notes = formatted_entry
+        db.add(invoice)
+    else:
+        # Fallback to latest student enrollment record
+        enr_q = (
+            select(StudentEnrollment)
+            .where(StudentEnrollment.student_id == data.student_id)
+            .order_by(StudentEnrollment.id.desc())
+        )
+        enr = (await db.execute(enr_q)).scalars().first()
+        if enr:
+            enr.remarks = formatted_entry[:500]
+            db.add(enr)
+
+    await db.commit()
+    return {
+        "status": "success",
+        "message": "Collection remark and priority recorded successfully",
+        "student_id": data.student_id,
+        "priority": data.priority.lower(),
+        "follow_up_status": data.follow_up_status.lower(),
+        "remark": data.remark.strip(),
     }
 
 

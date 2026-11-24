@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-16
+ * @updated     2026-11-24
  *
  * @description Zustand state store managing user-defined menus, navigation modes, adaptive suggestions, and search palettes.
  */
@@ -61,6 +61,8 @@ interface NavigationState {
   hideItem: (id: string) => void
   unhideItem: (id: string) => void
   reorderPinnedItems: (newOrder: string[]) => void
+  setPinnedItems: (items: string[]) => void
+  clearPinnedItems: () => void
   addCustomGroup: (name: string) => void
   renameCustomGroup: (id: string, name: string) => void
   deleteCustomGroup: (id: string) => void
@@ -172,6 +174,12 @@ export const useNavigationStore = create<NavigationState>()(
 
       reorderPinnedItems: (newOrder) =>
         set({ pinnedItems: newOrder, itemOrder: newOrder, hasUnsavedChanges: true }),
+
+      setPinnedItems: (items) =>
+        set({ pinnedItems: items, itemOrder: items, hasUnsavedChanges: true }),
+
+      clearPinnedItems: () =>
+        set({ pinnedItems: [], itemOrder: [], hasUnsavedChanges: true }),
 
       addCustomGroup: (name) =>
         set((state) => {

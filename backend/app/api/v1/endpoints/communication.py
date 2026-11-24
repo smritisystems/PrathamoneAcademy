@@ -11,12 +11,12 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-21
+#  * @updated     2026-11-24
 #  *
 #  * @description REST API router for Communication Center, message templates, universal document sharing, delivery tracking, and automated event notifications.
 #  */
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_, desc, update, delete
 from sqlalchemy.orm import selectinload
@@ -419,6 +419,71 @@ async def resolve_shared_document(
         "max_views": shared.max_views,
         "expires_at": shared.expires_at.isoformat(),
     }
+
+
+@router.get("/shared-doc/{token}/pdf")
+@limiter.limit("30/minute")
+async def download_shared_document_pdf(
+    request: Request,
+    token: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Public token-authorized PDF download for shared documents (e.g. Fee Payment Receipts).
+    Allows parents to view and download official receipt PDFs sent via WhatsApp or SMS.
+    """
+    stmt = select(SharedDocumentToken).where(SharedDocumentToken.token == token)
+    shared = (await db.execute(stmt)).scalar_one_or_none()
+    if not shared:
+        raise HTTPException(status_code=404, detail="Shared document link is invalid or has expired.")
+
+    if shared.is_revoked:
+        raise HTTPException(status_code=410, detail="This shared document link has been revoked.")
+
+    now_utc = datetime.now(timezone.utc)
+    if shared.expires_at < now_utc:
+        raise HTTPException(status_code=410, detail="This shared document link has expired.")
+
+    if shared.document_type == "RECEIPT":
+        from app.models.payment import PaymentReceipt, Payment
+        from app.services.receipt_pdf_service import ReceiptPdfService, sanitize_receipt_filename
+        from app.api.v1.endpoints.payments import build_receipt_response, get_institution_dict
+
+        res = await db.execute(
+            select(PaymentReceipt)
+            .options(selectinload(PaymentReceipt.payment).selectinload(Payment.student))
+            .where(
+                (PaymentReceipt.payment_id == shared.record_id)
+                | (PaymentReceipt.id == shared.record_id)
+            )
+            .order_by(PaymentReceipt.id.desc())
+        )
+        receipt = res.scalars().first()
+        if not receipt:
+            raise HTTPException(status_code=404, detail="Associated fee receipt not found.")
+
+        student_inst_id = 1
+        if receipt.payment and receipt.payment.student:
+            student_inst_id = receipt.payment.student.institution_id or 1
+
+        receipt_payload = await build_receipt_response(db, receipt, current_user=None)
+        institution_dict = await get_institution_dict(db, student_inst_id)
+        pdf_bytes = ReceiptPdfService.generate_receipt_pdf(receipt_payload, institution_dict)
+        filename = sanitize_receipt_filename(receipt_payload.get("student_name") or "Student", receipt.receipt_number)
+
+        shared.view_count += 1
+        await db.commit()
+
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "X-Receipt-Number": receipt.receipt_number,
+            },
+        )
+
+    raise HTTPException(status_code=400, detail=f"PDF generation not supported for document type '{shared.document_type}'")
 
 
 # ─── 3. Message Dispatch & Bulk Communication Center ─────────────────────────

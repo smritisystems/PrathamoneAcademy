@@ -243,7 +243,18 @@ async def test_customer_get_reactivations_lists_licenses():
                         "edition": "coaching-institute",
                         "license_model": "on_premise_subscription",
                         "seats": 5,
-                        "activation_count": 2,
+                        "active_activation_count": 2,
+                        "activation_history": [
+                            {
+                                "activation_id": 7,
+                                "device_label": "Device ····6315",
+                                "status": "released",
+                                "activated_at": "2026-11-01T10:00:00Z",
+                                "last_seen_at": "2026-11-10T10:00:00Z",
+                                "deactivated_at": "2026-11-11T10:00:00Z",
+                                "release_source": "customer",
+                            }
+                        ],
                     }
                 ]
             }
@@ -262,6 +273,8 @@ async def test_customer_get_reactivations_lists_licenses():
     assert len(licenses) == 1
     assert licenses[0]["license_id"] == 42
     assert licenses[0]["serial_number"] == "123456789"
+    assert licenses[0]["activation_count"] == 2
+    assert licenses[0]["activation_history"][0]["activation_id"] == 7
     assert called_headers["Authorization"] == "Bearer session_valid_token_123"
 
 
@@ -295,12 +308,27 @@ async def test_customer_reactivation_surrender_payload():
         refresh_public_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
         surrender_confirmed=True,
         surrender_reason="Previous device surrendered to support",
+        surrendered_activation_id=76,
         client=FakeClient(),
     )
 
     assert result["status"] == "approved"
     assert called_payload["surrender_confirmed"] is True
     assert called_payload["surrender_reason"] == "Previous device surrendered to support"
+    assert called_payload["surrendered_activation_id"] == 76
+
+    with pytest.raises(LicenseReactivationError, match="previously released activation"):
+        await customer_create_reactivation_request(
+            authority_url="https://license.smritisys.com",
+            session_token="valid_session_token",
+            license_id=42,
+            installation_id="PRATHAM-789F-CEBC-0916-6315",
+            activation_identifier="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            refresh_public_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            surrender_confirmed=True,
+            surrender_reason="Previous device surrendered to support",
+            client=FakeClient(),
+        )
 
 
 @pytest.mark.asyncio

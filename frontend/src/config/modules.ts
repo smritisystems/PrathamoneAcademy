@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-22
+ * @updated     2026-11-24
  *
  * @description Canonical Module Registry (SSOT) defining all application workspaces, icons, routes, and permissions.
  */
@@ -45,6 +45,7 @@ import {
   Presentation,
   CalendarDays,
   Film,
+  Wallet,
   LucideIcon,
 } from 'lucide-react'
 import type { User, NavigationModule, NavigationSubItem } from '../types'
@@ -169,6 +170,20 @@ export const CANONICAL_MODULE_REGISTRY: ModuleDefinition[] = [
       { id: 'fees_concessions', label: 'Concessions & Waivers', to: '/fees/concessions' },
       { id: 'fees_online_gateway', label: 'Online Gateway', to: '/fees/online-gateway' },
       { id: 'fees_reports', label: 'Financial Daybook', to: '/fees/reports' },
+    ],
+  },
+  {
+    id: 'expenses',
+    label: 'Daily Expenses & Cash',
+    category: 'finance',
+    defaultPath: '/expenses',
+    icon: Wallet,
+    iconName: 'Wallet',
+    description: 'Daily expense entries, automated cash opening/closing, denomination audit, and live cashbook.',
+    subItems: [
+      { id: 'expenses_register', label: 'Expense Register', to: '/expenses' },
+      { id: 'expenses_cash_closing', label: 'Cash Register & Closing', to: '/cash-register' },
+      { id: 'expenses_cashbook', label: 'Daily Cash Book', to: '/cashbook' },
     ],
   },
   {

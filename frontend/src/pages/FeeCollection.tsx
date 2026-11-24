@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-24
  *
  * @description Student fee collection terminal for recording payments against outstanding installments.
  */
@@ -233,9 +233,32 @@ export default function FeeCollection() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Fee Collection Terminal</h1>
           {student && (
-            <p className="text-sm text-gray-500">
-              {studentName} — {student.admission_number}
-            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <span className="text-sm font-semibold text-gray-800">{studentName}</span>
+              <span className="font-mono text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                {student.admission_number}
+              </span>
+              {student.board_name && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  {student.board_name}
+                </span>
+              )}
+              {student.standard_name && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                  {student.standard_name}
+                </span>
+              )}
+              {student.division_name && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200">
+                  {student.division_name}
+                </span>
+              )}
+              {student.roll_number && (
+                <span className="text-xs font-mono text-gray-600 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                  Roll: {student.roll_number}
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>

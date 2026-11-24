@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-23
+#  * @updated     2026-11-24
 #  *
 #  * @description API endpoints for academic, attendance, faculty load, and fee collection reporting.
 #  */
@@ -1193,37 +1193,14 @@ async def student_master_directory_report(
 ):
     """
     Exportable Demographic Roster of all enrolled students with academic allocations,
-    guardian contact, and status.
+    guardian contact, and status. Deduplicated to authoritative student identity (SSOT).
     """
     inst_id = await resolve_report_institution_id(db, current_user, data_env)
-    query = (
-        select(Student, StudentEnrollment, Standard, Division, Board)
-        .outerjoin(
-            StudentEnrollment,
-            (Student.id == StudentEnrollment.student_id)
-            & (
-                (StudentEnrollment.academic_year_id == academic_year_id)
-                if academic_year_id
-                else (StudentEnrollment.status.in_(["enrolled", "active"]))
-            ),
-        )
-        .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
-        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
-        .outerjoin(Board, Division.board_id == Board.id)
-        .where(Student.institution_id == inst_id)
-    )
-
-    if board_id:
-        query = query.where(Board.id == board_id)
-    if standard_id:
-        query = query.where(Standard.id == standard_id)
-    if division_id:
-        query = query.where(Division.id == division_id)
-    if status and status != "all":
-        query = query.where(StudentEnrollment.status == status)
+    
+    st_query = select(Student).where(Student.institution_id == inst_id)
     if search:
         s_term = f"%{search}%"
-        query = query.where(
+        st_query = st_query.where(
             or_(
                 Student.first_name.ilike(s_term),
                 Student.last_name.ilike(s_term),
@@ -1231,17 +1208,64 @@ async def student_master_directory_report(
                 Student.phone.ilike(s_term),
             )
         )
+    st_query = apply_report_environment_filter(st_query, Student, data_env)
+    st_res = await db.execute(st_query.order_by(Student.admission_number))
+    students = st_res.scalars().all()
+    if not students:
+        return []
 
-    query = apply_report_environment_filter(query, Student, data_env)
+    student_ids = [s.id for s in students]
 
-    res = await db.execute(query.order_by(Student.admission_number))
-    rows = res.all()
+    enr_q = (
+        select(
+            StudentEnrollment.student_id,
+            StudentEnrollment.status.label("enrollment_status"),
+            Standard.id.label("standard_id"),
+            Standard.name.label("standard_name"),
+            Division.id.label("division_id"),
+            Division.name.label("division_name"),
+            Division.code.label("batch_code"),
+            Board.id.label("board_id"),
+            Board.name.label("board_name"),
+        )
+        .join(Standard, StudentEnrollment.standard_id == Standard.id)
+        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .outerjoin(Board, Division.board_id == Board.id)
+        .where(StudentEnrollment.student_id.in_(student_ids))
+    )
+    if academic_year_id:
+        enr_q = enr_q.where(StudentEnrollment.academic_year_id == academic_year_id)
+    if standard_id:
+        enr_q = enr_q.where(StudentEnrollment.standard_id == standard_id)
+    if division_id:
+        enr_q = enr_q.where(StudentEnrollment.division_id == division_id)
+    if board_id:
+        enr_q = enr_q.where(Board.id == board_id)
+    if status and status != "all":
+        enr_q = enr_q.where(StudentEnrollment.status == status)
+
+    enr_q = enr_q.order_by(
+        StudentEnrollment.student_id,
+        case((StudentEnrollment.status.in_(["active", "enrolled"]), 0), else_=1),
+        StudentEnrollment.id.desc(),
+    )
+    enr_res = await db.execute(enr_q)
+    enrollment_map = {}
+    for row in enr_res.all():
+        if row.student_id not in enrollment_map:
+            enrollment_map[row.student_id] = row
+
+    has_enrollment_filter = bool(standard_id or division_id or board_id or (status and status != "all"))
+    filtered_students = [
+        s for s in students
+        if not has_enrollment_filter or s.id in enrollment_map
+    ]
 
     return [
         {
             "id": s.id,
             "admission_number": s.admission_number,
-            "student_name": f"{s.first_name} {s.last_name}",
+            "student_name": f"{s.first_name} {s.last_name}".strip(),
             "first_name": s.first_name,
             "last_name": s.last_name,
             "gender": s.gender or "N/A",
@@ -1250,17 +1274,17 @@ async def student_master_directory_report(
             "email": s.email,
             "blood_group": getattr(s, "blood_group", None) or "N/A",
             "emergency_contact": getattr(s, "emergency_contact", None) or s.phone,
-            "standard_name": std.name if std else "Unassigned",
-            "division_name": div.name if div else "Unassigned",
-            "batch_code": div.code if div else None,
-            "board_name": brd.name if brd else "N/A",
+            "standard_name": enrollment_map[s.id].standard_name if s.id in enrollment_map else "Unassigned",
+            "division_name": enrollment_map[s.id].division_name if s.id in enrollment_map else "Unassigned",
+            "batch_code": enrollment_map[s.id].batch_code if s.id in enrollment_map else None,
+            "board_name": enrollment_map[s.id].board_name if s.id in enrollment_map else "N/A",
             "admission_date": s.admission_date.isoformat() if s.admission_date else None,
-            "status": enr.status if enr else ("active" if s.is_active else "inactive"),
+            "status": enrollment_map[s.id].enrollment_status if s.id in enrollment_map else ("active" if s.is_active else "inactive"),
             "is_active": s.is_active,
             "city": s.city or "Mumbai",
             "address": getattr(s, "current_address", None) or s.city or "",
         }
-        for s, enr, std, div, brd in rows
+        for s in filtered_students
     ]
 
 
@@ -1280,37 +1304,14 @@ async def student_flexible_matrix_report(
     Universal Multi-Dimensional Student Intelligence & Academic Matrix Report.
     Provides flexible aggregation across Boards, Standards/Grades, and Batches/Divisions,
     with student demographics, guardian contacts, attendance telemetry, fee balances,
-    and exam performance grades.
+    and exam performance grades. Deduplicated to authoritative student identity (SSOT).
     """
     inst_id = await resolve_report_institution_id(db, current_user, data_env)
-    query = (
-        select(Student, StudentEnrollment, Standard, Division, Board)
-        .outerjoin(
-            StudentEnrollment,
-            (Student.id == StudentEnrollment.student_id)
-            & (
-                (StudentEnrollment.academic_year_id == academic_year_id)
-                if academic_year_id
-                else (StudentEnrollment.status.in_(["enrolled", "active"]))
-            ),
-        )
-        .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
-        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
-        .outerjoin(Board, Division.board_id == Board.id)
-        .where(Student.institution_id == inst_id)
-    )
-
-    if board_id:
-        query = query.where(Board.id == board_id)
-    if standard_id:
-        query = query.where(Standard.id == standard_id)
-    if division_id:
-        query = query.where(Division.id == division_id)
-    if status and status != "all":
-        query = query.where(StudentEnrollment.status == status)
+    
+    st_query = select(Student).where(Student.institution_id == inst_id)
     if search:
         s_term = f"%{search}%"
-        query = query.where(
+        st_query = st_query.where(
             or_(
                 Student.first_name.ilike(s_term),
                 Student.last_name.ilike(s_term),
@@ -1318,12 +1319,61 @@ async def student_flexible_matrix_report(
                 Student.phone.ilike(s_term),
             )
         )
+    st_query = apply_report_environment_filter(st_query, Student, data_env)
+    st_res = await db.execute(st_query.order_by(Student.admission_number))
+    students = st_res.scalars().all()
+    if not students:
+        return []
 
-    query = apply_report_environment_filter(query, Student, data_env)
-    res = await db.execute(query.order_by(Student.admission_number))
-    rows = res.all()
+    student_ids = [s.id for s in students]
 
-    student_ids = [s.id for s, _, _, _, _ in rows]
+    enr_q = (
+        select(
+            StudentEnrollment.student_id,
+            StudentEnrollment.roll_number,
+            StudentEnrollment.status.label("enrollment_status"),
+            Standard.id.label("standard_id"),
+            Standard.name.label("standard_name"),
+            Division.id.label("division_id"),
+            Division.name.label("division_name"),
+            Division.code.label("batch_code"),
+            Board.id.label("board_id"),
+            Board.name.label("board_name"),
+            Board.code.label("board_code"),
+        )
+        .join(Standard, StudentEnrollment.standard_id == Standard.id)
+        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .outerjoin(Board, Division.board_id == Board.id)
+        .where(StudentEnrollment.student_id.in_(student_ids))
+    )
+    if academic_year_id:
+        enr_q = enr_q.where(StudentEnrollment.academic_year_id == academic_year_id)
+    if standard_id:
+        enr_q = enr_q.where(StudentEnrollment.standard_id == standard_id)
+    if division_id:
+        enr_q = enr_q.where(StudentEnrollment.division_id == division_id)
+    if board_id:
+        enr_q = enr_q.where(Board.id == board_id)
+    if status and status != "all":
+        enr_q = enr_q.where(StudentEnrollment.status == status)
+
+    enr_q = enr_q.order_by(
+        StudentEnrollment.student_id,
+        case((StudentEnrollment.status.in_(["active", "enrolled"]), 0), else_=1),
+        StudentEnrollment.id.desc(),
+    )
+    enr_res = await db.execute(enr_q)
+    enrollment_map = {}
+    for row in enr_res.all():
+        if row.student_id not in enrollment_map:
+            enrollment_map[row.student_id] = row
+
+    has_enrollment_filter = bool(standard_id or division_id or board_id or (status and status != "all"))
+    filtered_students = [
+        s for s in students
+        if not has_enrollment_filter or s.id in enrollment_map
+    ]
+    student_ids = [s.id for s in filtered_students]
 
     # 1. Fetch Primary Guardians
     guardian_map: Dict[int, Guardian] = {}
@@ -1390,7 +1440,8 @@ async def student_flexible_matrix_report(
         exam_map = {row.student_id: row for row in exam_res.all()}
 
     output = []
-    for s, enr, std, div, brd in rows:
+    for s in filtered_students:
+        enr = enrollment_map.get(s.id)
         g = guardian_map.get(s.id)
         f_info = fee_map.get(s.id)
         a_info = att_map.get(s.id)
@@ -1445,7 +1496,7 @@ async def student_flexible_matrix_report(
         output.append({
             "id": s.id,
             "admission_number": s.admission_number,
-            "student_name": f"{s.first_name} {s.last_name}",
+            "student_name": f"{s.first_name} {s.last_name}".strip(),
             "first_name": s.first_name,
             "last_name": s.last_name,
             "gender": s.gender or "N/A",
@@ -1453,19 +1504,19 @@ async def student_flexible_matrix_report(
             "phone": s.phone or "N/A",
             "email": s.email or "N/A",
             "city": s.city or "Mumbai",
-            "guardian_name": f"{g.first_name} {g.last_name}" if g else "N/A",
+            "guardian_name": f"{g.first_name} {g.last_name}".strip() if g else "N/A",
             "guardian_phone": g.phone if g else (s.phone or "N/A"),
             "guardian_relation": g.relation if g else "Guardian",
-            "board_id": brd.id if brd else None,
-            "board_name": brd.name if brd else "N/A",
-            "board_code": brd.code if brd else "N/A",
-            "standard_id": std.id if std else None,
-            "standard_name": std.name if std else "Unassigned",
-            "division_id": div.id if div else None,
-            "division_name": div.name if div else "Unassigned",
-            "batch_code": div.code if div else None,
+            "board_id": enr.board_id if enr else None,
+            "board_name": enr.board_name if enr else "N/A",
+            "board_code": getattr(enr, "board_code", "N/A") if enr else "N/A",
+            "standard_id": enr.standard_id if enr else None,
+            "standard_name": enr.standard_name if enr else "Unassigned",
+            "division_id": enr.division_id if enr else None,
+            "division_name": enr.division_name if enr else "Unassigned",
+            "batch_code": enr.batch_code if enr else None,
             "roll_number": enr.roll_number if enr and enr.roll_number else "N/A",
-            "enrollment_status": enr.status if enr else ("active" if s.is_active else "inactive"),
+            "enrollment_status": enr.enrollment_status if enr else ("active" if s.is_active else "inactive"),
             "total_sessions": tot_days,
             "present_days": pres_days,
             "absent_days": ab_days,

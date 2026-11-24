@@ -410,13 +410,23 @@ async def customer_get_reactivations(
     except (ValueError, json.JSONDecodeError) as exc:
         raise LicenseReactivationError("License authority returned an invalid reactivations response.") from exc
 
-    if isinstance(data, list):
-        return data
-    if isinstance(data, dict):
-        licenses = data.get("licenses") or data.get("items") or data.get("data")
-        if isinstance(licenses, list):
-            return licenses
-    return []
+    licenses = data if isinstance(data, list) else (
+        data.get("licenses") or data.get("items") or data.get("data")
+        if isinstance(data, dict)
+        else None
+    )
+    if not isinstance(licenses, list):
+        raise LicenseReactivationError("License authority returned an invalid reactivations response.")
+
+    normalized = []
+    for license in licenses:
+        if not isinstance(license, dict):
+            raise LicenseReactivationError("License authority returned an invalid license option.")
+        active_count = license.get("activation_count", license.get("active_activation_count"))
+        if not isinstance(active_count, int) or isinstance(active_count, bool) or active_count < 0:
+            raise LicenseReactivationError("License authority returned an invalid active-device count.")
+        normalized.append({**license, "activation_count": active_count})
+    return normalized
 
 
 async def customer_create_reactivation_request(
@@ -428,6 +438,7 @@ async def customer_create_reactivation_request(
     refresh_public_key: str,
     surrender_confirmed: bool = False,
     surrender_reason: str | None = None,
+    surrendered_activation_id: int | None = None,
     client: httpx.AsyncClient | None = None,
 ) -> dict[str, Any]:
     """Submits a license reactivation request using POST /api/license/reactivations.
@@ -450,7 +461,12 @@ async def customer_create_reactivation_request(
     if surrender_confirmed:
         if not surrender_reason or len(surrender_reason.strip()) < 10:
             raise LicenseReactivationError("A surrender reason of at least 10 characters is required.")
+        if not isinstance(surrendered_activation_id, int) or surrendered_activation_id < 1:
+            raise LicenseReactivationError("A previously released activation must be selected for a surrender claim.")
         payload["surrender_reason"] = surrender_reason.strip()
+        payload["surrendered_activation_id"] = surrendered_activation_id
+    elif surrendered_activation_id is not None:
+        raise LicenseReactivationError("A surrendered activation can only be sent with a surrender claim.")
 
     async def _post(c: httpx.AsyncClient):
         return await c.post(f"{norm_url}/api/license/reactivations", json=payload, headers=headers)

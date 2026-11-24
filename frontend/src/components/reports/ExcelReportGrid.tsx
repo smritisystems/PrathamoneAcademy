@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-24
  *
  * @description Production-grade spreadsheet-style report data grid with sorting, column resizing/reordering, visibility toggle, column filters, and multi-format exports.
  */
@@ -111,10 +111,36 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
   const [globalSearch, setGlobalSearch] = useState('')
   const [columnFilters, setColumnFilters] = useState<Record<string, any>>({})
   const [activeFilterPopover, setActiveFilterPopover] = useState<string | null>(null)
+  const [popoverSearchQuery, setPopoverSearchQuery] = useState('')
+  const filterPopoverRef = useRef<HTMLDivElement>(null)
   const [sortState, setSortState] = useState<{
     columnId: string
     direction: 'asc' | 'desc'
   } | null>(defaultSort || null)
+
+  // Close filter popover on outside click or Escape
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (filterPopoverRef.current && !filterPopoverRef.current.contains(e.target as Node)) {
+        setActiveFilterPopover(null)
+        setPopoverSearchQuery('')
+      }
+    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveFilterPopover(null)
+        setPopoverSearchQuery('')
+      }
+    }
+    if (activeFilterPopover) {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleKeyDown)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [activeFilterPopover])
 
   // ─── 3. State: Pagination & Export Scope ──────────────────────────────────
   const [pageSize, setPageSize] = useState<number>(defaultPageSize)
@@ -218,7 +244,9 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
         if (filterVal.length === 0) return
         result = result.filter((row) => {
           const raw = getRawCellValue(row, col)
-          return filterVal.includes(String(raw))
+          if (raw === null || raw === undefined) return false
+          const s = String(raw).toLowerCase().trim()
+          return filterVal.some((v: any) => String(v).toLowerCase().trim() === s)
         })
       } else if (typeof filterVal === 'object' && ('min' in filterVal || 'max' in filterVal)) {
         // Numeric range filter
@@ -737,8 +765,9 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                           {/* Filter Popover */}
                           {activeFilterPopover === col.id && (
                             <div
+                              ref={filterPopoverRef}
                               onClick={(e) => e.stopPropagation()}
-                              className="absolute left-0 mt-2 w-60 bg-white rounded-xl shadow-xl border border-slate-200 p-3 z-40 text-left font-normal"
+                              className="absolute left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 p-3 z-40 text-left font-normal animate-in fade-in zoom-in-95 duration-100 select-text"
                             >
                               <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-2">
                                 <span className="text-xs font-bold text-slate-800 truncate">
@@ -746,7 +775,10 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                                 </span>
                                 <button
                                   type="button"
-                                  onClick={() => setActiveFilterPopover(null)}
+                                  onClick={() => {
+                                    setActiveFilterPopover(null)
+                                    setPopoverSearchQuery('')
+                                  }}
                                   className="text-slate-400 hover:text-slate-600"
                                 >
                                   <X className="w-3.5 h-3.5" />
@@ -820,46 +852,108 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                               )}
 
                               {/* Select / Unique Values Filter */}
-                              {col.filterType === 'select' && (
-                                <div className="space-y-1.5">
-                                  <div className="max-h-40 overflow-y-auto space-y-1 custom-scrollbar">
-                                    {getUniqueColumnValues(col).map((opt) => {
-                                      const currentSelected = columnFilters[col.id] || []
-                                      const isChecked = currentSelected.includes(opt.value)
-                                      return (
-                                        <label
-                                          key={opt.value}
-                                          className="flex items-center justify-between gap-2 px-1.5 py-1 hover:bg-slate-50 rounded text-xs cursor-pointer"
-                                        >
-                                          <div className="flex items-center gap-2 truncate">
-                                            <input
-                                              type="checkbox"
-                                              checked={isChecked}
-                                              onChange={(e) => {
-                                                const checked = e.target.checked
-                                                setColumnFilters((prev) => {
-                                                  const oldList = prev[col.id] || []
-                                                  const newList = checked
-                                                    ? [...oldList, opt.value]
-                                                    : oldList.filter((v: any) => v !== opt.value)
-                                                  return { ...prev, [col.id]: newList }
-                                                })
-                                              }}
-                                              className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
-                                            />
-                                            <span className="truncate">{opt.label}</span>
-                                          </div>
-                                          <span className="text-[10px] font-mono text-slate-400">
-                                            {opt.count}
-                                          </span>
-                                        </label>
-                                      )
-                                    })}
-                                  </div>
-                                </div>
-                              )}
+                              {col.filterType === 'select' && (() => {
+                                const uniqueVals = getUniqueColumnValues(col)
+                                const filteredUniqueVals = popoverSearchQuery.trim()
+                                  ? uniqueVals.filter((v) =>
+                                      v.label.toLowerCase().includes(popoverSearchQuery.toLowerCase().trim())
+                                    )
+                                  : uniqueVals
 
-                              <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-2 text-[11px]">
+                                return (
+                                  <div className="space-y-2">
+                                    {uniqueVals.length > 5 && (
+                                      <div className="relative">
+                                        <Search className="w-3 h-3 absolute left-2 top-2 text-slate-400" />
+                                        <input
+                                          type="text"
+                                          placeholder="Search values..."
+                                          value={popoverSearchQuery}
+                                          onChange={(e) => setPopoverSearchQuery(e.target.value)}
+                                          className="w-full pl-6 pr-2 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                        />
+                                      </div>
+                                    )}
+
+                                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const allVals = uniqueVals.map((v) => v.value)
+                                          setColumnFilters((prev) => ({ ...prev, [col.id]: allVals }))
+                                        }}
+                                        className="text-primary-600 hover:underline font-semibold"
+                                      >
+                                        Select All
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setColumnFilters((prev) => {
+                                            const copy = { ...prev }
+                                            delete copy[col.id]
+                                            return copy
+                                          })
+                                        }}
+                                        className="text-slate-400 hover:text-slate-600"
+                                      >
+                                        Clear Selection
+                                      </button>
+                                    </div>
+
+                                    <div className="max-h-44 overflow-y-auto space-y-1 pr-1 text-xs divide-y divide-slate-50 scrollbar-thin">
+                                      {filteredUniqueVals.length === 0 ? (
+                                        <div className="py-3 text-center text-slate-400 text-xs">
+                                          No matching values
+                                        </div>
+                                      ) : (
+                                        filteredUniqueVals.map((opt) => {
+                                          const currentSelected: any[] = Array.isArray(columnFilters[col.id])
+                                            ? columnFilters[col.id]
+                                            : []
+                                          const isChecked = currentSelected.some(
+                                            (v: any) => String(v).toLowerCase().trim() === String(opt.value).toLowerCase().trim()
+                                          )
+                                          return (
+                                            <label
+                                              key={opt.value}
+                                              className="flex items-center justify-between gap-2 px-1.5 py-1 hover:bg-slate-50 rounded text-xs cursor-pointer text-slate-700"
+                                            >
+                                              <div className="flex items-center gap-2 truncate">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={isChecked}
+                                                  onChange={(e) => {
+                                                    const checked = e.target.checked
+                                                    setColumnFilters((prev) => {
+                                                      const oldList = Array.isArray(prev[col.id]) ? prev[col.id] : []
+                                                      const newList = checked
+                                                        ? [...oldList, opt.value]
+                                                        : oldList.filter(
+                                                            (v: any) =>
+                                                              String(v).toLowerCase().trim() !==
+                                                              String(opt.value).toLowerCase().trim()
+                                                          )
+                                                      return { ...prev, [col.id]: newList }
+                                                    })
+                                                  }}
+                                                  className="rounded border-slate-300 text-primary-600 focus:ring-primary-500 w-3.5 h-3.5"
+                                                />
+                                                <span className="truncate">{opt.label}</span>
+                                              </div>
+                                              <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1 rounded shrink-0">
+                                                {opt.count}
+                                              </span>
+                                            </label>
+                                          )
+                                        })
+                                      )}
+                                    </div>
+                                  </div>
+                                )
+                              })()}
+
+                              <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-2 text-xs">
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -869,16 +963,24 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                                       return copy
                                     })
                                   }}
-                                  className="text-slate-500 hover:text-slate-800"
+                                  disabled={!hasFilter}
+                                  className={`text-[11px] font-semibold ${
+                                    hasFilter
+                                      ? 'text-rose-600 hover:text-rose-700'
+                                      : 'text-slate-300 cursor-not-allowed'
+                                  }`}
                                 >
-                                  Clear
+                                  Reset
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => setActiveFilterPopover(null)}
-                                  className="px-2 py-0.5 bg-primary-600 text-white rounded font-semibold"
+                                  onClick={() => {
+                                    setActiveFilterPopover(null)
+                                    setPopoverSearchQuery('')
+                                  }}
+                                  className="px-2.5 py-1 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-md shadow-2xs"
                                 >
-                                  Apply
+                                  Done
                                 </button>
                               </div>
                             </div>
@@ -927,9 +1029,13 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
               </tr>
             ) : (
               paginatedData.map((row, rowIdx) => {
+                const rowKey =
+                  row.id !== undefined && row.id !== null
+                    ? `${row.id}_${rowIdx}`
+                    : rowIdx
                 return (
                   <tr
-                    key={row.id ?? rowIdx}
+                    key={rowKey}
                     className="hover:bg-primary-50/40 transition-colors group"
                   >
                     {visibleColumns.map((col) => {
