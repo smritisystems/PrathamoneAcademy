@@ -1,8 +1,8 @@
 {
   "name": "prashant-academy-workspace",
-  "version": "1.181.0",
+  "version": "1.181.1",
   "private": true,
-  "description": "Prashant Academy Coaching Institute Management System - Monorepo Workspace",
+  "description": "PrathamONE Academy Coaching Institute Management System - Monorepo Workspace",
   "scripts": {
     "headers:check": "python scripts/manage_headers.py check",
     "headers:fix": "python scripts/manage_headers.py fix",
@@ -21,4 +21,3 @@
   "client": "Prashant Academy Coaching Institute",
   "license": "Proprietary"
 }
-

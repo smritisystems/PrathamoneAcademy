@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-05
- * @updated     2026-11-24
+ * @updated     2026-11-26
  *
  * @description Official A5 portrait fee receipt document featuring compact header, transaction metadata,
  */
@@ -38,6 +38,7 @@ import {
   Share2,
   Download,
   MessageSquare,
+  RotateCcw,
 } from 'lucide-react'
 import ShareModal from './ShareModal'
 import toast from 'react-hot-toast'
@@ -72,8 +73,10 @@ const METHOD_LABELS: Record<string, string> = {
 interface PaymentReceiptViewProps {
   receipt: DetailedPaymentReceipt | Receipt | any
   showPrintActions?: boolean
+  showReprintButton?: boolean
   initialPaperSize?: 'A5' | 'A4'
   onClose?: () => void
+  onReceiptUpdated?: (updatedReceipt: DetailedPaymentReceipt | Receipt | any) => void
   containerId?: string
 }
 
@@ -171,8 +174,10 @@ function AuthorizedSignatureSVG() {
 export default function PaymentReceiptView({
   receipt,
   showPrintActions = true,
+  showReprintButton = false,
   initialPaperSize = 'A5',
   onClose,
+  onReceiptUpdated,
   containerId = 'receipt-print-area',
 }: PaymentReceiptViewProps) {
   const branding = useBranding()
@@ -209,6 +214,7 @@ export default function PaymentReceiptView({
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false)
   const [downloadingPdf, setDownloadingPdf] = useState<boolean>(false)
   const [sharingPdf, setSharingPdf] = useState<boolean>(false)
+  const [reprinting, setReprinting] = useState<boolean>(false)
   const [sendingWhatsApp, setSendingWhatsApp] = useState<boolean>(false)
   const [shareFeedback, setShareFeedback] = useState<ShareNotification | null>(null)
 
@@ -397,6 +403,40 @@ export default function PaymentReceiptView({
     })
   }
 
+  const handleReprint = async () => {
+    if (!receipt?.receipt_number || reprinting) return
+    try {
+      setReprinting(true)
+      const res = await paymentsApi.reprintReceipt(receipt.receipt_number)
+      let refreshed = {
+        ...receipt,
+        reprint_count: res.data?.reprint_count ?? (Number(receipt.reprint_count || 0) + 1),
+        is_duplicate: true,
+      }
+      try {
+        const freshRes = await paymentsApi.getReceipt(receipt.receipt_number)
+        if (freshRes?.data) {
+          refreshed = freshRes.data
+        }
+      } catch {
+        // Keep optimistic duplicate metadata if detail fetch is unavailable in mocked tests
+      }
+      onReceiptUpdated?.(refreshed)
+      toast.success(res.data?.message || `Duplicate copy issued for #${receipt.receipt_number}`)
+      setTimeout(() => {
+        printReceiptElement({
+          elementId: containerId,
+          documentTitle: `Official Fee Receipt #${receipt.receipt_number} (Duplicate)`,
+          paperSize,
+        })
+      }, 60)
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || 'Failed to record receipt reprint')
+    } finally {
+      setReprinting(false)
+    }
+  }
+
   // Format payment date safely
   const formattedDate = receipt.payment_date
     ? new Date(receipt.payment_date).toLocaleDateString('en-IN', {
@@ -441,7 +481,7 @@ export default function PaymentReceiptView({
       {/* Screen Control Bar (Hidden on Print) */}
       {showPrintActions && (
         <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl print:hidden shadow-xs">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-bold text-slate-600">Print Paper Format:</span>
             <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs font-medium">
               <button
@@ -469,7 +509,7 @@ export default function PaymentReceiptView({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={handlePrint}
@@ -478,6 +518,18 @@ export default function PaymentReceiptView({
               <Printer className="w-4 h-4" />
               <span>Print Receipt ({paperSize})</span>
             </button>
+            {showReprintButton && !isReversed && !isSuperseded && (
+              <button
+                type="button"
+                onClick={handleReprint}
+                disabled={reprinting}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-xl text-xs font-bold shadow-xs transition-colors disabled:opacity-50"
+                title="Issue an audited duplicate copy reprint without creating a new payment"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>{reprinting ? 'Reprinting...' : 'Reprint Duplicate'}</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={handleDownloadPdf}

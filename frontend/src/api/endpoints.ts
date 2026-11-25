@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-24
+ * @updated     2026-11-26
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -944,10 +944,22 @@ export const paymentsApi = {
     transaction_reference?: string
     bank_name?: string
     cheque_number?: string
+    cheque_date?: string
     notes?: string
     action?: 'draft' | 'submit' | 'post'
+    idempotency_key?: string
     allocations: { invoice_id: number | string; installment_id?: number | string; amount: number }[]
-  }) => apiClient.post<{ payment_id: number; receipt_number?: string; amount: number; status: string; message: string }>('/payments/', data),
+  }) =>
+    apiClient.post<{
+      payment_id: number
+      receipt_number?: string
+      amount: number
+      payment_method?: string
+      payment_date?: string
+      status: string
+      requires_approval?: boolean
+      message: string
+    }>('/payments/', data),
   update: (id: number | string, data: {
     amount?: number
     payment_date?: string

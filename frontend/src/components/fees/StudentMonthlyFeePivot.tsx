@@ -11,13 +11,13 @@
  *
  * @version     1.2.0
  * @created     2026-11-24
- * @updated     2026-11-24
+ * @updated     2026-11-26
  *
  * @description Production-grade Dynamic Student-wise Fee Collection Pivot with Print/Download Receipt Actions, Priority Remarks & Follow-up, Quick Receive Payment, Advanced Dependent Filters, 12-Month Matrix, and Transaction Popovers.
  */
 
 import React, { useState, useMemo } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import {
   Search, RotateCcw, Download, Eye, X, Filter,
@@ -31,8 +31,16 @@ import toast from 'react-hot-toast'
 import { feesApi, paymentsApi, communicationApi } from '../../api/endpoints'
 import { formatINR } from '../../utils/formatters'
 import { exportToExcel, downloadCsvRows, downloadBlob } from '../../utils/reportExport'
+import { useTableSort } from '../../hooks/useTableSort'
+import {
+  useTableColumnFilters,
+  buildSelectOptionsFromRows,
+  type ColumnFilterDefinition,
+} from '../../hooks/useTableColumnFilters'
+import { SortableHeader } from '../common/SortableHeader'
 import Modal from '../Modal'
 import PaymentReceiptView from '../PaymentReceiptView'
+import { InlineQuickFeeCollectionModal } from './InlineQuickFeeCollectionModal'
 import type {
   StudentMonthlyPivotResponse,
   StudentMonthlyPivotRow,
@@ -50,6 +58,7 @@ export const StudentMonthlyFeePivot: React.FC<StudentMonthlyFeePivotProps> = ({
   onNavigateToCollection,
 }) => {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   // ─── Filter States ───────────────────────────────────────────────────────────
   const [academicYearId, setAcademicYearId] = useState<number | undefined>(initialAcademicYearId)
@@ -83,6 +92,7 @@ export const StudentMonthlyFeePivot: React.FC<StudentMonthlyFeePivotProps> = ({
   // ─── Quick Receive Payment Modal State ───────────────────────────────────────
   const [quickCollectData, setQuickCollectData] = useState<{
     student: StudentMonthlyPivotRow
+    monthKey: string
     monthName: string
     year: number
   } | null>(null)
@@ -160,6 +170,122 @@ export const StudentMonthlyFeePivot: React.FC<StudentMonthlyFeePivotProps> = ({
     return divs
   }, [filterOptions, boardId, standardId])
 
+  // ─── Column-Header Filters & Sorting (SSOT) ──────────────────────────────────
+  const rawStudents = data?.students ?? []
+  const monthsList = data?.months ?? []
+
+  const pivotFilterDefinitions = useMemo<Record<string, ColumnFilterDefinition<StudentMonthlyPivotRow>>>(() => {
+    const defs: Record<string, ColumnFilterDefinition<StudentMonthlyPivotRow>> = {
+      student_name: { type: 'text', accessor: (s) => s.student_name },
+      priority: { type: 'select', accessor: (s) => (s.priority || 'normal').toLowerCase() },
+      admission_number: { type: 'text', accessor: (s) => s.admission_number },
+      board_name: { type: 'select', accessor: (s) => s.board_name || '—' },
+      standard_name: { type: 'select', accessor: (s) => s.standard_name || '—' },
+      batch_name: { type: 'select', accessor: (s) => s.batch_name || '—' },
+      package_fee: { type: 'number_range', accessor: (s) => s.package_fee },
+      total_collected: { type: 'number_range', accessor: (s) => s.total_collected },
+      balance: { type: 'number_range', accessor: (s) => s.balance },
+      collection_rate: { type: 'number_range', accessor: (s) => s.collection_rate },
+      status: { type: 'select', accessor: (s) => s.status },
+    }
+    for (const m of monthsList) {
+      defs[`month_${m.key}`] = {
+        type: 'number_range',
+        accessor: (s) => s.months[m.key]?.amount || 0,
+      }
+    }
+    return defs
+  }, [monthsList])
+
+  const {
+    filteredData: headerFilteredStudents,
+    columnFilters: pivotColumnFilters,
+    setColumnFilter: setPivotColumnFilter,
+    clearAllFilters: clearAllPivotColumnFilters,
+    activeFilterCount: activePivotColumnFilterCount,
+  } = useTableColumnFilters(rawStudents, pivotFilterDefinitions)
+
+  const {
+    sortedData: sortedFilteredStudents,
+    sortKey: pivotSortKey,
+    sortDirection: pivotSortDirection,
+    requestSort: requestPivotSort,
+    clearSort: clearPivotSort,
+  } = useTableSort(headerFilteredStudents)
+
+  const headerFilterOptions = useMemo(() => {
+    const priorityCounts = new Map<string, number>()
+    for (const s of rawStudents) {
+      const p = (s.priority || 'normal').toLowerCase()
+      priorityCounts.set(p, (priorityCounts.get(p) || 0) + 1)
+    }
+    const priorityOrder = ['urgent', 'high', 'normal']
+    const priorityLabels: Record<string, string> = {
+      urgent: 'Urgent',
+      high: 'High',
+      normal: 'Normal',
+    }
+    return {
+      priority: priorityOrder
+        .filter((p) => (priorityCounts.get(p) || 0) > 0 || p === 'urgent' || p === 'high' || p === 'normal')
+        .map((p) => ({
+          value: p,
+          label: priorityLabels[p] || p.toUpperCase(),
+          count: priorityCounts.get(p) || 0,
+        })),
+      board: buildSelectOptionsFromRows(rawStudents, (s) => s.board_name || '—'),
+      grade: buildSelectOptionsFromRows(rawStudents, (s) => s.standard_name || '—'),
+      batch: buildSelectOptionsFromRows(rawStudents, (s) => s.batch_name || '—'),
+      status: [
+        { value: 'paid', label: 'PAID', count: rawStudents.filter((s) => s.status === 'paid').length },
+        { value: 'partial', label: 'PARTIAL', count: rawStudents.filter((s) => s.status === 'partial').length },
+        { value: 'overdue', label: 'OVERDUE', count: rawStudents.filter((s) => s.status === 'overdue').length },
+        { value: 'upcoming', label: 'UPCOMING', count: rawStudents.filter((s) => s.status === 'upcoming').length },
+      ],
+    }
+  }, [rawStudents])
+
+  const computedSummary = useMemo(() => {
+    if (!data?.summary) return null
+    if (activePivotColumnFilterCount === 0) return data.summary
+
+    let totalAgreed = 0
+    let totalCollected = 0
+    let totalBalance = 0
+    let defaultersCount = 0
+
+    for (const st of sortedFilteredStudents) {
+      totalAgreed += Number(st.package_fee || 0)
+      totalCollected += Number(st.total_collected || 0)
+      totalBalance += Number(st.balance || 0)
+      if (st.status === 'overdue') defaultersCount += 1
+    }
+    const pct = totalAgreed > 0 ? Math.round((totalCollected / totalAgreed) * 1000) / 10 : 0
+    return {
+      total_students: sortedFilteredStudents.length,
+      total_agreed_package: totalAgreed,
+      total_collected: totalCollected,
+      total_balance: totalBalance,
+      collection_percentage: pct,
+      defaulters_count: defaultersCount,
+    }
+  }, [data?.summary, activePivotColumnFilterCount, sortedFilteredStudents])
+
+  const computedMonthlyTotals = useMemo(() => {
+    if (!data?.monthly_totals) return {} as Record<string, number>
+    if (activePivotColumnFilterCount === 0) return data.monthly_totals
+
+    const totals: Record<string, number> = {}
+    for (const m of monthsList) {
+      let sum = 0
+      for (const st of sortedFilteredStudents) {
+        sum += Number(st.months[m.key]?.amount || 0)
+      }
+      totals[m.key] = sum
+    }
+    return totals
+  }, [data?.monthly_totals, activePivotColumnFilterCount, monthsList, sortedFilteredStudents])
+
   // Reset Filters Handler
   const handleResetFilters = () => {
     setBoardId('all')
@@ -169,10 +295,13 @@ export const StudentMonthlyFeePivot: React.FC<StudentMonthlyFeePivotProps> = ({
     setStudentStatus('all')
     setPaymentMethod('all')
     setSearchQuery('')
+    clearAllPivotColumnFilters()
+    clearPivotSort()
   }
 
   const isFiltered = boardId !== 'all' || standardId !== 'all' || divisionId !== 'all' ||
-    paymentStatus !== 'all' || studentStatus !== 'all' || paymentMethod !== 'all' || !!searchQuery.trim()
+    paymentStatus !== 'all' || studentStatus !== 'all' || paymentMethod !== 'all' ||
+    !!searchQuery.trim() || activePivotColumnFilterCount > 0 || Boolean(pivotSortKey)
 
   // ─── Receipt PDF Download Handler ──────────────────────────────────────────
   const handleDownloadReceiptPdf = async (receiptNumber: string) => {
@@ -188,26 +317,42 @@ export const StudentMonthlyFeePivot: React.FC<StudentMonthlyFeePivotProps> = ({
   }
 
   // ─── Quick Receive Payment Handlers ─────────────────────────────────────────
-  const handleReceivePayment = (student: StudentMonthlyPivotRow, monthName: string, year: number) => {
-    setQuickCollectData({ student, monthName, year })
+  const handleReceivePayment = (
+    student: StudentMonthlyPivotRow,
+    monthKey: string,
+    monthName: string,
+    year: number
+  ) => {
+    setQuickCollectData({ student, monthKey, monthName, year })
   }
 
-  const handleProceedToCollection = (openInNewTab: boolean = false) => {
-    if (!quickCollectData) return
-    const { student } = quickCollectData
+  const handleProceedToCollection = (studentId: number, openInNewTab: boolean = false) => {
+    const targetName = quickCollectData?.student.student_name || 'Student'
     setQuickCollectData(null)
 
     if (openInNewTab) {
-      window.open(`/fees/collect/${student.student_id}`, '_blank')
+      window.open(`/fees/collect/${studentId}`, '_blank')
       return
     }
 
     if (onNavigateToCollection) {
-      toast.success(`Opening Collection Desk for ${student.student_name}...`)
-      onNavigateToCollection(student.student_id)
+      toast.success(`Opening Collection Desk for ${targetName}...`)
+      onNavigateToCollection(studentId)
     } else {
-      navigate(`/fees/collect/${student.student_id}`)
+      navigate(`/fees/collect/${studentId}`)
     }
+  }
+
+  const handleQuickPaymentCommitted = async () => {
+    await refetch()
+    queryClient.invalidateQueries({ queryKey: ['student-monthly-pivot'] })
+    queryClient.invalidateQueries({ queryKey: ['fees-batch-monthly-matrix'] })
+    queryClient.invalidateQueries({ queryKey: ['fees-month-collection-matrix'] })
+    queryClient.invalidateQueries({ queryKey: ['fees-dimension-analytics'] })
+    queryClient.invalidateQueries({ queryKey: ['fees-overview'] })
+    queryClient.invalidateQueries({ queryKey: ['fee-register'] })
+    queryClient.invalidateQueries({ queryKey: ['payments-list'] })
+    queryClient.invalidateQueries({ queryKey: ['receipts-list'] })
   }
 
   // ─── Remark Modal Open Helper ───────────────────────────────────────────────
@@ -276,8 +421,10 @@ Prashant Academy Coaching Institute`
 
   // ─── Export Functions ───────────────────────────────────────────────────────
   const handleExport = async (format: 'xlsx' | 'csv') => {
-    if (!data || !data.students.length) return
+    if (!data || !sortedFilteredStudents.length) return
 
+    const exportSummary = computedSummary || data.summary
+    const exportMonthlyTotals = computedMonthlyTotals || data.monthly_totals
     const filename = `student_monthly_fee_pivot_${new Date().toISOString().slice(0, 10)}`
 
     if (format === 'csv') {
@@ -297,7 +444,7 @@ Prashant Academy Coaching Institute`
         'Remarks',
       ]
 
-      const rows: (string | number)[][] = data.students.map(st => [
+      const rows: (string | number)[][] = sortedFilteredStudents.map(st => [
         st.admission_number,
         st.student_name,
         st.board_name,
@@ -316,16 +463,16 @@ Prashant Academy Coaching Institute`
       // Append total summary row
       rows.push([
         'TOTALS',
-        `${data.students.length} Students`,
+        `${sortedFilteredStudents.length} Students`,
         '',
         '',
         '',
-        data.summary.total_agreed_package,
-        ...data.months.map(m => data.monthly_totals[m.key] || 0),
-        data.summary.total_collected,
-        data.summary.total_balance,
-        data.summary.collection_percentage,
-        `${data.summary.defaulters_count} Defaulters`,
+        exportSummary.total_agreed_package,
+        ...data.months.map(m => exportMonthlyTotals[m.key] || 0),
+        exportSummary.total_collected,
+        exportSummary.total_balance,
+        exportSummary.collection_percentage,
+        `${exportSummary.defaulters_count} Defaulters`,
         '',
         '',
       ])
@@ -361,12 +508,12 @@ Prashant Academy Coaching Institute`
       title: 'PrathamOne EduOS — Student-wise Monthly Fee Collection Pivot',
       sheetName: 'Student Monthly Pivot',
       columns,
-      data: data.students,
+      data: sortedFilteredStudents,
       calculationNotes: [
         `Academic Year: ${filterOptions?.academic_years?.find(ay => ay.id === academicYearId)?.name || 'All'}`,
         `Generated: ${new Date().toLocaleString('en-IN')}`,
-        `Total Realized Collections: ₹${data.summary.total_collected.toLocaleString('en-IN')}`,
-        `Total Pending Receivables: ₹${data.summary.total_balance.toLocaleString('en-IN')}`,
+        `Total Realized Collections: ₹${exportSummary.total_collected.toLocaleString('en-IN')}`,
+        `Total Pending Receivables: ₹${exportSummary.total_balance.toLocaleString('en-IN')}`,
       ],
     })
   }
@@ -564,12 +711,12 @@ Prashant Academy Coaching Institute`
       {/* ───────────────────────────────────────────────────────────────────────── */}
       {/* 2. SUMMARY METRICS RIBBON                                                  */}
       {/* ───────────────────────────────────────────────────────────────────────── */}
-      {data?.summary && (
+      {computedSummary && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Students Filtered</span>
             <div className="mt-1 text-xl font-black text-slate-900 font-mono">
-              {data.summary.total_students}
+              {computedSummary.total_students}
             </div>
             <div className="text-[10px] text-slate-400">Active in view</div>
           </div>
@@ -577,7 +724,7 @@ Prashant Academy Coaching Institute`
           <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Agreed Package</span>
             <div className="mt-1 text-xl font-black text-slate-900 font-mono">
-              ₹{data.summary.total_agreed_package.toLocaleString('en-IN')}
+              ₹{computedSummary.total_agreed_package.toLocaleString('en-IN')}
             </div>
             <div className="text-[10px] text-slate-400">Institutional Target</div>
           </div>
@@ -585,7 +732,7 @@ Prashant Academy Coaching Institute`
           <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
             <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Total Collected</span>
             <div className="mt-1 text-xl font-black text-emerald-600 font-mono">
-              ₹{data.summary.total_collected.toLocaleString('en-IN')}
+              ₹{computedSummary.total_collected.toLocaleString('en-IN')}
             </div>
             <div className="text-[10px] text-emerald-600 font-semibold">Realized to Date</div>
           </div>
@@ -593,7 +740,7 @@ Prashant Academy Coaching Institute`
           <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
             <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Pending Balance</span>
             <div className="mt-1 text-xl font-black text-rose-600 font-mono">
-              ₹{data.summary.total_balance.toLocaleString('en-IN')}
+              ₹{computedSummary.total_balance.toLocaleString('en-IN')}
             </div>
             <div className="text-[10px] text-slate-400">Outstanding Receivables</div>
           </div>
@@ -601,12 +748,12 @@ Prashant Academy Coaching Institute`
           <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Realization Rate</span>
             <div className="mt-1 text-xl font-black text-slate-900 font-mono">
-              {data.summary.collection_percentage}%
+              {computedSummary.collection_percentage}%
             </div>
             <div className="mt-1 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
               <div
                 className="bg-emerald-500 h-1.5 rounded-full"
-                style={{ width: `${Math.min(100, data.summary.collection_percentage)}%` }}
+                style={{ width: `${Math.min(100, computedSummary.collection_percentage)}%` }}
               />
             </div>
           </div>
@@ -614,7 +761,7 @@ Prashant Academy Coaching Institute`
           <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
             <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Overdue Defaulters</span>
             <div className="mt-1 text-xl font-black text-amber-600 font-mono">
-              {data.summary.defaulters_count}
+              {computedSummary.defaulters_count}
             </div>
             <div className="text-[10px] text-slate-400">Accounts requiring follow-up</div>
           </div>
@@ -625,6 +772,39 @@ Prashant Academy Coaching Institute`
       {/* 3. DYNAMIC STUDENT-WISE 12-MONTH PIVOT TABLE                               */}
       {/* ───────────────────────────────────────────────────────────────────────── */}
       <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+        {!isLoading && !isError && rawStudents.length > 0 && (activePivotColumnFilterCount > 0 || pivotSortKey) && (
+          <div className="px-4 py-2 bg-emerald-50/60 border-b border-emerald-200/70 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2 text-emerald-900 font-semibold">
+              <Filter className="w-3.5 h-3.5 text-emerald-700" />
+              <span>
+                Showing <span className="font-mono font-bold">{sortedFilteredStudents.length}</span> of{' '}
+                <span className="font-mono font-bold">{rawStudents.length}</span> students
+                {activePivotColumnFilterCount > 0 && ` • ${activePivotColumnFilterCount} header filter(s) active`}
+                {pivotSortKey && ` • Sorted by ${pivotSortKey} (${pivotSortDirection?.toUpperCase()})`}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {pivotSortKey && (
+                <button
+                  type="button"
+                  onClick={clearPivotSort}
+                  className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold text-[11px] cursor-pointer"
+                >
+                  Clear Sort
+                </button>
+              )}
+              {activePivotColumnFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={clearAllPivotColumnFilters}
+                  className="px-2 py-0.5 rounded-md bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 font-semibold text-[11px] cursor-pointer"
+                >
+                  Clear Header Filters
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         {isLoading ? (
           <div className="p-12 text-center space-y-3">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-emerald-600" />
@@ -665,40 +845,199 @@ Prashant Academy Coaching Institute`
               <thead>
                 <tr className="bg-slate-50/95 border-b border-slate-200/90 text-slate-600 font-semibold sticky top-0 z-20">
                   {/* Sticky Columns */}
-                  <th className="px-4 py-3 sticky left-0 z-30 bg-slate-50 min-w-[185px] shadow-xs">
-                    Student Name & Priority
-                  </th>
-                  <th className="px-3 py-3 sticky left-[185px] z-30 bg-slate-50 min-w-[125px] shadow-xs">
-                    Admission #
-                  </th>
+                  <SortableHeader
+                    columnKey="student_name"
+                    label="Student Name & Priority"
+                    currentSortKey={pivotSortKey}
+                    currentDirection={pivotSortDirection}
+                    onSort={requestPivotSort}
+                    sortType="string"
+                    filterType="text"
+                    filterValue={pivotColumnFilters.student_name}
+                    onFilterChange={setPivotColumnFilter}
+                    filterPlaceholder="Search student name..."
+                    secondaryFacetLabel="Priority"
+                    secondaryFacetOptions={headerFilterOptions.priority}
+                    secondaryFacetValue={pivotColumnFilters.priority || []}
+                    onSecondaryFacetChange={(vals) => setPivotColumnFilter('priority', vals)}
+                    compact
+                    className="px-4 sticky left-0 z-30 bg-slate-50 min-w-[185px] shadow-xs"
+                  />
+                  <SortableHeader
+                    columnKey="admission_number"
+                    label="Admission #"
+                    currentSortKey={pivotSortKey}
+                    currentDirection={pivotSortDirection}
+                    onSort={requestPivotSort}
+                    sortType="string"
+                    filterType="text"
+                    filterValue={pivotColumnFilters.admission_number}
+                    onFilterChange={setPivotColumnFilter}
+                    filterPlaceholder="Search admission #..."
+                    compact
+                    className="px-3 sticky left-[185px] z-30 bg-slate-50 min-w-[125px] shadow-xs"
+                  />
                   {/* Academic Coordinates */}
-                  <th className="px-3 py-3 min-w-[90px]">Board</th>
-                  <th className="px-3 py-3 min-w-[95px]">Grade</th>
-                  <th className="px-3 py-3 min-w-[100px]">Batch</th>
-                  <th className="px-3 py-3 text-right min-w-[110px]">Agreed Pkg (₹)</th>
+                  <SortableHeader
+                    columnKey="board_name"
+                    label="Board"
+                    currentSortKey={pivotSortKey}
+                    currentDirection={pivotSortDirection}
+                    onSort={requestPivotSort}
+                    sortType="string"
+                    filterType="select"
+                    filterValue={pivotColumnFilters.board_name}
+                    onFilterChange={setPivotColumnFilter}
+                    filterOptions={headerFilterOptions.board}
+                    compact
+                    className="px-3 min-w-[90px]"
+                  />
+                  <SortableHeader
+                    columnKey="standard_name"
+                    label="Grade"
+                    currentSortKey={pivotSortKey}
+                    currentDirection={pivotSortDirection}
+                    onSort={requestPivotSort}
+                    sortType="string"
+                    filterType="select"
+                    filterValue={pivotColumnFilters.standard_name}
+                    onFilterChange={setPivotColumnFilter}
+                    filterOptions={headerFilterOptions.grade}
+                    compact
+                    className="px-3 min-w-[95px]"
+                  />
+                  <SortableHeader
+                    columnKey="batch_name"
+                    label="Batch"
+                    currentSortKey={pivotSortKey}
+                    currentDirection={pivotSortDirection}
+                    onSort={requestPivotSort}
+                    sortType="string"
+                    filterType="select"
+                    filterValue={pivotColumnFilters.batch_name}
+                    onFilterChange={setPivotColumnFilter}
+                    filterOptions={headerFilterOptions.batch}
+                    compact
+                    className="px-3 min-w-[100px]"
+                  />
+                  <SortableHeader
+                    columnKey="package_fee"
+                    label="Agreed Pkg (₹)"
+                    align="right"
+                    currentSortKey={pivotSortKey}
+                    currentDirection={pivotSortDirection}
+                    onSort={requestPivotSort}
+                    sortType="number"
+                    filterType="number_range"
+                    filterValue={pivotColumnFilters.package_fee}
+                    onFilterChange={setPivotColumnFilter}
+                    compact
+                    className="px-3 min-w-[115px]"
+                  />
 
                   {/* 12 Academic Months Columns */}
                   {data.months.map(m => (
-                    <th key={m.key} className="px-2.5 py-3 text-center min-w-[92px] border-l border-slate-100">
-                      <div className="font-bold text-slate-800">{m.short_name}</div>
-                      <div className="text-[9px] text-slate-400 font-normal">{m.year}</div>
-                    </th>
+                    <SortableHeader
+                      key={m.key}
+                      columnKey={`month_${m.key}`}
+                      label={`${m.short_name} ${m.year}`}
+                      align="center"
+                      currentSortKey={pivotSortKey}
+                      currentDirection={pivotSortDirection}
+                      onSort={requestPivotSort}
+                      accessor={(st: StudentMonthlyPivotRow) => st.months[m.key]?.amount || 0}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={pivotColumnFilters[`month_${m.key}`]}
+                      onFilterChange={setPivotColumnFilter}
+                      compact
+                      className="px-2.5 min-w-[96px] border-l border-slate-100"
+                    >
+                      <div className="leading-tight">
+                        <div className="font-bold text-slate-800">{m.short_name}</div>
+                        <div className="text-[9px] text-slate-400 font-normal">{m.year}</div>
+                      </div>
+                    </SortableHeader>
                   ))}
 
                   {/* Summary Columns */}
-                  <th className="px-3 py-3 text-right min-w-[115px] border-l border-slate-200/80 text-emerald-800 bg-emerald-50/30">
-                    Total Realized (₹)
-                  </th>
-                  <th className="px-3 py-3 text-right min-w-[115px] text-rose-700 bg-rose-50/30">
-                    Balance (₹)
-                  </th>
-                  <th className="px-3 py-3 text-center min-w-[110px]">Recovery %</th>
-                  <th className="px-3 py-3 text-center min-w-[85px]">Status</th>
+                  <SortableHeader
+                    columnKey="total_collected"
+                    label="Total Realized (₹)"
+                    align="right"
+                    currentSortKey={pivotSortKey}
+                    currentDirection={pivotSortDirection}
+                    onSort={requestPivotSort}
+                    sortType="number"
+                    filterType="number_range"
+                    filterValue={pivotColumnFilters.total_collected}
+                    onFilterChange={setPivotColumnFilter}
+                    compact
+                    className="px-3 min-w-[125px] border-l border-slate-200/80 text-emerald-800 bg-emerald-50/30"
+                  />
+                  <SortableHeader
+                    columnKey="balance"
+                    label="Balance (₹)"
+                    align="right"
+                    currentSortKey={pivotSortKey}
+                    currentDirection={pivotSortDirection}
+                    onSort={requestPivotSort}
+                    sortType="number"
+                    filterType="number_range"
+                    filterValue={pivotColumnFilters.balance}
+                    onFilterChange={setPivotColumnFilter}
+                    compact
+                    className="px-3 min-w-[115px] text-rose-700 bg-rose-50/30"
+                  />
+                  <SortableHeader
+                    columnKey="collection_rate"
+                    label="Recovery %"
+                    align="center"
+                    currentSortKey={pivotSortKey}
+                    currentDirection={pivotSortDirection}
+                    onSort={requestPivotSort}
+                    sortType="number"
+                    filterType="number_range"
+                    filterValue={pivotColumnFilters.collection_rate}
+                    onFilterChange={setPivotColumnFilter}
+                    compact
+                    className="px-3 min-w-[115px]"
+                  />
+                  <SortableHeader
+                    columnKey="status"
+                    label="Status"
+                    align="center"
+                    currentSortKey={pivotSortKey}
+                    currentDirection={pivotSortDirection}
+                    onSort={requestPivotSort}
+                    sortType="string"
+                    filterType="select"
+                    filterValue={pivotColumnFilters.status}
+                    onFilterChange={setPivotColumnFilter}
+                    filterOptions={headerFilterOptions.status}
+                    compact
+                    className="px-3 min-w-[95px]"
+                  />
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-slate-100">
-                {data.students.map((st) => (
+                {sortedFilteredStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={10 + data.months.length} className="px-6 py-10 text-center">
+                      <div className="space-y-2">
+                        <p className="text-xs font-bold text-slate-700">No students match the active header filters.</p>
+                        <button
+                          type="button"
+                          onClick={clearAllPivotColumnFilters}
+                          className="px-3 py-1 bg-slate-900 text-white rounded-lg text-xs font-bold cursor-pointer"
+                        >
+                          Clear Header Filters
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : sortedFilteredStudents.map((st) => (
                   <tr key={st.student_id} className="hover:bg-slate-50/80 transition-colors">
                     {/* Sticky Student Name with Priority Badges */}
                     <td className="px-3.5 py-2.5 font-bold text-slate-900 sticky left-0 z-10 bg-white hover:bg-slate-50 shadow-xs whitespace-nowrap group/name">
@@ -815,7 +1154,7 @@ Prashant Academy Coaching Institute`
                             </button>
                           ) : isPending ? (
                             <button
-                              onClick={() => handleReceivePayment(st, m.name, m.year)}
+                              onClick={() => handleReceivePayment(st, m.key, m.name, m.year)}
                               className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 text-[10px] font-bold transition-all cursor-pointer group shadow-2xs"
                               title={`Click to receive payment for ${st.student_name} (${m.name} ${m.year})`}
                             >
@@ -827,7 +1166,7 @@ Prashant Academy Coaching Institute`
                             <div className="group relative flex items-center justify-center min-h-[26px]">
                               <span className="text-slate-300 font-mono group-hover:hidden select-none">—</span>
                               <button
-                                onClick={() => handleReceivePayment(st, m.name, m.year)}
+                                onClick={() => handleReceivePayment(st, m.key, m.name, m.year)}
                                 className="hidden group-hover:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300/80 text-[10px] font-bold transition-all cursor-pointer shadow-2xs"
                                 title={`Receive payment for ${st.student_name} (${m.name} ${m.year})`}
                               >
@@ -882,18 +1221,18 @@ Prashant Academy Coaching Institute`
                     INSTITUTE TOTALS
                   </td>
                   <td className="px-3 py-3 sticky left-[185px] z-30 bg-slate-100 shadow-xs font-mono text-slate-500">
-                    {data.students.length} Students
+                    {sortedFilteredStudents.length} Students
                   </td>
                   <td className="px-3 py-3 text-slate-500">—</td>
                   <td className="px-3 py-3 text-slate-500">—</td>
                   <td className="px-3 py-3 text-slate-500">—</td>
                   <td className="px-3 py-3 text-right font-mono font-black">
-                    ₹{data.summary.total_agreed_package.toLocaleString('en-IN')}
+                    ₹{(computedSummary?.total_agreed_package ?? data.summary.total_agreed_package).toLocaleString('en-IN')}
                   </td>
 
                   {/* Monthly Column Sums */}
                   {data.months.map(m => {
-                    const colTotal = data.monthly_totals[m.key] || 0
+                    const colTotal = computedMonthlyTotals[m.key] ?? 0
                     return (
                       <td key={m.key} className="px-2 py-3 text-center border-l border-slate-200 font-mono text-[11px] font-black text-emerald-800">
                         {colTotal > 0 ? `₹${colTotal.toLocaleString('en-IN')}` : '—'}
@@ -903,16 +1242,16 @@ Prashant Academy Coaching Institute`
 
                   {/* Total Collections & Balance */}
                   <td className="px-3 py-3 text-right font-mono font-black text-emerald-800 border-l border-slate-300 bg-emerald-100/30">
-                    ₹{data.summary.total_collected.toLocaleString('en-IN')}
+                    ₹{(computedSummary?.total_collected ?? data.summary.total_collected).toLocaleString('en-IN')}
                   </td>
                   <td className="px-3 py-3 text-right font-mono font-black text-rose-700 bg-rose-100/30">
-                    ₹{data.summary.total_balance.toLocaleString('en-IN')}
+                    ₹{(computedSummary?.total_balance ?? data.summary.total_balance).toLocaleString('en-IN')}
                   </td>
                   <td className="px-3 py-3 text-center font-mono font-black text-slate-900">
-                    {data.summary.collection_percentage}%
+                    {computedSummary?.collection_percentage ?? data.summary.collection_percentage}%
                   </td>
                   <td className="px-3 py-3 text-center text-xs font-bold text-slate-500">
-                    {data.summary.defaulters_count} Defaulters
+                    {computedSummary?.defaulters_count ?? data.summary.defaulters_count} Defaulters
                   </td>
                 </tr>
               </tfoot>
@@ -1118,103 +1457,23 @@ Prashant Academy Coaching Institute`
       )}
 
       {/* ───────────────────────────────────────────────────────────────────────── */}
-      {/* 5. QUICK RECEIVE PAYMENT MODAL / DISPATCHER                               */}
+      {/* 5. INLINE QUICK FEE COLLECTION & RECEIPT MODAL                            */}
       {/* ───────────────────────────────────────────────────────────────────────── */}
       {quickCollectData && (
-        <Modal
+        <InlineQuickFeeCollectionModal
           isOpen={!!quickCollectData}
           onClose={() => setQuickCollectData(null)}
-          title={`Receive Fee Payment • ${quickCollectData.monthName} ${quickCollectData.year}`}
-          size="md"
-        >
-          <div className="space-y-4">
-            <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded-xl space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900">{quickCollectData.student.student_name}</h4>
-                  <p className="font-mono text-xs text-slate-500">{quickCollectData.student.admission_number}</p>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-white text-emerald-800 border border-emerald-200 shadow-2xs">
-                  {quickCollectData.student.board_name} • {quickCollectData.student.standard_name}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-emerald-200/60 text-xs">
-                <div>
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold">Agreed Package</span>
-                  <div className="font-mono font-bold text-slate-800">₹{quickCollectData.student.package_fee.toLocaleString('en-IN')}</div>
-                </div>
-                <div>
-                  <span className="text-[10px] text-emerald-700 uppercase font-semibold">Realized</span>
-                  <div className="font-mono font-bold text-emerald-700">₹{quickCollectData.student.total_collected.toLocaleString('en-IN')}</div>
-                </div>
-                <div>
-                  <span className="text-[10px] text-rose-600 uppercase font-semibold">Pending Balance</span>
-                  <div className="font-mono font-bold text-rose-600">₹{quickCollectData.student.balance.toLocaleString('en-IN')}</div>
-                </div>
-              </div>
-            </div>
-
-            {quickCollectData.student.remark && (
-              <div className="p-2.5 bg-white border border-emerald-200 rounded-lg text-xs flex items-start gap-2">
-                <MessageSquare className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold text-slate-800">
-                    Follow-up Remark ({quickCollectData.student.priority?.toUpperCase() || 'NORMAL'}):
-                  </span>{' '}
-                  <span className="text-slate-600">{quickCollectData.student.remark}</span>
-                </div>
-              </div>
-            )}
-
-            <p className="text-xs text-slate-600">
-              Select how you would like to receive this payment for <span className="font-bold text-slate-900">{quickCollectData.monthName} {quickCollectData.year}</span>:
-            </p>
-
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => handleProceedToCollection(false)}
-                className="w-full flex items-center justify-between p-3 rounded-xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100/80 transition-all text-left cursor-pointer group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-emerald-600 text-white">
-                    <CreditCard className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-slate-900 group-hover:text-emerald-800">
-                      Open Collection Desk (Current Tab)
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      Switches directly to Fee Collection Desk with this student pre-selected
-                    </div>
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-emerald-600 group-hover:translate-x-0.5 transition-transform" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleProceedToCollection(true)}
-                className="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all text-left cursor-pointer group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-slate-100 text-slate-700">
-                    <ExternalLink className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-slate-900 group-hover:text-primary-700">
-                      Open Collection Terminal (New Window)
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      Open official payment recording terminal in a new tab without leaving this matrix
-                    </div>
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-              </button>
-            </div>
-          </div>
-        </Modal>
+          student={quickCollectData.student}
+          monthKey={quickCollectData.monthKey}
+          monthName={quickCollectData.monthName}
+          year={quickCollectData.year}
+          academicYearId={academicYearId}
+          academicYears={filterOptions?.academic_years}
+          fallbackPaymentMethods={filterOptions?.payment_methods}
+          onPaymentCommitted={handleQuickPaymentCommitted}
+          onOpenCollectionDesk={(studentId) => handleProceedToCollection(studentId, false)}
+          onOpenCollectionTerminal={(studentId) => handleProceedToCollection(studentId, true)}
+        />
       )}
 
       {/* ───────────────────────────────────────────────────────────────────────── */}
@@ -1225,7 +1484,7 @@ Prashant Academy Coaching Institute`
           isOpen={!!activeReceiptNumber}
           onClose={() => setActiveReceiptNumber(null)}
           title={`Official Fee Receipt #${activeReceiptNumber}`}
-          size="lg"
+          size="xl"
         >
           {loadingDetailedReceipt ? (
             <div className="p-8 text-center text-xs text-slate-500">
@@ -1236,6 +1495,10 @@ Prashant Academy Coaching Institute`
             <PaymentReceiptView
               receipt={detailedReceipt}
               showPrintActions={true}
+              showReprintButton={true}
+              onReceiptUpdated={(updated) => {
+                queryClient.setQueryData(['pivot-detailed-receipt', activeReceiptNumber], updated)
+              }}
               onClose={() => setActiveReceiptNumber(null)}
             />
           ) : (

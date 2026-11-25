@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-21
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints for payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refund workflows.
 #  */
@@ -522,6 +522,29 @@ async def create_payment(
                 allocated_amount=alloc["amount"],
             ))
 
+        await log_payment_audit(
+            db,
+            user_id=current_user.id,
+            action="payment_draft_created",
+            payment_id=payment.id,
+            old_data=None,
+            new_data={
+                "amount": float(payment.amount),
+                "payment_date": str(payment.payment_date),
+                "payment_method": payment.payment_method,
+                "status": "draft",
+                "allocations": [
+                    {
+                        "invoice_id": a["invoice_id"],
+                        "installment_id": a["installment_id"],
+                        "amount": float(a["amount"]),
+                    }
+                    for a in normalized_allocations
+                ],
+            },
+            reason=f"Payment draft recorded by {current_user.username}",
+        )
+
         await db.commit()
         return {
             "payment_id": payment.id,
@@ -551,6 +574,29 @@ async def create_payment(
                 installment_id=alloc["installment_id"],
                 allocated_amount=alloc["amount"],
             ))
+
+        await log_payment_audit(
+            db,
+            user_id=current_user.id,
+            action="payment_submitted",
+            payment_id=payment.id,
+            old_data=None,
+            new_data={
+                "amount": float(payment.amount),
+                "payment_date": str(payment.payment_date),
+                "payment_method": payment.payment_method,
+                "status": "submitted",
+                "allocations": [
+                    {
+                        "invoice_id": a["invoice_id"],
+                        "installment_id": a["installment_id"],
+                        "amount": float(a["amount"]),
+                    }
+                    for a in normalized_allocations
+                ],
+            },
+            reason=f"Payment submitted by {current_user.username}",
+        )
 
         await db.commit()
         return {
@@ -591,6 +637,30 @@ async def create_payment(
                 allocated_amount=alloc["amount"],
             ))
 
+        await log_payment_audit(
+            db,
+            user_id=current_user.id,
+            action="payment_submitted_for_approval",
+            payment_id=payment.id,
+            old_data=None,
+            new_data={
+                "amount": float(payment.amount),
+                "payment_date": str(payment.payment_date),
+                "payment_method": payment.payment_method,
+                "status": "submitted",
+                "requires_approval": True,
+                "allocations": [
+                    {
+                        "invoice_id": a["invoice_id"],
+                        "installment_id": a["installment_id"],
+                        "amount": float(a["amount"]),
+                    }
+                    for a in normalized_allocations
+                ],
+            },
+            reason="Payment routed for ERP approval",
+        )
+
         await db.commit()
         return {
             "payment_id": payment.id,
@@ -626,6 +696,32 @@ async def create_payment(
         payment=payment,
         current_user_id=current_user.id,
         effective_institution_id=effective_inst_id,
+    )
+
+    await log_payment_audit(
+        db,
+        user_id=current_user.id,
+        action="payment_posted",
+        payment_id=payment.id,
+        old_data=None,
+        new_data={
+            "amount": float(payment.amount),
+            "payment_date": str(payment.payment_date),
+            "payment_method": payment.payment_method,
+            "transaction_reference": payment.transaction_reference,
+            "cheque_number": payment.cheque_number,
+            "receipt_number": receipt.receipt_number,
+            "status": payment.status,
+            "allocations": [
+                {
+                    "invoice_id": a["invoice_id"],
+                    "installment_id": a["installment_id"],
+                    "amount": float(a["amount"]),
+                }
+                for a in normalized_allocations
+            ],
+        },
+        reason=f"Payment recorded and posted directly by {current_user.username}",
     )
 
     await db.commit()
@@ -2627,15 +2723,15 @@ async def get_institution_dict(db: AsyncSession, institution_id: Optional[int]) 
             "disclaimer_text": disclaimer_text,
         }
     return {
-        "name": "Prashant Academy",
-        "tagline": "Premier Coaching Institute for Academic & Competitive Excellence",
-        "address": "Shop No16, 14, 12, Aquarius Taurus Building, Jankalyan Nagar, Malad West",
-        "city": "Mumbai",
-        "state": "Maharashtra",
-        "pincode": "400095",
-        "phone": "+91 8779 123 007",
-        "email": "info@prashantacademy.com",
-        "tax_id": "AABCP1234K",
+        "name": "PrathamOne EduOS Institute",
+        "tagline": "Education Operating System",
+        "address": "",
+        "city": "",
+        "state": "",
+        "pincode": "",
+        "phone": "",
+        "email": "support@prathamone.local",
+        "tax_id": "",
         "print_receipt_logo": print_logo,
         "print_receipt_tagline": print_tagline,
         "print_software_branding": print_software_branding,

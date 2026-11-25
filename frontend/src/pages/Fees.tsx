@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-23
+ * @updated     2026-11-26
  *
  * @description Flagship Fees & Payments workspace featuring overview analytics, fee register, payments, and receipts.
  */
@@ -53,6 +53,11 @@ import {
 import { formatINR, formatDateIN, fallbackEmpty } from '../utils/formatters'
 import ReportIntelligenceBanner from '../components/reports/ReportIntelligenceBanner'
 import { useTableSort } from '../hooks/useTableSort'
+import {
+  useTableColumnFilters,
+  buildSelectOptionsFromRows,
+  type ColumnFilterDefinition,
+} from '../hooks/useTableColumnFilters'
 import Modal from '../components/Modal'
 import PaymentReceiptView from '../components/PaymentReceiptView'
 import { StatusBadge, InvoiceStatusBadge } from '../components/Badge'
@@ -1213,12 +1218,31 @@ function FeesContent() {
   })
 
   const recentPaymentsList = overviewData?.recent_payments ?? []
+  const recentPaymentsFilterDefs = useMemo<Record<string, ColumnFilterDefinition<RecentPayment>>>(
+    () => ({
+      receipt_number: { type: 'text', accessor: (p) => p.receipt_number },
+      payment_date: { type: 'date_range', accessor: (p) => p.payment_date },
+      student_name: { type: 'text', accessor: (p) => p.student_name },
+      board_name: { type: 'select', accessor: (p: any) => p.board || p.board_name || 'ICSE' },
+      standard_name: { type: 'select', accessor: (p: any) => p.standard || p.standard_name || 'X' },
+      batch_name: { type: 'select', accessor: (p: any) => p.batch || p.batch_name || 'Batch A' },
+      amount: { type: 'number_range', accessor: (p) => p.amount },
+      payment_method: { type: 'select', accessor: (p) => p.payment_method },
+      status: { type: 'select', accessor: (p) => p.status },
+    }),
+    []
+  )
+  const {
+    filteredData: filteredRecentPayments,
+    columnFilters: recentPaymentsFilters,
+    setColumnFilter: setRecentPaymentsFilter,
+  } = useTableColumnFilters(recentPaymentsList, recentPaymentsFilterDefs)
   const {
     sortedData: sortedRecentPayments,
     sortKey: recentPaymentsSortKey,
     sortDirection: recentPaymentsSortDirection,
     requestSort: requestRecentPaymentsSort,
-  } = useTableSort(recentPaymentsList, {
+  } = useTableSort(filteredRecentPayments, {
     initialKey: 'payment_date',
     initialDirection: 'desc',
     initialType: 'date',
@@ -1898,12 +1922,31 @@ function FeesContent() {
     enabled: activeTab === 'payments' || activeTab === 'collection',
   })
 
+  const paymentsFilterDefs = useMemo<Record<string, ColumnFilterDefinition<PaymentTransactionItem>>>(
+    () => ({
+      receipt_number: { type: 'text', accessor: (p) => p.receipt_number },
+      payment_date: { type: 'date_range', accessor: (p) => p.payment_date },
+      student_name: { type: 'text', accessor: (p) => p.student_name },
+      batch_name: { type: 'select', accessor: (p) => p.batch_name || 'General' },
+      amount: { type: 'number_range', accessor: (p) => p.amount },
+      payment_method: { type: 'select', accessor: (p) => p.payment_method },
+      transaction_reference: { type: 'text', accessor: (p) => p.transaction_reference || '' },
+      status: { type: 'select', accessor: (p) => p.status },
+    }),
+    []
+  )
+  const {
+    filteredData: filteredPaymentsList,
+    columnFilters: paymentsFilters,
+    setColumnFilter: setPaymentsFilter,
+  } = useTableColumnFilters(paymentsList, paymentsFilterDefs)
+
   const {
     sortedData: sortedPaymentsList,
     sortKey: paymentsSortKey,
     sortDirection: paymentsSortDirection,
     requestSort: requestPaymentsSort,
-  } = useTableSort(paymentsList, {
+  } = useTableSort(filteredPaymentsList, {
     initialKey: 'payment_date',
     initialDirection: 'desc',
     initialType: 'date',
@@ -1968,12 +2011,29 @@ function FeesContent() {
     enabled: activeTab === 'receipts' || activeTab === 'collection',
   })
 
+  const receiptsFilterDefs = useMemo<Record<string, ColumnFilterDefinition<PaymentReceiptListItem>>>(
+    () => ({
+      receipt_number: { type: 'text', accessor: (r) => r.receipt_number },
+      payment_date: { type: 'date_range', accessor: (r) => r.payment_date },
+      student_name: { type: 'text', accessor: (r) => r.student_name },
+      admission_number: { type: 'text', accessor: (r) => r.admission_number },
+      amount: { type: 'number_range', accessor: (r) => r.amount },
+      payment_method: { type: 'select', accessor: (r) => r.payment_method },
+    }),
+    []
+  )
+  const {
+    filteredData: filteredReceiptsList,
+    columnFilters: receiptsFilters,
+    setColumnFilter: setReceiptsFilter,
+  } = useTableColumnFilters(receiptsList, receiptsFilterDefs)
+
   const {
     sortedData: sortedReceiptsList,
     sortKey: receiptsSortKey,
     sortDirection: receiptsSortDirection,
     requestSort: requestReceiptsSort,
-  } = useTableSort(receiptsList, {
+  } = useTableSort(filteredReceiptsList, {
     initialKey: 'payment_date',
     initialDirection: 'desc',
     initialType: 'date',
@@ -4037,6 +4097,9 @@ function FeesContent() {
                             currentSortKey={recentPaymentsSortKey}
                             currentDirection={recentPaymentsSortDirection}
                             onSort={requestRecentPaymentsSort}
+                            filterType="text"
+                            filterValue={recentPaymentsFilters.receipt_number}
+                            onFilterChange={setRecentPaymentsFilter}
                           />
                           <SortableHeader
                             columnKey="payment_date"
@@ -4045,6 +4108,9 @@ function FeesContent() {
                             currentDirection={recentPaymentsSortDirection}
                             onSort={requestRecentPaymentsSort}
                             sortType="date"
+                            filterType="date_range"
+                            filterValue={recentPaymentsFilters.payment_date}
+                            onFilterChange={setRecentPaymentsFilter}
                           />
                           <SortableHeader
                             columnKey="student_name"
@@ -4052,27 +4118,45 @@ function FeesContent() {
                             currentSortKey={recentPaymentsSortKey}
                             currentDirection={recentPaymentsSortDirection}
                             onSort={requestRecentPaymentsSort}
+                            filterType="text"
+                            filterValue={recentPaymentsFilters.student_name}
+                            onFilterChange={setRecentPaymentsFilter}
                           />
                           <SortableHeader
                             columnKey="board_name"
                             label="Board"
+                            accessor={(p: any) => p.board || p.board_name || 'ICSE'}
                             currentSortKey={recentPaymentsSortKey}
                             currentDirection={recentPaymentsSortDirection}
                             onSort={requestRecentPaymentsSort}
+                            filterType="select"
+                            filterValue={recentPaymentsFilters.board_name}
+                            onFilterChange={setRecentPaymentsFilter}
+                            filterOptions={buildSelectOptionsFromRows(recentPaymentsList, (p: any) => p.board || p.board_name || 'ICSE')}
                           />
                           <SortableHeader
                             columnKey="standard_name"
                             label="Class"
+                            accessor={(p: any) => p.standard || p.standard_name || 'X'}
                             currentSortKey={recentPaymentsSortKey}
                             currentDirection={recentPaymentsSortDirection}
                             onSort={requestRecentPaymentsSort}
+                            filterType="select"
+                            filterValue={recentPaymentsFilters.standard_name}
+                            onFilterChange={setRecentPaymentsFilter}
+                            filterOptions={buildSelectOptionsFromRows(recentPaymentsList, (p: any) => p.standard || p.standard_name || 'X')}
                           />
                           <SortableHeader
                             columnKey="batch_name"
                             label="Batch"
+                            accessor={(p: any) => p.batch || p.batch_name || 'Batch A'}
                             currentSortKey={recentPaymentsSortKey}
                             currentDirection={recentPaymentsSortDirection}
                             onSort={requestRecentPaymentsSort}
+                            filterType="select"
+                            filterValue={recentPaymentsFilters.batch_name}
+                            onFilterChange={setRecentPaymentsFilter}
+                            filterOptions={buildSelectOptionsFromRows(recentPaymentsList, (p: any) => p.batch || p.batch_name || 'Batch A')}
                           />
                           <SortableHeader
                             columnKey="amount"
@@ -4082,6 +4166,9 @@ function FeesContent() {
                             currentDirection={recentPaymentsSortDirection}
                             onSort={requestRecentPaymentsSort}
                             sortType="number"
+                            filterType="number_range"
+                            filterValue={recentPaymentsFilters.amount}
+                            onFilterChange={setRecentPaymentsFilter}
                           />
                           <SortableHeader
                             columnKey="payment_method"
@@ -4090,6 +4177,10 @@ function FeesContent() {
                             currentSortKey={recentPaymentsSortKey}
                             currentDirection={recentPaymentsSortDirection}
                             onSort={requestRecentPaymentsSort}
+                            filterType="select"
+                            filterValue={recentPaymentsFilters.payment_method}
+                            onFilterChange={setRecentPaymentsFilter}
+                            filterOptions={buildSelectOptionsFromRows(recentPaymentsList, (p) => p.payment_method)}
                           />
                           <SortableHeader
                             columnKey="status"
@@ -4098,6 +4189,10 @@ function FeesContent() {
                             currentSortKey={recentPaymentsSortKey}
                             currentDirection={recentPaymentsSortDirection}
                             onSort={requestRecentPaymentsSort}
+                            filterType="select"
+                            filterValue={recentPaymentsFilters.status}
+                            onFilterChange={setRecentPaymentsFilter}
+                            filterOptions={buildSelectOptionsFromRows(recentPaymentsList, (p) => p.status)}
                           />
                           <th className="py-2.5 px-3 text-center">Actions</th>
                         </tr>
@@ -4894,6 +4989,9 @@ function FeesContent() {
                         currentSortKey={paymentsSortKey}
                         currentDirection={paymentsSortDirection}
                         onSort={requestPaymentsSort}
+                        filterType="text"
+                        filterValue={paymentsFilters.receipt_number}
+                        onFilterChange={setPaymentsFilter}
                       />
                       <SortableHeader
                         columnKey="payment_date"
@@ -4902,6 +5000,9 @@ function FeesContent() {
                         currentDirection={paymentsSortDirection}
                         onSort={requestPaymentsSort}
                         sortType="date"
+                        filterType="date_range"
+                        filterValue={paymentsFilters.payment_date}
+                        onFilterChange={setPaymentsFilter}
                       />
                       <SortableHeader
                         columnKey="student_name"
@@ -4909,6 +5010,9 @@ function FeesContent() {
                         currentSortKey={paymentsSortKey}
                         currentDirection={paymentsSortDirection}
                         onSort={requestPaymentsSort}
+                        filterType="text"
+                        filterValue={paymentsFilters.student_name}
+                        onFilterChange={setPaymentsFilter}
                       />
                       <SortableHeader
                         columnKey="batch_name"
@@ -4916,6 +5020,10 @@ function FeesContent() {
                         currentSortKey={paymentsSortKey}
                         currentDirection={paymentsSortDirection}
                         onSort={requestPaymentsSort}
+                        filterType="select"
+                        filterValue={paymentsFilters.batch_name}
+                        onFilterChange={setPaymentsFilter}
+                        filterOptions={buildSelectOptionsFromRows(paymentsList, (p) => p.batch_name || 'General')}
                       />
                       <SortableHeader
                         columnKey="amount"
@@ -4925,6 +5033,9 @@ function FeesContent() {
                         currentDirection={paymentsSortDirection}
                         onSort={requestPaymentsSort}
                         sortType="number"
+                        filterType="number_range"
+                        filterValue={paymentsFilters.amount}
+                        onFilterChange={setPaymentsFilter}
                       />
                       <SortableHeader
                         columnKey="payment_method"
@@ -4933,6 +5044,10 @@ function FeesContent() {
                         currentSortKey={paymentsSortKey}
                         currentDirection={paymentsSortDirection}
                         onSort={requestPaymentsSort}
+                        filterType="select"
+                        filterValue={paymentsFilters.payment_method}
+                        onFilterChange={setPaymentsFilter}
+                        filterOptions={buildSelectOptionsFromRows(paymentsList, (p) => p.payment_method)}
                       />
                       <SortableHeader
                         columnKey="transaction_reference"
@@ -4940,6 +5055,9 @@ function FeesContent() {
                         currentSortKey={paymentsSortKey}
                         currentDirection={paymentsSortDirection}
                         onSort={requestPaymentsSort}
+                        filterType="text"
+                        filterValue={paymentsFilters.transaction_reference}
+                        onFilterChange={setPaymentsFilter}
                       />
                       <SortableHeader
                         columnKey="status"
@@ -4948,6 +5066,10 @@ function FeesContent() {
                         currentSortKey={paymentsSortKey}
                         currentDirection={paymentsSortDirection}
                         onSort={requestPaymentsSort}
+                        filterType="select"
+                        filterValue={paymentsFilters.status}
+                        onFilterChange={setPaymentsFilter}
+                        filterOptions={buildSelectOptionsFromRows(paymentsList, (p) => p.status)}
                       />
                       <th className="py-2.5 px-3 text-center">Actions</th>
                     </tr>
@@ -5111,6 +5233,9 @@ function FeesContent() {
                         currentSortKey={receiptsSortKey}
                         currentDirection={receiptsSortDirection}
                         onSort={requestReceiptsSort}
+                        filterType="text"
+                        filterValue={receiptsFilters.receipt_number}
+                        onFilterChange={setReceiptsFilter}
                       />
                       <SortableHeader
                         columnKey="payment_date"
@@ -5119,6 +5244,9 @@ function FeesContent() {
                         currentDirection={receiptsSortDirection}
                         onSort={requestReceiptsSort}
                         sortType="date"
+                        filterType="date_range"
+                        filterValue={receiptsFilters.payment_date}
+                        onFilterChange={setReceiptsFilter}
                       />
                       <SortableHeader
                         columnKey="student_name"
@@ -5126,6 +5254,9 @@ function FeesContent() {
                         currentSortKey={receiptsSortKey}
                         currentDirection={receiptsSortDirection}
                         onSort={requestReceiptsSort}
+                        filterType="text"
+                        filterValue={receiptsFilters.student_name}
+                        onFilterChange={setReceiptsFilter}
                       />
                       <SortableHeader
                         columnKey="admission_number"
@@ -5133,6 +5264,9 @@ function FeesContent() {
                         currentSortKey={receiptsSortKey}
                         currentDirection={receiptsSortDirection}
                         onSort={requestReceiptsSort}
+                        filterType="text"
+                        filterValue={receiptsFilters.admission_number}
+                        onFilterChange={setReceiptsFilter}
                       />
                       <SortableHeader
                         columnKey="amount"
@@ -5142,6 +5276,9 @@ function FeesContent() {
                         currentDirection={receiptsSortDirection}
                         onSort={requestReceiptsSort}
                         sortType="number"
+                        filterType="number_range"
+                        filterValue={receiptsFilters.amount}
+                        onFilterChange={setReceiptsFilter}
                       />
                       <SortableHeader
                         columnKey="payment_method"
@@ -5150,6 +5287,10 @@ function FeesContent() {
                         currentSortKey={receiptsSortKey}
                         currentDirection={receiptsSortDirection}
                         onSort={requestReceiptsSort}
+                        filterType="select"
+                        filterValue={receiptsFilters.payment_method}
+                        onFilterChange={setReceiptsFilter}
+                        filterOptions={buildSelectOptionsFromRows(receiptsList, (r) => r.payment_method)}
                       />
                       <th className="py-2.5 px-3 text-center">Actions</th>
                     </tr>

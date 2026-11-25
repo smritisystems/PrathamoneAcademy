@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-21
- * @updated     2026-11-24
+ * @updated     2026-11-26
  *
  * @description Enterprise Multi-Perspective Fee Collection Matrix: By Batch, By Month, By Standard/Grade, By Board, and Annual Year-wise with EnterpriseDataTable.
  */
@@ -64,6 +64,13 @@ import {
 } from '../../types'
 import { EnterpriseDataTable } from '../common/EnterpriseDataTable'
 import type { DataTableColumn } from '../common/EnterpriseDataTable/types'
+import { SortableHeader } from '../common/SortableHeader'
+import { useTableSort } from '../../hooks/useTableSort'
+import {
+  useTableColumnFilters,
+  buildSelectOptionsFromRows,
+  type ColumnFilterDefinition,
+} from '../../hooks/useTableColumnFilters'
 import { StudentMonthlyFeePivot } from './StudentMonthlyFeePivot'
 
 interface BatchMonthlyFeeMatrixProps {
@@ -206,6 +213,159 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
     enabled: viewPerspective === 'standard' || viewPerspective === 'board' || viewPerspective === 'annual',
   })
 
+  // ─── Breakdown & Transposed Table Column Filter + Sort Hooks ────────────────
+  const batchTransposedStudents = batchData?.students ?? []
+  const batchTransposedFilterDefs = useMemo<Record<string, ColumnFilterDefinition<BatchMatrixStudent>>>(() => {
+    const defs: Record<string, ColumnFilterDefinition<BatchMatrixStudent>> = {
+      full_name: { type: 'text', accessor: (s) => `${s.full_name} ${s.admission_number || ''}` },
+      package_fee: { type: 'number_range', accessor: (s) => s.package_fee },
+      total_paid: { type: 'number_range', accessor: (s) => s.total_paid },
+      total_outstanding: { type: 'number_range', accessor: (s) => s.total_outstanding },
+      recovery_pct: { type: 'number_range', accessor: (s) => s.recovery_pct },
+    }
+    for (const m of batchData?.months ?? []) {
+      defs[`month_${m.key}`] = {
+        type: 'number_range',
+        accessor: (s) => s.monthly_cells?.[m.key]?.total_amount || 0,
+      }
+    }
+    return defs
+  }, [batchData?.months])
+
+  const {
+    filteredData: filteredBatchTransposedStudents,
+    columnFilters: batchTransposedFilters,
+    setColumnFilter: setBatchTransposedFilter,
+  } = useTableColumnFilters(batchTransposedStudents, batchTransposedFilterDefs)
+
+  const {
+    sortedData: sortedBatchTransposedStudents,
+    sortKey: batchTransposedSortKey,
+    sortDirection: batchTransposedSortDirection,
+    requestSort: requestBatchTransposedSort,
+  } = useTableSort(filteredBatchTransposedStudents)
+
+  const standardBreakdownList = dimensionData?.standard_breakdown ?? []
+  const standardFilterDefs = useMemo<Record<string, ColumnFilterDefinition<StandardDimensionItem>>>(
+    () => ({
+      standard_name: { type: 'select', accessor: (s) => s.standard_name },
+      board_name: { type: 'select', accessor: (s) => s.board_name },
+      batches_count: { type: 'number_range', accessor: (s) => s.batches_count },
+      enrolled_students: { type: 'number_range', accessor: (s) => s.enrolled_students },
+      target_amount: { type: 'number_range', accessor: (s) => s.target_amount },
+      collected_amount: { type: 'number_range', accessor: (s) => s.collected_amount },
+      pending_amount: { type: 'number_range', accessor: (s) => s.pending_amount },
+      recovery_rate: { type: 'number_range', accessor: (s) => s.recovery_rate },
+      defaulters_count: { type: 'number_range', accessor: (s) => s.defaulters_count },
+    }),
+    []
+  )
+  const {
+    filteredData: filteredStandardBreakdown,
+    columnFilters: standardColumnFilters,
+    setColumnFilter: setStandardColumnFilter,
+  } = useTableColumnFilters(standardBreakdownList, standardFilterDefs)
+  const {
+    sortedData: sortedStandardBreakdown,
+    sortKey: standardSortKey,
+    sortDirection: standardSortDirection,
+    requestSort: requestStandardSort,
+  } = useTableSort(filteredStandardBreakdown)
+
+  const boardBreakdownList = dimensionData?.board_breakdown ?? []
+  const boardFilterDefs = useMemo<Record<string, ColumnFilterDefinition<BoardDimensionItem>>>(
+    () => ({
+      board_name: { type: 'select', accessor: (b) => b.board_name },
+      standards_count: { type: 'number_range', accessor: (b) => b.standards_count },
+      batches_count: { type: 'number_range', accessor: (b) => b.batches_count },
+      enrolled_students: { type: 'number_range', accessor: (b) => b.enrolled_students },
+      target_amount: { type: 'number_range', accessor: (b) => b.target_amount },
+      collected_amount: { type: 'number_range', accessor: (b) => b.collected_amount },
+      pending_amount: { type: 'number_range', accessor: (b) => b.pending_amount },
+      recovery_rate: { type: 'number_range', accessor: (b) => b.recovery_rate },
+      defaulters_count: { type: 'number_range', accessor: (b) => b.defaulters_count },
+    }),
+    []
+  )
+  const {
+    filteredData: filteredBoardBreakdown,
+    columnFilters: boardColumnFilters,
+    setColumnFilter: setBoardColumnFilter,
+  } = useTableColumnFilters(boardBreakdownList, boardFilterDefs)
+  const {
+    sortedData: sortedBoardBreakdown,
+    sortKey: boardSortKey,
+    sortDirection: boardSortDirection,
+    requestSort: requestBoardSort,
+  } = useTableSort(filteredBoardBreakdown)
+
+  const annualBreakdownList = dimensionData?.annual_breakdown ?? []
+  const annualFilterDefs = useMemo<Record<string, ColumnFilterDefinition<AnnualDimensionItem>>>(
+    () => ({
+      academic_year_name: { type: 'select', accessor: (a) => a.academic_year_name },
+      status_label: { type: 'select', accessor: (a) => (a.is_current ? 'Current AY' : 'Historical') },
+      enrolled_students: { type: 'number_range', accessor: (a) => a.enrolled_students },
+      target_amount: { type: 'number_range', accessor: (a) => a.target_amount },
+      collected_amount: { type: 'number_range', accessor: (a) => a.collected_amount },
+      pending_amount: { type: 'number_range', accessor: (a) => a.pending_amount },
+      recovery_rate: { type: 'number_range', accessor: (a) => a.recovery_rate },
+      defaulters_count: { type: 'number_range', accessor: (a) => a.defaulters_count },
+    }),
+    []
+  )
+  const {
+    filteredData: filteredAnnualBreakdown,
+    columnFilters: annualColumnFilters,
+    setColumnFilter: setAnnualColumnFilter,
+  } = useTableColumnFilters(annualBreakdownList, annualFilterDefs)
+  const {
+    sortedData: sortedAnnualBreakdown,
+    sortKey: annualSortKey,
+    sortDirection: annualSortDirection,
+    requestSort: requestAnnualSort,
+  } = useTableSort(filteredAnnualBreakdown)
+
+  const annualPivotRows = useMemo(() => {
+    if (!dimensionData?.monthly_pivot) return []
+    return annualPivotDimension === 'board'
+      ? dimensionData.monthly_pivot.by_board
+      : annualPivotDimension === 'standard'
+      ? dimensionData.monthly_pivot.by_standard
+      : dimensionData.monthly_pivot.by_batch
+  }, [dimensionData?.monthly_pivot, annualPivotDimension])
+
+  const annualPivotFilterDefs = useMemo<Record<string, ColumnFilterDefinition<any>>>(() => {
+    const defs: Record<string, ColumnFilterDefinition<any>> = {
+      dimension_name: {
+        type: 'select',
+        accessor: (row) => row.board_name || row.standard_name || row.batch_name || '—',
+      },
+      enrolled_students: { type: 'number_range', accessor: (row) => row.enrolled_students },
+      total_realized: { type: 'number_range', accessor: (row) => row.total_realized },
+      target_amount: { type: 'number_range', accessor: (row) => row.target_amount },
+      recovery_rate: { type: 'number_range', accessor: (row) => row.recovery_rate },
+    }
+    for (const m of dimensionData?.monthly_pivot?.months ?? []) {
+      defs[`month_${m.key}`] = {
+        type: 'number_range',
+        accessor: (row) => row.monthly_collections?.[m.key] || 0,
+      }
+    }
+    return defs
+  }, [dimensionData?.monthly_pivot?.months])
+
+  const {
+    filteredData: filteredAnnualPivotRows,
+    columnFilters: annualPivotFilters,
+    setColumnFilter: setAnnualPivotFilter,
+  } = useTableColumnFilters(annualPivotRows, annualPivotFilterDefs)
+  const {
+    sortedData: sortedAnnualPivotRows,
+    sortKey: annualPivotSortKey,
+    sortDirection: annualPivotSortDirection,
+    requestSort: requestAnnualPivotSort,
+  } = useTableSort(filteredAnnualPivotRows)
+
   // ─────────────────────────────────────────────────────────────────────────────
   // 3. ENTERPRISE DATA TABLE COLUMN DEFINITIONS (Sorting & Filtering on every header)
   // ─────────────────────────────────────────────────────────────────────────────
@@ -241,20 +401,39 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
         ),
       },
       {
-        id: 'batch_name',
-        key: 'batch_name',
-        header: 'Batch / Std',
-        accessorFn: (row) => `${row.batch_name} ${row.standard_name}`,
+        id: 'board_name',
+        key: 'board_name',
+        header: 'Board',
+        accessorFn: (row) => row.board_name || '—',
         sortable: true,
         filterable: true,
         filterType: 'select',
         cell: ({ row }) => (
-          <div>
-            <span className="font-bold text-slate-800 text-xs">{row.batch_name}</span>
-            <span className="text-[10px] text-slate-400 block font-medium">
-              {row.standard_name} {row.board_name ? `• ${row.board_name}` : ''}
-            </span>
-          </div>
+          <span className="text-[11px] font-semibold text-slate-600">{row.board_name || '—'}</span>
+        ),
+      },
+      {
+        id: 'standard_name',
+        key: 'standard_name',
+        header: 'Grade',
+        accessorFn: (row) => row.standard_name || '—',
+        sortable: true,
+        filterable: true,
+        filterType: 'select',
+        cell: ({ row }) => (
+          <span className="text-[11px] font-semibold text-slate-700">{row.standard_name || '—'}</span>
+        ),
+      },
+      {
+        id: 'batch_name',
+        key: 'batch_name',
+        header: 'Batch',
+        accessorFn: (row) => row.batch_name || '—',
+        sortable: true,
+        filterable: true,
+        filterType: 'select',
+        cell: ({ row }) => (
+          <span className="font-bold text-slate-800 text-xs">{row.batch_name || '—'}</span>
         ),
       },
       {
@@ -879,23 +1058,99 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
               <div className="overflow-x-auto custom-scrollbar">
                 <table className="w-full border-collapse text-left text-xs min-w-[1100px]">
                   <thead>
-                    <tr className="bg-slate-900 text-white border-b border-slate-800">
-                      <th className="sticky left-0 z-20 bg-slate-900 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-300 border-r border-slate-800">
-                        Student Details
-                      </th>
-                      <th className="px-3 py-3 text-center border-r border-slate-800 text-rose-300 font-bold">Package (₹)</th>
+                    <tr className="bg-slate-50/95 text-slate-600 border-b border-slate-200/90">
+                      <SortableHeader
+                        columnKey="full_name"
+                        label="Student Details"
+                        currentSortKey={batchTransposedSortKey}
+                        currentDirection={batchTransposedSortDirection}
+                        onSort={requestBatchTransposedSort}
+                        sortType="string"
+                        filterType="text"
+                        filterValue={batchTransposedFilters.full_name}
+                        onFilterChange={setBatchTransposedFilter}
+                        filterPlaceholder="Search name or adm #..."
+                        compact
+                        className="sticky left-0 z-20 bg-slate-50 px-4 border-r border-slate-200 min-w-[175px]"
+                      />
+                      <SortableHeader
+                        columnKey="package_fee"
+                        label="Package (₹)"
+                        align="center"
+                        currentSortKey={batchTransposedSortKey}
+                        currentDirection={batchTransposedSortDirection}
+                        onSort={requestBatchTransposedSort}
+                        sortType="number"
+                        filterType="number_range"
+                        filterValue={batchTransposedFilters.package_fee}
+                        onFilterChange={setBatchTransposedFilter}
+                        compact
+                        className="px-3 border-r border-slate-200 text-rose-700"
+                      />
                       {batchData?.months.map((m) => (
-                        <th key={m.key} className="px-2.5 py-3 text-center border-r border-slate-800 text-[11px] font-bold text-slate-200">
-                          {m.month_name.substring(0, 3)}
-                        </th>
+                        <SortableHeader
+                          key={m.key}
+                          columnKey={`month_${m.key}`}
+                          label={m.month_name.substring(0, 3)}
+                          align="center"
+                          currentSortKey={batchTransposedSortKey}
+                          currentDirection={batchTransposedSortDirection}
+                          onSort={requestBatchTransposedSort}
+                          accessor={(s: BatchMatrixStudent) => s.monthly_cells?.[m.key]?.total_amount || 0}
+                          sortType="number"
+                          filterType="number_range"
+                          filterValue={batchTransposedFilters[`month_${m.key}`]}
+                          onFilterChange={setBatchTransposedFilter}
+                          compact
+                          className="px-2.5 border-r border-slate-200"
+                        />
                       ))}
-                      <th className="px-3.5 py-3 text-center border-r border-slate-800 text-emerald-300 font-bold">Realized (₹)</th>
-                      <th className="px-3.5 py-3 text-center border-r border-slate-800 text-amber-300 font-bold">Pending (₹)</th>
-                      <th className="px-3 py-3 text-center text-slate-300 font-bold">Rate</th>
+                      <SortableHeader
+                        columnKey="total_paid"
+                        label="Realized (₹)"
+                        align="center"
+                        currentSortKey={batchTransposedSortKey}
+                        currentDirection={batchTransposedSortDirection}
+                        onSort={requestBatchTransposedSort}
+                        sortType="number"
+                        filterType="number_range"
+                        filterValue={batchTransposedFilters.total_paid}
+                        onFilterChange={setBatchTransposedFilter}
+                        compact
+                        className="px-3.5 border-r border-slate-200 text-emerald-700"
+                      />
+                      <SortableHeader
+                        columnKey="total_outstanding"
+                        label="Pending (₹)"
+                        align="center"
+                        currentSortKey={batchTransposedSortKey}
+                        currentDirection={batchTransposedSortDirection}
+                        onSort={requestBatchTransposedSort}
+                        sortType="number"
+                        filterType="number_range"
+                        filterValue={batchTransposedFilters.total_outstanding}
+                        onFilterChange={setBatchTransposedFilter}
+                        compact
+                        className="px-3.5 border-r border-slate-200 text-amber-700"
+                      />
+                      <SortableHeader
+                        columnKey="recovery_pct"
+                        label="Rate"
+                        align="center"
+                        currentSortKey={batchTransposedSortKey}
+                        currentDirection={batchTransposedSortDirection}
+                        onSort={requestBatchTransposedSort}
+                        sortType="number"
+                        filterType="number_range"
+                        filterValue={batchTransposedFilters.recovery_pct}
+                        onFilterChange={setBatchTransposedFilter}
+                        compact
+                        className="px-3"
+                      />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {batchData?.students.map((s) => (
+                    {sortedBatchTransposedStudents.map((s) => (
                       <tr key={s.student_id} className="hover:bg-slate-50/70">
                         <td className="sticky left-0 z-10 bg-white px-4 py-2.5 border-r border-slate-200">
                           <div className="font-bold text-slate-900 text-xs">{s.full_name}</div>
@@ -1078,20 +1333,137 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
               <table className="w-full border-collapse text-left text-xs">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-600 font-semibold">
-                    <th className="px-4 py-2.5">Standard / Grade</th>
-                    <th className="px-3 py-2.5">Board</th>
-                    <th className="px-3 py-2.5 text-center">Batches</th>
-                    <th className="px-3 py-2.5 text-center">Enrolled</th>
-                    <th className="px-3 py-2.5 text-right">Target (₹)</th>
-                    <th className="px-3 py-2.5 text-right text-emerald-700">Realized (₹)</th>
-                    <th className="px-3 py-2.5 text-right text-rose-600">Pending (₹)</th>
-                    <th className="px-4 py-2.5 text-center min-w-[130px]">Recovery %</th>
-                    <th className="px-3 py-2.5 text-center">Defaulters</th>
+                    <SortableHeader
+                      columnKey="standard_name"
+                      label="Standard / Grade"
+                      currentSortKey={standardSortKey}
+                      currentDirection={standardSortDirection}
+                      onSort={requestStandardSort}
+                      sortType="string"
+                      filterType="select"
+                      filterValue={standardColumnFilters.standard_name}
+                      onFilterChange={setStandardColumnFilter}
+                      filterOptions={buildSelectOptionsFromRows(standardBreakdownList, (s) => s.standard_name)}
+                      compact
+                      className="px-4"
+                    />
+                    <SortableHeader
+                      columnKey="board_name"
+                      label="Board"
+                      currentSortKey={standardSortKey}
+                      currentDirection={standardSortDirection}
+                      onSort={requestStandardSort}
+                      sortType="string"
+                      filterType="select"
+                      filterValue={standardColumnFilters.board_name}
+                      onFilterChange={setStandardColumnFilter}
+                      filterOptions={buildSelectOptionsFromRows(standardBreakdownList, (s) => s.board_name)}
+                      compact
+                      className="px-3"
+                    />
+                    <SortableHeader
+                      columnKey="batches_count"
+                      label="Batches"
+                      align="center"
+                      currentSortKey={standardSortKey}
+                      currentDirection={standardSortDirection}
+                      onSort={requestStandardSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={standardColumnFilters.batches_count}
+                      onFilterChange={setStandardColumnFilter}
+                      compact
+                      className="px-3"
+                    />
+                    <SortableHeader
+                      columnKey="enrolled_students"
+                      label="Enrolled"
+                      align="center"
+                      currentSortKey={standardSortKey}
+                      currentDirection={standardSortDirection}
+                      onSort={requestStandardSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={standardColumnFilters.enrolled_students}
+                      onFilterChange={setStandardColumnFilter}
+                      compact
+                      className="px-3"
+                    />
+                    <SortableHeader
+                      columnKey="target_amount"
+                      label="Target (₹)"
+                      align="right"
+                      currentSortKey={standardSortKey}
+                      currentDirection={standardSortDirection}
+                      onSort={requestStandardSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={standardColumnFilters.target_amount}
+                      onFilterChange={setStandardColumnFilter}
+                      compact
+                      className="px-3"
+                    />
+                    <SortableHeader
+                      columnKey="collected_amount"
+                      label="Realized (₹)"
+                      align="right"
+                      currentSortKey={standardSortKey}
+                      currentDirection={standardSortDirection}
+                      onSort={requestStandardSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={standardColumnFilters.collected_amount}
+                      onFilterChange={setStandardColumnFilter}
+                      compact
+                      className="px-3 text-emerald-700"
+                    />
+                    <SortableHeader
+                      columnKey="pending_amount"
+                      label="Pending (₹)"
+                      align="right"
+                      currentSortKey={standardSortKey}
+                      currentDirection={standardSortDirection}
+                      onSort={requestStandardSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={standardColumnFilters.pending_amount}
+                      onFilterChange={setStandardColumnFilter}
+                      compact
+                      className="px-3 text-rose-600"
+                    />
+                    <SortableHeader
+                      columnKey="recovery_rate"
+                      label="Recovery %"
+                      align="center"
+                      currentSortKey={standardSortKey}
+                      currentDirection={standardSortDirection}
+                      onSort={requestStandardSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={standardColumnFilters.recovery_rate}
+                      onFilterChange={setStandardColumnFilter}
+                      compact
+                      className="px-4 min-w-[130px]"
+                    />
+                    <SortableHeader
+                      columnKey="defaulters_count"
+                      label="Defaulters"
+                      align="center"
+                      currentSortKey={standardSortKey}
+                      currentDirection={standardSortDirection}
+                      onSort={requestStandardSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={standardColumnFilters.defaulters_count}
+                      onFilterChange={setStandardColumnFilter}
+                      compact
+                      className="px-3"
+                    />
                     <th className="px-3 py-2.5 text-center">Drilldown</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {dimensionData?.standard_breakdown.map((s) => (
+                  {sortedStandardBreakdown.map((s) => (
                     <tr key={s.standard_id} className="hover:bg-slate-50/70">
                       <td className="px-4 py-2.5 font-bold text-slate-900">{s.standard_name}</td>
                       <td className="px-3 py-2.5 text-slate-600">{s.board_name}</td>
@@ -1211,20 +1583,137 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
               <table className="w-full border-collapse text-left text-xs">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-600 font-semibold">
-                    <th className="px-4 py-2.5">Board Name</th>
-                    <th className="px-3 py-2.5 text-center">Standards</th>
-                    <th className="px-3 py-2.5 text-center">Batches</th>
-                    <th className="px-3 py-2.5 text-center">Enrolled</th>
-                    <th className="px-3 py-2.5 text-right">Target (₹)</th>
-                    <th className="px-3 py-2.5 text-right text-emerald-700">Realized (₹)</th>
-                    <th className="px-3 py-2.5 text-right text-rose-600">Pending (₹)</th>
-                    <th className="px-4 py-2.5 text-center min-w-[130px]">Recovery %</th>
-                    <th className="px-3 py-2.5 text-center">Defaulters</th>
+                    <SortableHeader
+                      columnKey="board_name"
+                      label="Board Name"
+                      currentSortKey={boardSortKey}
+                      currentDirection={boardSortDirection}
+                      onSort={requestBoardSort}
+                      sortType="string"
+                      filterType="select"
+                      filterValue={boardColumnFilters.board_name}
+                      onFilterChange={setBoardColumnFilter}
+                      filterOptions={buildSelectOptionsFromRows(boardBreakdownList, (b) => b.board_name)}
+                      compact
+                      className="px-4"
+                    />
+                    <SortableHeader
+                      columnKey="standards_count"
+                      label="Standards"
+                      align="center"
+                      currentSortKey={boardSortKey}
+                      currentDirection={boardSortDirection}
+                      onSort={requestBoardSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={boardColumnFilters.standards_count}
+                      onFilterChange={setBoardColumnFilter}
+                      compact
+                      className="px-3"
+                    />
+                    <SortableHeader
+                      columnKey="batches_count"
+                      label="Batches"
+                      align="center"
+                      currentSortKey={boardSortKey}
+                      currentDirection={boardSortDirection}
+                      onSort={requestBoardSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={boardColumnFilters.batches_count}
+                      onFilterChange={setBoardColumnFilter}
+                      compact
+                      className="px-3"
+                    />
+                    <SortableHeader
+                      columnKey="enrolled_students"
+                      label="Enrolled"
+                      align="center"
+                      currentSortKey={boardSortKey}
+                      currentDirection={boardSortDirection}
+                      onSort={requestBoardSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={boardColumnFilters.enrolled_students}
+                      onFilterChange={setBoardColumnFilter}
+                      compact
+                      className="px-3"
+                    />
+                    <SortableHeader
+                      columnKey="target_amount"
+                      label="Target (₹)"
+                      align="right"
+                      currentSortKey={boardSortKey}
+                      currentDirection={boardSortDirection}
+                      onSort={requestBoardSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={boardColumnFilters.target_amount}
+                      onFilterChange={setBoardColumnFilter}
+                      compact
+                      className="px-3"
+                    />
+                    <SortableHeader
+                      columnKey="collected_amount"
+                      label="Realized (₹)"
+                      align="right"
+                      currentSortKey={boardSortKey}
+                      currentDirection={boardSortDirection}
+                      onSort={requestBoardSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={boardColumnFilters.collected_amount}
+                      onFilterChange={setBoardColumnFilter}
+                      compact
+                      className="px-3 text-emerald-700"
+                    />
+                    <SortableHeader
+                      columnKey="pending_amount"
+                      label="Pending (₹)"
+                      align="right"
+                      currentSortKey={boardSortKey}
+                      currentDirection={boardSortDirection}
+                      onSort={requestBoardSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={boardColumnFilters.pending_amount}
+                      onFilterChange={setBoardColumnFilter}
+                      compact
+                      className="px-3 text-rose-600"
+                    />
+                    <SortableHeader
+                      columnKey="recovery_rate"
+                      label="Recovery %"
+                      align="center"
+                      currentSortKey={boardSortKey}
+                      currentDirection={boardSortDirection}
+                      onSort={requestBoardSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={boardColumnFilters.recovery_rate}
+                      onFilterChange={setBoardColumnFilter}
+                      compact
+                      className="px-4 min-w-[130px]"
+                    />
+                    <SortableHeader
+                      columnKey="defaulters_count"
+                      label="Defaulters"
+                      align="center"
+                      currentSortKey={boardSortKey}
+                      currentDirection={boardSortDirection}
+                      onSort={requestBoardSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={boardColumnFilters.defaulters_count}
+                      onFilterChange={setBoardColumnFilter}
+                      compact
+                      className="px-3"
+                    />
                     <th className="px-3 py-2.5 text-center">Drilldown</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {dimensionData?.board_breakdown.map((b) => (
+                  {sortedBoardBreakdown.map((b) => (
                     <tr key={b.board_id} className="hover:bg-slate-50/70">
                       <td className="px-4 py-2.5 font-bold text-slate-900">{b.board_name}</td>
                       <td className="px-3 py-2.5 text-center font-mono">{b.standards_count}</td>
@@ -1306,19 +1795,125 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
               <table className="w-full border-collapse text-left text-xs min-w-[950px]">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-600 font-semibold">
-                    <th className="px-5 py-3 min-w-[140px] whitespace-nowrap text-left">Academic Year</th>
-                    <th className="px-3 py-3 text-center min-w-[95px]">Status</th>
-                    <th className="px-3 py-3 text-center min-w-[110px]">Enrolled Students</th>
-                    <th className="px-3 py-3 text-right min-w-[120px]">Annual Target (₹)</th>
-                    <th className="px-3 py-3 text-right min-w-[125px] text-emerald-700">Realized Collections (₹)</th>
-                    <th className="px-3 py-3 text-right min-w-[120px] text-rose-600">Pending Balance (₹)</th>
-                    <th className="px-4 py-3 text-center min-w-[130px]">Recovery Rate %</th>
-                    <th className="px-3 py-3 text-center min-w-[85px]">Defaulters</th>
+                    <SortableHeader
+                      columnKey="academic_year_name"
+                      label="Academic Year"
+                      currentSortKey={annualSortKey}
+                      currentDirection={annualSortDirection}
+                      onSort={requestAnnualSort}
+                      sortType="string"
+                      filterType="select"
+                      filterValue={annualColumnFilters.academic_year_name}
+                      onFilterChange={setAnnualColumnFilter}
+                      filterOptions={buildSelectOptionsFromRows(annualBreakdownList, (a) => a.academic_year_name)}
+                      compact
+                      className="px-5 min-w-[140px] whitespace-nowrap text-left"
+                    />
+                    <SortableHeader
+                      columnKey="status_label"
+                      label="Status"
+                      align="center"
+                      accessor={(a: AnnualDimensionItem) => (a.is_current ? 'Current AY' : 'Historical')}
+                      currentSortKey={annualSortKey}
+                      currentDirection={annualSortDirection}
+                      onSort={requestAnnualSort}
+                      sortType="string"
+                      filterType="select"
+                      filterValue={annualColumnFilters.status_label}
+                      onFilterChange={setAnnualColumnFilter}
+                      filterOptions={buildSelectOptionsFromRows(annualBreakdownList, (a) => (a.is_current ? 'Current AY' : 'Historical'))}
+                      compact
+                      className="px-3 min-w-[95px]"
+                    />
+                    <SortableHeader
+                      columnKey="enrolled_students"
+                      label="Enrolled Students"
+                      align="center"
+                      currentSortKey={annualSortKey}
+                      currentDirection={annualSortDirection}
+                      onSort={requestAnnualSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={annualColumnFilters.enrolled_students}
+                      onFilterChange={setAnnualColumnFilter}
+                      compact
+                      className="px-3 min-w-[110px]"
+                    />
+                    <SortableHeader
+                      columnKey="target_amount"
+                      label="Annual Target (₹)"
+                      align="right"
+                      currentSortKey={annualSortKey}
+                      currentDirection={annualSortDirection}
+                      onSort={requestAnnualSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={annualColumnFilters.target_amount}
+                      onFilterChange={setAnnualColumnFilter}
+                      compact
+                      className="px-3 min-w-[120px]"
+                    />
+                    <SortableHeader
+                      columnKey="collected_amount"
+                      label="Realized Collections (₹)"
+                      align="right"
+                      currentSortKey={annualSortKey}
+                      currentDirection={annualSortDirection}
+                      onSort={requestAnnualSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={annualColumnFilters.collected_amount}
+                      onFilterChange={setAnnualColumnFilter}
+                      compact
+                      className="px-3 min-w-[125px] text-emerald-700"
+                    />
+                    <SortableHeader
+                      columnKey="pending_amount"
+                      label="Pending Balance (₹)"
+                      align="right"
+                      currentSortKey={annualSortKey}
+                      currentDirection={annualSortDirection}
+                      onSort={requestAnnualSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={annualColumnFilters.pending_amount}
+                      onFilterChange={setAnnualColumnFilter}
+                      compact
+                      className="px-3 min-w-[120px] text-rose-600"
+                    />
+                    <SortableHeader
+                      columnKey="recovery_rate"
+                      label="Recovery Rate %"
+                      align="center"
+                      currentSortKey={annualSortKey}
+                      currentDirection={annualSortDirection}
+                      onSort={requestAnnualSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={annualColumnFilters.recovery_rate}
+                      onFilterChange={setAnnualColumnFilter}
+                      compact
+                      className="px-4 min-w-[130px]"
+                    />
+                    <SortableHeader
+                      columnKey="defaulters_count"
+                      label="Defaulters"
+                      align="center"
+                      currentSortKey={annualSortKey}
+                      currentDirection={annualSortDirection}
+                      onSort={requestAnnualSort}
+                      sortType="number"
+                      filterType="number_range"
+                      filterValue={annualColumnFilters.defaulters_count}
+                      onFilterChange={setAnnualColumnFilter}
+                      compact
+                      className="px-3 min-w-[85px]"
+                    />
                     <th className="px-3 py-3 text-center min-w-[85px]">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {dimensionData?.annual_breakdown.map((ay) => (
+                  {sortedAnnualBreakdown.map((ay) => (
                     <tr key={ay.academic_year_id} className="hover:bg-slate-50/70">
                       <td className="px-5 py-3 font-bold text-slate-900 min-w-[140px] whitespace-nowrap">
                         {ay.academic_year_name}
@@ -1424,34 +2019,108 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
                 <table className="w-full border-collapse text-left text-xs min-w-[1250px]">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-600 font-semibold">
-                      <th className="px-5 py-3 min-w-[160px] whitespace-nowrap">
-                        {annualPivotDimension === 'board' ? 'Educational Board' :
-                         annualPivotDimension === 'standard' ? 'Standard / Grade' : 'Batch / Division'}
-                      </th>
-                      <th className="px-3 py-3 text-center min-w-[80px]">Enrolled</th>
+                      <SortableHeader
+                        columnKey="dimension_name"
+                        label={
+                          annualPivotDimension === 'board'
+                            ? 'Educational Board'
+                            : annualPivotDimension === 'standard'
+                            ? 'Standard / Grade'
+                            : 'Batch / Division'
+                        }
+                        accessor={(row: any) => row.board_name || row.standard_name || row.batch_name || '—'}
+                        currentSortKey={annualPivotSortKey}
+                        currentDirection={annualPivotSortDirection}
+                        onSort={requestAnnualPivotSort}
+                        sortType="string"
+                        filterType="select"
+                        filterValue={annualPivotFilters.dimension_name}
+                        onFilterChange={setAnnualPivotFilter}
+                        filterOptions={buildSelectOptionsFromRows(
+                          annualPivotRows,
+                          (row: any) => row.board_name || row.standard_name || row.batch_name || '—'
+                        )}
+                        compact
+                        className="px-5 min-w-[160px] whitespace-nowrap"
+                      />
+                      <SortableHeader
+                        columnKey="enrolled_students"
+                        label="Enrolled"
+                        align="center"
+                        currentSortKey={annualPivotSortKey}
+                        currentDirection={annualPivotSortDirection}
+                        onSort={requestAnnualPivotSort}
+                        sortType="number"
+                        filterType="number_range"
+                        filterValue={annualPivotFilters.enrolled_students}
+                        onFilterChange={setAnnualPivotFilter}
+                        compact
+                        className="px-3 min-w-[80px]"
+                      />
                       {dimensionData?.monthly_pivot?.months.map(m => (
-                        <th key={m.key} className="px-2.5 py-3 text-center min-w-[85px] border-l border-slate-100">
-                          {m.label}
-                        </th>
+                        <SortableHeader
+                          key={m.key}
+                          columnKey={`month_${m.key}`}
+                          label={m.label}
+                          align="center"
+                          accessor={(row: any) => row.monthly_collections?.[m.key] || 0}
+                          currentSortKey={annualPivotSortKey}
+                          currentDirection={annualPivotSortDirection}
+                          onSort={requestAnnualPivotSort}
+                          sortType="number"
+                          filterType="number_range"
+                          filterValue={annualPivotFilters[`month_${m.key}`]}
+                          onFilterChange={setAnnualPivotFilter}
+                          compact
+                          className="px-2.5 min-w-[85px] border-l border-slate-100"
+                        />
                       ))}
-                      <th className="px-3 py-3 text-right min-w-[110px] text-emerald-800 bg-emerald-50/30 border-l border-slate-200">
-                        Total Realized (₹)
-                      </th>
-                      <th className="px-3 py-3 text-right min-w-[110px]">
-                        Target (₹)
-                      </th>
-                      <th className="px-3 py-3 text-center min-w-[100px]">
-                        Recovery %
-                      </th>
+                      <SortableHeader
+                        columnKey="total_realized"
+                        label="Total Realized (₹)"
+                        align="right"
+                        currentSortKey={annualPivotSortKey}
+                        currentDirection={annualPivotSortDirection}
+                        onSort={requestAnnualPivotSort}
+                        sortType="number"
+                        filterType="number_range"
+                        filterValue={annualPivotFilters.total_realized}
+                        onFilterChange={setAnnualPivotFilter}
+                        compact
+                        className="px-3 min-w-[110px] text-emerald-800 bg-emerald-50/30 border-l border-slate-200"
+                      />
+                      <SortableHeader
+                        columnKey="target_amount"
+                        label="Target (₹)"
+                        align="right"
+                        currentSortKey={annualPivotSortKey}
+                        currentDirection={annualPivotSortDirection}
+                        onSort={requestAnnualPivotSort}
+                        sortType="number"
+                        filterType="number_range"
+                        filterValue={annualPivotFilters.target_amount}
+                        onFilterChange={setAnnualPivotFilter}
+                        compact
+                        className="px-3 min-w-[110px]"
+                      />
+                      <SortableHeader
+                        columnKey="recovery_rate"
+                        label="Recovery %"
+                        align="center"
+                        currentSortKey={annualPivotSortKey}
+                        currentDirection={annualPivotSortDirection}
+                        onSort={requestAnnualPivotSort}
+                        sortType="number"
+                        filterType="number_range"
+                        filterValue={annualPivotFilters.recovery_rate}
+                        onFilterChange={setAnnualPivotFilter}
+                        compact
+                        className="px-3 min-w-[100px]"
+                      />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {(annualPivotDimension === 'board'
-                      ? dimensionData.monthly_pivot.by_board
-                      : annualPivotDimension === 'standard'
-                      ? dimensionData.monthly_pivot.by_standard
-                      : dimensionData.monthly_pivot.by_batch
-                    ).map((row: any, idx: number) => {
+                    {sortedAnnualPivotRows.map((row: any, idx: number) => {
                       const rowName = row.board_name || row.standard_name || row.batch_name
                       return (
                         <tr key={idx} className="hover:bg-slate-50/70 transition-colors">

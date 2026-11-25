@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-24
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints for fee obligations, payment collections, receipts, trends, and ledger reconciliation.
 #  */
@@ -991,6 +991,9 @@ async def get_invoice(
         "items": [
             {
                 "id": i.id,
+                "fee_structure_id": i.fee_structure_id,
+                "fee_category_name": i.fee_category_name,
+                "structure_name": i.structure_name,
                 "description": i.description,
                 "amount": float(i.amount),
                 "discount_amount": float(i.discount_amount),

@@ -11,11 +11,12 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-25
+#  * @updated     2026-11-26
 #  *
 #  * @description Global application settings, environment variables, security secrets, and CORS policies.
 #  */
 
+import hashlib
 from pydantic_settings import BaseSettings
 from typing import Any, List
 import json
@@ -24,8 +25,10 @@ import sys
 _INSECURE_DEFAULT = "changeme-in-production-use-long-random-string"
 _INSECURE_SECRETS = {
     _INSECURE_DEFAULT,
-    "prashant_academy_super_secure_jwt_secret_key_change_in_production_2024",
     "REPLACE_WITH_RANDOM_64_CHAR_HEX_SECRET",
+}
+_INSECURE_SECRET_HASHES = {
+    "2e4735dc199a4f5933d6537f39d1a98d0445dbfdb22683851bb3a64e4cf61bb",
 }
 
 PRODUCT_APP_ICON_URL = "/artwork/16112026/001/path8-5-8.png"
@@ -38,16 +41,16 @@ class Settings(BaseSettings):
     # Shortened from 24 h to 60 min for security; use refresh tokens for long sessions
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    APP_NAME: str = "Prashant Academy"
+    APP_NAME: str = "PrathamOne EduOS"
     PRODUCT_NAME: str = "PrathamOne EduOS"
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "COACHING MANAGEMENT. SIMPLIFIED."
-    VERSION: str = "1.181.0"
-    BUILD_NUMBER: str = "2026.11.24-REV-325-v1.181.0-97884BE7"
+    VERSION: str = "1.181.1"
+    BUILD_NUMBER: str = "2026.11.25-REV-326-v1.181.1-971F11B9"
     RELEASE_CHANNEL: str = "Release Candidate"
     RELEASE_STATUS: str = "Minor Release Candidate"
-    BUILD_DATE: str = "2026-11-24"
+    BUILD_DATE: str = "2026-11-25"
     AUTHOR: str = "Jawahar R Mallah"
     ORGANIZATION: str = "Smritisys & AITDL Networks"
     LICENSE_AUTHORITY_URL: str = "https://smritisys.com"
@@ -97,22 +100,6 @@ class Settings(BaseSettings):
         "https://classesname.local:2026",
         "http://classesname.local",
         "https://classesname.local",
-        "http://aditiacademy:2026",
-        "https://aditiacademy:2026",
-        "http://aditiacademy",
-        "https://aditiacademy",
-        "http://aditiacademy.local:2026",
-        "https://aditiacademy.local:2026",
-        "http://aditiacademy.local",
-        "https://aditiacademy.local",
-        "http://prashantacademy:2026",
-        "https://prashantacademy:2026",
-        "http://prashantacademy",
-        "https://prashantacademy",
-        "http://prashantacademy.local:2026",
-        "https://prashantacademy.local:2026",
-        "http://prashantacademy.local",
-        "https://prashantacademy.local",
     ]
 
     @property
@@ -163,22 +150,6 @@ class Settings(BaseSettings):
             "https://classesname.local:2026",
             "http://classesname.local",
             "https://classesname.local",
-            "http://aditiacademy:2026",
-            "https://aditiacademy:2026",
-            "http://aditiacademy",
-            "https://aditiacademy",
-            "http://aditiacademy.local:2026",
-            "https://aditiacademy.local:2026",
-            "http://aditiacademy.local",
-            "https://aditiacademy.local",
-            "http://prashantacademy:2026",
-            "https://prashantacademy:2026",
-            "http://prashantacademy",
-            "https://prashantacademy",
-            "http://prashantacademy.local:2026",
-            "https://prashantacademy.local:2026",
-            "http://prashantacademy.local",
-            "https://prashantacademy.local",
         ]
         merged = list(origins)
         for c in canonical:
@@ -189,7 +160,12 @@ class Settings(BaseSettings):
     def validate_security(self) -> None:
         """Fail fast in production when insecure defaults are detected."""
         if not self.DEBUG:
-            if self.SECRET_KEY in _INSECURE_SECRETS or len(self.SECRET_KEY) < 32:
+            secret_digest = hashlib.sha256(self.SECRET_KEY.encode("utf-8", "ignore")).hexdigest()
+            if (
+                self.SECRET_KEY in _INSECURE_SECRETS
+                or secret_digest in _INSECURE_SECRET_HASHES
+                or len(self.SECRET_KEY) < 32
+            ):
                 print(
                     "FATAL: SECRET_KEY is insecure. "
                     "Set a strong SECRET_KEY in your .env file before running in production.",
