@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-23
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints for multi-branch institute profile configuration and campus metadata.
 #  */
@@ -124,8 +124,8 @@ async def create_institution(
     }
 
 
-@router.get("/public/branding")
-@public_router.get("/public/branding")
+@router.get("/public/branding", include_in_schema=False)
+@public_router.get("/public/branding", operation_id="get_public_institution_branding")
 async def get_public_institution_branding(
     institution_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),

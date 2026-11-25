@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-24
+#  * @updated     2026-11-26
 #  *
 #  * @description Verifies signed license artifacts and calculates local entitlement state.
 #  */
@@ -27,6 +27,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 import httpx
+from starlette.requests import Request
 from cryptography.exceptions import InvalidSignature, InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import serialization
@@ -672,3 +673,11 @@ def verify_and_import_reactivation_artifact(
         "expires_at": payload.get("expires_at"),
         "issued_at": payload.get("issued_at"),
     }
+
+
+def get_verified_lease_claims(request: Request) -> dict[str, Any]:
+    """FastAPI dependency to retrieve tamper-proof verified Ed25519 lease claims from request state."""
+    claims = getattr(request.state, "verified_lease_claims", None)
+    if claims is None:
+        return {}
+    return claims

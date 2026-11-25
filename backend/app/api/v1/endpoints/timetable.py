@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-21
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints for class timetable scheduling, room allocation, and collision detection.
 #  */
@@ -483,15 +483,15 @@ async def get_timetable_export_docket(
     inst_header = {
         "name": inst.name if inst else "Prashant Academy",
         "code": inst.code if inst else "PA01",
-        "tagline": inst.tagline if (inst and inst.tagline) else "Empowering Young Minds for Academic Excellence",
+        "tagline": inst.tagline if (inst and inst.tagline) else "Coaching Institute Management System",
         "address": (
             f"{inst.address or ''}, {inst.city or ''}, {inst.state or ''} {inst.pincode or ''}".strip(", ")
             if inst
-            else "Ghatkopar East, Mumbai 400077"
+            else ""
         ),
-        "phone": inst.phone if (inst and inst.phone) else "+91 98200 00000",
-        "email": inst.email if (inst and inst.email) else "contact@prashantacademy.in",
-        "website": inst.website if (inst and inst.website) else "www.prashantacademy.in",
+        "phone": inst.phone if (inst and inst.phone) else "",
+        "email": inst.email if (inst and inst.email) else "support@prathamone.local",
+        "website": inst.website if (inst and inst.website) else "",
         "logo_url": inst.logo_url if (inst and inst.logo_url) else None,
     }
 

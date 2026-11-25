@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-15
-#  * @updated     2026-11-21
+#  * @updated     2026-11-26
 #  *
 #  * @description Windows Desktop & System Tray Launcher: manages local PostgreSQL service,
 #  */
@@ -205,10 +205,22 @@ class PrathamOneManager:
                 stderr=log_fp,
                 creationflags=flags,
             )
-            # Wait up to 15 seconds for PostgreSQL port to open
+            # Wait up to 45 seconds for PostgreSQL to accept connections (handles crash recovery cleanly)
+            pg_isready = self.pgsql_dir / "bin" / "pg_isready.exe"
             started = False
-            for _ in range(30):
-                if self.is_port_in_use(self.pg_port):
+            for _ in range(90):
+                if pg_isready.exists():
+                    chk = subprocess.run(
+                        [str(pg_isready), "-h", "127.0.0.1", "-p", str(self.pg_port), "-U", "postgres"],
+                        capture_output=True,
+                        creationflags=flags,
+                    )
+                    if chk.returncode == 0:
+                        print("[LAUNCHER] PostgreSQL started and accepting connections.")
+                        self.pg_managed = True
+                        started = True
+                        break
+                elif self.is_port_in_use(self.pg_port):
                     print("[LAUNCHER] PostgreSQL started successfully.")
                     self.pg_managed = True
                     started = True
@@ -216,23 +228,39 @@ class PrathamOneManager:
                 time.sleep(0.5)
 
             if not started:
-                raise TimeoutError("PostgreSQL did not start listening within timeout.")
+                raise TimeoutError("PostgreSQL did not become ready within timeout.")
         except Exception as pg_err:
             err_msg = f"Failed to start local database engine:\n{pg_err}"
             print(f"[LAUNCHER ERROR] {err_msg}")
             show_native_message("PrathamOne EduOS — Database Start Failed", err_msg, is_error=True)
             return False
 
-        # If .env does not exist or database is unmigrated, run bootstrap
+        # Run bootstrap on first launch, setup_config.json pending, or upgrade (alembic version check)
         env_file = self.root_dir / ".env"
+        setup_cfg = self.root_dir / "setup_config.json"
+        bootstrap_marker = self.data_dir / ".bootstrap_complete"
+        import hashlib
+        manifest_file = self.backend_dir / "app" / ".code_integrity.manifest"
+        alembic_dir = self.backend_dir / "alembic" / "versions"
+        stamp_src = manifest_file.read_bytes() if manifest_file.exists() else b"dev"
+        if alembic_dir.exists():
+            stamp_src += "|".join(sorted(p.name for p in alembic_dir.iterdir())).encode("utf-8")
+        current_stamp = hashlib.sha256(stamp_src).hexdigest()
+        needs_bootstrap = (
+            not env_file.exists()
+            or setup_cfg.exists()
+            or not bootstrap_marker.exists()
+            or bootstrap_marker.read_text(encoding="utf-8").strip() != current_stamp
+        )
         bootstrap_script = self.root_dir / "scripts" / "windows_bootstrap.py"
-        if bootstrap_script.exists():
+        if needs_bootstrap and bootstrap_script.exists():
             try:
                 subprocess.run([
                     sys.executable,
                     str(bootstrap_script),
                     f"--db-port={self.pg_port}"
                 ], check=True, creationflags=flags)
+                bootstrap_marker.write_text(current_stamp, encoding="utf-8")
                 print("[LAUNCHER] Database schema and canonical masters verified.")
             except Exception as b_exc:
                 print(f"[LAUNCHER WARN] Bootstrap execution note: {b_exc}")
@@ -293,6 +321,10 @@ class PrathamOneManager:
         # Ensure backend connects to the active PostgreSQL port
         env["DATABASE_URL"] = f"postgresql+asyncpg://postgres:postgres@localhost:{self.pg_port}/prashant_academy"
 
+        # Forward desktop token if passed from native launcher
+        if "PRATHAM_DESKTOP_TOKEN" in os.environ:
+            env["PRATHAM_DESKTOP_TOKEN"] = os.environ["PRATHAM_DESKTOP_TOKEN"]
+
         cmd = [
             sys.executable,
             "-m",
@@ -312,13 +344,16 @@ class PrathamOneManager:
             ])
 
         flags = 0x08000000 if sys.platform == "win32" else 0
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+        backend_log = self.data_dir / "backend_server.log"
+        backend_log_fp = open(str(backend_log), "w", encoding="utf-8")
         self.backend_proc = subprocess.Popen(
             cmd,
             cwd=str(self.backend_dir),
             env=env,
             creationflags=flags,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=backend_log_fp,
+            stderr=backend_log_fp,
         )
 
     def stop_backend(self):
@@ -430,6 +465,10 @@ class PrathamOneManager:
 
     def open_browser(self):
         """Open web interface in standard browser (default) or standalone Desktop App window based on settings."""
+        if "--no-browser" in sys.argv:
+            print("[LAUNCHER] Running in native desktop mode (--no-browser); external browser launch suppressed.")
+            return
+
         slug = self.get_institute_slug()
 
         # Check which local host resolves (classes name, prathamone, or localhost)
@@ -527,14 +566,20 @@ class PrathamOneManager:
         salt = b"PRATHAMONE_EDUOS_INTEGRITY_SALT_2026"
         try:
             manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
-            critical_modules = [
-                "app/core/hardware.pyc",
-                "app/api/v1/endpoints/license.pyc",
-                "app/services/license_service.pyc",
+            critical_prefixes = [
+                "app/core/hardware.",
+                "app/api/v1/endpoints/license.",
+                "app/services/license_service.",
             ]
-            for rel in critical_modules:
-                expected_hash = manifest.get(rel)
-                if expected_hash:
+            for prefix in critical_prefixes:
+                # Match .pyd or .pyc in manifest
+                matching_entry = None
+                for rel, expected_hash in manifest.items():
+                    if rel.startswith(prefix) and (rel.endswith(".pyd") or rel.endswith(".pyc")):
+                        matching_entry = (rel, expected_hash)
+                        break
+                if matching_entry:
+                    rel, expected_hash = matching_entry
                     file_path = self.backend_dir / rel
                     if not file_path.exists():
                         show_native_message(

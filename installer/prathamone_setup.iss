@@ -11,7 +11,7 @@
 ;  *
 ;  * @version     1.0.0
 ;  * @created     2026-11-15
-;  * @updated     2026-11-16
+;  * @updated     2026-11-25
 ;  *
 ;  * @description Inno Setup Script: Packages PrathamOne EduOS, embedded PostgreSQL 16,
 ;  *              Python backend runtime, and compiled React SPA into a single zero-knowledge installer.
@@ -24,6 +24,13 @@
 #endif
 #ifndef MyAppFileVersion
   #define MyAppFileVersion "1.0.0.0"
+#endif
+#ifndef MyOutputBaseFilename
+  #ifdef UseReleasePayload
+    #define MyOutputBaseFilename "PrathamOne_EduOS_Setup"
+  #else
+    #define MyOutputBaseFilename "PrathamOne-EduOS-Setup-v" + MyAppVersion
+  #endif
 #endif
 #define MyAppPublisher "Smritisys & AITDL Networks"
 #define MyAppURL "https://aitdl.com"
@@ -43,7 +50,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 LicenseFile=..\LICENSE
 OutputDir=..\dist
-OutputBaseFilename=PrathamOne-EduOS-Setup-v{#MyAppVersion}
+OutputBaseFilename={#MyOutputBaseFilename}
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
@@ -70,19 +77,29 @@ Name: "firewallrule"; Description: "Allow other computers on coaching institute 
 Name: "installrootca"; Description: "Install local SSL certificate for trusted HTTPS access (Eliminates 'Not secure' browser warnings)"; GroupDescription: "Security & Local Certificate Authority:"; Flags: checkedonce
 
 [Dirs]
-Name: "{app}"; Permissions: users-full
-Name: "{app}\data"; Permissions: users-full
+Name: "{app}"
+Name: "{localappdata}\{#MyAppDirName}"
+Name: "{localappdata}\{#MyAppDirName}\data"
+Name: "{localappdata}\{#MyAppDirName}\backups"
+Name: "{localappdata}\{#MyAppDirName}\logs"
 
 [Files]
+#ifdef UseReleasePayload
+; Self-contained Windows Release Payload (Nuitka standalone backend + Cython .pyd + WebView2 C# shell + PostgreSQL + React SPA)
+Source: "..\build_staging\release_payload\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+#else
 ; Branding and Icon Assets
 Source: "assets\app_icon.ico"; DestDir: "{app}\assets"; Flags: ignoreversion
 Source: "assets\wizard_large.bmp"; DestDir: "{app}\assets"; Flags: ignoreversion
 Source: "assets\wizard_small.bmp"; DestDir: "{app}\assets"; Flags: ignoreversion
 Source: "assets\widelogo.png"; DestDir: "{app}\assets"; Flags: ignoreversion
 Source: "assets\widelogo.svg"; DestDir: "{app}\assets"; Flags: ignoreversion
-Source: "..\frontend\public\artwork\CSM\widelogo.svg"; DestDir: "{app}\assets"; Flags: ignoreversion
-Source: "..\frontend\public\artwork\CSM\path1.svg"; DestDir: "{app}\assets"; Flags: ignoreversion
-Source: "..\frontend\public\artwork\16112026\001\2.svg"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "assets\prathamone_emblem.png"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "assets\prathamone_emblem.svg"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "assets\Splash.gif"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "assets\Image.jpg"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "..\frontend\public\artwork\25112026\batch_g44.svg"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "..\frontend\public\artwork\25112026\batch_g46.svg"; DestDir: "{app}\assets"; Flags: ignoreversion
 
 ; Root configuration and scripts
 Source: "..\.env.example"; DestDir: "{app}"; Flags: ignoreversion
@@ -113,19 +130,29 @@ Source: "files\StopPrathamOne.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "files\PrathamOneLauncher.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "files\StopPrathamOne.bat"; DestDir: "{app}"; Flags: ignoreversion
 
+; Microsoft Edge WebView2 Managed & Native Runtime Libraries
+Source: "files\Microsoft.Web.WebView2.Core.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "files\Microsoft.Web.WebView2.WinForms.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "files\WebView2Loader.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "files\runtimes\*"; DestDir: "{app}\runtimes"; Flags: ignoreversion recursesubdirs createallsubdirs
+#endif
+
 [Icons]
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\assets\app_icon.ico"; Tasks: desktopicon
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\assets\app_icon.ico"
 Name: "{group}\Stop PrathamOne EduOS"; Filename: "{app}\StopPrathamOne.exe"; WorkingDir: "{app}"; IconFilename: "{app}\assets\app_icon.ico"
-Name: "{group}\PrathamOne EduOS (Web Browser Mode)"; Filename: "{app}\{#MyAppExeName}"; Parameters: "--browser"; WorkingDir: "{app}"; IconFilename: "{app}\assets\app_icon.ico"
-Name: "{group}\PrathamOne EduOS (Desktop App Mode)"; Filename: "{app}\{#MyAppExeName}"; Parameters: "--app"; WorkingDir: "{app}"; IconFilename: "{app}\assets\app_icon.ico"
+Name: "{group}\PrathamOne EduOS (Desktop App Mode)"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\assets\app_icon.ico"
+Name: "{group}\PrathamOne EduOS (Web Browser Mode)"; Filename: "http://localhost:2026"; IconFilename: "{app}\assets\app_icon.ico"
 Name: "{group}\PrathamOne EduOS (Web Portal HTTPS)"; Filename: "https://prathamone:2026"; IconFilename: "{app}\assets\app_icon.ico"
 Name: "{group}\PrathamOne EduOS (Console Mode)"; Filename: "{app}\PrathamOneLauncher.bat"; WorkingDir: "{app}"; IconFilename: "{app}\assets\app_icon.ico"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 
 [Run]
-; 1. Initialize PostgreSQL cluster if data folder doesn't exist
-Filename: "{app}\pgsql\bin\initdb.exe"; Parameters: "-D ""{app}\data"" -U postgres -A trust --encoding=UTF8 --locale=C --no-instructions"; WorkingDir: "{app}\pgsql\bin"; Flags: runhidden skipifdoesntexist; StatusMsg: "Initializing local database cluster..."; Check: NeedsDbInit
+; 0. Verify and install Microsoft Edge WebView2 Runtime silently if missing on target machine
+Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""& {{ [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object System.Net.WebClient).DownloadFile('https://go.microsoft.com/fwlink/p/?LinkId=2124703', '$env:TEMP\MicrosoftEdgeWebview2Setup.exe'); Start-Process -FilePath '$env:TEMP\MicrosoftEdgeWebview2Setup.exe' -ArgumentList '/silent /install' -Wait }}"""; Flags: runhidden; StatusMsg: "Verifying and configuring Microsoft Edge WebView2 Runtime..."; Check: not IsWebView2Installed
+
+; 1. Initialize PostgreSQL cluster in user-writable data root if data folder doesn't exist
+Filename: "{app}\pgsql\bin\initdb.exe"; Parameters: "-D ""{code:GetWritableDataRoot}\data"" -U postgres -A trust --encoding=UTF8 --locale=C --no-instructions"; WorkingDir: "{app}\pgsql\bin"; Flags: runhidden skipifdoesntexist; StatusMsg: "Initializing local database cluster..."; Check: NeedsDbInit
 
 ; 2. Add Windows Firewall rule for ports 2026, HTTP 80, and HTTPS 443
 Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""PrathamOne EduOS Local Network"" dir=in action=allow protocol=TCP localport=2026,80,443"; Flags: runhidden; Tasks: firewallrule
@@ -135,13 +162,21 @@ Filename: "netsh"; Parameters: "interface portproxy add v4tov4 listenport=80 lis
 Filename: "netsh"; Parameters: "interface portproxy add v4tov4 listenport=443 listenaddress=127.0.0.1 connectport=2026 connectaddress=127.0.0.1"; Flags: runhidden
 
 ; 4. Generate local TLS security certificates uniquely on this computer (never packaged in installer)
+#ifdef UseReleasePayload
+Filename: "{app}\backend\prathamone_backend.exe"; Parameters: "--generate-ssl"; WorkingDir: "{app}\backend"; Flags: runhidden; StatusMsg: "Generating local trusted TLS security certificates..."
+#else
 Filename: "{app}\python\python.exe"; Parameters: """{app}\scripts\generate_ssl_certificates.py"""; WorkingDir: "{app}"; Flags: runhidden; StatusMsg: "Generating local trusted TLS security certificates..."
+#endif
 
 ; 5. Register newly generated machine-local Root CA into Windows Trusted Root Store (eliminates "Not secure" / untrusted certificate warnings)
 Filename: "certutil.exe"; Parameters: "-addstore -f ""ROOT"" ""{app}\assets\Smritisys_AITDL_Local_CA.cer"""; Flags: runhidden; Tasks: installrootca; StatusMsg: "Configuring local trusted SSL security certificate..."
 
 ; 6. Run automated domain and network configuration (guarantees hosts entries, port 80/443 proxy, and DNS cache flush)
+#ifdef UseReleasePayload
+Filename: "{app}\backend\prathamone_backend.exe"; Parameters: "--configure-domains"; WorkingDir: "{app}\backend"; Flags: runhidden; StatusMsg: "Finalizing domain routing and local network configuration..."
+#else
 Filename: "{app}\python\python.exe"; Parameters: """{app}\scripts\configure_local_domains.py"" --no-pause --skip-ca"; WorkingDir: "{app}"; Flags: runhidden; StatusMsg: "Finalizing domain routing and local network configuration..."
+#endif
 
 ; 7. Option to launch immediately
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
@@ -149,7 +184,7 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 [UninstallRun]
 ; Stop running services cleanly via native Stop executable
 Filename: "{app}\StopPrathamOne.exe"; Flags: runhidden skipifdoesntexist; RunOnceId: "StopPrathamOne"
-Filename: "taskkill"; Parameters: "/F /IM PrathamOne.exe /IM pythonw.exe /IM postgres.exe"; Flags: runhidden; RunOnceId: "StopPython"
+Filename: "taskkill"; Parameters: "/F /IM PrathamOne.exe /IM prathamone_backend.exe /IM pythonw.exe /IM postgres.exe"; Flags: runhidden; RunOnceId: "StopPython"
 ; Clean up port 80 and port 443 portproxies
 Filename: "netsh"; Parameters: "interface portproxy delete v4tov4 listenport=80 listenaddress=127.0.0.1"; Flags: runhidden; RunOnceId: "RemovePortproxy80"
 Filename: "netsh"; Parameters: "interface portproxy delete v4tov4 listenport=443 listenaddress=127.0.0.1"; Flags: runhidden; RunOnceId: "RemovePortproxy443"
@@ -173,6 +208,45 @@ var
   MediumPage: TInputOptionWizardPage;
   AdminPasswordValue: String;
   DbPortValue: String;
+
+function IsWebView2Installed: Boolean;
+var
+  Version: String;
+begin
+  Result := False;
+  // 1. Check 64-bit / 32-bit Uninstall registry keys
+  if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft EdgeWebView', 'DisplayVersion', Version) then
+  begin
+    if (Version <> '') and (Version <> '0.0.0.0') then
+      Result := True;
+  end;
+  if not Result and RegQueryStringValue(HKLM, 'SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft EdgeWebView', 'DisplayVersion', Version) then
+  begin
+    if (Version <> '') and (Version <> '0.0.0.0') then
+      Result := True;
+  end;
+  if not Result and RegQueryStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft EdgeWebView', 'DisplayVersion', Version) then
+  begin
+    if (Version <> '') and (Version <> '0.0.0.0') then
+      Result := True;
+  end;
+  // 2. Check EdgeUpdate Clients registry keys
+  if not Result and RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-23EC-4867-A98B-9140B4800D60}', 'pv', Version) then
+  begin
+    if (Version <> '') and (Version <> '0.0.0.0') then
+      Result := True;
+  end;
+  if not Result and RegQueryStringValue(HKLM, 'SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-23EC-4867-A98B-9140B4800D60}', 'pv', Version) then
+  begin
+    if (Version <> '') and (Version <> '0.0.0.0') then
+      Result := True;
+  end;
+  if not Result and RegQueryStringValue(HKCU, 'Software\Microsoft\EdgeUpdate\Clients\{F3017226-23EC-4867-A98B-9140B4800D60}', 'pv', Version) then
+  begin
+    if (Version <> '') and (Version <> '0.0.0.0') then
+      Result := True;
+  end;
+end;
 
 function SanitizeSlug(Input: String): String;
 var
@@ -218,13 +292,8 @@ begin
         begin
           NewEntries := NewEntries + #13#10 + '127.0.0.1    classesname' + #13#10 + '127.0.0.1    classesname.local';
         end;
-        // 3. Combination 3: Always include prashantacademy default alias
-        if Pos('prashantacademy', Lowercase(String(HostsContent))) = 0 then
-        begin
-          NewEntries := NewEntries + #13#10 + '127.0.0.1    prashantacademy' + #13#10 + '127.0.0.1    prashantacademy.local';
-        end;
-        // 4. Custom institute/classes name without any space if different
-        if (ClassesSlug <> '') and (ClassesSlug <> 'prashantacademy') and (ClassesSlug <> 'prathamone') and (ClassesSlug <> 'classesname') and (ClassesSlug <> 'youracademyname') and (Pos(Lowercase(ClassesSlug), Lowercase(String(HostsContent))) = 0) then
+        // 3. Custom institute/classes name without any space if different
+        if (ClassesSlug <> '') and (ClassesSlug <> 'prathamone') and (ClassesSlug <> 'classesname') and (ClassesSlug <> 'youracademyname') and (Pos(Lowercase(ClassesSlug), Lowercase(String(HostsContent))) = 0) then
         begin
           NewEntries := NewEntries + #13#10 + '127.0.0.1    ' + ClassesSlug + #13#10 + '127.0.0.1    ' + ClassesSlug + '.local';
         end;
@@ -290,16 +359,98 @@ begin
   end;
 end;
 
+function GetWritableDataRoot(Param: String): String;
+var
+  InstallBase: String;
+  ProgFiles: String;
+  InProgramFiles: Boolean;
+begin
+  InstallBase := '';
+  if WizardForm <> nil then
+  begin
+    try
+      InstallBase := WizardDirValue;
+    except
+      InstallBase := '';
+    end;
+  end;
+  if InstallBase = '' then
+    InstallBase := ExpandConstant('{app}');
+
+  ProgFiles := Lowercase(ExpandConstant('{autopf}'));
+  InProgramFiles := (ProgFiles <> '') and (Pos(ProgFiles, Lowercase(InstallBase)) = 1);
+
+  if (not InProgramFiles) and FileExists(AddBackslash(InstallBase) + 'data\PG_VERSION') then
+  begin
+    Result := RemoveBackslash(InstallBase);
+    Exit;
+  end;
+
+  Result := ExpandConstant('{localappdata}\{#MyAppDirName}');
+end;
+
+function DetectPostgresPort(DataDir: String): String;
+var
+  OptsContent: AnsiString;
+begin
+  Result := '5432';
+  if FileExists(AddBackslash(DataDir) + 'postmaster.opts') then
+  begin
+    if LoadStringFromFile(AddBackslash(DataDir) + 'postmaster.opts', OptsContent) then
+    begin
+      if Pos('5433', String(OptsContent)) > 0 then
+        Result := '5433';
+    end;
+  end;
+end;
+
+function GenerateRandomBootstrapSecret: String;
+var
+  Charset: String;
+  I: Integer;
+begin
+  Charset := 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$';
+  Result := '';
+  for I := 1 to 18 do
+    Result := Result + Charset[Random(Length(Charset)) + 1];
+end;
+
 function IsUpgradeMode: Boolean;
 var
   ExistingDir: String;
+  TargetDir: String;
+  LocalDataDir: String;
 begin
+  LocalDataDir := ExpandConstant('{localappdata}\{#MyAppDirName}\data\PG_VERSION');
+  if FileExists(LocalDataDir) then
+  begin
+    Result := True;
+    Exit;
+  end;
+
+  if WizardForm <> nil then
+  begin
+    try
+      TargetDir := WizardDirValue;
+      if TargetDir <> '' then
+      begin
+        Result := FileExists(AddBackslash(TargetDir) + 'data\PG_VERSION') or
+                  FileExists(AddBackslash(TargetDir) + 'setup_config.json');
+        Exit;
+      end;
+    except
+    end;
+  end;
+
   ExistingDir := GetExistingInstallDir;
-  Result := (ExistingDir <> '') or
-            FileExists(ExpandConstant('{app}\data\PG_VERSION')) or
-            FileExists(ExpandConstant('{app}\setup_config.json')) or
-            FileExists('D:\' + '{#MyAppDirName}\data\PG_VERSION') or
-            FileExists('C:\' + '{#MyAppDirName}\data\PG_VERSION');
+  if (ExistingDir <> '') and DirExists(ExistingDir) then
+  begin
+    Result := FileExists(AddBackslash(ExistingDir) + 'data\PG_VERSION') or
+              FileExists(AddBackslash(ExistingDir) + 'setup_config.json');
+    Exit;
+  end;
+
+  Result := False;
 end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
@@ -382,7 +533,7 @@ var
 begin
   Result := True;
   // 1. Terminate any previous running or stuck instances so files are not locked
-  Exec('taskkill.exe', '/F /IM PrathamOne.exe /IM pythonw.exe /IM postgres.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Exec('taskkill.exe', '/F /IM PrathamOne.exe /IM prathamone_backend.exe /IM pythonw.exe /IM postgres.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   // 2. Remove stale database lock if updating/reinstalling across possible paths
   if FileExists(ExpandConstant('{autopf}\{#MyAppName}\data\postmaster.pid')) then
     DeleteFile(ExpandConstant('{autopf}\{#MyAppName}\data\postmaster.pid'));
@@ -401,7 +552,7 @@ end;
 
 function NeedsDbInit: Boolean;
 begin
-  Result := FileExists(ExpandConstant('{app}\pgsql\bin\initdb.exe')) and (not FileExists(ExpandConstant('{app}\data\PG_VERSION')));
+  Result := FileExists(ExpandConstant('{app}\pgsql\bin\initdb.exe')) and (not FileExists(GetWritableDataRoot('') + '\data\PG_VERSION'));
 end;
 
 function GetAdminPassword(Param: String): String;
@@ -447,13 +598,13 @@ begin
   ConfigPage.Add('Administrator Password (min 14 characters):', True);
   ConfigPage.Add('Confirm Administrator Password:', True);
 
-  // Set default pre-filled values
+  // Set default pre-filled values (never pre-fill hardcoded static admin credentials)
   ConfigPage.Values[0] := 'Your Academy Name';
   ConfigPage.Values[1] := 'Main Campus';
   ConfigPage.Values[2] := '123 Education Hub, MG Road';
-  ConfigPage.Values[3] := '8779123007';
-  ConfigPage.Values[4] := 'PrathamOne2026!Admin';
-  ConfigPage.Values[5] := 'PrathamOne2026!Admin';
+  ConfigPage.Values[3] := '';
+  ConfigPage.Values[4] := '';
+  ConfigPage.Values[5] := '';
 
   // Academy Official Logo Selection Page (Optional)
   LogoPage := CreateInputFilePage(ConfigPage.ID,
@@ -543,20 +694,40 @@ var
   EscapedLogoPath: String;
   BackupDir: String;
   BackupTarget: String;
+  DumpFile: String;
+  DataRootDir: String;
   DataDir: String;
+  PgCtl: String;
+  PgDump: String;
+  PgPort: String;
   ResultCode: Integer;
 begin
-  // 1. Rule 013: Pre-upgrade automatic safety snapshot before copying new binaries
+  // 1. Rule 013 & DPDP: Automated logical pg_dump + data snapshot before copying binaries on upgrade
   if (CurStep = ssInstall) and IsUpgradeMode then
   begin
-    DataDir := ExpandConstant('{app}\data');
+    DataRootDir := GetWritableDataRoot('');
+    DataDir := DataRootDir + '\data';
     if not DirExists(DataDir) then
+      DataDir := ExpandConstant('{app}\data');
+    if (not DirExists(DataDir)) and (GetExistingInstallDir <> '') then
       DataDir := GetExistingInstallDir + '\data';
 
     if DirExists(DataDir) then
     begin
-      BackupDir := ExpandConstant('{app}\backups');
+      BackupDir := DataRootDir + '\backups';
       ForceDirectories(BackupDir);
+      PgPort := DetectPostgresPort(DataDir);
+      PgCtl := ExpandConstant('{app}\pgsql\bin\pg_ctl.exe');
+      PgDump := ExpandConstant('{app}\pgsql\bin\pg_dump.exe');
+
+      if FileExists(PgDump) and FileExists(PgCtl) and FileExists(DataDir + '\PG_VERSION') then
+      begin
+        Exec(PgCtl, 'start -w -t 30 -D "' + DataDir + '" -o "-p ' + PgPort + '" -l "' + DataDir + '\pg_upgrade_backup.log"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+        DumpFile := BackupDir + '\pre_upgrade_v' + '{#MyAppVersion}' + '_' + GetDateTimeString('yyyymmdd_hhnnss', #0, #0) + '.dump';
+        Exec(PgDump, '-h 127.0.0.1 -p ' + PgPort + ' -U postgres -Fc prashant_academy -f "' + DumpFile + '"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+        Exec(PgCtl, 'stop -w -t 15 -D "' + DataDir + '" -m fast', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+      end;
+
       BackupTarget := BackupDir + '\pre_upgrade_snapshot_v' + '{#MyAppVersion}' + '_' + GetDateTimeString('yyyymmdd_hhnnss', #0, #0);
       Exec('robocopy.exe', '"' + DataDir + '" "' + BackupTarget + '" /E /R:1 /W:1 /NP /NFL /NDL /NJH /NJS', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     end;
@@ -565,9 +736,14 @@ begin
   // 2. Post-installation configuration
   if CurStep = ssPostInstall then
   begin
-    // Rule 013: ONLY generate setup_config.json on FRESH install to prevent overwriting existing institutional profile & credentials!
+    // Rule 013: ONLY generate transient bootstrap config on FRESH install
     if not IsUpgradeMode then
     begin
+      DataRootDir := GetWritableDataRoot('');
+      ForceDirectories(DataRootDir);
+      if AdminPasswordValue = '' then
+        AdminPasswordValue := GenerateRandomBootstrapSecret;
+
       SelectedBoards := '';
       if AcademicPage.Values[0] then SelectedBoards := SelectedBoards + 'MSBSHSE,';
       if AcademicPage.Values[1] then SelectedBoards := SelectedBoards + 'CBSE,';
@@ -603,13 +779,13 @@ begin
         '  "phone": "' + ConfigPage.Values[3] + '",' + #13#10 +
         '  "logo_path": "' + EscapedLogoPath + '",' + #13#10 +
         '  "admin_username": "admin",' + #13#10 +
-        '  "admin_password": "' + AdminPasswordValue + '",' + #13#10 +
+        '  "bootstrap_admin_secret": "' + AdminPasswordValue + '",' + #13#10 +
         '  "boards": "' + SelectedBoards + '",' + #13#10 +
         '  "mediums": "' + SelectedMediums + '",' + #13#10 +
         '  "port": 2026' + #13#10 +
         '}';
 
-      SaveStringToFile(ExpandConstant('{app}\setup_config.json'), JsonContent, False);
+      SaveStringToFile(DataRootDir + '\setup_config.json', JsonContent, False);
       UpdateHostsFile(SanitizeSlug(ConfigPage.Values[0]));
     end;
   end;
@@ -618,21 +794,40 @@ end;
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   BackupDir: String;
+  DataDir: String;
+  PgCtl: String;
+  PgDump: String;
+  PgPort: String;
   ResultCode: Integer;
 begin
   if CurUninstallStep = usUninstall then
   begin
     RemoveHostsEntries;
-    if FileExists(ExpandConstant('{app}\pgsql\bin\pg_dump.exe')) then
+    DataDir := ExpandConstant('{localappdata}\{#MyAppDirName}\data');
+    if not DirExists(DataDir) then
+      DataDir := ExpandConstant('{app}\data');
+
+    PgCtl := ExpandConstant('{app}\pgsql\bin\pg_ctl.exe');
+    PgDump := ExpandConstant('{app}\pgsql\bin\pg_dump.exe');
+
+    if (not UninstallSilent) and DirExists(DataDir) and FileExists(PgDump) and FileExists(DataDir + '\PG_VERSION') then
     begin
       if MsgBox('Would you like to save a safety backup of your student and fee database in your Documents folder before uninstalling?', mbConfirmation, MB_YESNO) = IDYES then
       begin
         BackupDir := ExpandConstant('{userdocs}\PrathamOne_Backups');
         ForceDirectories(BackupDir);
-        Exec(ExpandConstant('{app}\pgsql\bin\pg_dump.exe'),
-             '-U postgres -p 5432 -Fc prashant_academy -f "' + BackupDir + '\prathamone_uninstall_backup.dump"',
-             '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+        PgPort := DetectPostgresPort(DataDir);
+        if FileExists(PgCtl) then
+          Exec(PgCtl, 'start -w -t 30 -D "' + DataDir + '" -o "-p ' + PgPort + '" -l "' + DataDir + '\pg_uninstall_backup.log"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+        Exec(PgDump, '-h 127.0.0.1 -p ' + PgPort + ' -U postgres -Fc prashant_academy -f "' + BackupDir + '\prathamone_uninstall_backup.dump"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+        if FileExists(PgCtl) then
+          Exec(PgCtl, 'stop -w -t 15 -D "' + DataDir + '" -m fast', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
         MsgBox('Database backup saved to: ' + BackupDir, mbInformation, MB_OK);
+      end;
+
+      if MsgBox('Keep your local database and records for future reinstalls?' + #13#10 + #13#10 + 'Select YES to preserve your data folder (' + DataDir + '), or NO to permanently delete all local database files.', mbConfirmation, MB_YESNO or MB_DEFBUTTON1) = IDNO then
+      begin
+        DelTree(DataDir, True, True, True);
       end;
     end;
   end;

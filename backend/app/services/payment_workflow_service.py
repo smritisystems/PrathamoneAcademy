@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-23
+#  * @updated     2026-11-26
 #  *
 #  * @description Service managing payment lifecycle states, ERP approval rules, audited modifications, receipt versioning, and refunds.
 #  */
@@ -20,7 +20,7 @@ import json
 from datetime import datetime, timezone, date
 from decimal import Decimal
 from typing import Optional, List, Dict, Any
-from sqlalchemy import select, and_, func
+from sqlalchemy import select, and_, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException

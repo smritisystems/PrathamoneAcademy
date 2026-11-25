@@ -49,15 +49,26 @@ namespace PrathamOne
                     }
                 }
 
-                // Stop pythonw backend instances
-                foreach (Process p in Process.GetProcessesByName("pythonw"))
+                // Stop standalone backend and pythonw instances
+                foreach (string procName in new string[] { "prathamone_backend", "pythonw" })
                 {
-                    try { p.Kill(); } catch { }
+                    foreach (Process p in Process.GetProcessesByName(procName))
+                    {
+                        try { p.Kill(); } catch { }
+                    }
                 }
 
-                // Stop PostgreSQL cleanly
+                // Stop PostgreSQL cleanly (supports both Program Files -> LocalAppData and custom data root)
                 string pgCtl = Path.Combine(appDir, @"pgsql\bin\pg_ctl.exe");
-                string dataDir = Path.Combine(appDir, "data");
+                string localDataDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "PrathamOneEduOS",
+                    "data"
+                );
+                string appDataDir = Path.Combine(appDir, "data");
+                string dataDir = File.Exists(Path.Combine(appDataDir, "PG_VERSION"))
+                    ? appDataDir
+                    : (Directory.Exists(localDataDir) ? localDataDir : appDataDir);
                 if (File.Exists(pgCtl) && Directory.Exists(dataDir))
                 {
                     ProcessStartInfo psi = new ProcessStartInfo();

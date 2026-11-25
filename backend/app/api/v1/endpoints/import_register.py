@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-16
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints for legacy fee register spreadsheet parsing and ledger migration.
 #  */
@@ -33,14 +33,14 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
-DEFAULT_WORKBOOK_PATH = r"F:\Smriti-Clients Data\Prashant Academy\Book1.xlsx"
+DEFAULT_WORKBOOK_PATH = ""
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB upper bound for uploaded spreadsheets
 REGISTER_IMPORT_ROLES = ("superadmin", "sysadmin", "super_admin")
 
 
 class ImportExecuteRequest(BaseModel):
     replace_demo_data: bool = True
-    file_path: Optional[str] = DEFAULT_WORKBOOK_PATH
+    file_path: Optional[str] = None
 
 
 @router.get("/preview")

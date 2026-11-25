@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-24
+#  * @updated     2026-11-26
 #  *
 #  * @description REST API router for Communication Center, message templates, universal document sharing, delivery tracking, and automated event notifications.
 #  */
@@ -1103,7 +1103,8 @@ async def update_rules_endpoint(
     return await update_automation_rules(db, inst_id, update_data)
 
 
-@router.api_route("/automation/fee-reminders/preview", methods=["GET", "POST"])
+@router.get("/automation/fee-reminders/preview", operation_id="preview_fee_reminders_get")
+@router.post("/automation/fee-reminders/preview", operation_id="preview_fee_reminders_post")
 async def preview_fee_reminders_endpoint(
     payload: Optional[FeeRemindersPreviewRequest] = None,
     min_balance: Optional[float] = Query(None),

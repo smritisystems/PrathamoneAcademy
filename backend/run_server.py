@@ -1,0 +1,1083 @@
+#!/usr/bin/env python3
+# /**
+#  * @file        run_server.py
+#  * @project     PrathamOne Academy Coaching Institute Management System
+#  * @module      backend.run_server
+#  *
+#  * @author      Jawahar R. Mallah
+#  * @organization Smritisys & AITDL Networks
+#  * @client      Prashant Academy Coaching Institute
+#  * @copyright   Copyright (c) 2026 PrathamOne EduOS
+#  * @license     Proprietary
+#  *
+#  * @version     1.0.0
+#  * @created     2026-11-25
+#  * @updated     2026-11-26
+#  *
+#  * @description Standalone Windows backend entrypoint compiled with Nuitka.
+#  */
+
+import argparse
+import asyncio
+import atexit
+import ctypes
+import datetime
+import hashlib
+import ipaddress
+import json
+import os
+import re
+import secrets
+import shutil
+import signal
+import socket
+import stat
+import subprocess
+import sys
+import time
+from pathlib import Path
+from typing import List, Optional
+from urllib.parse import urlparse
+
+
+def _resolve_dirs() -> tuple[Path, Path]:
+    """Resolve backend directory and application root directory for both frozen Nuitka and dev runs."""
+    exe_name = Path(sys.executable).name.lower()
+    is_compiled = bool(getattr(sys, "frozen", False)) or (
+        exe_name not in ("python.exe", "pythonw.exe", "python", "python3")
+    )
+    if is_compiled:
+        backend_dir = Path(sys.executable).resolve().parent
+    else:
+        backend_dir = Path(__file__).resolve().parent
+    return backend_dir, backend_dir.parent
+
+
+def _is_dir_writable(path: Path) -> bool:
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        probe = path / f".write_probe_{os.getpid()}"
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink(missing_ok=True)
+        return True
+    except Exception:
+        return False
+
+
+def _resolve_data_root(app_root: Path) -> Path:
+    """Resolve user-writable storage root for data/, logs/, backups/, and .env (avoiding Program Files)."""
+    override = os.getenv("PRATHAM_DATA_ROOT", "").strip()
+    if override:
+        return Path(override)
+
+    # Preserve existing non-Program-Files installations (e.g., D:\PrathamOneEduOS\data)
+    existing_local_data = app_root / "data"
+    prog_files = {
+        p.lower()
+        for p in (
+            os.environ.get("ProgramFiles", ""),
+            os.environ.get("ProgramFiles(x86)", ""),
+            os.environ.get("ProgramW6432", ""),
+        )
+        if p
+    }
+    in_program_files = any(str(app_root).lower().startswith(pf) for pf in prog_files)
+    if not in_program_files and (existing_local_data / "PG_VERSION").is_file() and _is_dir_writable(app_root):
+        return app_root
+
+    local_app_data = os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")
+    if in_program_files or not _is_dir_writable(app_root):
+        return Path(local_app_data) / "PrathamOneEduOS"
+
+    return app_root
+
+
+BACKEND_DIR, APP_ROOT = _resolve_dirs()
+DATA_ROOT = _resolve_data_root(APP_ROOT)
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+os.chdir(str(BACKEND_DIR))
+
+
+_LOG_FP = None
+
+
+def _ensure_stdio_streams(log_path: Path):
+    """Redirect None stdout/stderr (when built with --windows-console-mode=disable) to a persistent log file."""
+    global _LOG_FP
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_fp = open(str(log_path), "a", encoding="utf-8", buffering=1)
+    if hasattr(log_fp, "reconfigure"):
+        try:
+            log_fp.reconfigure(write_through=True)
+        except Exception:
+            pass
+    _LOG_FP = log_fp
+    if sys.stdout is None:
+        sys.stdout = log_fp
+    if sys.stderr is None:
+        sys.stderr = log_fp
+    return log_fp
+
+
+def _is_port_in_use(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.5)
+        return s.connect_ex(("127.0.0.1", port)) == 0
+
+
+def _find_free_port(start_port: int, max_scan: int = 25) -> int:
+    for p in range(start_port, start_port + max_scan):
+        if not _is_port_in_use(p):
+            return p
+    return start_port
+
+
+def _load_env_file(env_path: Path) -> dict[str, str]:
+    loaded: dict[str, str] = {}
+    if not env_path.is_file():
+        return loaded
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, v = line.split("=", 1)
+            loaded[k.strip()] = v.strip().strip("'\"")
+    return loaded
+
+
+def _get_institute_slug(root_dir: Path) -> str:
+    slug = "prashantacademy"
+    cfg_file = root_dir / "setup_config.json"
+    if cfg_file.is_file():
+        try:
+            data = json.loads(cfg_file.read_text(encoding="utf-8"))
+            val = str(data.get("institute_name", ""))
+            cleaned = "".join(c.lower() for c in val if c.isalnum())
+            if cleaned and cleaned not in ("youracademyname", "institute"):
+                return cleaned
+        except Exception:
+            pass
+    env_vars = _load_env_file(root_dir / ".env")
+    for key in ("INSTITUTE_SLUG", "INSTITUTE_NAME"):
+        val = env_vars.get(key, "")
+        cleaned = "".join(c.lower() for c in val if c.isalnum())
+        if cleaned and cleaned not in ("youracademyname", "institute"):
+            return cleaned
+    return slug
+
+
+def generate_local_pki(output_dir: Path, extra_slugs: Optional[List[str]] = None):
+    """Generate Smritisys & AITDL local Root CA and SAN server SSL certificates."""
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    ca_cert_path = output_dir / "Smritisys_AITDL_Local_CA.cer"
+    ca_key_path = output_dir / "Smritisys_AITDL_Local_CA.key"
+    server_cert_path = output_dir / "prathamone_ssl_cert.pem"
+    server_key_path = output_dir / "prathamone_ssl_key.pem"
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    ca_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    ca_name = x509.Name([
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Smritisys & AITDL Networks"),
+        x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, "Security Operations"),
+        x509.NameAttribute(NameOID.COMMON_NAME, "Smritisys & AITDL Networks Local Root CA"),
+    ])
+    ca_cert = (
+        x509.CertificateBuilder()
+        .subject_name(ca_name)
+        .issuer_name(ca_name)
+        .public_key(ca_key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - datetime.timedelta(days=1))
+        .not_valid_after(now + datetime.timedelta(days=3650))
+        .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
+        .add_extension(
+            x509.KeyUsage(
+                digital_signature=True,
+                key_encipherment=False,
+                key_cert_sign=True,
+                crl_sign=True,
+                content_commitment=False,
+                data_encipherment=False,
+                key_agreement=False,
+                encipher_only=False,
+                decipher_only=False,
+            ),
+            critical=True,
+        )
+        .sign(ca_key, hashes.SHA256())
+    )
+    ca_cert_path.write_bytes(ca_cert.public_bytes(serialization.Encoding.PEM))
+    ca_key_path.write_bytes(
+        ca_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+    )
+
+    server_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    server_name = x509.Name([
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Smritisys & AITDL Networks"),
+        x509.NameAttribute(NameOID.COMMON_NAME, "prathamone.local"),
+    ])
+    domain_names = [
+        "localhost",
+        "*.localhost",
+        "prathamone",
+        "prathamone.local",
+        "classesname",
+        "classesname.local",
+        "aditiacademy",
+        "aditiacademy.local",
+        "prashantacademy",
+        "prashantacademy.local",
+    ]
+    if extra_slugs:
+        for slug in extra_slugs:
+            cleaned = "".join(c.lower() for c in slug if c.isalnum())
+            if cleaned and cleaned not in domain_names:
+                domain_names.append(cleaned)
+                domain_names.append(f"{cleaned}.local")
+
+    san_list: List[x509.GeneralName] = [x509.DNSName(d) for d in domain_names]
+    san_list.append(x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")))
+    san_list.append(x509.IPAddress(ipaddress.IPv6Address("::1")))
+
+    try:
+        host_name = socket.gethostname().lower()
+        for h_variant in (host_name, f"{host_name}.local"):
+            if h_variant not in domain_names:
+                domain_names.append(h_variant)
+                san_list.append(x509.DNSName(h_variant))
+        _, _, ip_list = socket.gethostbyname_ex(host_name)
+        for ip_str in ip_list:
+            try:
+                ip_obj = ipaddress.ip_address(ip_str)
+                if not ip_obj.is_loopback and x509.IPAddress(ip_obj) not in san_list:
+                    san_list.append(x509.IPAddress(ip_obj))
+            except ValueError:
+                pass
+    except Exception:
+        pass
+
+    server_cert = (
+        x509.CertificateBuilder()
+        .subject_name(server_name)
+        .issuer_name(ca_name)
+        .public_key(server_key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - datetime.timedelta(days=1))
+        .not_valid_after(now + datetime.timedelta(days=1825))
+        .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+        .add_extension(x509.SubjectAlternativeName(san_list), critical=False)
+        .add_extension(x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]), critical=False)
+        .sign(ca_key, hashes.SHA256())
+    )
+    server_cert_path.write_bytes(server_cert.public_bytes(serialization.Encoding.PEM))
+    server_key_path.write_bytes(
+        server_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+    )
+    print(f"[SSL PKI] Generated certificates in {output_dir} ({len(san_list)} SANs).")
+
+
+def configure_local_domains(root_dir: Path, backend_port: int = 2026) -> None:
+    """Configure Windows hosts entries and portproxy rules cleanly."""
+    slug = _get_institute_slug(root_dir)
+    hosts_path = Path(r"C:\Windows\System32\drivers\etc\hosts")
+    if hosts_path.exists():
+        try:
+            content = hosts_path.read_text(encoding="utf-8", errors="ignore")
+            required = ["prathamone", "prathamone.local", "classesname", "classesname.local"]
+            if slug and slug not in required:
+                required.extend([slug, f"{slug}.local"])
+            missing = [d for d in required if not re.search(rf"\b{re.escape(d)}\b", content, re.IGNORECASE)]
+            if missing:
+                entries = "\n\n# PrathamOne EduOS Local Domain Aliases\n" + "".join(
+                    f"127.0.0.1    {d}\n" for d in missing
+                )
+                os.chmod(str(hosts_path), stat.S_IWRITE)
+                with open(str(hosts_path), "a", encoding="utf-8") as f:
+                    f.write(entries)
+                subprocess.run(["ipconfig", "/flushdns"], capture_output=True, check=False)
+        except Exception as exc:
+            print(f"[HOSTS WARN] {exc}")
+
+    for cmd in [
+        ["netsh", "interface", "portproxy", "add", "v4tov4", "listenport=80", "listenaddress=127.0.0.1", f"connectport={backend_port}", "connectaddress=127.0.0.1"],
+        ["netsh", "interface", "portproxy", "add", "v4tov4", "listenport=443", "listenaddress=127.0.0.1", f"connectport={backend_port}", "connectaddress=127.0.0.1"],
+        ["netsh", "advfirewall", "firewall", "add", "rule", "name=PrathamOne EduOS Local Network", "dir=in", "action=allow", "protocol=TCP", f"localport={backend_port},80,443"],
+    ]:
+        try:
+            subprocess.run(cmd, capture_output=True, check=False)
+        except Exception:
+            pass
+
+
+def _ensure_env_file(root_dir: Path, db_port: int, db_password: str, institute_name: str = "", data_root: Optional[Path] = None) -> Path:
+    effective_root = data_root or root_dir
+    env_path = effective_root / ".env"
+    backend_env = root_dir / "backend" / ".env"
+    env_example = root_dir / ".env.example"
+
+    if env_path.exists():
+        if _is_dir_writable(backend_env.parent):
+            try:
+                backend_env.write_text(env_path.read_text(encoding="utf-8"), encoding="utf-8")
+            except Exception:
+                pass
+        return env_path
+
+    if not env_example.exists():
+        secret_key = secrets.token_hex(32)
+        db_url = f"postgresql+asyncpg://postgres:{db_password}@127.0.0.1:{db_port}/prashant_academy"
+        content = (
+            f"POSTGRES_USER=postgres\n"
+            f"POSTGRES_PASSWORD={db_password}\n"
+            f"POSTGRES_DB=prashant_academy\n"
+            f"POSTGRES_PORT={db_port}\n"
+            f"DATABASE_URL={db_url}\n"
+            f"SECRET_KEY={secret_key}\n"
+            f"ALGORITHM=HS256\n"
+        )
+    else:
+        content = env_example.read_text(encoding="utf-8")
+        secret_key = secrets.token_hex(32)
+        db_url = f"postgresql+asyncpg://postgres:{db_password}@127.0.0.1:{db_port}/prashant_academy"
+        lines = []
+        for line in content.splitlines():
+            if line.startswith("SECRET_KEY="):
+                lines.append(f"SECRET_KEY={secret_key}")
+            elif line.startswith("POSTGRES_PORT="):
+                lines.append(f"POSTGRES_PORT={db_port}")
+            elif line.startswith("POSTGRES_PASSWORD="):
+                lines.append(f"POSTGRES_PASSWORD={db_password}")
+            elif line.startswith("DATABASE_URL="):
+                lines.append(f"DATABASE_URL={db_url}")
+            else:
+                lines.append(line)
+        content = "\n".join(lines) + "\n"
+
+    slug = "".join(c.lower() for c in institute_name if c.isalnum()) or "prathamone"
+    if "INSTITUTE_NAME=" not in content:
+        content += f'\nINSTITUTE_NAME="{institute_name}"\nINSTITUTE_SLUG="{slug}"\n'
+
+    env_path.parent.mkdir(parents=True, exist_ok=True)
+    env_path.write_text(content, encoding="utf-8")
+    if _is_dir_writable(backend_env.parent):
+        try:
+            backend_env.write_text(content, encoding="utf-8")
+        except Exception:
+            pass
+    return env_path
+
+
+async def _ensure_database_exists(db_url: str):
+    import asyncpg
+
+    clean_url = db_url.replace("postgresql+asyncpg://", "postgresql://")
+    parsed = urlparse(clean_url)
+    target_db = parsed.path.lstrip("/") or "prashant_academy"
+    user = parsed.username or "postgres"
+    password = parsed.password or ""
+    host = parsed.hostname or "127.0.0.1"
+    port = parsed.port or 5432
+
+    conn = None
+    try:
+        conn = await asyncpg.connect(user=user, password=password, host=host, port=port, database="postgres", timeout=10.0)
+        exists = await conn.fetchval("SELECT 1 FROM pg_database WHERE datname = $1", target_db)
+        if not exists:
+            await conn.execute(f'CREATE DATABASE "{target_db}" OWNER "{user}" ENCODING "UTF8"')
+    finally:
+        if conn:
+            await conn.close()
+
+
+async def _save_license_credentials(db_url: str, serial_number: str, activation_key: str):
+    if not serial_number and not activation_key:
+        return
+    import asyncpg
+
+    clean_url = db_url.replace("postgresql+asyncpg://", "postgresql://")
+    conn = None
+    try:
+        conn = await asyncpg.connect(clean_url)
+        row = await conn.fetchrow("SELECT id FROM institutions ORDER BY id ASC LIMIT 1")
+        inst_id = row["id"] if row else 1
+        if serial_number:
+            await conn.execute(
+                """
+                INSERT INTO institution_settings (institution_id, category, key, value, data_type, is_secret, is_public, description, created_at, updated_at)
+                VALUES ($1, 'licensing', 'license.serial_number', $2, 'string', false, false, 'Serial number captured during setup', NOW(), NOW())
+                ON CONFLICT (institution_id, key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+                """,
+                inst_id,
+                serial_number,
+            )
+        if activation_key:
+            await conn.execute(
+                """
+                INSERT INTO institution_settings (institution_id, category, key, value, data_type, is_secret, is_public, description, created_at, updated_at)
+                VALUES ($1, 'licensing', 'license.activation_identifier', $2, 'string', false, false, 'Activation key captured during setup', NOW(), NOW())
+                ON CONFLICT (institution_id, key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+                """,
+                inst_id,
+                activation_key,
+            )
+    except Exception as exc:
+        print(f"[BOOTSTRAP WARN] Failed to store license keys: {exc}")
+    finally:
+        if conn:
+            await conn.close()
+
+
+def _run_inprocess_bootstrap(root_dir: Path, backend_dir: Path, pg_port: int, data_root: Optional[Path] = None):
+    """Execute zero-touch DB creation, Alembic migrations, master seeding, and PKI verification."""
+    effective_root = data_root or root_dir
+    cfg_file = effective_root / "setup_config.json"
+    if not cfg_file.exists():
+        cfg_file = root_dir / "setup_config.json"
+    setup_config = {}
+    if cfg_file.exists():
+        try:
+            setup_config = json.loads(cfg_file.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+    admin_password = (
+        setup_config.get("bootstrap_admin_secret")
+        or setup_config.get("admin_password")
+        or secrets.token_urlsafe(16)
+    )
+    raw_inst_name = str(setup_config.get("institute_name") or "").strip()
+    institute_name = (
+        raw_inst_name
+        if raw_inst_name and raw_inst_name != "Prashant Academy Coaching Institute"
+        else "Your Academy Name"
+    )
+    branch_name = str(setup_config.get("branch_name", "Main Campus")).strip() or "Main Campus"
+    address = str(setup_config.get("address", "Campus Address, Education Hub")).strip() or "Campus Address, Education Hub"
+    phone = str(setup_config.get("phone", "+91-8779-123-007")).strip() or "+91-8779-123-007"
+    boards = setup_config.get("boards") or "MSBSHSE,CBSE,ICSE,GSEB,COMPETITIVE"
+    mediums = setup_config.get("mediums") or "English,Semi-English,Hindi,Marathi,Gujarati"
+
+    logo_url = "/media/logo/prathamone-symbol-icon.svg"
+    raw_logo_path = str(setup_config.get("logo_path", "")).strip()
+    if raw_logo_path and Path(raw_logo_path).is_file():
+        try:
+            logo_ext = Path(raw_logo_path).suffix or ".png"
+            dest_name = f"custom-academy-logo{logo_ext}"
+            for sub in ("frontend/dist/media/logo", "backend/media/logo"):
+                dest_dir = root_dir / sub
+                if _is_dir_writable(dest_dir):
+                    dest_dir.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(raw_logo_path, dest_dir / dest_name)
+            logo_url = f"/media/logo/{dest_name}"
+        except Exception:
+            pass
+
+    env_vars = _load_env_file(effective_root / ".env")
+    if not env_vars:
+        env_vars = _load_env_file(root_dir / ".env")
+    db_password = env_vars.get("POSTGRES_PASSWORD") or "postgres"
+    _ensure_env_file(root_dir, pg_port, db_password, institute_name, data_root=effective_root)
+    env_vars = _load_env_file(effective_root / ".env")
+    os.environ.update(env_vars)
+
+    db_url = f"postgresql+asyncpg://postgres:{db_password}@127.0.0.1:{pg_port}/prashant_academy"
+    os.environ["DATABASE_URL"] = db_url
+    os.environ["INITIAL_ADMIN_PASSWORD"] = admin_password
+    os.environ["INSTITUTE_NAME"] = institute_name
+    os.environ["INSTITUTE_BRANCH"] = branch_name
+    os.environ["INSTITUTE_ADDRESS"] = address
+    os.environ["INSTITUTE_PHONE"] = phone
+    os.environ["INSTITUTE_LOGO_URL"] = logo_url
+    os.environ["SEED_BOARDS"] = boards
+    os.environ["SEED_MEDIUMS"] = mediums
+
+    asyncio.run(_ensure_database_exists(db_url))
+
+    alembic_ini = backend_dir / "alembic.ini"
+    if alembic_ini.exists():
+        from alembic import command
+        from alembic.config import Config
+
+        alembic_cfg = Config(str(alembic_ini))
+        alembic_cfg.set_main_option("script_location", str(backend_dir / "alembic"))
+        command.upgrade(alembic_cfg, "head")
+
+    import seed
+    asyncio.run(seed.seed(bootstrap_only=True))
+
+    serial_number = str(setup_config.get("serial_number", "")).strip()
+    activation_key = str(setup_config.get("activation_key", "")).strip()
+    asyncio.run(_save_license_credentials(db_url, serial_number, activation_key))
+
+    slug = "".join(c.lower() for c in institute_name if c.isalnum())
+    assets_dir = root_dir / "assets"
+    if not (assets_dir / "prathamone_ssl_cert.pem").exists() and _is_dir_writable(assets_dir):
+        generate_local_pki(assets_dir, extra_slugs=[slug] if slug else None)
+
+    for cand_cfg in {cfg_file, effective_root / "setup_config.json", root_dir / "setup_config.json"}:
+        if cand_cfg.exists():
+            try:
+                cand_cfg.unlink()
+            except Exception:
+                pass
+
+
+def _clean_stale_pid_file(data_dir: Path):
+    pid_file = data_dir / "postmaster.pid"
+    if not pid_file.exists():
+        return
+    try:
+        lines = pid_file.read_text(encoding="utf-8").splitlines()
+        if lines:
+            pid = int(lines[0].strip())
+            is_alive = False
+            if sys.platform == "win32":
+                h = ctypes.windll.kernel32.OpenProcess(0x1000, False, pid)
+                if h:
+                    ctypes.windll.kernel32.CloseHandle(h)
+                    is_alive = True
+            if not is_alive:
+                pid_file.unlink(missing_ok=True)
+    except Exception:
+        try:
+            pid_file.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+
+def _start_embedded_postgres(root_dir: Path, backend_dir: Path, data_root: Optional[Path] = None) -> tuple[Optional[subprocess.Popen], int]:
+    """Start embedded PostgreSQL if present in app_root/pgsql, returning (proc, pg_port)."""
+    effective_root = data_root or root_dir
+    pgsql_dir = root_dir / "pgsql"
+    data_dir = effective_root / "data"
+    pg_ctl = pgsql_dir / "bin" / "pg_ctl.exe"
+    postgres_exe = pgsql_dir / "bin" / "postgres.exe"
+    pg_isready = pgsql_dir / "bin" / "pg_isready.exe"
+    initdb = pgsql_dir / "bin" / "initdb.exe"
+    flags = 0x08000000 if sys.platform == "win32" else 0
+
+    if not postgres_exe.exists():
+        return None, int(os.getenv("POSTGRES_PORT", "5432"))
+
+    _clean_stale_pid_file(data_dir)
+    if not (data_dir / "PG_VERSION").exists() and initdb.exists():
+        data_dir.mkdir(parents=True, exist_ok=True)
+        subprocess.run(
+            [str(initdb), "-D", str(data_dir), "-U", "postgres", "-A", "trust", "--encoding=UTF8", "--locale=C", "--no-instructions"],
+            check=True,
+            creationflags=flags,
+        )
+
+    pg_port = 5433 if _is_port_in_use(5432) else 5432
+    if pg_port == 5433:
+        conf_file = data_dir / "postgresql.conf"
+        if conf_file.exists() and "port = 5433" not in conf_file.read_text(encoding="utf-8"):
+            with open(conf_file, "a", encoding="utf-8") as f:
+                f.write("\nport = 5433\n")
+
+    pg_proc = None
+    if not _is_port_in_use(pg_port):
+        data_dir.mkdir(parents=True, exist_ok=True)
+        pg_log = open(str(data_dir / "pg_server.log"), "a", encoding="utf-8")
+        pg_proc = subprocess.Popen(
+            [str(postgres_exe), "-D", str(data_dir), "-p", str(pg_port)],
+            stdout=pg_log,
+            stderr=pg_log,
+            creationflags=flags,
+        )
+        for _ in range(90):
+            if pg_isready.exists():
+                chk = subprocess.run(
+                    [str(pg_isready), "-h", "127.0.0.1", "-p", str(pg_port), "-U", "postgres"],
+                    capture_output=True,
+                    creationflags=flags,
+                )
+                if chk.returncode == 0:
+                    break
+            elif _is_port_in_use(pg_port):
+                break
+            time.sleep(0.5)
+
+    # Check if bootstrap/alembic stamp needs execution
+    bootstrap_marker = data_dir / ".bootstrap_complete"
+    alembic_dir = backend_dir / "alembic" / "versions"
+    stamp_src = b"standalone"
+    if alembic_dir.exists():
+        stamp_src += "|".join(sorted(p.name for p in alembic_dir.iterdir())).encode("utf-8")
+    current_stamp = hashlib.sha256(stamp_src).hexdigest()
+    needs_bootstrap = (
+        not (effective_root / ".env").exists()
+        or (effective_root / "setup_config.json").exists()
+        or (root_dir / "setup_config.json").exists()
+        or not bootstrap_marker.exists()
+        or bootstrap_marker.read_text(encoding="utf-8").strip() != current_stamp
+    )
+    if needs_bootstrap:
+        _run_inprocess_bootstrap(root_dir, backend_dir, pg_port, data_root=effective_root)
+        bootstrap_marker.write_text(current_stamp, encoding="utf-8")
+
+    return pg_proc, pg_port
+
+
+def _stop_postgres_graceful(root_dir: Path, pg_proc: Optional[subprocess.Popen], data_root: Optional[Path] = None):
+    effective_root = data_root or root_dir
+    pg_ctl = root_dir / "pgsql" / "bin" / "pg_ctl.exe"
+    data_dir = effective_root / "data"
+    flags = 0x08000000 if sys.platform == "win32" else 0
+    if pg_proc and pg_proc.poll() is None and pg_ctl.exists() and data_dir.exists():
+        try:
+            subprocess.run([str(pg_ctl), "stop", "-D", str(data_dir), "-m", "fast"], capture_output=True, creationflags=flags, timeout=8)
+        except Exception:
+            try:
+                pg_proc.terminate()
+            except Exception:
+                pass
+
+
+def _nuitka_dependency_hints():
+    """Ensure Nuitka standalone includes dynamic runtime dependencies used by external app/ modules."""
+    import aiohttp.client  # noqa
+    import alembic  # noqa
+    import asyncpg  # noqa
+    import bcrypt  # noqa
+    import click  # noqa
+    import cryptography  # noqa
+    import cryptography.exceptions  # noqa
+    import cryptography.hazmat.primitives  # noqa
+    import cryptography.hazmat.primitives.asymmetric.ed25519  # noqa
+    import cryptography.hazmat.primitives.ciphers.aead  # noqa
+    import dotenv  # noqa
+    import email_validator  # noqa
+    import fastapi  # noqa
+    import fastapi.security  # noqa
+    import greenlet  # noqa
+    import h11  # noqa
+    import httpx  # noqa
+    import jinja2  # noqa
+    import jwt  # noqa
+    import jwt.exceptions  # noqa
+    import limits  # noqa
+    import limits.aio  # noqa
+    import limits.storage  # noqa
+    import multipart  # noqa
+    import openpyxl  # noqa
+    import openpyxl.styles  # noqa
+    import openpyxl.utils  # noqa
+    import passlib  # noqa
+    import passlib.handlers.bcrypt  # noqa
+    import PIL.Image  # noqa
+    import psycopg2  # noqa
+    import pydantic  # noqa
+    import pydantic_core  # noqa
+    import pydantic_settings  # noqa
+    import python_multipart  # noqa
+    import qrcode  # noqa
+    import qrcode.image.svg  # noqa
+    import slowapi  # noqa
+    import slowapi.util  # noqa
+    import sqlalchemy  # noqa
+    import sqlalchemy.dialects.postgresql  # noqa
+    import sqlalchemy.dialects.postgresql.asyncpg  # noqa
+    import sqlalchemy.ext.asyncio  # noqa
+    import sqlalchemy.orm  # noqa
+    import sqlalchemy.pool  # noqa
+    import starlette  # noqa
+    import starlette.requests  # noqa
+    import tzdata  # noqa
+    import uvicorn  # noqa
+    import uvicorn.lifespan.on  # noqa
+    import uvicorn.loops.asyncio  # noqa
+    import uvicorn.protocols.http.h11_impl  # noqa
+    import uvicorn.protocols.websockets.websockets_impl  # noqa
+    import websockets  # noqa
+    import binascii  # noqa
+    import calendar  # noqa
+    import csv  # noqa
+    import dataclasses  # noqa
+    import decimal  # noqa
+    import functools  # noqa
+    import gzip  # noqa
+    import hmac  # noqa
+    import html  # noqa
+    import ipaddress  # noqa
+    import logging.config  # noqa
+    import math  # noqa
+    import string  # noqa
+    import struct  # noqa
+    import tempfile  # noqa
+    import urllib.error  # noqa
+    import urllib.request  # noqa
+    import uuid  # noqa
+    import winreg  # noqa
+    import zipfile  # noqa
+    import zoneinfo  # noqa
+
+
+def _create_progressive_asgi_app(shutdown_callback=None):
+    """Bind /health, /openapi.json, and SPA static assets immediately while loading full routers in background."""
+    import threading
+    from fastapi import FastAPI, Request
+    from fastapi.responses import FileResponse, JSONResponse, Response
+    from fastapi.staticfiles import StaticFiles
+
+    bootstrap_app = FastAPI(
+        title="PrathamOne EduOS — Coaching Institute Edition",
+        version="1.0.0",
+        docs_url=None,
+        redoc_url=None,
+    )
+
+    @bootstrap_app.middleware("http")
+    async def _bootstrap_ipc_guard(request: Request, call_next):
+        desktop_token = os.getenv("PRATHAM_DESKTOP_TOKEN")
+        if not desktop_token:
+            return await call_next(request)
+        path = request.url.path
+        if path == "/health" or path.startswith("/health/"):
+            return await call_next(request)
+        client_host = request.client.host if request.client else "127.0.0.1"
+        is_loopback = False
+        is_private_lan = False
+        try:
+            ip_obj = ipaddress.ip_address(client_host)
+            is_loopback = ip_obj.is_loopback
+            is_private_lan = ip_obj.is_private and not ip_obj.is_loopback
+        except ValueError:
+            is_loopback = client_host in ("127.0.0.1", "::1", "localhost")
+
+        if is_loopback:
+            token_hdr = request.headers.get("x-pratham-client-token")
+            cookie_token = request.cookies.get("pratham_client_token")
+            if not ((token_hdr == desktop_token) or (cookie_token == desktop_token)):
+                return JSONResponse(
+                    status_code=403,
+                    content={
+                        "detail": "Direct loopback access forbidden. Please launch PrathamOne EduOS via the native desktop application."
+                    },
+                )
+            response = await call_next(request)
+            if token_hdr == desktop_token and cookie_token != desktop_token:
+                response.set_cookie(
+                    key="pratham_client_token",
+                    value=desktop_token,
+                    httponly=True,
+                    samesite="lax",
+                    path="/",
+                    secure=(request.url.scheme == "https"),
+                )
+            return response
+
+        allow_lan = os.getenv("PRATHAM_ALLOW_LAN_ACCESS", "true").lower() in ("true", "1", "yes")
+        if is_private_lan and not allow_lan:
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "LAN network access is disabled by institute administrator."},
+            )
+        if not is_private_lan:
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "External untrusted network access forbidden."},
+            )
+        return await call_next(request)
+
+    static_dir = os.getenv(
+        "STATIC_DIR",
+        os.path.join(str(APP_ROOT), "frontend", "dist"),
+    )
+
+    @bootstrap_app.get("/")
+    async def _bootstrap_root():
+        index_file = os.path.join(static_dir, "index.html")
+        if os.path.isdir(static_dir) and os.path.isfile(index_file):
+            return FileResponse(index_file)
+        return {"product": "PrathamOne EduOS", "status": "initializing"}
+
+    @bootstrap_app.get("/health")
+    async def _bootstrap_health():
+        return {
+            "status": "healthy",
+            "product": "PrathamOne EduOS",
+            "version": "1.0.0",
+            "alembic_head": "056_expense_and_cash_register",
+        }
+
+    if os.path.isdir(static_dir) and os.path.isfile(os.path.join(static_dir, "index.html")):
+        assets_dir = os.path.join(static_dir, "assets")
+        if os.path.isdir(assets_dir):
+            bootstrap_app.mount("/assets", StaticFiles(directory=assets_dir), name="bootstrap_spa_assets")
+
+        @bootstrap_app.get("/{full_path:path}", include_in_schema=False)
+        async def _bootstrap_spa(full_path: str):
+            if full_path == "api" or full_path.startswith("api/"):
+                return JSONResponse(status_code=404, content={"detail": "API endpoint not found"})
+            if full_path == "health":
+                return {"status": "healthy"}
+            static_root = Path(static_dir).resolve()
+            candidate = (static_root / full_path).resolve()
+            if candidate.is_relative_to(static_root) and candidate.is_file():
+                return FileResponse(str(candidate))
+            return FileResponse(os.path.join(static_dir, "index.html"))
+
+    state = {
+        "real_app": None,
+        "ready_event": None,
+        "error": None,
+    }
+
+    async def _finalize_real_app(loaded_app):
+        try:
+            await loaded_app.router.startup()
+            state["real_app"] = loaded_app
+        except Exception as exc:
+            state["error"] = f"{type(exc).__name__}: {exc}"
+        finally:
+            if state["ready_event"] is not None:
+                state["ready_event"].set()
+
+    def _background_import(loop: asyncio.AbstractEventLoop):
+        try:
+            from app.main import app as loaded_app
+            loop.call_soon_threadsafe(lambda: asyncio.create_task(_finalize_real_app(loaded_app)))
+        except Exception as exc:
+            state["error"] = f"{type(exc).__name__}: {exc}"
+            if state["ready_event"] is not None:
+                loop.call_soon_threadsafe(state["ready_event"].set)
+
+    async def _wait_for_real_app():
+        ev = state["ready_event"]
+        if ev is not None and not ev.is_set():
+            await asyncio.wait_for(ev.wait(), timeout=120.0)
+
+    async def progressive_asgi(scope, receive, send):
+        real_app = state["real_app"]
+        scope_type = scope.get("type")
+
+        if scope_type == "lifespan":
+            while True:
+                message = await receive()
+                msg_type = message.get("type")
+                if msg_type == "lifespan.startup":
+                    state["ready_event"] = asyncio.Event()
+                    loop = asyncio.get_running_loop()
+                    threading.Thread(
+                        target=_background_import,
+                        args=(loop,),
+                        name="prathamone-router-loader",
+                        daemon=True,
+                    ).start()
+                    await send({"type": "lifespan.startup.complete"})
+                elif msg_type == "lifespan.shutdown":
+                    loaded = state["real_app"]
+                    if loaded is not None:
+                        try:
+                            await loaded.router.shutdown()
+                        except Exception:
+                            pass
+                        try:
+                            from app.core.database import engine
+                            await engine.dispose()
+                        except Exception:
+                            pass
+                    await send({"type": "lifespan.shutdown.complete"})
+                    return
+            return
+
+        path = scope.get("path", "")
+        if path == "/_desktop/shutdown" and scope.get("method") == "POST" and shutdown_callback is not None:
+            desktop_token = os.getenv("PRATHAM_DESKTOP_TOKEN")
+            client_host = (scope.get("client") or ("127.0.0.1", 0))[0]
+            try:
+                is_loopback = ipaddress.ip_address(client_host).is_loopback
+            except ValueError:
+                is_loopback = client_host in ("127.0.0.1", "::1", "localhost")
+            hdrs = {k.decode("latin1").lower(): v.decode("latin1") for k, v in scope.get("headers", [])}
+            token_ok = bool(desktop_token) and hdrs.get("x-pratham-client-token") == desktop_token
+            if is_loopback and token_ok:
+                shutdown_callback()
+                resp = JSONResponse(status_code=200, content={"status": "shutting_down"})
+            else:
+                resp = JSONResponse(status_code=403, content={"detail": "Forbidden"})
+            await resp(scope, receive, send)
+            return
+
+        if real_app is not None:
+            await real_app(scope, receive, send)
+            return
+
+        if scope_type == "websocket":
+            await _wait_for_real_app()
+            if state["real_app"] is not None:
+                await state["real_app"](scope, receive, send)
+            return
+
+        path = scope.get("path", "")
+        if path.startswith("/api/"):
+            await _wait_for_real_app()
+            if state["real_app"] is not None:
+                await state["real_app"](scope, receive, send)
+                return
+            err_resp = JSONResponse(
+                status_code=503,
+                content={"detail": f"Backend initializing or unavailable: {state['error'] or 'timeout'}"},
+            )
+            await err_resp(scope, receive, send)
+            return
+
+        await bootstrap_app(scope, receive, send)
+
+    return progressive_asgi
+
+
+# Populated inside clean_src during ADR-009 Gate 2 release builds
+_EXPECTED_PYD_MANIFEST: Optional[dict[str, str]] = None
+
+
+def _verify_pyd_integrity() -> None:
+    """Verify compiled app/core and app/services .pyd binaries against the embedded release manifest."""
+    exe_name = Path(sys.executable).name.lower()
+    is_compiled = bool(getattr(sys, "frozen", False)) or (
+        exe_name not in ("python.exe", "pythonw.exe", "python", "python3")
+    )
+    manifest = _EXPECTED_PYD_MANIFEST
+    if not is_compiled and not manifest:
+        return
+
+    for sub in ("app/core", "app/services"):
+        sub_dir = BACKEND_DIR / sub
+        if not sub_dir.is_dir():
+            continue
+        for item in sub_dir.rglob("*"):
+            if item.is_file() and item.suffix.lower() in {".py", ".pyc", ".pyo"}:
+                raise SystemExit(f"CRITICAL: Unauthorized Python source file detected in {sub}: {item.name}")
+
+    if not manifest:
+        return
+
+    for rel_posix, expected_hash in manifest.items():
+        target = BACKEND_DIR / rel_posix
+        if not target.is_file():
+            raise SystemExit(f"CRITICAL: Protected extension missing: {rel_posix}")
+        actual_hash = hashlib.sha256(target.read_bytes()).hexdigest().lower()
+        if actual_hash != expected_hash.lower():
+            raise SystemExit(f"CRITICAL: Runtime integrity mismatch detected for {rel_posix}")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="PrathamOne EduOS Standalone Backend Server")
+    parser.add_argument("--port", type=int, default=0, help="Explicit HTTP/HTTPS port override")
+    parser.add_argument("--host", default="127.0.0.1", help="Bind host address (default loopback 127.0.0.1)")
+    parser.add_argument("--no-browser", action="store_true", help="Compatibility flag for desktop shell")
+    parser.add_argument("--uvicorn-only", action="store_true", help="Skip embedded PostgreSQL management")
+    parser.add_argument("--generate-ssl", action="store_true", help="Generate local SSL certificates and exit")
+    parser.add_argument("--configure-domains", action="store_true", help="Configure local hosts and portproxy and exit")
+    parser.add_argument("--healthcheck-smoke", action="store_true", help="Verify app import, .pyd extensions, and OpenAPI schema")
+    args = parser.parse_args()
+
+    if args.generate_ssl:
+        slug = _get_institute_slug(APP_ROOT)
+        assets_dir = APP_ROOT / "assets"
+        generate_local_pki(assets_dir, extra_slugs=[slug] if slug else None)
+        return
+
+    if args.configure_domains:
+        configure_local_domains(APP_ROOT, backend_port=args.port or 2026)
+        return
+
+    if args.healthcheck_smoke:
+        _verify_pyd_integrity()
+        os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/prashant_academy")
+        os.environ.setdefault("SECRET_KEY", "smoke_test_secret_key_for_verification_only_1234567890abcdef12345678")
+        os.environ.setdefault("DEBUG", "false")
+        from app.main import app as fastapi_app
+        schema = fastapi_app.openapi()
+        paths_count = len(schema.get("paths", {}))
+        if paths_count < 10:
+            raise RuntimeError(f"Unexpectedly small OpenAPI schema path count: {paths_count}")
+        print(f"SMOKE_OK paths={paths_count}")
+        return
+
+    _ensure_stdio_streams(DATA_ROOT / "logs" / "backend_server.log")
+    _verify_pyd_integrity()
+
+    pg_proc: Optional[subprocess.Popen] = None
+    pg_port = int(os.getenv("POSTGRES_PORT", "5432"))
+    if not args.uvicorn_only:
+        pg_proc, pg_port = _start_embedded_postgres(APP_ROOT, BACKEND_DIR, data_root=DATA_ROOT)
+        atexit.register(_stop_postgres_graceful, APP_ROOT, pg_proc, DATA_ROOT)
+
+    env_vars = _load_env_file(DATA_ROOT / ".env")
+    if not env_vars:
+        env_vars = _load_env_file(APP_ROOT / ".env")
+    for k, v in env_vars.items():
+        os.environ.setdefault(k, v)
+
+    if not args.uvicorn_only and (APP_ROOT / "pgsql" / "bin" / "postgres.exe").exists():
+        db_pass = os.environ.get("POSTGRES_PASSWORD", "postgres")
+        os.environ["DATABASE_URL"] = f"postgresql+asyncpg://postgres:{db_pass}@127.0.0.1:{pg_port}/prashant_academy"
+
+    static_dist = APP_ROOT / "frontend" / "dist"
+    if static_dist.exists():
+        os.environ["STATIC_DIR"] = str(static_dist)
+
+    port = args.port or int(os.getenv("PORT", "2026"))
+    if not args.port and _is_port_in_use(port):
+        port = _find_free_port(2027)
+
+    cert_file = next(
+        (c for c in [APP_ROOT / "assets" / "prathamone_ssl_cert.pem", APP_ROOT / "installer" / "assets" / "prathamone_ssl_cert.pem"] if c.is_file()),
+        None,
+    )
+    key_file = next(
+        (k for k in [APP_ROOT / "assets" / "prathamone_ssl_key.pem", APP_ROOT / "installer" / "assets" / "prathamone_ssl_key.pem"] if k.is_file()),
+        None,
+    )
+
+    def _handle_sig(_signum, _frame):
+        _stop_postgres_graceful(APP_ROOT, pg_proc, DATA_ROOT)
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, _handle_sig)
+    signal.signal(signal.SIGTERM, _handle_sig)
+
+    import uvicorn
+
+    server_ref: dict[str, Optional[uvicorn.Server]] = {"server": None}
+
+    def _trigger_graceful_shutdown():
+        srv = server_ref["server"]
+        if srv is not None:
+            srv.should_exit = True
+
+    progressive_app = _create_progressive_asgi_app(shutdown_callback=_trigger_graceful_shutdown)
+
+    uvicorn_kwargs = {
+        "host": args.host,
+        "port": port,
+        "log_level": "info",
+        "use_colors": False,
+    }
+    if cert_file and key_file:
+        uvicorn_kwargs["ssl_certfile"] = str(cert_file)
+        uvicorn_kwargs["ssl_keyfile"] = str(key_file)
+
+    config = uvicorn.Config(progressive_app, **uvicorn_kwargs)
+    server = uvicorn.Server(config)
+    server_ref["server"] = server
+    server.run()
+
+
+if __name__ == "__main__":
+    main()

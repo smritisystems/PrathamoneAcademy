@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-20
-#  * @updated     2026-11-21
+#  * @updated     2026-11-26
 #  *
 #  * @description Cryptographic hardware node-locking engine. Extracts immutable motherboard,
 #  */
@@ -42,6 +42,20 @@ def _get_registry_machine_guid() -> str:
     except Exception as exc:
         logger.debug("Could not read registry MachineGuid: %s", exc)
         return "UNKNOWN_GUID"
+
+
+def _get_registry_hardware_value(subkey: str, value_name: str) -> str:
+    """Fast native Windows registry read used as fallback if WMI/PowerShell times out."""
+    if os.name != "nt":
+        return "NON_NT_SYSTEM"
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, subkey) as key:
+            val, _ = winreg.QueryValueEx(key, value_name)
+            cleaned = str(val).strip()
+            return cleaned if cleaned else "UNKNOWN"
+    except Exception:
+        return "UNKNOWN"
 
 
 def _query_wmi_property(cmd_snippet: str) -> str:
@@ -78,8 +92,20 @@ def get_hardware_components() -> Dict[str, str]:
         }
 
     motherboard_uuid = _query_wmi_property("(Get-CimInstance Win32_ComputerSystemProduct).UUID")
+    if motherboard_uuid == "UNKNOWN":
+        motherboard_uuid = _get_registry_hardware_value(
+            r"HARDWARE\DESCRIPTION\System\BIOS", "BaseBoardProduct"
+        )
     cpu_id = _query_wmi_property("(Get-CimInstance Win32_Processor).ProcessorId")
+    if cpu_id == "UNKNOWN":
+        cpu_id = _get_registry_hardware_value(
+            r"HARDWARE\DESCRIPTION\System\CentralProcessor\0", "ProcessorNameString"
+        )
     disk_serial = _query_wmi_property("(Get-CimInstance Win32_DiskDrive | Select-Object -First 1).SerialNumber")
+    if disk_serial == "UNKNOWN":
+        disk_serial = _get_registry_hardware_value(
+            r"SYSTEM\CurrentControlSet\Control\IDConfigDB\Hardware Profiles\0001", "HwProfileGuid"
+        )
     machine_guid = _get_registry_machine_guid()
 
     return {
@@ -111,6 +137,14 @@ def verify_hardware_fingerprint(target_hardware_id: str) -> Tuple[bool, str]:
     if not target_hardware_id or not isinstance(target_hardware_id, str):
         return False, "Target hardware identifier is missing or invalid."
 
+    comps = get_hardware_components()
+    unknown_count = sum(
+        1 for k in ("motherboard_uuid", "cpu_id", "disk_serial", "machine_guid")
+        if comps.get(k) in ("", "UNKNOWN", "UNKNOWN_GUID", None)
+    )
+    if os.name == "nt" and unknown_count >= 3:
+        return False, "Insufficient immutable hardware identifiers detected on host."
+
     current_hw_id = get_machine_hardware_fingerprint()
 
     # Normalize comparison
@@ -120,8 +154,10 @@ def verify_hardware_fingerprint(target_hardware_id: str) -> Tuple[bool, str]:
     if target_clean == current_clean:
         return True, "Hardware identity verified and matched."
 
-    # Development or wildcard bypass for testing
-    if target_clean in ("PRATHAM-DEV-MASTER-ALL", "PRATHAM-WILDCARD-UNRESTRICTED"):
+    # Enterprise signed wildcard OR explicit opt-in developer override
+    if target_clean == "PRATHAM-WILDCARD-UNRESTRICTED":
         return True, "Wildcard enterprise developer license verified."
+    if target_clean == "PRATHAM-DEV-MASTER-ALL" and os.getenv("PRATHAM_ALLOW_DEV_MASTER_LICENSE") == "1":
+        return True, "Developer master license verified."
 
     return False, f"Hardware mismatch detected! Machine '{current_clean}' does not match registered license target '{target_clean}'."

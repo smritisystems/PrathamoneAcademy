@@ -77,7 +77,10 @@
         "PrathamOne.exe",
         "StopPrathamOne.exe",
         "PrathamOneLauncher.bat",
-        "StopPrathamOne.bat"
+        "StopPrathamOne.bat",
+        "Microsoft.Web.WebView2.Core.dll",
+        "Microsoft.Web.WebView2.WinForms.dll",
+        "WebView2Loader.dll"
       ]
     }
   },

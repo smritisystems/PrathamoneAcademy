@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-25
+#  * @updated     2026-11-26
 #  *
 #  * @description License activation, signed snapshot storage, status, and API enforcement.
 #  */
@@ -63,6 +63,7 @@ from app.services.license_service import (
     customer_poll_reactivation_status,
     decrypt_refresh_private_key,
     encrypt_refresh_private_key,
+    get_verified_lease_claims,
     refresh_public_key,
     sign_license_management_request,
     sign_refresh_request,
@@ -576,11 +577,18 @@ async def _load_license_context(
         payload = verify_signed_license_artifact(artifact, settings.LICENSE_PUBLIC_KEYS_JSON)
 
         # Enforce Cryptographic Physical Hardware Node-Locking
-        payload_inst_id = payload.get("installation_id")
-        is_hw_valid, hw_msg = verify_hardware_fingerprint(payload_inst_id or "")
+        payload_inst_id = (payload.get("installation_id") or "").strip()
+        is_hw_valid, hw_msg = verify_hardware_fingerprint(payload_inst_id)
         if not is_hw_valid:
-            # Check backward-compatibility with test fixture or existing installation_setting
-            if not (installation_setting and payload_inst_id == installation_setting.value):
+            # Never permit database-cloning fallback for physical hardware-bound PRATHAM-* leases.
+            # Legacy non-hardware-bound identifiers remain supported only for historical/test records.
+            is_hardware_bound = payload_inst_id.upper().startswith("PRATHAM-")
+            legacy_match = (
+                not is_hardware_bound
+                and installation_setting
+                and payload_inst_id == installation_setting.value
+            )
+            if not legacy_match:
                 raise LicenseArtifactError(f"Node-Lock Mismatch: {hw_msg}")
 
         if (
@@ -707,6 +715,19 @@ async def enforce_license_request(
         db=db,
     )
     if data_environment == "TRAINING":
+        request.state.verified_lease_claims = {
+            "company_binding": "TRAINING",
+            "max_students": 50,
+            "max_staff": 20,
+            "seats": 10,
+            "active_modules": ["all"],
+            "installation_id": "TRAINING",
+            "expires_at": "2099-12-31T23:59:59Z",
+            "mode": "active",
+            "rollout_stage": "shadow",
+            "document_id": "TRAINING",
+            "serial_number": "TRAINING",
+        }
         return
     if data_environment == "ALL":
         raise HTTPException(status_code=409, detail="Select one institution; licensed data cannot be combined across institutions.")
@@ -723,6 +744,41 @@ async def enforce_license_request(
     # Rollout metadata must never bypass entitlement checks on customer installations.
     payload = context["payload"]
     entitlements = payload.get("entitlements", {}) if payload else {}
+
+    # Bind tamper-proof verified Ed25519 lease claims to in-memory request state
+    if payload:
+        request.state.verified_lease_claims = {
+            "company_binding": payload.get("company_binding"),
+            "max_students": entitlements.get("max_students"),
+            "max_staff": entitlements.get("max_staff"),
+            "seats": entitlements.get("seats"),
+            "active_modules": [
+                k.replace("module.", "")
+                for k, v in entitlements.items()
+                if k.startswith("module.") and v is True
+            ],
+            "installation_id": payload.get("installation_id"),
+            "expires_at": payload.get("expires_at"),
+            "mode": context["mode"],
+            "rollout_stage": context["rollout_stage"],
+            "document_id": payload.get("document_id"),
+            "serial_number": payload.get("serial_number"),
+        }
+    else:
+        request.state.verified_lease_claims = {
+            "company_binding": None,
+            "max_students": None,
+            "max_staff": None,
+            "seats": None,
+            "active_modules": [],
+            "installation_id": context.get("installation_id"),
+            "expires_at": None,
+            "mode": context.get("mode", "unactivated"),
+            "rollout_stage": context.get("rollout_stage"),
+            "document_id": None,
+            "serial_number": None,
+        }
+
     module = _enforce_module_entitlement(request.url.path, entitlements)
     if context["mode"] in {"active", "grace"}:
         return

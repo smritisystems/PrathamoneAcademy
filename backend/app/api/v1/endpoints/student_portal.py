@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-18
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints dedicated to authenticated student dashboard views, digital homework, attendance calendar, and report cards.
 #  */
@@ -1657,12 +1657,12 @@ async def get_student_portal_receipt_voucher(
             "notes": pmt.notes or "",
             "status": rc.status,
             "institution": {
-                "name": inst.name if inst else "Prashant Academy Coaching Institute",
+                "name": inst.name if inst else "PrathamOne EduOS Institute",
                 "tagline": getattr(inst, "tagline", "Coaching Institute Management System"),
-                "address": getattr(inst, "address", "Thane, Maharashtra"),
-                "phone": getattr(inst, "phone", "9323 023 007"),
-                "email": getattr(inst, "email", "support@prashantacademy.com"),
-                "registration_number": getattr(inst, "registration_number", "MH-COACH-2018-0157"),
+                "address": getattr(inst, "address", ""),
+                "phone": getattr(inst, "phone", ""),
+                "email": getattr(inst, "email", "support@prathamone.local"),
+                "registration_number": getattr(inst, "registration_number", ""),
             },
             "student": {
                 "id": student.id,

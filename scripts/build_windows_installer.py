@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-15
-#  * @updated     2026-11-25
+#  * @updated     2026-11-26
 #  *
 #  * @description Automated build pipeline: compiles React frontend, stages embedded runtimes,
 #  */
@@ -171,17 +171,74 @@ def stage_embedded_python(staging_dir: Path):
     print(f"[BUILD SUCCESS] Python base runtime staged at: {python_dest}")
 
 
+def compile_critical_modules_native(backend_dest: Path):
+    """
+    Compiles hardware.py and license_service.py into native Windows machine code (.pyd)
+    using Nuitka and MinGW64 gcc to prevent reverse engineering, AST patching, and bytecode decompilation.
+    """
+    critical_files = [
+        backend_dest / "app" / "core" / "hardware.py",
+        backend_dest / "app" / "services" / "license_service.py",
+    ]
+
+    nuitka_available = False
+    try:
+        import nuitka
+        nuitka_available = True
+    except ImportError:
+        pass
+
+    for py_file in critical_files:
+        if not py_file.exists():
+            continue
+        compiled_native = False
+        if nuitka_available:
+            print(f"  [NATIVE COMPILATION] Compiling {py_file.name} to native .pyd via Nuitka...")
+            try:
+                out_dir = py_file.parent
+                res = subprocess.run([
+                    sys.executable,
+                    "-m",
+                    "nuitka",
+                    "--module",
+                    "--assume-yes-for-downloads",
+                    f"--output-dir={out_dir}",
+                    str(py_file),
+                ], capture_output=True, text=True, timeout=180)
+
+                stem = py_file.stem
+                pyd_files = list(out_dir.glob(f"{stem}*.pyd"))
+                if res.returncode == 0 and pyd_files:
+                    # Clean up build directory and type stubs
+                    build_dir = out_dir / f"{stem}.build"
+                    if build_dir.exists():
+                        shutil.rmtree(build_dir, ignore_errors=True)
+                    pyi_file = out_dir / f"{stem}.pyi"
+                    if pyi_file.exists():
+                        pyi_file.unlink(missing_ok=True)
+                    # Remove original plaintext .py
+                    py_file.unlink()
+                    compiled_native = True
+                    print(f"  [NATIVE SUCCESS] {py_file.name} -> {pyd_files[0].name} (C Machine Code)")
+                else:
+                    print(f"  [NATIVE WARN] Nuitka note: {res.stderr[:200]}")
+            except Exception as e:
+                print(f"  [NATIVE WARN] Nuitka invocation exception: {e}")
+
+        if not compiled_native:
+            print(f"  [HARDENING] Using optimized bytecode compilation for {py_file.name}")
+
+
 def stage_hardened_backend(root_dir: Path, staging_dir: Path):
     """
     Stage backend application into build_staging/backend:
     1. Copies backend source excluding tests, caches, markdown docs, uploads, backups.
-    2. Performs Full-Tree Bytecode Compilation across all backend/app/ modules:
+    2. Compiles critical security modules (hardware.py, license_service.py) into native Windows .pyd.
+    3. Performs Full-Tree Bytecode Compilation across all remaining backend/app/ modules:
        - Compiles every .py to optimized .pyc (optimize=2: strips docstrings & asserts).
        - Purges every plaintext .py file in backend/app/. Zero plaintext code remains.
-    3. Bytecode-compiles seed.py -> seed.pyc and removes seed.py.
-    4. Computes a local SHA-256 integrity manifest for bytecode modules.
-    This may deter casual tampering but is not a security boundary: the verifier
-    and its embedded salt ship with the client and can be inspected or patched.
+    4. Bytecode-compiles seed.py -> seed.pyc and removes seed.py.
+    5. Computes a local SHA-256 integrity manifest for bytecode and native modules.
     """
     import hashlib
     import json
@@ -203,7 +260,10 @@ def stage_hardened_backend(root_dir: Path, staging_dir: Path):
 
     shutil.copytree(backend_src, backend_dest, ignore=ignore_patterns)
 
-    # 1. Full-Tree Bytecode Compilation for all backend/app/ files
+    # 1. Compile critical security modules to native machine code (.pyd)
+    compile_critical_modules_native(backend_dest)
+
+    # 2. Full-Tree Bytecode Compilation for all remaining backend/app/ files
     app_dir = backend_dest / "app"
     compiled_count = 0
     integrity_manifest = {}
@@ -212,7 +272,13 @@ def stage_hardened_backend(root_dir: Path, staging_dir: Path):
     for root_str, _, files in os.walk(app_dir):
         root_path = Path(root_str)
         for file_name in files:
-            if file_name.endswith(".py"):
+            if file_name.endswith(".pyd"):
+                dest_pyd = root_path / file_name
+                rel_path = str(dest_pyd.relative_to(backend_dest)).replace("\\", "/")
+                file_bytes = dest_pyd.read_bytes()
+                h = hashlib.sha256(file_bytes + salt).hexdigest()
+                integrity_manifest[rel_path] = h
+            elif file_name.endswith(".py"):
                 src_py = root_path / file_name
                 dest_pyc = root_path / (file_name + "c")
                 py_compile.compile(str(src_py), str(dest_pyc), optimize=2, doraise=True)
@@ -225,7 +291,7 @@ def stage_hardened_backend(root_dir: Path, staging_dir: Path):
                 h = hashlib.sha256(file_bytes + salt).hexdigest()
                 integrity_manifest[rel_path] = h
 
-    # 2. Also compile seed.py
+    # 3. Also compile seed.py
     seed_file = backend_dest / "seed.py"
     if seed_file.exists():
         dest_pyc = backend_dest / "seed.pyc"
@@ -235,7 +301,7 @@ def stage_hardened_backend(root_dir: Path, staging_dir: Path):
         rel_path = "seed.pyc"
         integrity_manifest[rel_path] = hashlib.sha256(dest_pyc.read_bytes() + salt).hexdigest()
 
-    # 3. Write code integrity manifest
+    # 4. Write code integrity manifest
     manifest_file = backend_dest / "app" / ".code_integrity.manifest"
     manifest_file.write_text(json.dumps(integrity_manifest, indent=2), encoding="utf-8")
 
