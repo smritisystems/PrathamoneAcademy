@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-23
+ * @updated     2026-11-26
  *
  * @description Attendance management workspace transforming daily batch roll call, QR terminals, registers, and absenteeism into dedicated functional views.
  */
@@ -370,6 +370,9 @@ function AttendanceContent() {
     }) => attendanceApi.markBulk(data),
     onSuccess: () => {
       toast.success('Attendance recorded and notifications queued')
+      queryClient.invalidateQueries({ queryKey: ['attendance'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] })
+      queryClient.invalidateQueries({ queryKey: ['student-admin-profile'] })
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.detail || 'Failed to submit attendance')

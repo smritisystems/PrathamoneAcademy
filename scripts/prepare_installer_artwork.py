@@ -186,7 +186,7 @@ def generate_installer_assets():
     <div class='feature-item'><div class='check-dot'></div><span>Exams, OMR &amp; Marksheets</span></div>
   </div>
   <div class='footer-bar'>
-    <span>v1.0.0 EduOS</span>
+    <span>v1.182.0 EduOS</span>
     <span style='color: #FB923C; font-weight: 600;'>Smritisys &amp; AITDL</span>
   </div>
 </body>

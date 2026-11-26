@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-23
+ * @updated     2026-11-26
  *
  * @description Dedicated Teachers & Faculty Management Centre with 8 first-class workspaces:
  */
@@ -390,6 +390,9 @@ function TeacherManagementContent() {
         name: `${vars.first_name} ${vars.last_name}`,
       })
       queryClient.invalidateQueries({ queryKey: ['teacher-workforce-dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['staff-list'] })
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['teacher-payroll-teachers'] })
       setNewTeacher({
         username: '',
         email: '',
@@ -417,6 +420,9 @@ function TeacherManagementContent() {
     onSuccess: () => {
       setShowAssignModal(false)
       queryClient.invalidateQueries({ queryKey: ['teacher-workforce-dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['staff-list'] })
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['teacher-payroll-teachers'] })
       queryClient.invalidateQueries({ queryKey: ['all-teacher-assignments'] })
       queryClient.invalidateQueries({ queryKey: ['teacher-profile'] })
       toast.success('Academic batch assignment created successfully!')
@@ -431,6 +437,9 @@ function TeacherManagementContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-teacher-assignments'] })
       queryClient.invalidateQueries({ queryKey: ['teacher-workforce-dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['staff-list'] })
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['teacher-payroll-teachers'] })
       toast.success('Batch assignment revoked successfully!')
     },
     onError: (err: any) => {

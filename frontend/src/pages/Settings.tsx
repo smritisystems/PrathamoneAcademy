@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-22
+ * @updated     2026-11-26
  *
  * @description Comprehensive Institute Settings & Configuration Workspace for branding, defaults, lookups, and governance.
  */
@@ -36,6 +36,7 @@ import type {
 } from '../types'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { downloadBlob } from '../utils/reportExport'
+import { extractApiErrorMessage, formatApiErrorDetail } from '../utils/errorTaxonomy'
 import { useEditModeStore } from '../store/editModeStore'
 import { EditModeBar, LockedButton, LockedIconButton, ContextualHelpButton } from '../components/common'
 import {
@@ -229,8 +230,8 @@ export default function Settings() {
     fetchAllData()
   }, [])
 
-  const showNotification = (type: 'success' | 'error', message: string) => {
-    setFeedback({ type, message })
+  const showNotification = (type: 'success' | 'error', message: unknown) => {
+    setFeedback({ type, message: formatApiErrorDetail(message, 'Operation completed.') })
     setTimeout(() => {
       setFeedback(null)
     }, 4500)
@@ -387,7 +388,7 @@ export default function Settings() {
       setAuditLogs(auditRes.data || [])
     } catch (err: any) {
       console.error('Failed to save settings:', err)
-      showNotification('error', err?.response?.data?.detail || 'Failed to save settings. Please try again.')
+      showNotification('error', extractApiErrorMessage(err, 'Failed to save settings. Please try again.'))
     } finally {
       setSaving(false)
     }
@@ -515,7 +516,7 @@ export default function Settings() {
       setIsLookupModalOpen(false)
     } catch (err: any) {
       console.error('Failed to save lookup item:', err)
-      showNotification('error', err?.response?.data?.detail || 'Failed to save lookup item.')
+      showNotification('error', extractApiErrorMessage(err, 'Failed to save lookup item.'))
     }
   }
 

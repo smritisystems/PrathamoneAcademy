@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints for student attendance tracking, session marking, QR code scanning, and absenteeism reporting.
 #  */
@@ -77,10 +77,11 @@ class AttendanceScanCheckin(BaseModel):
 @router.post("/bulk")
 async def mark_attendance_bulk(
     data: AttendanceBulk,
+    effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role(*ATTENDANCE_STAFF_ROLES)),
 ):
-    user_inst_id = getattr(current_user, "institution_id", None) or 1
+    user_inst_id = effective_inst_id or getattr(current_user, "institution_id", None) or 1
     if not is_sysadmin(current_user) and data.entries:
         student_ids = [entry.student_id for entry in data.entries]
         foreign_students = (

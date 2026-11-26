@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-20
- * @updated     2026-11-21
+ * @updated     2026-11-26
  *
  * @description First-launch interactive license activation prompt dialog. Allows entering
  */
@@ -33,6 +33,7 @@ import {
 import toast from 'react-hot-toast'
 import { licenseApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { extractApiErrorMessage } from '../utils/errorTaxonomy'
 import type { LicenseStatusResponse } from '../types'
 
 export interface InitialLaunchActivationModalProps {
@@ -90,12 +91,31 @@ export default function InitialLaunchActivationModal({
       onClose()
     },
     onError: (err: any) => {
-      const msg =
-        err?.response?.data?.detail ||
-        err?.message ||
-        'The license authority could not validate this key. Please check your credentials.'
+      const msg = extractApiErrorMessage(
+        err,
+        'The license authority could not validate this key. Please check your credentials.',
+      )
       setErrorMessage(msg)
-      toast.error('License Activation Failed')
+      toast.error(msg)
+    },
+  })
+
+  const startTrialMutation = useMutation({
+    mutationFn: () => licenseApi.startTrial(institutionId),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['license-status'] })
+      sessionStorage.setItem('prathamone-initial-license-prompt-deferred', 'true')
+      setErrorMessage(null)
+      toast.success(
+        `30-Day Free Trial active (${res.data.days_remaining} days left · up to ${res.data.limits.max_students} students & ${res.data.limits.max_staff} staff).`,
+        { duration: 6000 },
+      )
+      onClose()
+    },
+    onError: (err: any) => {
+      const msg = extractApiErrorMessage(err, 'Unable to start the 30-day machine trial.')
+      setErrorMessage(msg)
+      toast.error(msg)
     },
   })
 
@@ -199,6 +219,34 @@ export default function InitialLaunchActivationModal({
             </button>
           </div>
 
+          {/* 30-Day Unique-Machine Trial Option */}
+          {licenseStatus?.trial_expired ? (
+            <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
+              <strong>30-Day Machine Trial Expired:</strong> All entered records and reports remain preserved in read-only Evaluation Mode. Activate a commercial license below or switch to Training Mode.
+            </div>
+          ) : licenseStatus?.mode !== 'trial' && (
+            <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <div className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Try Full Live Features Free for 30 Days</span>
+                </div>
+                <p className="text-[11px] text-emerald-800">
+                  Hardware-locked to this PC (up to {licenseStatus?.trial_limits?.max_students ?? 100} students, {licenseStatus?.trial_limits?.max_staff ?? 25} staff). Automatically reverts to read-only after Day 30.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => startTrialMutation.mutate()}
+                disabled={startTrialMutation.isPending || activateMutation.isPending}
+                className="shrink-0 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs disabled:opacity-60 transition-colors"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>{startTrialMutation.isPending ? 'Starting Trial...' : 'Start 30-Day Free Trial'}</span>
+              </button>
+            </div>
+          )}
+
           {/* Error Message Alert */}
           {errorMessage && (
             <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-start space-x-3 text-rose-900 text-xs animate-in slide-in-from-top-2">
@@ -265,11 +313,11 @@ export default function InitialLaunchActivationModal({
               <button
                 type="button"
                 onClick={handleDeferActivation}
-                disabled={activateMutation.isPending}
+                disabled={activateMutation.isPending || startTrialMutation.isPending}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl font-semibold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 transition-all"
               >
                 <Clock className="w-3.5 h-3.5 text-slate-500" />
-                <span>Continue & Activate Later</span>
+                <span>Continue Read-Only Later</span>
               </button>
             </div>
           </form>

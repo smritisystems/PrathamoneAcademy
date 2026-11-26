@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-22
+ * @updated     2026-11-26
  *
  * @description Central Administrator Control Center for Global Training & Demo Environment: policy configuration, session monitor, and atomic reset engine.
  */
@@ -40,6 +40,7 @@ import { useEditModeStore } from '../store/editModeStore'
 import { EditModeBar } from '../components/common'
 import EnvironmentSwitchModal from '../components/common/EnvironmentSwitchModal'
 import ContextualHelpButton from '../components/common/ContextualHelpButton'
+import { extractApiErrorMessage } from '../utils/errorTaxonomy'
 import { toast } from 'react-hot-toast'
 
 export default function TrainingManagement() {
@@ -50,6 +51,7 @@ export default function TrainingManagement() {
   const [showSwitchModal, setShowSwitchModal] = useState(false)
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false)
   const [forceReset, setForceReset] = useState(false)
+  const [demoResetMode, setDemoResetMode] = useState<'mirror_live' | 'baseline' | 'clean_empty'>('baseline')
 
   // 1. Fetch Training Environment Status
   const {
@@ -81,20 +83,25 @@ export default function TrainingManagement() {
     mutationFn: () =>
       trainingApi.resetEnvironment({
         force: forceReset,
-        restore_baseline: true,
+        restore_baseline: demoResetMode !== 'clean_empty',
+        demo_mode: demoResetMode,
       }),
     onSuccess: (res) => {
-      toast.success(
-        `Training environment reset successfully! ${res.data.records_seeded} baseline records seeded.`
-      )
+      const modeSummary =
+        demoResetMode === 'clean_empty'
+          ? 'Clean empty demo ready (0 students, batches & fees preserved).'
+          : demoResetMode === 'mirror_live'
+            ? `Demo sandbox mirrored (${res.data.students_cloned ?? res.data.records_seeded} records synced).`
+            : `Training environment reset successfully! ${res.data.records_seeded} baseline records seeded.`
+      toast.success(modeSummary)
       setShowResetConfirmModal(false)
       queryClient.invalidateQueries({ queryKey: ['training-status'] })
       queryClient.invalidateQueries({ queryKey: ['training-reset-logs'] })
       queryClient.invalidateQueries({ queryKey: ['crm'] })
+      queryClient.invalidateQueries({ queryKey: ['students'] })
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.detail || err?.message || 'Failed to reset training environment.'
-      toast.error(msg)
+      toast.error(extractApiErrorMessage(err, 'Failed to reset training environment.'))
     },
   })
 
@@ -332,8 +339,7 @@ export default function TrainingManagement() {
             <p className="text-xs text-slate-300 leading-relaxed">
               The Reset Engine is bound strictly to the isolated Training Tenant (
               <code className="text-amber-300 font-mono">PA001-DEMO</code>). It cannot, under any
-              circumstance, access or delete Prashant Academy’s 39 real students, 171 payments, or
-              customer ledgers.
+              circumstance, access or delete live production students, payments, or customer ledgers.
             </p>
 
             <div className="bg-slate-800/80 rounded-xl p-3.5 border border-slate-700/80 space-y-2 text-xs">
@@ -375,7 +381,7 @@ export default function TrainingManagement() {
               </p>
             )}
             <p className="text-[10px] text-slate-400 text-center">
-              Re-seeds 20 enquiries across 7 stages and 5 demo students.
+              Supports Mirrored Live Academy Data ({status?.record_counts?.live_students ?? 0} live students), Baseline Demo, or Clean Empty Demo (0 students).
             </p>
           </div>
         </div>
@@ -479,10 +485,50 @@ export default function TrainingManagement() {
 
             <div className="p-5 space-y-4 text-sm text-slate-600">
               <p className="leading-relaxed">
-                This operation will completely clear all demo CRM enquiries, follow-ups, and sample
-                student transactions created during staff training sessions, then restore the
-                official baseline dataset (<strong>20 enquiries, 5 demo students</strong>).
+                This operation clears demo records inside <code className="font-mono text-xs">PA001-DEMO</code> and applies your chosen sandbox mode:
               </p>
+
+              <div className="space-y-2 text-xs">
+                {[
+                  {
+                    id: 'mirror_live' as const,
+                    title: `Copy Local Live Academy (${status?.record_counts?.live_students ?? 0} live students)`,
+                    desc: 'Safely clones live boards, standards, batches, fee structures, students & ledgers into PA001-DEMO (falls back to sample if empty).',
+                  },
+                  {
+                    id: 'baseline' as const,
+                    title: 'Standard Sample Demo (20 CRM Leads · 5 Students)',
+                    desc: 'Restores the built-in coaching demo dataset with batches and fee structures.',
+                  },
+                  {
+                    id: 'clean_empty' as const,
+                    title: 'Clean Empty Demo (0 Students & 0 Leads)',
+                    desc: 'Leaves 0 demo students and 0 leads while keeping demo batches & fee structures ready for fresh admission tests.',
+                  },
+                ].map((opt) => (
+                  <label
+                    key={opt.id}
+                    className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors ${
+                      demoResetMode === opt.id
+                        ? 'border-amber-500 bg-amber-50/70'
+                        : 'border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="demoResetMode"
+                      value={opt.id}
+                      checked={demoResetMode === opt.id}
+                      onChange={() => setDemoResetMode(opt.id)}
+                      className="mt-0.5 text-amber-600"
+                    />
+                    <span>
+                      <strong className="block text-slate-900">{opt.title}</strong>
+                      <span className="block text-[11px] text-slate-600 mt-0.5">{opt.desc}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
 
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-2">
                 <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">

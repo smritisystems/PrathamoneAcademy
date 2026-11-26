@@ -53,6 +53,17 @@ app.add_middleware(
 
 
 @app.middleware("http")
+async def add_no_cache_headers_for_api(request: Request, call_next):
+    response = await call_next(request)
+    path = request.url.path or ""
+    if path.startswith("/api/") or path == "/health" or path.startswith("/health/"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
+
+@app.middleware("http")
 async def verify_desktop_ipc_token(request: Request, call_next):
     desktop_token = os.getenv("PRATHAM_DESKTOP_TOKEN")
     if not desktop_token:
@@ -160,7 +171,13 @@ if not os.path.isdir(STATIC_DIR):
 async def root():
     index_file = os.path.join(STATIC_DIR, "index.html")
     if os.path.isdir(STATIC_DIR) and os.path.isfile(index_file):
-        return FileResponse(index_file)
+        return FileResponse(
+            index_file,
+            headers={
+                "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+                "Pragma": "no-cache",
+            },
+        )
     return {
         "product": settings.PRODUCT_NAME,
         "description": settings.PRODUCT_DESCRIPTION,
@@ -190,7 +207,7 @@ def _resolve_alembic_head() -> str:
                 return heads[0]
     except Exception:
         pass
-    return "056_expense_and_cash_register"
+    return "057_repair_teacher_assignments"
 
 
 _ALEMBIC_HEAD = _resolve_alembic_head()
@@ -220,4 +237,10 @@ if os.path.isdir(STATIC_DIR) and os.path.isfile(os.path.join(STATIC_DIR, "index.
         candidate = os.path.join(STATIC_DIR, full_path)
         if os.path.isfile(candidate):
             return FileResponse(candidate)
-        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+        return FileResponse(
+            os.path.join(STATIC_DIR, "index.html"),
+            headers={
+                "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+                "Pragma": "no-cache",
+            },
+        )

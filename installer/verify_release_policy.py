@@ -186,11 +186,16 @@ class PolicyAuditor:
     def check_dpdp_lifecycle_and_hygiene(self):
         iss_txt = (INSTALLER_DIR / "prathamone_setup.iss").read_text(encoding="utf-8")
 
-        # Pre-upgrade pg_dump check
-        if "CurStep = ssInstall" in iss_txt and "pg_dump.exe" in iss_txt.split("procedure CurStepChanged", 1)[1].split("procedure CurUninstallStepChanged", 1)[0]:
-            self.ok("DPDP-UPGRADE-DUMP", "Automated pg_dump backup configured in pre-upgrade ssInstall step")
+        # Pre-upgrade pg_dump check (options must precede dbname on Windows PostgreSQL)
+        ss_install_block = iss_txt.split("procedure CurStepChanged", 1)[1].split("procedure CurUninstallStepChanged", 1)[0]
+        if (
+            "CurStep = ssInstall" in iss_txt
+            and "pg_dump.exe" in ss_install_block
+            and not re.search(r"Exec\(PgDump,\s*[^\r\n]*\bprashant_academy\b[^\r\n]*\s-f\b", iss_txt, re.IGNORECASE)
+        ):
+            self.ok("DPDP-UPGRADE-DUMP", "Automated pg_dump backup configured with valid Windows flag ordering in ssInstall step")
         else:
-            self.fail("DPDP-UPGRADE-DUMP", "prathamone_setup.iss ssInstall runs raw robocopy only without pre-upgrade pg_dump logical snapshot")
+            self.fail("DPDP-UPGRADE-DUMP", "prathamone_setup.iss ssInstall pg_dump missing or places -f after database name")
 
         # Non-destructive upgrade check
         if "NeedsDbInit" in iss_txt and "not IsUpgradeMode" in iss_txt:

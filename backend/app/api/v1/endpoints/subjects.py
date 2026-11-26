@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints for canonical subject master catalogue, curriculum syllabus mappings, and legacy subject compatibility.
 #  */
@@ -25,7 +25,14 @@ from pydantic import BaseModel
 from datetime import datetime
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role, check_institution_access, is_sysadmin
+from app.core.deps import (
+    get_current_active_user,
+    require_role,
+    check_institution_access,
+    get_data_environment,
+    resolve_environment_institution_id,
+    is_sysadmin,
+)
 from app.models.institution import Institution
 from app.models.subject import Subject, CanonicalSubject, SubjectMapping, SubjectLegacyMapping
 from app.models.standard import Standard
@@ -238,10 +245,15 @@ async def list_canonical_subjects(
     search: Optional[str] = Query(None),
     include_inactive: bool = Query(False),
     institution_id: Optional[int] = Query(None),
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
-    effective_inst_id = _resolve_subject_institution_filter(institution_id, current_user)
+    effective_inst_id = (
+        await resolve_environment_institution_id(db, data_env, current_user)
+        if data_env == "TRAINING"
+        else _resolve_subject_institution_filter(institution_id, current_user)
+    )
     query = (
         select(CanonicalSubject)
         .options(
@@ -315,10 +327,15 @@ async def list_canonical_subjects(
 async def create_canonical_subject(
     data: CanonicalSubjectCreate,
     force: bool = Query(False, description="Force creation even if duplicate name exists"),
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
-    effective_inst_id = _resolve_subject_institution_filter(data.institution_id, current_user)
+    effective_inst_id = (
+        await resolve_environment_institution_id(db, data_env, current_user, data.institution_id)
+        if data_env == "TRAINING"
+        else _resolve_subject_institution_filter(data.institution_id, current_user)
+    )
     inst_id = effective_inst_id
     if inst_id is None:
         first_inst = (await db.execute(select(Institution))).scalars().first()
@@ -1009,6 +1026,7 @@ async def list_subjects(
     search: Optional[str] = Query(None),
     institution_id: Optional[int] = Query(None),
     raw: bool = Query(False, description="Return raw unconsolidated standard-specific records if true"),
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -1018,7 +1036,11 @@ async def list_subjects(
     - If standard_id is omitted (general dropdowns): returns consolidated canonical subjects
       without duplicate identities, supporting lookup by old subject codes and aliases.
     """
-    effective_inst_id = _resolve_subject_institution_filter(institution_id, current_user)
+    effective_inst_id = (
+        await resolve_environment_institution_id(db, data_env, current_user)
+        if data_env == "TRAINING"
+        else _resolve_subject_institution_filter(institution_id, current_user)
+    )
     if standard_id is not None or raw:
         query = (
             select(Subject, Standard.name.label("standard_name"))

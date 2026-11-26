@@ -20,10 +20,10 @@
 #define MyAppName "PrathamOne EduOS"
 #define MyAppDirName "PrathamOneEduOS"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.0.0"
+  #define MyAppVersion "1.182.0"
 #endif
 #ifndef MyAppFileVersion
-  #define MyAppFileVersion "1.0.0.0"
+  #define MyAppFileVersion "1.182.0.0"
 #endif
 #ifndef MyOutputBaseFilename
   #ifdef UseReleasePayload
@@ -203,6 +203,7 @@ external 'SetFileAttributesW@kernel32.dll stdcall';
 var
   LicensePage: TInputQueryWizardPage;
   ConfigPage: TInputQueryWizardPage;
+  PasswordPage: TInputQueryWizardPage;
   LogoPage: TInputFileWizardPage;
   AcademicPage: TInputOptionWizardPage;
   MediumPage: TInputOptionWizardPage;
@@ -461,6 +462,7 @@ begin
     // Skip all initial onboarding wizard pages during in-place upgrade (Rule 013)
     if (PageID = LicensePage.ID) or
        (PageID = ConfigPage.ID) or
+       (PageID = PasswordPage.ID) or
        (PageID = LogoPage.ID) or
        (PageID = AcademicPage.ID) or
        (PageID = MediumPage.ID) then
@@ -535,6 +537,8 @@ begin
   // 1. Terminate any previous running or stuck instances so files are not locked
   Exec('taskkill.exe', '/F /IM PrathamOne.exe /IM prathamone_backend.exe /IM pythonw.exe /IM postgres.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   // 2. Remove stale database lock if updating/reinstalling across possible paths
+  if FileExists(ExpandConstant('{localappdata}\{#MyAppDirName}\data\postmaster.pid')) then
+    DeleteFile(ExpandConstant('{localappdata}\{#MyAppDirName}\data\postmaster.pid'));
   if FileExists(ExpandConstant('{autopf}\{#MyAppName}\data\postmaster.pid')) then
     DeleteFile(ExpandConstant('{autopf}\{#MyAppName}\data\postmaster.pid'));
   if FileExists(ExpandConstant('{autopf}\{#MyAppDirName}\data\postmaster.pid')) then
@@ -585,29 +589,35 @@ begin
   LicensePage.Values[0] := '';
   LicensePage.Values[1] := '';
 
-  // Create Custom Configuration Page for institute details and administrator credentials
+  // Create Custom Configuration Page for institute profile details (4 fields fit cleanly without scrolling/clipping)
   ConfigPage := CreateInputQueryPage(LicensePage.ID,
     'Institute & Academy Profile Setup',
     'Personalize PrathamOne EduOS for your coaching institute, academy, or school',
-    'Please enter your institution details and create a secure administrator password. These details will appear on student admission forms, receipts, and marksheets:');
+    'Please enter your institution details. These details will appear on student admission forms, receipts, and marksheets:');
 
   ConfigPage.Add('Coaching Institute / Academy / School Name:', False);
   ConfigPage.Add('Primary Branch / Campus Name:', False);
-  ConfigPage.Add('Campus Address & City:', False);
+  ConfigPage.Add('Campus Address && City:', False);
   ConfigPage.Add('Helpline / Contact Phone:', False);
-  ConfigPage.Add('Administrator Password (min 14 characters):', True);
-  ConfigPage.Add('Confirm Administrator Password:', True);
 
-  // Set default pre-filled values (never pre-fill hardcoded static admin credentials)
   ConfigPage.Values[0] := 'Your Academy Name';
   ConfigPage.Values[1] := 'Main Campus';
   ConfigPage.Values[2] := '123 Education Hub, MG Road';
   ConfigPage.Values[3] := '';
-  ConfigPage.Values[4] := '';
-  ConfigPage.Values[5] := '';
+
+  // Dedicated Administrator Password Page (keeps both password + confirmation clearly visible)
+  PasswordPage := CreateInputQueryPage(ConfigPage.ID,
+    'Administrator Account Security',
+    'Create a strong administrator password for your institute',
+    'Enter and confirm a secure password (minimum 14 characters) for the initial administrator account:');
+
+  PasswordPage.Add('Administrator Password (min 14 characters):', True);
+  PasswordPage.Add('Confirm Administrator Password:', True);
+  PasswordPage.Values[0] := '';
+  PasswordPage.Values[1] := '';
 
   // Academy Official Logo Selection Page (Optional)
-  LogoPage := CreateInputFilePage(ConfigPage.ID,
+  LogoPage := CreateInputFilePage(PasswordPage.ID,
     'Official Academy Crest or Logo (Optional)',
     'Select your coaching institute or school logo image',
     'Choose an image file (.png, .jpg, .jpeg) for your receipts, identity cards, and portal. If you do not have one ready right now, leave it blank for an automated prestigious academic crest:');
@@ -667,22 +677,25 @@ begin
       Result := False;
       Exit;
     end;
+  end;
 
-    if Length(ConfigPage.Values[4]) < 14 then
+  if CurPageID = PasswordPage.ID then
+  begin
+    if Length(PasswordPage.Values[0]) < 14 then
     begin
       MsgBox('The administrator password must contain at least 14 characters for security.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
 
-    if ConfigPage.Values[4] <> ConfigPage.Values[5] then
+    if PasswordPage.Values[0] <> PasswordPage.Values[1] then
     begin
       MsgBox('The administrator passwords do not match. Please re-enter them.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
 
-    AdminPasswordValue := ConfigPage.Values[4];
+    AdminPasswordValue := PasswordPage.Values[0];
   end;
 end;
 
@@ -722,10 +735,10 @@ begin
 
       if FileExists(PgDump) and FileExists(PgCtl) and FileExists(DataDir + '\PG_VERSION') then
       begin
-        Exec(PgCtl, 'start -w -t 30 -D "' + DataDir + '" -o "-p ' + PgPort + '" -l "' + DataDir + '\pg_upgrade_backup.log"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+        Exec(PgCtl, 'start -w -t 30 -D "' + DataDir + '" -o "-p ' + PgPort + '" -l "' + DataDir + '\pg_upgrade_backup.log"', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
         DumpFile := BackupDir + '\pre_upgrade_v' + '{#MyAppVersion}' + '_' + GetDateTimeString('yyyymmdd_hhnnss', #0, #0) + '.dump';
-        Exec(PgDump, '-h 127.0.0.1 -p ' + PgPort + ' -U postgres -Fc prashant_academy -f "' + DumpFile + '"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-        Exec(PgCtl, 'stop -w -t 15 -D "' + DataDir + '" -m fast', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+        Exec(PgDump, '-h 127.0.0.1 -p ' + PgPort + ' -U postgres -Fc -f "' + DumpFile + '" prashant_academy', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+        Exec(PgCtl, 'stop -w -t 15 -D "' + DataDir + '" -m fast', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
       end;
 
       BackupTarget := BackupDir + '\pre_upgrade_snapshot_v' + '{#MyAppVersion}' + '_' + GetDateTimeString('yyyymmdd_hhnnss', #0, #0);
@@ -818,10 +831,10 @@ begin
         ForceDirectories(BackupDir);
         PgPort := DetectPostgresPort(DataDir);
         if FileExists(PgCtl) then
-          Exec(PgCtl, 'start -w -t 30 -D "' + DataDir + '" -o "-p ' + PgPort + '" -l "' + DataDir + '\pg_uninstall_backup.log"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-        Exec(PgDump, '-h 127.0.0.1 -p ' + PgPort + ' -U postgres -Fc prashant_academy -f "' + BackupDir + '\prathamone_uninstall_backup.dump"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+          Exec(PgCtl, 'start -w -t 30 -D "' + DataDir + '" -o "-p ' + PgPort + '" -l "' + DataDir + '\pg_uninstall_backup.log"', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+        Exec(PgDump, '-h 127.0.0.1 -p ' + PgPort + ' -U postgres -Fc -f "' + BackupDir + '\prathamone_uninstall_backup.dump" prashant_academy', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
         if FileExists(PgCtl) then
-          Exec(PgCtl, 'stop -w -t 15 -D "' + DataDir + '" -m fast', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+          Exec(PgCtl, 'stop -w -t 15 -D "' + DataDir + '" -m fast', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
         MsgBox('Database backup saved to: ' + BackupDir, mbInformation, MB_OK);
       end;
 

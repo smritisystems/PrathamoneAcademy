@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-16
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints for Global Training & Demo Environment management, session tracking, and reset operations.
 #  */
@@ -34,6 +34,8 @@ from app.models.training import (
     TrainingResetLog,
 )
 from app.services.training_dataset_service import (
+    clone_live_to_training_environment,
+    ensure_training_initialized_on_entry,
     get_training_environment_status,
     register_training_activity,
     end_training_session,
@@ -52,6 +54,7 @@ class TrainingResetRequest(BaseModel):
     force: bool = False
     restore_baseline: bool = True
     dataset_version: Optional[str] = ACTIVE_DATASET_VERSION
+    demo_mode: Optional[str] = None  # "baseline" | "clean_empty" | "mirror_live"
 
 
 class TrainingConfigUpdateRequest(BaseModel):
@@ -75,8 +78,10 @@ async def ping_session(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(*STAFF_ROLES)),
 ):
-    """Registers user heartbeat inside training session context."""
+    """Registers user heartbeat inside training session context and auto-initializes demo data if blank."""
+    await ensure_training_initialized_on_entry(db, current_user.id)
     session = await register_training_activity(db, current_user.id)
+    await db.commit()
     return {
         "status": "ACTIVE",
         "session_id": session.id,
@@ -101,16 +106,27 @@ async def reset_environment(
     current_user: User = Depends(require_role(*ADMIN_ROLES)),
 ):
     """
-    Administrator-authorized action to wipe isolated demo tenant and restore clean baseline dataset.
+    Administrator-authorized action to switch or reset the isolated demo tenant
+    (baseline sample dataset, clean 0-student sandbox, or mirrored local live data).
     Has absolute production safety locks preventing deletion of real customer data.
     """
     try:
+        mode = (req.demo_mode or "").strip().lower()
+        if mode == "mirror_live":
+            return await clone_live_to_training_environment(
+                db=db,
+                user_id=current_user.id,
+                initiated_by=current_user.username or "admin",
+                force=req.force,
+                source_institution_id=getattr(current_user, "institution_id", None),
+            )
+        restore_baseline = False if mode == "clean_empty" else (True if mode == "baseline" else req.restore_baseline)
         result = await reset_training_environment(
             db=db,
             user_id=current_user.id,
             initiated_by=current_user.username or "admin",
             force=req.force,
-            restore_baseline=req.restore_baseline,
+            restore_baseline=restore_baseline,
         )
         return result
     except ValueError as e:

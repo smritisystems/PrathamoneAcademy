@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-16
+#  * @updated     2026-11-26
 #  *
 #  * @description Pytest suite testing fee register spreadsheet parsing, validation rules, and error handling.
 #  */
@@ -101,8 +101,9 @@ class TestFeeRegisterParsing:
 class TestFeeRegisterImportExecution:
     @pytest.mark.skipif(not os.path.exists(WORKBOOK_PATH), reason="Workbook not found in test environment")
     @pytest.mark.asyncio
-    async def test_preview_and_execute_import(self, client, auth_headers, test_institution, test_academic_year, db):
+    async def test_preview_and_execute_import(self, client, auth_headers, test_institution, test_academic_year, db, monkeypatch):
         """Test preview endpoint and atomic database import execution."""
+        monkeypatch.setenv("PRATHAM_DEFAULT_WORKBOOK_PATH", WORKBOOK_PATH)
         # 1. Preview
         prev_res = await client.get("/api/v1/import/fee-register/preview", headers=auth_headers)
         assert prev_res.status_code == 200
@@ -156,8 +157,9 @@ class TestFeeRegisterImportExecution:
 
     @pytest.mark.skipif(not os.path.exists(WORKBOOK_PATH), reason="Workbook not found in test environment")
     @pytest.mark.asyncio
-    async def test_duplicate_import_prevention(self, client, auth_headers):
+    async def test_duplicate_import_prevention(self, client, auth_headers, monkeypatch):
         """Test that attempting to re-import the same file is blocked by SHA-256 fingerprint."""
+        monkeypatch.setenv("PRATHAM_DEFAULT_WORKBOOK_PATH", WORKBOOK_PATH)
         dup_res = await client.post(
             "/api/v1/import/fee-register/execute",
             headers=auth_headers,

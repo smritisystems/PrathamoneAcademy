@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-22
+ * @updated     2026-11-26
  *
  * @description Flagship Academic Structure & Batch Management workspace featuring 9 tabs, tree view, and batch cards.
  */
@@ -42,6 +42,7 @@ import Modal from '../components/Modal'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
 import { printTimetableDocketElement, getTimetableDocketPrintStyles } from '../utils/printTimetableDocket'
 import { downloadCsvRows, downloadTextCsv } from '../utils/reportExport'
+import { extractApiErrorMessage } from '../utils/errorTaxonomy'
 import toast from 'react-hot-toast'
 import type {
   Division, Board, Standard, BatchRosterStudent, AcademicTreeBoard,
@@ -1052,7 +1053,7 @@ export default function AcademicWorkspace() {
       qc.invalidateQueries({ queryKey: ['standards'] })
       setShowCreateBatchModal(false)
     },
-    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to create batch'),
+    onError: (err: any) => toast.error(extractApiErrorMessage(err, 'Failed to create batch')),
   })
 
   const updateBatchMutation = useMutation({
@@ -1064,7 +1065,7 @@ export default function AcademicWorkspace() {
       setShowEditBatchModal(false)
       setSelectedBatchForEdit(null)
     },
-    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to update batch'),
+    onError: (err: any) => toast.error(extractApiErrorMessage(err, 'Failed to update batch')),
   })
 
   const archiveBatchMutation = useMutation({
@@ -1074,12 +1075,12 @@ export default function AcademicWorkspace() {
       qc.invalidateQueries({ queryKey: ['divisions'] })
       qc.invalidateQueries({ queryKey: ['academic-overview'] })
     },
-    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to archive batch'),
+    onError: (err: any) => toast.error(extractApiErrorMessage(err, 'Failed to archive batch')),
   })
 
   // Board Mutations
   const createBoardMutation = useMutation({
-    mutationFn: (data: any) => boardsApi.create({ ...data, institution_id: selectedInstitutionId || 2 }),
+    mutationFn: (data: any) => boardsApi.create({ ...data, institution_id: selectedInstitutionId || 1 }),
     onSuccess: () => {
       toast.success('Board created successfully')
       qc.invalidateQueries({ queryKey: ['boards'] })
@@ -1087,7 +1088,7 @@ export default function AcademicWorkspace() {
       setShowAddBoardModal(false)
       setBoardForm({ name: '', code: '', description: '' })
     },
-    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to create board'),
+    onError: (err: any) => toast.error(extractApiErrorMessage(err, 'Failed to create board')),
   })
 
   const updateBoardMutation = useMutation({
@@ -1099,7 +1100,7 @@ export default function AcademicWorkspace() {
       setShowEditBoardModal(false)
       setSelectedBoardForEdit(null)
     },
-    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to update board'),
+    onError: (err: any) => toast.error(extractApiErrorMessage(err, 'Failed to update board')),
   })
 
   const toggleBoardStatusMutation = useMutation({
@@ -1109,12 +1110,12 @@ export default function AcademicWorkspace() {
       qc.invalidateQueries({ queryKey: ['boards'] })
       qc.invalidateQueries({ queryKey: ['academic-overview'] })
     },
-    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to toggle status'),
+    onError: (err: any) => toast.error(extractApiErrorMessage(err, 'Failed to toggle status')),
   })
 
   // Standard Mutations
   const createStandardMutation = useMutation({
-    mutationFn: (data: any) => standardsApi.create({ ...data, institution_id: selectedInstitutionId || 2 }),
+    mutationFn: (data: any) => standardsApi.create({ ...data, institution_id: selectedInstitutionId || 1 }),
     onSuccess: () => {
       toast.success('Class / Standard created successfully')
       qc.invalidateQueries({ queryKey: ['standards'] })
@@ -1122,7 +1123,7 @@ export default function AcademicWorkspace() {
       setShowAddStandardModal(false)
       setStandardForm({ name: '', level: 10, description: '' })
     },
-    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to create class'),
+    onError: (err: any) => toast.error(extractApiErrorMessage(err, 'Failed to create class')),
   })
 
   const updateStandardMutation = useMutation({
@@ -1134,7 +1135,7 @@ export default function AcademicWorkspace() {
       setShowEditStandardModal(false)
       setSelectedStandardForEdit(null)
     },
-    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to update class'),
+    onError: (err: any) => toast.error(extractApiErrorMessage(err, 'Failed to update class')),
   })
 
   const resetSubjectModalState = (defaultStandardId?: string) => {
@@ -1167,7 +1168,7 @@ export default function AcademicWorkspace() {
       setShowAddSubjectModal(false)
       resetSubjectModalState()
     },
-    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to create subject'),
+    onError: (err: any) => toast.error(extractApiErrorMessage(err, 'Failed to create subject')),
   })
 
   const mapExistingSubjectMutation = useMutation({
@@ -1190,7 +1191,7 @@ export default function AcademicWorkspace() {
       setShowAddSubjectModal(false)
       resetSubjectModalState()
     },
-    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to link existing subject'),
+    onError: (err: any) => toast.error(extractApiErrorMessage(err, 'Failed to link existing subject')),
   })
 
   const updateSubjectMutation = useMutation({
@@ -1201,7 +1202,7 @@ export default function AcademicWorkspace() {
       setShowEditSubjectModal(false)
       setSelectedSubjectForEdit(null)
     },
-    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to update subject'),
+    onError: (err: any) => toast.error(extractApiErrorMessage(err, 'Failed to update subject')),
   })
 
   const deleteSubjectMutation = useMutation({
@@ -1210,7 +1211,7 @@ export default function AcademicWorkspace() {
       toast.success('Subject removed successfully')
       qc.invalidateQueries({ queryKey: ['subjects'] })
     },
-    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to delete subject'),
+    onError: (err: any) => toast.error(extractApiErrorMessage(err, 'Failed to delete subject')),
   })
 
   // Timetable Mutations
@@ -1224,7 +1225,7 @@ export default function AcademicWorkspace() {
       setShowAddSessionModal(false)
       setConflictWarning(null)
     },
-    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to schedule session'),
+    onError: (err: any) => toast.error(extractApiErrorMessage(err, 'Failed to schedule session')),
   })
 
   const batchGenerateSlotsMutation = useMutation({

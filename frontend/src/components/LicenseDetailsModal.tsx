@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-19
- * @updated     2026-11-19
+ * @updated     2026-11-26
  *
  * @description Accessible popout modal displaying live unmasked serial number, registered institution & customer details, license mode, validity countdown, and administrative activation governance.
  */
@@ -159,6 +159,7 @@ export default function LicenseDetailsModal({ isOpen, onClose }: LicenseDetailsM
   }
 
   const licenseMode = licenseStatus?.mode || 'active'
+  const isTrial = licenseMode === 'trial'
   const isGrace = licenseMode === 'grace'
   const isEvaluation = licenseMode === 'evaluation' || licenseMode === 'invalid' || licenseMode === 'unactivated'
 
@@ -315,6 +316,8 @@ export default function LicenseDetailsModal({ isOpen, onClose }: LicenseDetailsM
                     ? 'text-rose-700'
                     : isGrace
                     ? 'text-amber-700'
+                    : isTrial
+                    ? 'text-indigo-700'
                     : 'text-emerald-700'
                 }`}
               >
@@ -325,7 +328,9 @@ export default function LicenseDetailsModal({ isOpen, onClose }: LicenseDetailsM
                 ) : (
                   <ShieldCheck className="w-3.5 h-3.5" />
                 )}
-                <span className="capitalize">{licenseMode} Mode</span>
+                <span className="capitalize">
+                  {isTrial ? `30-Day Machine Trial (${licenseStatus?.trial_days_remaining ?? 30}d left)` : `${licenseMode} Mode`}
+                </span>
               </span>
               <span className="text-[10px] text-slate-500 block mt-0.5">
                 {licenseStatus?.rollout_stage === 'shadow' ? 'Shadow Enforcement' : 'Enforced Verification'}
@@ -338,7 +343,11 @@ export default function LicenseDetailsModal({ isOpen, onClose }: LicenseDetailsM
                 <Calendar className="w-3 h-3 text-slate-400" />
                 <span>{expirationText}</span>
               </span>
-              <span className="text-[10px] text-slate-500 block mt-0.5">30-day offline tolerance</span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">
+                {isTrial
+                  ? `Caps: ${licenseStatus?.trial_limits?.max_students ?? 100} students · ${licenseStatus?.trial_limits?.max_staff ?? 25} staff`
+                  : '30-day offline tolerance'}
+              </span>
             </div>
           </div>
 

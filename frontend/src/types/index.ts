@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-24
+ * @updated     2026-11-26
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -46,7 +46,7 @@ export interface LicenseRegistration {
 
 export interface LicenseStatusResponse {
   product: string
-  mode: 'active' | 'grace' | 'evaluation' | 'unactivated' | 'invalid'
+  mode: 'active' | 'grace' | 'trial' | 'evaluation' | 'unactivated' | 'invalid'
   rollout_stage: 'shadow' | 'enforced'
   document_id: string | null
   license_id: string | null
@@ -65,6 +65,15 @@ export interface LicenseStatusResponse {
   installation_id?: string | null
   hardware_fingerprint?: string | null
   evaluation_policy: Record<string, unknown> | null
+  trial_active?: boolean
+  trial_expired?: boolean
+  trial_started_at?: string | null
+  trial_days_remaining?: number | null
+  trial_limits?: {
+    max_students: number
+    max_staff: number
+    seats: number
+  } | null
   error: string | null
 }
 
@@ -1879,6 +1888,17 @@ export interface StudentAdminProfile {
   }
   tests: TestResultItem[]
   fees: {
+    assignment?: {
+      id: number
+      fee_structure_id: number
+      fee_structure_name: string
+      academic_year_id: number
+      base_amount: number
+      package_amount: number
+      concession_amount: number
+      remarks?: string
+      has_invoice?: boolean
+    } | null
     summary: {
       total_fees: number
       gross_fees?: number

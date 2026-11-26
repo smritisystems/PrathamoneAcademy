@@ -53,6 +53,11 @@ from app.services.license_service import (
     LicenseReactivationError,
     LICENSE_CLOCK_CHECKPOINT_INTERVAL,
     LICENSE_CLOCK_ROLLBACK_TOLERANCE,
+    TRIAL_DURATION_DAYS,
+    TRIAL_MAX_STAFF,
+    TRIAL_MAX_STUDENTS,
+    TRIAL_SEATS,
+    build_trial_record,
     calculate_license_mode,
     create_license_clock_checkpoint,
     create_refresh_keypair,
@@ -63,19 +68,26 @@ from app.services.license_service import (
     customer_poll_reactivation_status,
     decrypt_refresh_private_key,
     encrypt_refresh_private_key,
+    evaluate_machine_trial,
     get_verified_lease_claims,
+    merge_strictest_trial_records,
+    read_machine_trial_anchors,
     refresh_public_key,
     sign_license_management_request,
     sign_refresh_request,
+    sign_trial_record,
     verify_and_import_reactivation_artifact,
     verify_license_clock_checkpoint,
     verify_signed_license_artifact,
+    verify_trial_record,
+    write_machine_trial_anchors,
 )
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 _SETTING_ARTIFACT = "license.artifact"
+_SETTING_TRIAL_ARTIFACT = "license.trial_artifact"
 _SETTING_INSTALLATION_ID = "license.installation_id"
 _SETTING_ACTIVATION_ID = "license.activation_identifier"
 _SETTING_SERIAL_NUMBER = "license.serial_number"
@@ -100,15 +112,18 @@ _ROUTE_MODULES = (
     ("/subjects", "academic_management"),
     ("/timetable", "academic_management"),
     ("/enrollments", "academic_management"),
+    ("/catalogue", "academic_management"),
     ("/students", "students"),
     ("/student-portal", "students"),
     ("/attendance", "attendance"),
     ("/fees/concessions", "billing"),
     ("/fees", "billing"),
     ("/payments", "accounting"),
+    ("/finance", "accounting"),
     ("/teacher-payroll", "payroll"),
     ("/examinations", "examinations"),
     ("/homework", "homework"),
+    ("/planning", "planning"),
     ("/reports", "reports"),
     ("/import/fee-register", "billing"),
     ("/import-export", "data_management"),
@@ -116,8 +131,10 @@ _ROUTE_MODULES = (
     ("/staff", "staff"),
     ("/users", "staff"),
     ("/communication", "communication"),
+    ("/chat", "communication"),
     ("/releases", "releases"),
     ("/study-materials", "study_materials"),
+    ("/video-studio", "video_studio"),
     ("/eduboard", "eduboard"),
     ("/leads", "crm"),
     ("/dashboard", "dashboard"),
@@ -125,6 +142,7 @@ _ROUTE_MODULES = (
     ("/settings", "administration"),
     ("/navigation", "administration"),
     ("/governance", "administration"),
+    ("/security/device-binding", "administration"),
     ("/housekeeping", "housekeeping"),
     ("/help", "core"),
     ("/codex", "developer_tools"),
@@ -547,6 +565,98 @@ async def _refresh_license_if_due(
     return "refreshed"
 
 
+async def _load_trial_context(
+    db: AsyncSession,
+    institution_id: int,
+    current_hw_fingerprint: str,
+    configured_stage: str,
+) -> dict | None:
+    trial_setting = await _get_setting(db, institution_id, _SETTING_TRIAL_ARTIFACT)
+    candidate_records: list[dict[str, Any]] = []
+
+    if trial_setting and trial_setting.value:
+        try:
+            db_env = json.loads(trial_setting.value)
+            db_rec = verify_trial_record(db_env)
+            rec_hw = (db_rec.get("hardware_id") or "").strip()
+            is_hw_valid, hw_msg = verify_hardware_fingerprint(rec_hw)
+            if not is_hw_valid:
+                raise LicenseArtifactError(f"Node-Lock Mismatch: {hw_msg}")
+            if db_rec.get("product_code") != settings.LICENSE_PRODUCT_CODE:
+                raise LicenseArtifactError("Machine trial artifact does not match this product installation.")
+            candidate_records.append(db_rec)
+        except (LicenseArtifactError, json.JSONDecodeError) as exc:
+            return {
+                "mode": "invalid",
+                "rollout_stage": configured_stage,
+                "payload": None,
+                "installation_id": current_hw_fingerprint,
+                "hardware_fingerprint": current_hw_fingerprint,
+                "activation_identifier": None,
+                "trial": {"trial_active": False, "trial_expired": True, "days_remaining": 0},
+                "error": str(exc),
+            }
+
+    anchor_records = read_machine_trial_anchors(current_hw_fingerprint)
+    for rec in anchor_records:
+        if rec.get("product_code") == settings.LICENSE_PRODUCT_CODE:
+            candidate_records.append(rec)
+
+    if not candidate_records:
+        return None
+
+    strictest = merge_strictest_trial_records(candidate_records)
+    clock_error = await _check_license_clock_checkpoint(db, institution_id)
+    trial_eval = evaluate_machine_trial(strictest)
+    if clock_error:
+        trial_eval = {
+            **trial_eval,
+            "mode": "evaluation",
+            "trial_active": False,
+            "trial_expired": True,
+            "days_remaining": 0,
+            "error": clock_error,
+        }
+
+    now_utc = datetime.now(timezone.utc)
+    try:
+        last_seen_dt = datetime.fromisoformat(str(strictest["last_seen_at"]).replace("Z", "+00:00"))
+    except ValueError:
+        last_seen_dt = now_utc - LICENSE_CLOCK_CHECKPOINT_INTERVAL
+
+    needs_sync = (
+        not (trial_setting and trial_setting.value)
+        or not anchor_records
+        or (trial_eval["mode"] == "trial" and now_utc >= last_seen_dt + LICENSE_CLOCK_CHECKPOINT_INTERVAL)
+    )
+    if needs_sync:
+        if trial_eval["mode"] == "trial" and now_utc > last_seen_dt:
+            strictest["last_seen_at"] = now_utc.isoformat()
+        signed_env = sign_trial_record(strictest)
+        write_machine_trial_anchors(signed_env, current_hw_fingerprint)
+        if hasattr(db, "commit"):
+            await _save_setting(
+                db,
+                institution_id,
+                None,
+                _SETTING_TRIAL_ARTIFACT,
+                json.dumps(signed_env, separators=(",", ":"), sort_keys=True),
+                "Hardware-locked 30-day evaluation trial snapshot.",
+            )
+            await db.commit()
+
+    return {
+        "mode": trial_eval["mode"],
+        "rollout_stage": configured_stage,
+        "payload": None,
+        "installation_id": current_hw_fingerprint,
+        "hardware_fingerprint": current_hw_fingerprint,
+        "activation_identifier": None,
+        "trial": trial_eval,
+        "error": trial_eval.get("error"),
+    }
+
+
 async def _load_license_context(
     db: AsyncSession,
     institution_id: int,
@@ -562,6 +672,11 @@ async def _load_license_context(
     current_hw_fingerprint = get_machine_hardware_fingerprint()
 
     if not artifact_setting or not artifact_setting.value:
+        trial_ctx = await _load_trial_context(
+            db, institution_id, current_hw_fingerprint, configured_stage,
+        )
+        if trial_ctx is not None:
+            return trial_ctx
         return {
             "mode": "unactivated",
             "rollout_stage": configured_stage,
@@ -569,6 +684,7 @@ async def _load_license_context(
             "installation_id": installation_setting.value if installation_setting else current_hw_fingerprint,
             "hardware_fingerprint": current_hw_fingerprint,
             "activation_identifier": activation_setting.value if activation_setting else None,
+            "trial": None,
             "error": None,
         }
 
@@ -780,6 +896,22 @@ async def enforce_license_request(
         }
 
     module = _enforce_module_entitlement(request.url.path, entitlements)
+    if context["mode"] == "trial":
+        trial_info = context.get("trial") or {}
+        request.state.verified_lease_claims = {
+            "company_binding": institution.code,
+            "max_students": TRIAL_MAX_STUDENTS,
+            "max_staff": TRIAL_MAX_STAFF,
+            "seats": TRIAL_SEATS,
+            "active_modules": ["all"],
+            "installation_id": context.get("installation_id"),
+            "expires_at": trial_info.get("expires_at"),
+            "mode": "trial",
+            "rollout_stage": context["rollout_stage"],
+            "document_id": None,
+            "serial_number": "TRIAL-30D",
+        }
+        return
     if context["mode"] in {"active", "grace"}:
         return
     policy = payload.get("evaluation_policy") if payload else _DEFAULT_EVALUATION_POLICY
@@ -794,6 +926,12 @@ async def enforce_license_request(
         return
     if request.url.path.startswith("/api/v1/license/"):
         return
+    trial_info = context.get("trial") or {}
+    if trial_info.get("trial_expired"):
+        raise HTTPException(
+            status_code=423,
+            detail="Your 30-day free trial has ended. PrathamOne EduOS is in read-only Evaluation Mode; activate a commercial license to make changes.",
+        )
     raise HTTPException(
         status_code=423,
         detail="PrathamOne EduOS is in Evaluation Mode. Activate or renew the license to make changes.",
@@ -813,6 +951,8 @@ async def get_license_status(
     refresh_status = await _refresh_license_if_due(db, institution_id, institution.code)
     context = await _load_license_context(db, institution_id, institution.code)
     payload = context["payload"]
+    trial_info = context.get("trial") or {}
+    is_trial = context["mode"] == "trial"
     serial_setting = await _get_setting(db, institution_id, _SETTING_SERIAL_NUMBER)
     registered_email_setting = await _get_setting(db, institution_id, _SETTING_REGISTERED_EMAIL)
     current_hw_fingerprint = get_machine_hardware_fingerprint()
@@ -824,17 +964,136 @@ async def get_license_status(
         **_license_certificate_fields(payload),
         "serial_number": payload.get("serial_number") if payload else (serial_setting.value if serial_setting else None),
         "registered_email": registered_email_setting.value if registered_email_setting else None,
-        "license_model": payload.get("license_model") if payload else None,
-        "edition": payload.get("edition") if payload else None,
-        "expires_at": payload.get("expires_at") if payload else None,
-        "issued_at": payload.get("issued_at") if payload else None,
-        "offline_validity_days": payload.get("offline_validity_days") if payload else None,
+        "license_model": payload.get("license_model") if payload else ("offline_trial_30d" if is_trial else None),
+        "edition": payload.get("edition") if payload else ("30-Day Machine Trial" if is_trial else None),
+        "expires_at": payload.get("expires_at") if payload else trial_info.get("expires_at"),
+        "issued_at": payload.get("issued_at") if payload else trial_info.get("started_at"),
+        "offline_validity_days": payload.get("offline_validity_days") if payload else (TRIAL_DURATION_DAYS if is_trial else None),
         "installation_id": context.get("installation_id") or current_hw_fingerprint,
         "hardware_fingerprint": current_hw_fingerprint,
         "refresh_status": refresh_status,
         "evaluation_policy": payload.get("evaluation_policy") if payload else None,
         "registration": _license_registration(institution, current_user),
+        "trial_active": bool(trial_info.get("trial_active", False)),
+        "trial_expired": bool(trial_info.get("trial_expired", False)),
+        "trial_started_at": trial_info.get("started_at"),
+        "trial_days_remaining": trial_info.get("days_remaining"),
+        "trial_limits": {
+            "max_students": TRIAL_MAX_STUDENTS,
+            "max_staff": TRIAL_MAX_STAFF,
+            "seats": TRIAL_SEATS,
+        },
         "error": context["error"],
+    }
+
+
+@router.post("/trial/start")
+async def start_machine_trial(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
+    institution_id: int | None = Query(None, ge=1),
+    data_environment: str = Depends(get_data_environment),
+):
+    """Activate or resume a one-time 30-day offline trial strictly bound to this host machine."""
+    if data_environment != "PRODUCTION":
+        raise HTTPException(
+            status_code=409,
+            detail="The 30-day machine trial applies only to the Live institution workspace.",
+        )
+    target_institution_id = _resolve_target_institution_id(current_user, institution_id)
+    institution = await db.get(Institution, target_institution_id)
+    if not institution or not institution.is_active:
+        raise HTTPException(status_code=404, detail="Active institution not found.")
+
+    context = await _load_license_context(db, target_institution_id, institution.code)
+    if context.get("payload") and context.get("mode") in {"active", "grace"}:
+        raise HTTPException(status_code=409, detail="A verified license is already active for this institution.")
+
+    current_hw = get_machine_hardware_fingerprint()
+    is_hw_valid, hw_msg = verify_hardware_fingerprint(current_hw)
+    if not is_hw_valid:
+        raise HTTPException(status_code=409, detail=f"Cannot start unique-machine trial: {hw_msg}")
+
+    trial_setting = await _get_setting(db, target_institution_id, _SETTING_TRIAL_ARTIFACT)
+    candidate_records: list[dict[str, Any]] = []
+    if trial_setting and trial_setting.value:
+        try:
+            db_rec = verify_trial_record(json.loads(trial_setting.value))
+            ok_db_hw, db_hw_msg = verify_hardware_fingerprint((db_rec.get("hardware_id") or "").strip())
+            if not ok_db_hw:
+                raise HTTPException(status_code=409, detail=f"Node-Lock Mismatch: {db_hw_msg}")
+            candidate_records.append(db_rec)
+        except (LicenseArtifactError, json.JSONDecodeError):
+            pass
+
+    for rec in read_machine_trial_anchors(current_hw):
+        if rec.get("product_code") == settings.LICENSE_PRODUCT_CODE:
+            candidate_records.append(rec)
+
+    now_utc = datetime.now(timezone.utc)
+    already_started = False
+    if candidate_records:
+        strictest = merge_strictest_trial_records(candidate_records)
+        clock_error = await _check_license_clock_checkpoint(db, target_institution_id, now_utc)
+        trial_eval = evaluate_machine_trial(strictest, now_utc)
+        if clock_error or trial_eval["trial_expired"]:
+            raise HTTPException(
+                status_code=409,
+                detail="This machine's 30-day free trial has already expired. Activate a commercial license or switch to Training Mode.",
+            )
+        strictest["last_seen_at"] = now_utc.isoformat()
+        already_started = True
+    else:
+        strictest = build_trial_record(
+            current_hw,
+            settings.LICENSE_PRODUCT_CODE,
+            institution.code,
+            now=now_utc,
+        )
+        trial_eval = evaluate_machine_trial(strictest, now_utc)
+
+    signed_env = sign_trial_record(strictest)
+    write_machine_trial_anchors(signed_env, current_hw)
+    await _save_setting(
+        db,
+        target_institution_id,
+        current_user,
+        _SETTING_TRIAL_ARTIFACT,
+        json.dumps(signed_env, separators=(",", ":"), sort_keys=True),
+        "Hardware-locked 30-day evaluation trial snapshot.",
+    )
+    await _save_setting(
+        db,
+        target_institution_id,
+        current_user,
+        _SETTING_INSTALLATION_ID,
+        current_hw,
+        "Physical machine fingerprint anchored for 30-day trial.",
+    )
+    await _save_setting(
+        db,
+        target_institution_id,
+        current_user,
+        _SETTING_CLOCK_CHECKPOINT,
+        create_license_clock_checkpoint(target_institution_id, now_utc, settings.SECRET_KEY),
+        "Protected checkpoint for detecting local system-clock rollback.",
+    )
+    await db.commit()
+
+    return {
+        "ok": True,
+        "already_started": already_started,
+        "mode": "trial",
+        "license_model": "offline_trial_30d",
+        "edition": "30-Day Machine Trial",
+        "started_at": trial_eval["started_at"],
+        "expires_at": trial_eval["expires_at"],
+        "days_remaining": trial_eval["days_remaining"],
+        "limits": {
+            "max_students": TRIAL_MAX_STUDENTS,
+            "max_staff": TRIAL_MAX_STAFF,
+            "seats": TRIAL_SEATS,
+        },
     }
 
 

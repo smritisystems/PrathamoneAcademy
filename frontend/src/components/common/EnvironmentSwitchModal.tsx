@@ -11,12 +11,13 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-16
+ * @updated     2026-11-26
  *
  * @description Confirmation modal for switching between Live Production and Isolated Training & Demo environments.
  */
 
-import React from 'react'
+import React, { useContext, useState } from 'react'
+import { QueryClientContext } from '@tanstack/react-query'
 import { AlertTriangle, ShieldCheck, ArrowRight, X } from 'lucide-react'
 import { useEnvironmentStore, DataEnvironment } from '../../store/environmentStore'
 import { trainingApi } from '../../api/endpoints'
@@ -35,22 +36,35 @@ export function EnvironmentSwitchModal({
   onConfirm,
 }: EnvironmentSwitchModalProps) {
   const { setEnvironment } = useEnvironmentStore()
+  const queryClient = useContext(QueryClientContext)
+  const [demoSetupMode, setDemoSetupMode] = useState<'keep' | 'mirror_live' | 'baseline' | 'clean_empty'>('keep')
 
   if (!isOpen) return null
 
   const isEnteringTraining = targetEnvironment === 'TRAINING'
 
   const handleConfirm = async () => {
-    try {
-      if (isEnteringTraining) {
+    if (isEnteringTraining) {
+      // Activate TRAINING environment before calling pingSession so requests carry X-Data-Environment: TRAINING
+      setEnvironment(targetEnvironment)
+      queryClient?.clear()
+      try {
         await trainingApi.pingSession().catch(() => {})
-      } else {
-        await trainingApi.exitSession().catch(() => {})
+        if (demoSetupMode !== 'keep') {
+          await trainingApi.resetEnvironment({ force: true, demo_mode: demoSetupMode }).catch(() => {})
+        }
+      } catch {
+        // Non-blocking telemetry
       }
-    } catch {
-      // Non-blocking telemetry
+    } else {
+      try {
+        await trainingApi.exitSession().catch(() => {})
+      } catch {
+        // Non-blocking telemetry
+      }
+      setEnvironment(targetEnvironment)
     }
-    setEnvironment(targetEnvironment)
+    queryClient?.clear()
     if (onConfirm) {
       onConfirm()
     }
@@ -116,6 +130,25 @@ export function EnvironmentSwitchModal({
               : 'All subsequent API requests will route to live tenant PA001.'}
           </p>
         </div>
+
+        {isEnteringTraining && (
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-bold text-slate-700">
+              Demo Dataset Preset
+            </label>
+            <select
+              value={demoSetupMode}
+              onChange={(e) => setDemoSetupMode(e.target.value as any)}
+              aria-label="Demo dataset preset"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              <option value="keep">Use Active Demo Data (auto-loads Live mirror or Sample on first run)</option>
+              <option value="mirror_live">Copy Local Live Academy Data into Demo Sandbox</option>
+              <option value="baseline">Standard Sample Demo (20 CRM Leads · 5 Demo Students)</option>
+              <option value="clean_empty">Clean Empty Demo (0 Students · Batches & Fees Ready)</option>
+            </select>
+          </div>
+        )}
 
         <div className="flex items-center justify-end gap-2.5 pt-2">
           <button

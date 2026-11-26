@@ -11,18 +11,19 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-26
  *
  * @description Multi-step student admission form capturing personal details, parent info, and initial enrollment.
  */
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createStudent, getStandards, getDivisions } from '../api/endpoints';
 import { useAuthStore } from '../store/authStore';
 import { useEditModeStore } from '../store/editModeStore';
 import { EditModeBar } from '../components/common';
+import { extractApiErrorMessage } from '../utils/errorTaxonomy';
 import { Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -90,6 +91,7 @@ const initialForm: StudentFormData = {
 
 export default function AddStudent() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { selectedInstitutionId, selectedAcademicYearId } = useAuthStore();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<StudentFormData>(initialForm);
@@ -120,10 +122,15 @@ export default function AddStudent() {
     mutationFn: createStudent,
     onSuccess: (data) => {
       toast.success('Student registered successfully!');
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['enrollments-list'] });
+      queryClient.invalidateQueries({ queryKey: ['enrollments-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['academic-overview'] });
       navigate(`/students/${data.id}`);
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.detail || 'Failed to register student.');
+      toast.error(extractApiErrorMessage(err, 'Failed to register student.'));
     },
   });
 

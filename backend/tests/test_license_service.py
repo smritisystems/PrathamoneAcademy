@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-25
+#  * @updated     2026-11-26
 #  *
 #  * @description Focused signature validation and license-mode tests.
 #  */
@@ -930,3 +930,47 @@ async def test_offline_request_and_import_are_bound_to_the_pending_installation(
             data_environment="PRODUCTION",
         )
     assert mismatch.value.status_code == 400
+
+
+def test_all_license_protected_api_routes_resolve_without_423_config_error():
+    from app.main import app as fastapi_app
+
+    unconfigured_routes = []
+    for route in fastapi_app.routes:
+        path = getattr(route, "path", "")
+        if not path.startswith("/api/v1"):
+            continue
+        dependant = getattr(route, "dependant", None)
+        deps = getattr(dependant, "dependencies", ()) if dependant else ()
+        uses_license_guard = any(
+            getattr(d, "call", None) is license_endpoint.enforce_license_request
+            for d in deps
+        )
+        if not uses_license_guard:
+            continue
+        try:
+            license_endpoint._resolve_license_module(path)
+        except HTTPException as exc:
+            unconfigured_routes.append((path, exc.detail))
+
+    assert unconfigured_routes == []
+    assert license_endpoint._resolve_license_module("/api/v1/catalogue/overview") == "academic_management"
+    assert license_endpoint._resolve_license_module("/api/v1/planning/tasks/summary") == "planning"
+    assert license_endpoint._resolve_license_module("/api/v1/chat/rooms") == "communication"
+    assert license_endpoint._resolve_license_module("/api/v1/security/device-binding/settings") == "administration"
+    assert license_endpoint._resolve_license_module("/api/v1/video-studio/templates") == "video_studio"
+    assert license_endpoint._resolve_license_module("/api/v1/finance/expenses") == "accounting"
+
+
+def test_student_create_defaults_admission_date_when_omitted():
+    from datetime import date
+    from app.api.v1.endpoints.students import StudentCreate
+
+    payload = StudentCreate(
+        first_name="Aarav",
+        last_name="Sharma",
+        date_of_birth="2010-01-01",
+        gender="male",
+    )
+    assert payload.admission_date == date.today()
+

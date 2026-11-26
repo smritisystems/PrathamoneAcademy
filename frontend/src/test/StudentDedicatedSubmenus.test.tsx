@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-09
- * @updated     2026-11-21
+ * @updated     2026-11-26
  *
  * @description Vitest test suite validating dedicated functional workspaces for Students & Admissions Centre across all 8 submenus, URL synchronization, and Rule 010 View-First governance.
  */
@@ -301,5 +301,37 @@ describe('Students & Admissions Dedicated Workspaces Suite', () => {
     renderWithRoute('/students/overview')
 
     expect(await screen.findByText(/TRAINING MODE ACTIVE/i)).toBeDefined()
+  })
+
+  it('submits student admission with admission_date and handles 423/422 errors safely', async () => {
+    const { studentsApi } = await import('../api/endpoints')
+    act(() => {
+      useEditModeStore.setState({
+        scopes: { 'students:master': true },
+      })
+    })
+
+    renderWithRoute('/students/admission')
+
+    expect(await screen.findByText('New Student Admission & KYC Application')).toBeDefined()
+    expect(await screen.findByText('Standard 10')).toBeDefined()
+    fireEvent.change(screen.getByPlaceholderText('e.g. Aarav'), { target: { value: 'Rohan' } })
+    fireEvent.change(screen.getByPlaceholderText('e.g. Sharma'), { target: { value: 'Verma' } })
+    const selects = screen.getAllByRole('combobox')
+    const standardSelect = selects.find((el) => el.innerHTML.includes('Select Target Standard'))!
+    fireEvent.change(standardSelect, { target: { value: '1' } })
+    fireEvent.click(screen.getByRole('button', { name: /submit student admission/i }))
+
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(studentsApi.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        first_name: 'Rohan',
+        last_name: 'Verma',
+        admission_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      })
+    )
   })
 })

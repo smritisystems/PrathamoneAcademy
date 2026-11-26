@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints for batch/division management, teacher allocation, capacity, and scheduling.
 #  */
@@ -24,7 +24,14 @@ from pydantic import BaseModel
 from datetime import datetime
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role, check_institution_access, is_sysadmin
+from app.core.deps import (
+    get_current_active_user,
+    require_role,
+    check_institution_access,
+    get_data_environment,
+    resolve_environment_institution_id,
+    is_sysadmin,
+)
 from app.services.settings_service import get_institution_setting
 from app.services.safe_delete_service import SafeDeleteService
 from app.models.division import Division
@@ -81,6 +88,7 @@ async def list_divisions(
     board_id: Optional[int] = Query(None),
     status_filter: Optional[str] = Query(None, alias="status"),
     search: Optional[str] = Query(None),
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
@@ -90,7 +98,10 @@ async def list_divisions(
         .outerjoin(Board, Division.board_id == Board.id)
         .outerjoin(User, Division.class_teacher_id == User.id)
     )
-    if not is_sysadmin(current_user):
+    if data_env == "TRAINING":
+        training_inst_id = await resolve_environment_institution_id(db, data_env, current_user)
+        query = query.where(Standard.institution_id == training_inst_id)
+    elif not is_sysadmin(current_user):
         inst_id = getattr(current_user, "institution_id", None)
         if inst_id is None:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Institution context required")

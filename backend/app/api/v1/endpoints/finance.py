@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-24
-#  * @updated     2026-11-24
+#  * @updated     2026-11-26
 #  *
 #  * @description REST API router for Institute Daily Expense Management, Cash Registers, Cash Closing, and Daily Cash Book.
 #  */
@@ -25,7 +25,7 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
+from app.core.deps import get_current_active_user, enforce_institution_access
 from app.models.user import User
 from app.models.finance import Expense, ExpenseCategory, CashRegister, DailyCashRegister, CashTransaction
 from app.services.finance_service import FinanceService
@@ -108,17 +108,17 @@ class CashTransactionCreate(BaseModel):
 # ------------------------------------------------------------------------------
 @router.get("/expenses/overview")
 async def get_expense_overview(
-    institution_id: int = 1,
+    effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
     """Returns top-level KPIs and monthly category breakdown for expenses."""
-    return await FinanceService.get_expense_dashboard_metrics(db, institution_id)
+    return await FinanceService.get_expense_dashboard_metrics(db, effective_inst_id or 1)
 
 
 @router.get("/expenses/categories")
 async def list_expense_categories(
-    institution_id: int = 1,
+    effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
@@ -127,7 +127,7 @@ async def list_expense_categories(
         select(ExpenseCategory)
         .where(
             and_(
-                ExpenseCategory.institution_id == institution_id,
+                ExpenseCategory.institution_id == (effective_inst_id or 1),
                 ExpenseCategory.is_active == True,
             )
         )
@@ -148,7 +148,7 @@ async def list_expense_categories(
 
 @router.get("/expenses")
 async def list_expenses(
-    institution_id: int = 1,
+    effective_inst_id: int = Depends(enforce_institution_access),
     search: Optional[str] = None,
     category_id: Optional[int] = None,
     payment_mode: Optional[str] = None,
@@ -165,7 +165,7 @@ async def list_expenses(
         select(Expense, ExpenseCategory, User)
         .join(ExpenseCategory, Expense.category_id == ExpenseCategory.id)
         .outerjoin(User, Expense.recorded_by_id == User.id)
-        .where(Expense.institution_id == institution_id)
+        .where(Expense.institution_id == (effective_inst_id or 1))
     )
 
     if search:
@@ -236,14 +236,14 @@ async def list_expenses(
 @router.post("/expenses", status_code=status.HTTP_201_CREATED)
 async def create_expense(
     payload: ExpenseCreate,
-    institution_id: int = 1,
+    effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
     """Record a new institutional expense."""
     expense = await FinanceService.create_expense(
         db=db,
-        institution_id=institution_id,
+        institution_id=effective_inst_id or 1,
         data=payload.model_dump(),
         recorded_by_id=current_user.id,
     )

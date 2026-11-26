@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-16
+#  * @updated     2026-11-26
 #  *
 #  * @description Test suite verifying Global Training & Demo Environment tenant isolation, baseline dataset seeding, reporting governance, and dependency-aware reset engine with absolute production safety.
 #  */
@@ -211,3 +211,54 @@ async def test_rbac_training_reset(client: AsyncClient, db, test_institution):
     )
     assert res.status_code == 403
     assert "Insufficient permissions" in res.json().get("detail", "")
+
+
+async def test_clean_empty_and_mirror_live_demo_modes(db, test_institution, admin_user):
+    """Verifies Clean Empty Demo leaves 0 students with batches/fees ready, and Mirror Live clones live records safely."""
+    from app.services.training_dataset_service import (
+        clone_live_to_training_environment,
+        CLEAN_DATASET_VERSION,
+        MIRROR_DATASET_VERSION,
+    )
+
+    live_student = Student(
+        institution_id=test_institution.id,
+        admission_number="LIVE-MIR-001",
+        first_name="Aarav",
+        last_name="MirrorTest",
+        date_of_birth=date(2010, 4, 10),
+        gender="male",
+        admission_date=date(2026, 4, 15),
+        is_active=True,
+        is_demo=False,
+        data_environment="PRODUCTION",
+    )
+    db.add(live_student)
+    await db.commit()
+
+    # 1. Mirror live institution into isolated PA001-DEMO
+    mirror_res = await clone_live_to_training_environment(
+        db, user_id=admin_user.id, initiated_by=admin_user.username, force=True
+    )
+    assert mirror_res["status"] == "SUCCESS"
+    assert mirror_res["dataset_version"] == MIRROR_DATASET_VERSION
+    assert mirror_res["students_cloned"] >= 1
+
+    status_mirror = await get_training_environment_status(db)
+    assert status_mirror["demo_profile"] == "mirror_live"
+    assert status_mirror["record_counts"]["students"] >= 1
+
+    # 2. Switch to Clean Empty Demo (0 students, 0 leads, batches + fees preserved)
+    clean_res = await reset_training_environment(
+        db, user_id=admin_user.id, initiated_by=admin_user.username, force=True, restore_baseline=False
+    )
+    assert clean_res["status"] == "SUCCESS"
+    assert clean_res["dataset_version"] == CLEAN_DATASET_VERSION
+    assert clean_res["records_seeded"] == 0
+
+    status_clean = await get_training_environment_status(db)
+    assert status_clean["demo_profile"] == "clean_empty"
+    assert status_clean["record_counts"]["students"] == 0
+    assert status_clean["record_counts"]["leads"] == 0
+    assert status_clean["record_counts"]["batches"] >= 1
+    assert status_clean["record_counts"]["fee_structures"] >= 1

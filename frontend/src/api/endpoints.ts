@@ -2085,6 +2085,22 @@ export const licenseApi = {
       { artifact },
       { params: institution_id ? { institution_id } : undefined },
     ),
+  startTrial: (institution_id?: number) =>
+    apiClient.post<{
+      ok: boolean
+      already_started: boolean
+      mode: 'trial'
+      license_model: string
+      edition: string
+      started_at: string
+      expires_at: string
+      days_remaining: number
+      limits: { max_students: number; max_staff: number; seats: number }
+    }>(
+      '/license/trial/start',
+      {},
+      { params: institution_id ? { institution_id } : undefined },
+    ),
 }
 
 // ─── Housekeeping & Database Operations API ──────────────────────────────────
@@ -2727,6 +2743,7 @@ export interface TrainingStatusResponse {
   inactivity_timeout_minutes: number
   daily_reset_time: string
   dataset_version: string
+  demo_profile?: 'mirror_live' | 'baseline' | 'clean_empty'
   institution_id: number
   institution_code: string
   record_counts: {
@@ -2734,6 +2751,9 @@ export interface TrainingStatusResponse {
     students: number
     receipts: number
     follow_ups: number
+    live_students?: number
+    batches?: number
+    fee_structures?: number
   }
   active_sessions_count: number
   active_sessions: Array<{
@@ -2753,8 +2773,22 @@ export const trainingApi = {
   getStatus: () => apiClient.get<TrainingStatusResponse>('/training/status'),
   pingSession: () => apiClient.post<{ status: string; session_id: number; last_active_at: string }>('/training/session/ping'),
   exitSession: () => apiClient.post<{ status: string }>('/training/session/exit'),
-  resetEnvironment: (data: { force?: boolean; restore_baseline?: boolean; dataset_version?: string }) =>
-    apiClient.post<{ status: string; dataset_version: string; records_cleared: number; records_seeded: number; duration_ms: number; timestamp: string }>('/training/reset', data),
+  resetEnvironment: (data: {
+    force?: boolean
+    restore_baseline?: boolean
+    dataset_version?: string
+    demo_mode?: 'baseline' | 'clean_empty' | 'mirror_live'
+  }) =>
+    apiClient.post<{
+      status: string
+      dataset_version: string
+      records_cleared: number
+      records_seeded: number
+      students_cloned?: number
+      fallback_to_baseline?: boolean
+      duration_ms: number
+      timestamp: string
+    }>('/training/reset', data),
   seedDataset: () => apiClient.post<{ status: string; details: any }>('/training/seed'),
   getResetLogs: (limit = 50) => apiClient.get<Array<any>>('/training/reset-logs', { params: { limit } }),
   updateConfig: (data: { is_enabled?: boolean; reset_policy?: string; inactivity_timeout_minutes?: number; daily_reset_time?: string }) =>

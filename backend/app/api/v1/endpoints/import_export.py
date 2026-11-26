@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-16
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints for bulk spreadsheet import/export, template generation, and async job tracking.
 #  */
@@ -19,7 +19,7 @@
 import json
 from datetime import date
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Query, UploadFile, File, Form, Response
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
@@ -37,6 +37,7 @@ from app.services.data_importer import (
     execute_verified_import,
 )
 from app.services.data_exporter import export_entity_data
+from app.services.license_service import enforce_lease_quota
 
 router = APIRouter()
 
@@ -191,6 +192,7 @@ async def preview_grid_import(
 @router.post("/execute")
 async def execute_import(
     req: ImportExecuteRequest,
+    request: Request,
     current_user: User = Depends(require_role("super_admin", "admin", "staff")),
     db: AsyncSession = Depends(get_db),
 ):
@@ -201,6 +203,12 @@ async def execute_import(
     """
     if not req.validated_rows:
         raise HTTPException(status_code=400, detail="No validated rows provided for import.")
+
+    target_inst_id = current_user.institution_id or 1
+    if req.entity_type == "students" and req.mode != "update_existing":
+        await enforce_lease_quota(
+            request, db, target_inst_id, resource_type="student", add_count=len(req.validated_rows)
+        )
 
     try:
         result = await execute_verified_import(

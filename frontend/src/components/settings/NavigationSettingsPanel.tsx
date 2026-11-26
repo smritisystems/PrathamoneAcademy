@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-16
+ * @updated     2026-11-26
  *
  * @description Institute administrative settings panel managing global menu personalization policies and role default menus.
  */
@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore, isUserAdmin } from '../../store/authStore'
 import { navigationApi } from '../../api/endpoints'
+import { extractApiErrorMessage } from '../../utils/errorTaxonomy'
 import type { NavigationPolicy, NavigationMode } from '../../types'
 import { CANONICAL_MODULE_REGISTRY } from '../../config/modules'
 
@@ -90,7 +91,7 @@ export default function NavigationSettingsPanel() {
       setStatusMsg({ text: 'Navigation governance policy saved successfully', type: 'success' })
       setTimeout(() => setStatusMsg(null), 3000)
     } catch (err: any) {
-      setStatusMsg({ text: err?.message || 'Failed to save navigation policy', type: 'error' })
+      setStatusMsg({ text: extractApiErrorMessage(err, 'Failed to save navigation policy'), type: 'error' })
     } finally {
       setIsSaving(false)
     }

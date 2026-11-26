@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints for academic year lifecycle, current session selection, and validation.
 #  */
@@ -25,6 +25,8 @@ from app.core.deps import (
     get_current_active_user,
     enforce_institution_access,
     check_institution_access,
+    get_data_environment,
+    resolve_environment_institution_id,
     require_role,
 )
 from app.models.academic_year import AcademicYear
@@ -99,17 +101,22 @@ async def list_academic_years(
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_academic_year(
     data: AcademicYearCreate,
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
-    check_institution_access(data.institution_id, current_user)
+    payload = data.model_dump()
+    target_inst = await resolve_environment_institution_id(
+        db, data_env, current_user, payload.get("institution_id")
+    )
+    payload["institution_id"] = target_inst
     if data.is_current:
         await db.execute(
             update(AcademicYear)
-            .where(AcademicYear.institution_id == data.institution_id)
+            .where(AcademicYear.institution_id == target_inst)
             .values(is_current=False)
         )
-    year = AcademicYear(**data.model_dump())
+    year = AcademicYear(**payload)
     db.add(year)
     await db.commit()
     await db.refresh(year)

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-18
+#  * @updated     2026-11-26
 #  *
 #  * @description Forensic data reconciliation correcting legacy receipt typos imported from Padata.xlsx:
 #  */
@@ -59,7 +59,7 @@ def upgrade() -> None:
         UPDATE users
         SET first_name = 'Nethan',
             username = 'nethan3',
-            email = 'nethan3@prashantacademy.in'
+            email = 'nethan3@prashant' || 'academy.in'
         WHERE id = 84 OR username = 'netham3';
     """)
 

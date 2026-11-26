@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-16
+ * @updated     2026-11-26
  *
  * @description Comprehensive test suite validating centralized error taxonomy, non-technical messaging, recovery actions, and reload loop prevention.
  */
@@ -30,7 +30,14 @@ import {
   resetReloadGuard,
   performSafeReload,
   sanitizeDiagnosticValue,
+  formatApiErrorDetail,
+  extractApiErrorMessage,
+  installGlobalErrorBridge,
+  logTechnicalError,
+  redactSensitiveText,
 } from '../utils/errorTaxonomy'
+import SafeToaster from '../components/common/SafeToaster'
+import toast from 'react-hot-toast'
 import { ErrorScreen } from '../components/ErrorScreen'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { OfflineBanner } from '../components/OfflineBanner'
@@ -321,6 +328,136 @@ describe('Centralized Error Handling & Recovery Architecture', () => {
         value: true,
         configurable: true,
       })
+    })
+  })
+
+  describe('7. Safe API Error Formatting & Crash-Proof SafeToaster', () => {
+    it('formats FastAPI 422 validation error arrays into safe human-readable strings', () => {
+      const detailArray = [
+        { type: 'missing', loc: ['body', 'admission_date'], msg: 'Field required', input: {} },
+        { type: 'string_too_short', loc: ['body', 'first_name'], msg: 'String should have at least 1 character' },
+      ]
+      expect(formatApiErrorDetail(detailArray)).toBe(
+        'admission date: Field required; first name: String should have at least 1 character'
+      )
+
+      const err422 = { response: { status: 422, data: { detail: detailArray } } }
+      expect(extractApiErrorMessage(err422, 'Save failed')).toBe(
+        'admission date: Field required; first name: String should have at least 1 character'
+      )
+    })
+
+    it('translates HTTP 423 Evaluation Mode errors without leaking raw Axios status text', () => {
+      const err423WithDetail = {
+        response: {
+          status: 423,
+          data: { detail: 'PrathamOne EduOS is in Evaluation Mode. Activate or renew the license to make changes.' },
+        },
+        message: 'Request failed with status code 423',
+      }
+      expect(extractApiErrorMessage(err423WithDetail)).toBe(
+        'PrathamOne EduOS is in Evaluation Mode. Activate or renew the license to make changes.'
+      )
+
+      const err423Generic = {
+        response: { status: 423 },
+        message: 'Request failed with status code 423',
+      }
+      expect(extractApiErrorMessage(err423Generic)).toContain('Evaluation Mode is active')
+    })
+
+    it('renders SafeToaster safely without React #31 crash even when given a 422 validation object array', async () => {
+      const { unmount } = render(<SafeToaster />)
+      await act(async () => {
+        toast.error([
+          { type: 'missing', loc: ['body', 'admission_date'], msg: 'Field required', input: {} },
+        ] as any)
+      })
+      expect(screen.getByText(/admission date: Field required/i)).toBeDefined()
+      toast.dismiss()
+      unmount()
+    })
+  })
+
+  describe('8. Desktop WebView2 Frontend Error Bridge & DPDP Scrubbing', () => {
+    it('forwards window errors, unhandled rejections, ErrorBoundary crashes, and HTTP 500/423 summaries sanitized to WebView2', () => {
+      const postMessage = vi.fn()
+      ;(window as any).chrome = { webview: { postMessage } }
+
+      const cleanup = installGlobalErrorBridge()
+      try {
+        // 1. Trigger window error event with sensitive token/aadhaar text
+        window.dispatchEvent(
+          new ErrorEvent('error', {
+            error: new Error('Crash with Bearer secretToken123 and aadhaar=1234-5678-9012'),
+            message: 'Crash with Bearer secretToken123',
+          })
+        )
+        // 2. Trigger unhandled promise rejection
+        const rejEvent = new Event('unhandledrejection') as any
+        rejEvent.reason = new Error('Unhandled rejection password=TopSecret!')
+        window.dispatchEvent(rejEvent)
+
+        // 3. Trigger HTTP 500 & 423 API summaries (and ensure 404 is not forwarded)
+        logTechnicalError({
+          errorId: 'ERR-20261126-500X',
+          error: new Error('Server 500'),
+          category: 'SERVER_UNAVAILABLE',
+          apiEndpoint: '/api/v1/staff/assignments/list?token=abc123',
+          status: 500,
+        })
+        logTechnicalError({
+          errorId: 'ERR-20261126-423X',
+          error: new Error('Locked 423'),
+          category: 'DATA_LOAD_FAILURE',
+          apiEndpoint: '/api/v1/settings/profile',
+          status: 423,
+        })
+        logTechnicalError({
+          errorId: 'ERR-20261126-404X',
+          error: new Error('Not found'),
+          category: 'DATA_LOAD_FAILURE',
+          apiEndpoint: '/api/v1/students/999',
+          status: 404,
+        })
+
+        // 4. Trigger ErrorBoundary componentDidCatch
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+        const Boom = () => {
+          throw new Error('Boundary explosion token=xyz999')
+        }
+        render(
+          <ErrorBoundary>
+            <Boom />
+          </ErrorBoundary>
+        )
+        errSpy.mockRestore()
+
+        const payloads = postMessage.mock.calls.map((c) => c[0])
+        const sources = payloads.map((p) => p.source)
+        expect(sources).toContain('window_error')
+        expect(sources).toContain('unhandledrejection')
+        expect(sources).toContain('api')
+        expect(sources).toContain('error_boundary')
+        expect(payloads.some((p) => p.httpStatus === 404)).toBe(false)
+
+        const errEvt = payloads.find((p) => p.errorName === 'Error' && p.summary.includes('Bearer'))
+        const rejEvtPayload = payloads.find((p) => p.source === 'unhandledrejection')
+        const api500 = payloads.find((p) => p.httpStatus === 500)
+        const api423 = payloads.find((p) => p.httpStatus === 423)
+        const boundaryEvt = payloads.find((p) => p.source === 'error_boundary')
+
+        expect(errEvt?.summary).not.toContain('secretToken123')
+        expect(errEvt?.summary).not.toContain('1234-5678-9012')
+        expect(rejEvtPayload?.summary).not.toContain('TopSecret!')
+        expect(api500?.apiEndpoint).toBe('/api/v1/staff/assignments/list?token=[REDACTED]')
+        expect(api423?.httpStatus).toBe(423)
+        expect(boundaryEvt?.summary).not.toContain('xyz999')
+        expect(redactSensitiveText('Bearer abc.def.ghi')).toBe('Bearer [REDACTED]')
+      } finally {
+        cleanup()
+        delete (window as any).chrome
+      }
     })
   })
 })

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-16
+ * @updated     2026-11-26
  *
  * @description Centralized error classification, user-friendly messaging, reference ID generation, and diagnostic logging.
  */
@@ -211,9 +211,23 @@ const SENSITIVE_KEY_PATTERNS = [
   /key/i,
   /credential/i,
   /aadhaar/i,
+  /aadhar/i,
   /card/i,
   /cvv/i,
 ]
+
+/**
+ * Scrubs JWTs, Bearer headers, query credentials, and 12-digit Aadhaar numbers from free-form text (DPDP compliance).
+ */
+export function redactSensitiveText(text: string): string {
+  if (!text) return ''
+  return text
+    .replace(/\bBearer\s+[A-Za-z0-9\-._~+/]+=*/gi, 'Bearer [REDACTED]')
+    .replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}(?:\.[A-Za-z0-9_-]+)?/g, '[REDACTED_JWT]')
+    .replace(/([?&](?:token|access_token|refresh_token|password|secret|api_key|key|aadhaar|aadhar)=)[^&\s]+/gi, '$1[REDACTED]')
+    .replace(/\b(password|passwd|pwd|secret|token|aadhaar|aadhar)\s*[:=]\s*[^\s,;]+/gi, '$1=[REDACTED]')
+    .replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[REDACTED_UID]')
+}
 
 /**
  * Filters any object or string to remove sensitive security tokens and personal credentials.
@@ -270,7 +284,9 @@ export function createSafeDiagnostics(
     route,
     onlineStatus: typeof navigator !== 'undefined' ? navigator.onLine : true,
     userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown Client',
-    apiEndpoint: extra?.apiEndpoint ? String(sanitizeDiagnosticValue(extra.apiEndpoint)) : undefined,
+    apiEndpoint: extra?.apiEndpoint
+      ? redactSensitiveText(String(sanitizeDiagnosticValue(extra.apiEndpoint)))
+      : undefined,
     httpStatus: extra?.httpStatus,
   }
 }
@@ -401,10 +417,13 @@ export function performSafeReload(forceCacheBust = false): boolean {
   return true
 }
 
-/**
- * Structured developer console logger connecting error reference IDs with stack traces.
- */
-export function logTechnicalError(details: {
+export type FrontendErrorSource =
+  | 'api'
+  | 'error_boundary'
+  | 'window_error'
+  | 'unhandledrejection'
+
+export interface TechnicalErrorDetails {
   errorId: string
   error: unknown
   category: ErrorCategory
@@ -412,7 +431,144 @@ export function logTechnicalError(details: {
   componentStack?: string
   apiEndpoint?: string
   status?: number
-}): void {
+  source?: FrontendErrorSource
+}
+
+function shouldForwardToDesktopHost(details: TechnicalErrorDetails): boolean {
+  if (details.source === 'window_error' || details.source === 'unhandledrejection' || details.source === 'error_boundary') {
+    return true
+  }
+  if (details.componentStack) {
+    return true
+  }
+  if (details.status !== undefined && (details.status >= 500 || details.status === 423)) {
+    return true
+  }
+  return details.category === 'SERVER_UNAVAILABLE'
+}
+
+const _recentForwarded = new Map<string, number>()
+
+/**
+ * Forwards sanitized diagnostics via WebView2 postMessage so desktop EXE collects frontend errors
+ * cleanly in <dataRoot>\logs\frontend_errors.log without exposing PII or tokens.
+ */
+export function forwardDiagnosticsToDesktopHost(details: TechnicalErrorDetails): boolean {
+  if (typeof window === 'undefined') return false
+  const webview = (window as any)?.chrome?.webview
+  if (!webview || typeof webview.postMessage !== 'function') {
+    return false
+  }
+  if (!shouldForwardToDesktopHost(details)) {
+    return false
+  }
+
+  try {
+    const diagnostics = createSafeDiagnostics(details.errorId, details.category, {
+      route: details.route,
+      apiEndpoint: details.apiEndpoint,
+      httpStatus: details.status,
+    })
+    const errObj = details.error as any
+    const rawMsg =
+      errObj instanceof Error
+        ? errObj.message
+        : typeof errObj === 'string'
+          ? errObj
+          : String(errObj?.response?.data?.detail || errObj?.message || 'Unexpected frontend error')
+    const source: FrontendErrorSource =
+      details.source || (details.componentStack ? 'error_boundary' : 'api')
+
+    const summary = redactSensitiveText(formatApiErrorDetail(rawMsg, 'Error recorded')).slice(0, 500)
+    const dedupKey = `${source}|${diagnostics.httpStatus ?? ''}|${summary}`
+    const now = Date.now()
+    const prevAt = _recentForwarded.get(dedupKey)
+    if (prevAt !== undefined && now - prevAt < 500) {
+      return false
+    }
+    _recentForwarded.set(dedupKey, now)
+    if (_recentForwarded.size > 50) {
+      const oldestKey = _recentForwarded.keys().next().value
+      if (oldestKey !== undefined) _recentForwarded.delete(oldestKey)
+    }
+
+    const cleanPayload = sanitizeDiagnosticValue({
+      kind: 'PRATHAMONE_FRONTEND_ERROR',
+      source,
+      errorId: diagnostics.errorId,
+      category: diagnostics.category,
+      timestamp: diagnostics.timestamp,
+      app: diagnostics.app,
+      version: diagnostics.version,
+      route: redactSensitiveText(diagnostics.route),
+      httpStatus: diagnostics.httpStatus,
+      apiEndpoint: diagnostics.apiEndpoint,
+      errorName: errObj instanceof Error ? errObj.name : undefined,
+      summary,
+      componentStack: details.componentStack
+        ? redactSensitiveText(details.componentStack).slice(0, 800)
+        : undefined,
+    })
+    webview.postMessage(cleanPayload)
+    return true
+  } catch {
+    return false
+  }
+}
+
+let _globalBridgeCleanup: (() => void) | null = null
+
+/**
+ * Idempotently binds global window.onerror and unhandledrejection handlers so unhandled JS/React
+ * errors are sanitized via createSafeDiagnostics and forwarded to the desktop WebView2 host.
+ */
+export function installGlobalErrorBridge(): () => void {
+  if (typeof window === 'undefined') {
+    return () => {}
+  }
+  if (_globalBridgeCleanup) {
+    return _globalBridgeCleanup
+  }
+
+  const handleWindowError = (event: ErrorEvent) => {
+    const err = event.error instanceof Error ? event.error : new Error(event.message || 'Uncaught runtime error')
+    logTechnicalError({
+      errorId: generateErrorReferenceId(),
+      error: err,
+      category: classifyError(err),
+      route: window.location.pathname,
+      source: 'window_error',
+    })
+  }
+
+  const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+    const reason = event.reason
+    logTechnicalError({
+      errorId: generateErrorReferenceId(),
+      error: reason ?? new Error('Unhandled promise rejection'),
+      category: classifyError(reason),
+      route: window.location.pathname,
+      source: 'unhandledrejection',
+    })
+  }
+
+  window.addEventListener('error', handleWindowError)
+  window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+  _globalBridgeCleanup = () => {
+    window.removeEventListener('error', handleWindowError)
+    window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+    _globalBridgeCleanup = null
+  }
+  return _globalBridgeCleanup
+}
+
+/**
+ * Structured developer console logger connecting error reference IDs with stack traces.
+ */
+export function logTechnicalError(details: TechnicalErrorDetails): void {
+  forwardDiagnosticsToDesktopHost(details)
+
   if (!(import.meta as any).env?.DEV) {
     return
   }
@@ -445,4 +601,109 @@ export function logTechnicalError(details: {
     console.error(`[PrathamOne Error] ${errorId}:`, error)
   }
 }
+
+/**
+ * Formats an arbitrary FastAPI/API `detail` payload (string, Pydantic 422 validation
+ * error array, or structured object) into a safe human-readable string so React UI
+ * banners and toast notifications never receive raw objects or arrays (#31 crash).
+ */
+export function formatApiErrorDetail(
+  detail: unknown,
+  fallback = 'An unexpected error occurred.'
+): string {
+  if (detail == null) return fallback
+  if (typeof detail === 'string') {
+    const trimmed = detail.trim()
+    return trimmed || fallback
+  }
+  if (typeof detail === 'number' || typeof detail === 'boolean') {
+    return String(detail)
+  }
+  if (Array.isArray(detail)) {
+    const parts = detail
+      .map((item) => {
+        if (typeof item === 'string') return item.trim()
+        if (item && typeof item === 'object') {
+          const rec = item as Record<string, unknown>
+          const rawMsg =
+            typeof rec.msg === 'string'
+              ? rec.msg
+              : typeof rec.message === 'string'
+                ? rec.message
+                : typeof rec.detail === 'string'
+                  ? rec.detail
+                  : ''
+          const loc = Array.isArray(rec.loc)
+            ? rec.loc
+                .filter((seg) => !['body', 'query', 'path'].includes(String(seg)))
+                .map((seg) => String(seg).replace(/_/g, ' '))
+            : []
+          const field = loc.length > 0 ? loc[loc.length - 1] : ''
+          if (field && rawMsg) return `${field}: ${rawMsg}`
+          if (rawMsg) return rawMsg
+        }
+        return ''
+      })
+      .filter(Boolean)
+    return parts.length > 0 ? parts.join('; ') : fallback
+  }
+  if (typeof detail === 'object') {
+    const rec = detail as Record<string, unknown>
+    for (const key of ['detail', 'message', 'msg', 'error']) {
+      if (rec[key] !== undefined && rec[key] !== detail) {
+        const nested = formatApiErrorDetail(rec[key], '')
+        if (nested) return nested
+      }
+    }
+  }
+  return fallback
+}
+
+/**
+ * Extracts a safe, user-friendly error message from any Axios/API/runtime error,
+ * translating HTTP 423 (Evaluation Mode / License Locked) and FastAPI 422 arrays cleanly.
+ */
+export function extractApiErrorMessage(
+  error: unknown,
+  fallback = 'Request failed. Please try again.'
+): string {
+  if (!error) return fallback
+  if (typeof error === 'string') return error.trim() || fallback
+
+  const errObj = error as {
+    response?: { status?: number; data?: { detail?: unknown; message?: unknown; error?: unknown } }
+    userFriendlyMessage?: unknown
+    message?: unknown
+  }
+  const status = errObj?.response?.status
+  const rawDetail =
+    errObj?.response?.data?.detail ??
+    errObj?.response?.data?.message ??
+    errObj?.response?.data?.error
+
+  if (rawDetail !== undefined && rawDetail !== null) {
+    const formatted = formatApiErrorDetail(rawDetail, '')
+    if (formatted) return formatted
+  }
+
+  if (status === 423) {
+    return 'Evaluation Mode is active. Activate your commercial license or switch to Training Mode to make changes.'
+  }
+
+  if (typeof errObj?.userFriendlyMessage === 'string' && errObj.userFriendlyMessage.trim()) {
+    return errObj.userFriendlyMessage.trim()
+  }
+
+  if (typeof errObj?.message === 'string' && errObj.message.trim()) {
+    if (status === 423 && /^Request failed with status code 423/i.test(errObj.message)) {
+      return 'Evaluation Mode is active. Activate your commercial license or switch to Training Mode to make changes.'
+    }
+    if (!/^Request failed with status code \d+$/i.test(errObj.message)) {
+      return errObj.message.trim()
+    }
+  }
+
+  return fallback
+}
+
 

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-22
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints for standards/classes management, board associations, and settings.
 #  */
@@ -21,7 +21,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from typing import Optional
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role, check_institution_access, is_sysadmin
+from app.core.deps import (
+    get_current_active_user,
+    require_role,
+    check_institution_access,
+    get_data_environment,
+    resolve_environment_institution_id,
+    is_sysadmin,
+)
 from app.models.standard import Standard
 from app.models.division import Division
 from app.models.board import Board
@@ -153,17 +160,22 @@ class StandardUpdate(BaseModel):
 async def get_academic_overview(
     institution_id: Optional[int] = Query(None),
     academic_year_id: Optional[int] = Query(None),
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
-    if institution_id is not None:
-        check_institution_access(institution_id, current_user)
-    target_inst = institution_id if institution_id is not None else (
-        None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
-    )
+    if data_env == "TRAINING":
+        target_inst = await resolve_environment_institution_id(db, data_env, current_user)
+    else:
+        if institution_id is not None:
+            check_institution_access(institution_id, current_user)
+        target_inst = institution_id if institution_id is not None else (
+            None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
+        )
     # 1-5. Consolidated Single-Roundtrip Academic Metrics Query
     std_inst_filter = [Standard.institution_id == target_inst] if target_inst is not None else []
     stu_inst_filter = [Student.institution_id == target_inst] if target_inst is not None else []
+    brd_inst_filter = [Board.institution_id == target_inst] if target_inst is not None else []
 
     metrics_query = select(
         select(func.count(Student.id)).where(Student.is_active == True, *stu_inst_filter).scalar_subquery().label("total_students"),
@@ -178,7 +190,7 @@ async def get_academic_overview(
     occupancy_pct = round((enrolled_seats / total_seats) * 100) if total_seats > 0 else 0
 
     # 6. Academic Tree Structure: Boards -> Classes/Standards -> Batch count & Student count
-    boards_stmt = select(Board).where(Board.is_active == True).order_by(Board.name)
+    boards_stmt = select(Board).where(Board.is_active == True, *brd_inst_filter).order_by(Board.name)
     boards = (await db.execute(boards_stmt)).scalars().all()
 
     # Pre-fetch counts
@@ -199,7 +211,7 @@ async def get_academic_overview(
     for b_id, s_id, cnt in (await db.execute(std_enr_stmt)).all():
         student_counts_by_brd_std[(b_id, s_id)] = cnt
 
-    standards_all_stmt = select(Standard).where(Standard.is_active == True).order_by(Standard.level)
+    standards_all_stmt = select(Standard).where(Standard.is_active == True, *std_inst_filter).order_by(Standard.level)
     standards_all = (await db.execute(standards_all_stmt)).scalars().all()
 
     structure_tree = []
@@ -243,14 +255,18 @@ async def list_standards(
     institution_id: Optional[int] = None,
     board_id: Optional[int] = None,
     search: Optional[str] = None,
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
-    if institution_id is not None:
-        check_institution_access(institution_id, current_user)
-    target_inst = institution_id if institution_id is not None else (
-        None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
-    )
+    if data_env == "TRAINING":
+        target_inst = await resolve_environment_institution_id(db, data_env, current_user)
+    else:
+        if institution_id is not None:
+            check_institution_access(institution_id, current_user)
+        target_inst = institution_id if institution_id is not None else (
+            None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
+        )
     query = select(Standard).where(Standard.is_active == True)
     if target_inst is not None:
         query = query.where(Standard.institution_id == target_inst)
@@ -312,13 +328,14 @@ async def list_standards(
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_standard(
     data: StandardCreate,
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     d = data.model_dump()
-    if not d.get("institution_id"):
-        d["institution_id"] = getattr(current_user, "institution_id", None) or 1
-    check_institution_access(d["institution_id"], current_user)
+    d["institution_id"] = await resolve_environment_institution_id(
+        db, data_env, current_user, d.get("institution_id")
+    )
 
     # Check duplicate level per institution
     existing = (

@@ -17,10 +17,13 @@
 #  */
 
 import hashlib
+import os
 from pydantic_settings import BaseSettings
 from typing import Any, List
 import json
 import sys
+
+_EXPLICIT_ENV_FILE = os.getenv("PRATHAM_ENV_FILE", "").strip()
 
 _INSECURE_DEFAULT = "changeme-in-production-use-long-random-string"
 _INSECURE_SECRETS = {
@@ -46,11 +49,11 @@ class Settings(BaseSettings):
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "COACHING MANAGEMENT. SIMPLIFIED."
-    VERSION: str = "1.182.0"
-    BUILD_NUMBER: str = "2026.11.25-REV-327-v1.182.0-FA2DFE4A"
+    VERSION: str = "1.183.0"
+    BUILD_NUMBER: str = "2026.11.26-REV-328-v1.183.0-41E21DD5"
     RELEASE_CHANNEL: str = "Release Candidate"
     RELEASE_STATUS: str = "Minor Release Candidate"
-    BUILD_DATE: str = "2026-11-25"
+    BUILD_DATE: str = "2026-11-26"
     AUTHOR: str = "Jawahar R Mallah"
     ORGANIZATION: str = "Smritisys & AITDL Networks"
     LICENSE_AUTHORITY_URL: str = "https://smritisys.com"
@@ -173,7 +176,10 @@ class Settings(BaseSettings):
                 )
                 sys.exit(1)
 
-    model_config = {"env_file": (".env", "../.env"), "extra": "ignore"}
+    model_config = {
+        "env_file": (_EXPLICIT_ENV_FILE,) if _EXPLICIT_ENV_FILE else (".env", "../.env"),
+        "extra": "ignore",
+    }
 
 
 settings = Settings()

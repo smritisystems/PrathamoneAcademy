@@ -21,12 +21,17 @@ import binascii
 import hashlib
 import hmac
 import json
+import math
 import os
 import re
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
 import httpx
+from fastapi import HTTPException
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 from cryptography.exceptions import InvalidSignature, InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -40,8 +45,14 @@ LICENSE_DEFAULT_OFFLINE_VALIDITY_DAYS = 14
 LICENSE_LEGACY_OFFLINE_VALIDITY_DAYS = 7
 LICENSE_CLOCK_ROLLBACK_TOLERANCE = timedelta(minutes=5)
 LICENSE_CLOCK_CHECKPOINT_INTERVAL = timedelta(minutes=15)
+TRIAL_DURATION_DAYS = 30
+TRIAL_MAX_STUDENTS = 100
+TRIAL_MAX_STAFF = 25
+TRIAL_SEATS = 10
 _REFRESH_KEY_VERSION = "v1"
 _CLOCK_CHECKPOINT_PREFIX = "prathamone-license-clock-v1"
+_TRIAL_ANCHOR_SALT = b"PRATHAMONE-OFFLINE-TRIAL-ANCHOR-V1-2026"
+_TRIAL_REG_KEY = r"Software\Smritisys\PrathamOneEduOS\Trial"
 
 class LicenseArtifactError(ValueError):
     """Raised when a signed license artifact cannot be trusted."""
@@ -681,3 +692,324 @@ def get_verified_lease_claims(request: Request) -> dict[str, Any]:
     if claims is None:
         return {}
     return claims
+
+
+def _trial_anchor_hmac_key(hardware_id: str) -> bytes:
+    normalized = hardware_id.strip().upper().encode("utf-8")
+    return hashlib.sha256(normalized + _TRIAL_ANCHOR_SALT).digest()
+
+
+def _trial_hw_short_hash(hardware_id: str) -> str:
+    return hashlib.sha256(hardware_id.strip().upper().encode("utf-8")).hexdigest()[:16]
+
+
+def _trial_anchor_paths(hardware_id: str) -> list[Path]:
+    short_hash = _trial_hw_short_hash(hardware_id)
+    override_dir = os.environ.get("PRATHAM_TRIAL_ANCHOR_DIR", "").strip()
+    if override_dir:
+        return [Path(override_dir) / f".trial_{short_hash}.dat"]
+    paths: list[Path] = []
+    if os.name == "nt":
+        prog_data = os.environ.get("PROGRAMDATA", "").strip()
+        if prog_data:
+            paths.append(Path(prog_data) / "PrathamOneEduOS" / f".trial_{short_hash}.dat")
+        local_app_data = os.environ.get("LOCALAPPDATA", "").strip()
+        if local_app_data:
+            paths.append(Path(local_app_data) / "Smritisys" / "PrathamOneEduOS" / f".trial_{short_hash}.dat")
+    else:
+        xdg_data = os.environ.get("XDG_DATA_HOME", "").strip()
+        base_dir = Path(xdg_data) if xdg_data else (Path.home() / ".local" / "share")
+        paths.append(base_dir / "prathamone-eduos" / f".trial_{short_hash}.dat")
+    return paths
+
+
+def sign_trial_record(record: dict[str, Any]) -> dict[str, Any]:
+    """Sign a unique-machine trial state record with an HMAC-SHA256 machine key."""
+    hardware_id = str(record.get("hardware_id") or "").strip().upper()
+    if not hardware_id:
+        raise LicenseArtifactError("Hardware identifier is required to sign a machine trial.")
+    canonical = json.dumps(record, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    payload_b64 = _encode_base64url(canonical)
+    signature = hmac.new(
+        _trial_anchor_hmac_key(hardware_id),
+        payload_b64.encode("ascii"),
+        hashlib.sha256,
+    ).hexdigest()
+    return {
+        "schema_version": 1,
+        "algorithm": "HMAC-SHA256",
+        "payload": payload_b64,
+        "signature": signature,
+    }
+
+
+def _parse_iso_utc(raw: Any, label: str) -> datetime:
+    if not isinstance(raw, str) or not raw.strip():
+        raise LicenseArtifactError(f"Trial {label} timestamp is missing.")
+    try:
+        dt = datetime.fromisoformat(raw.strip().replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise LicenseArtifactError(f"Trial {label} timestamp is invalid.") from exc
+    if dt.tzinfo is None:
+        raise LicenseArtifactError(f"Trial {label} timestamp must include timezone.")
+    return dt.astimezone(timezone.utc)
+
+
+def verify_trial_record(
+    envelope: dict[str, Any],
+    expected_hardware_id: str | None = None,
+) -> dict[str, Any]:
+    """Verify HMAC signature and temporal invariants of a signed machine trial envelope."""
+    if not isinstance(envelope, dict) or envelope.get("algorithm") != "HMAC-SHA256":
+        raise LicenseArtifactError("Unsupported machine trial signature algorithm.")
+    payload_b64 = envelope.get("payload")
+    signature = envelope.get("signature")
+    if not isinstance(payload_b64, str) or not isinstance(signature, str):
+        raise LicenseArtifactError("Machine trial envelope is incomplete.")
+    payload_bytes = _decode_base64url(payload_b64)
+    try:
+        record = json.loads(payload_bytes)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise LicenseArtifactError("Machine trial payload is unreadable.") from exc
+    if not isinstance(record, dict) or record.get("schema_version") != 1:
+        raise LicenseArtifactError("Unsupported machine trial schema.")
+    hardware_id = str(record.get("hardware_id") or "").strip().upper()
+    if not hardware_id:
+        raise LicenseArtifactError("Machine trial hardware identity is missing.")
+
+    expected_sig = hmac.new(
+        _trial_anchor_hmac_key(hardware_id),
+        payload_b64.encode("ascii"),
+        hashlib.sha256,
+    ).hexdigest()
+    if not hmac.compare_digest(signature.lower(), expected_sig.lower()):
+        raise LicenseArtifactError("Machine trial signature verification failed.")
+
+    if expected_hardware_id and hardware_id != expected_hardware_id.strip().upper():
+        raise LicenseArtifactError("Machine trial does not belong to this host hardware.")
+
+    started_at = _parse_iso_utc(record.get("started_at"), "started_at")
+    expires_at = _parse_iso_utc(record.get("expires_at"), "expires_at")
+    last_seen_at = _parse_iso_utc(record.get("last_seen_at"), "last_seen_at")
+    if expires_at <= started_at or expires_at > started_at + timedelta(days=TRIAL_DURATION_DAYS, minutes=5):
+        raise LicenseArtifactError("Machine trial validity window is invalid.")
+    if last_seen_at + LICENSE_CLOCK_ROLLBACK_TOLERANCE < started_at:
+        raise LicenseArtifactError("Machine trial clock history is invalid.")
+    return record
+
+
+def build_trial_record(
+    hardware_id: str,
+    product_code: str,
+    company_binding: str,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Construct a bounded 30-day machine trial payload."""
+    current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    expires = current + timedelta(days=TRIAL_DURATION_DAYS)
+    return {
+        "schema_version": 1,
+        "license_model": "offline_trial_30d",
+        "product_code": product_code,
+        "company_binding": company_binding,
+        "hardware_id": hardware_id.strip().upper(),
+        "started_at": current.isoformat(),
+        "expires_at": expires.isoformat(),
+        "last_seen_at": current.isoformat(),
+        "entitlements": {
+            "max_students": TRIAL_MAX_STUDENTS,
+            "max_staff": TRIAL_MAX_STAFF,
+            "seats": TRIAL_SEATS,
+        },
+    }
+
+
+def merge_strictest_trial_records(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Combine redundant machine trial anchors keeping earliest expiry and latest clock checkpoint."""
+    if not records:
+        raise LicenseArtifactError("No valid trial records provided.")
+    earliest_started = min(_parse_iso_utc(r["started_at"], "started_at") for r in records)
+    earliest_expires = min(
+        min(_parse_iso_utc(r["expires_at"], "expires_at") for r in records),
+        earliest_started + timedelta(days=TRIAL_DURATION_DAYS),
+    )
+    latest_seen = max(_parse_iso_utc(r["last_seen_at"], "last_seen_at") for r in records)
+    base = dict(records[-1])
+    base["started_at"] = earliest_started.isoformat()
+    base["expires_at"] = earliest_expires.isoformat()
+    base["last_seen_at"] = max(latest_seen, earliest_started).isoformat()
+    base["entitlements"] = {
+        "max_students": TRIAL_MAX_STUDENTS,
+        "max_staff": TRIAL_MAX_STAFF,
+        "seats": TRIAL_SEATS,
+    }
+    return base
+
+
+def read_machine_trial_anchors(hardware_id: str) -> list[dict[str, Any]]:
+    """Read signed trial anchors stored outside the PostgreSQL cluster (Registry + filesystem)."""
+    records: list[dict[str, Any]] = []
+    norm_hw = hardware_id.strip().upper()
+    if not norm_hw:
+        return records
+
+    use_registry = os.name == "nt" and not os.environ.get("PRATHAM_TRIAL_ANCHOR_DIR", "").strip()
+    if use_registry:
+        try:
+            import winreg
+            val_name = f"t_{_trial_hw_short_hash(norm_hw)}"
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, _TRIAL_REG_KEY) as key:
+                raw_json, _ = winreg.QueryValueEx(key, val_name)
+            env_obj = json.loads(str(raw_json))
+            records.append(verify_trial_record(env_obj, norm_hw))
+        except Exception:
+            pass
+
+    for path in _trial_anchor_paths(norm_hw):
+        try:
+            if path.is_file():
+                env_obj = json.loads(path.read_text(encoding="utf-8"))
+                records.append(verify_trial_record(env_obj, norm_hw))
+        except Exception:
+            continue
+    return records
+
+
+def write_machine_trial_anchors(envelope: dict[str, Any], hardware_id: str) -> None:
+    """Persist signed trial envelope across Windows Registry and OS data directories."""
+    norm_hw = hardware_id.strip().upper()
+    raw_json = json.dumps(envelope, separators=(",", ":"), sort_keys=True)
+
+    use_registry = os.name == "nt" and not os.environ.get("PRATHAM_TRIAL_ANCHOR_DIR", "").strip()
+    if use_registry:
+        try:
+            import winreg
+            val_name = f"t_{_trial_hw_short_hash(norm_hw)}"
+            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _TRIAL_REG_KEY) as key:
+                winreg.SetValueEx(key, val_name, 0, winreg.REG_SZ, raw_json)
+        except Exception:
+            pass
+
+    for path in _trial_anchor_paths(norm_hw):
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(raw_json, encoding="utf-8")
+        except Exception:
+            continue
+
+
+def evaluate_machine_trial(record: dict[str, Any], now: datetime | None = None) -> dict[str, Any]:
+    """Determine active trial vs automatic reversion to read-only Evaluation Mode."""
+    current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    started_at = _parse_iso_utc(record["started_at"], "started_at")
+    expires_at = _parse_iso_utc(record["expires_at"], "expires_at")
+    last_seen_at = _parse_iso_utc(record["last_seen_at"], "last_seen_at")
+
+    if (
+        current + LICENSE_CLOCK_ROLLBACK_TOLERANCE < last_seen_at
+        or current + LICENSE_CLOCK_ROLLBACK_TOLERANCE < started_at
+    ):
+        return {
+            "mode": "evaluation",
+            "trial_active": False,
+            "trial_expired": True,
+            "days_remaining": 0,
+            "started_at": started_at.isoformat(),
+            "expires_at": expires_at.isoformat(),
+            "error": "The system clock moved backwards. Correct the date and time or activate a license.",
+        }
+
+    if current >= expires_at:
+        return {
+            "mode": "evaluation",
+            "trial_active": False,
+            "trial_expired": True,
+            "days_remaining": 0,
+            "started_at": started_at.isoformat(),
+            "expires_at": expires_at.isoformat(),
+            "error": None,
+        }
+
+    remaining_secs = (expires_at - current).total_seconds()
+    days_remaining = min(TRIAL_DURATION_DAYS, max(1, math.ceil(remaining_secs / 86400.0)))
+    return {
+        "mode": "trial",
+        "trial_active": True,
+        "trial_expired": False,
+        "days_remaining": days_remaining,
+        "started_at": started_at.isoformat(),
+        "expires_at": expires_at.isoformat(),
+        "error": None,
+    }
+
+
+async def enforce_lease_quota(
+    request: Request | None,
+    db: AsyncSession,
+    institution_id: int,
+    *,
+    resource_type: str,
+    add_count: int = 1,
+) -> None:
+    """Enforce verified student/staff capacity caps for trial, training, or bounded commercial leases."""
+    if request is None or add_count <= 0:
+        return
+    claims = get_verified_lease_claims(request)
+    if not claims or claims.get("mode") not in {"trial", "active", "grace"}:
+        return
+
+    plan_label = (
+        "30-Day Machine Trial"
+        if claims.get("mode") == "trial"
+        else ("Training Mode sandbox" if claims.get("company_binding") == "TRAINING" else "licensed plan")
+    )
+
+    if resource_type == "student":
+        limit = claims.get("max_students")
+        if not isinstance(limit, int) or isinstance(limit, bool) or limit <= 0:
+            return
+        from app.models.student import Student
+        current_count = (
+            await db.execute(
+                select(func.count(Student.id)).where(
+                    Student.institution_id == institution_id,
+                    Student.is_active == True,
+                )
+            )
+        ).scalar() or 0
+        if current_count + add_count > limit:
+            raise HTTPException(
+                status_code=423,
+                detail=f"Student limit ({limit}) reached for your {plan_label}. Activate or upgrade your license to add more students.",
+            )
+    elif resource_type == "staff":
+        limit = claims.get("max_staff")
+        if not isinstance(limit, int) or isinstance(limit, bool) or limit <= 0:
+            return
+        from app.models.staff import StaffProfile
+        from app.models.user import User
+        staff_count = (
+            await db.execute(
+                select(func.count(StaffProfile.id))
+                .join(User, StaffProfile.user_id == User.id)
+                .where(
+                    StaffProfile.institution_id == institution_id,
+                    User.is_active == True,
+                )
+            )
+        ).scalar() or 0
+        user_staff_count = (
+            await db.execute(
+                select(func.count(User.id)).where(
+                    User.institution_id == institution_id,
+                    User.is_active == True,
+                    func.lower(User.role) != "student",
+                )
+            )
+        ).scalar() or 0
+        current_count = max(staff_count, user_staff_count)
+        if current_count + add_count > limit:
+            raise HTTPException(
+                status_code=423,
+                detail=f"Staff limit ({limit}) reached for your {plan_label}. Activate or upgrade your license to add more staff.",
+            )

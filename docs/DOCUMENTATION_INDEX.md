@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-26 00:18:26<br>
-**Total Indexed Items:** 757<br>
+**Last Reindexed:** 2026-11-26 18:04:58<br>
+**Total Indexed Items:** 759<br>
 
 ---
 
@@ -34,7 +34,7 @@
 | `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **48** | UI/UX Design, Components & Footer |
 | `18` | [18_TESTING_QA](#18_testing_qa) | **14** | Testing, Verification & Quality Assurance |
 | `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **18** | Releases, Versioning & Changelogs |
-| `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **73** | Forensic Audits & Data Health |
+| `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **75** | Forensic Audits & Data Health |
 | `21` | [21_TROUBLESHOOTING](#21_troubleshooting) | **6** | Troubleshooting, Runbooks & Recovery |
 | `22` | [22_USER_MANUALS](#22_user_manuals) | **14** | User Manuals & Operating Guides |
 | `23` | [23_DEVELOPMENT_GUIDES](#23_development_guides) | **0** | Developer Manuals & Coding Standards |
@@ -571,6 +571,8 @@
 | **PrathamOne Academy — Audit Remediation Phase 1 Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-05 | `Approved` | [2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_PHASE1-REMEDIATION-AND-PRE-MIGRATION-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_PHASE1-REMEDIATION-AND-PRE-MIGRATION-REPORT_V1.md) | - |
 | **PrathamOne Academy — Clean Production Data Restoration Audit & Cleanup Preview** | `REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_AUDITS_COMPLIANCE_REPORT_CLEAN-PRODUCTION-DATA-CLEANUP-PREVIEW_V1.md](20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_REPORT_CLEAN-PRODUCTION-DATA-CLEANUP-PREVIEW_V1.md) | - |
 | **PrathamOne Academy — Full Application Audit & Quality Architecture Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-05 | `Approved` | [2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_FULL-APPLICATION-AUDIT-REPORT-NOV2026_V1.md](20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_FULL-APPLICATION-AUDIT-REPORT-NOV2026_V1.md) | - |
+| **PrathamOne EduOS v1.182.0 — 423 Route Mapping, White Screen on Save, Fresh DB Schema & Desktop EXE Logging Remediation Report** | `REPORT` | `1.2` | 2026-11-26 | `Approved` | [2026-11-26_AUDITS-COMPLIANCE_REMEDIATION-REPORT_423-LOCKED-WHITE-SCREEN-AND-SCHEMA-DRIFT_V1.md](20_AUDITS_COMPLIANCE/2026-11-26_AUDITS-COMPLIANCE_REMEDIATION-REPORT_423-LOCKED-WHITE-SCREEN-AND-SCHEMA-DRIFT_V1.md) | 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS |
+| **PrathamOne EduOS v1.182.0 — Desktop Auth, Upgrade pg_dump & Full Release Audit Remediation Report** | `REPORT` | `1.0` | 2026-11-26 | `Approved` | [2026-11-26_AUDITS-COMPLIANCE_REMEDIATION-REPORT_DESKTOP-AUTH-PGDUMP-AND-RELEASE-VERIFICATION_V1.md](20_AUDITS_COMPLIANCE/2026-11-26_AUDITS-COMPLIANCE_REMEDIATION-REPORT_DESKTOP-AUTH-PGDUMP-AND-RELEASE-VERIFICATION_V1.md) | 02_INSTALLATION_DEPLOYMENT, 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS |
 | **PrathamOne EduOS — Automated Test Execution & Quality Assurance Report** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_AUTOMATED-TEST-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_AUTOMATED-TEST-REPORT_V1.md) | 18_TESTING_QA, 20_AUDITS_COMPLIANCE |
 | **PrathamOne EduOS — Automated Test Execution, Coverage & Regression Report** | `AUDIT-REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEST-EXECUTION-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEST-EXECUTION-REPORT_V1.md) | 18_TESTING_QA, 01_ARCHITECTURE, 12_RBAC_SECURITY |
 | **PrathamOne EduOS — Backend Architecture, API Catalog & Service Audit** | `AUDIT-REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BACKEND-API-AUDIT-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BACKEND-API-AUDIT-REPORT_V1.md) | 01_ARCHITECTURE, 16_DATABASE_API, 18_TESTING_QA |

@@ -33,7 +33,10 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
-DEFAULT_WORKBOOK_PATH = ""
+def _resolve_default_workbook_path() -> str:
+    return os.getenv("PRATHAM_DEFAULT_WORKBOOK_PATH", "").strip()
+
+
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB upper bound for uploaded spreadsheets
 REGISTER_IMPORT_ROLES = ("superadmin", "sysadmin", "super_admin")
 
@@ -51,16 +54,17 @@ async def preview_default_register(
     Stage 1 & 2: Preview default uploaded fee register (Book1.xlsx).
     Returns parsed groups, student records, payments, and balance discrepancy analysis.
     """
-    if not os.path.exists(DEFAULT_WORKBOOK_PATH):
+    workbook_path = _resolve_default_workbook_path()
+    if not workbook_path or not os.path.exists(workbook_path):
         raise HTTPException(
             status_code=404,
-            detail=f"Fee register workbook not found at: {DEFAULT_WORKBOOK_PATH}",
+            detail="Default fee register workbook is not configured on this server.",
         )
 
-    with open(DEFAULT_WORKBOOK_PATH, "rb") as f:
+    with open(workbook_path, "rb") as f:
         content = f.read()
 
-    file_name = os.path.basename(DEFAULT_WORKBOOK_PATH)
+    file_name = os.path.basename(workbook_path)
     return parse_fee_register_workbook(content, file_name)
 
 
@@ -94,21 +98,22 @@ async def execute_register_import(
     Stage 4 & 5: Execute verified database import in an atomic transaction.
     Guards against duplicates using SHA-256 fingerprinting.
     """
-    file_path = request.file_path or DEFAULT_WORKBOOK_PATH
-    if os.path.realpath(file_path) != os.path.realpath(DEFAULT_WORKBOOK_PATH):
+    workbook_path = _resolve_default_workbook_path()
+    file_path = request.file_path or workbook_path
+    if not workbook_path or os.path.realpath(file_path) != os.path.realpath(workbook_path):
         raise HTTPException(
             status_code=403,
             detail="Arbitrary server filesystem paths are not allowed. Use upload preview or authorized baseline path.",
         )
-    if not os.path.exists(DEFAULT_WORKBOOK_PATH):
+    if not os.path.exists(workbook_path):
         raise HTTPException(
-            status_code=404, detail=f"Workbook file not found at: {DEFAULT_WORKBOOK_PATH}"
+            status_code=404, detail=f"Workbook file not found at: {workbook_path}"
         )
 
-    with open(DEFAULT_WORKBOOK_PATH, "rb") as f:
+    with open(workbook_path, "rb") as f:
         content = f.read()
 
-    file_name = os.path.basename(DEFAULT_WORKBOOK_PATH)
+    file_name = os.path.basename(workbook_path)
     result = await execute_fee_register_import(
         db=db,
         user_id=current_user.id,

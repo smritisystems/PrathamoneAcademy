@@ -344,9 +344,17 @@ class PrathamOneManager:
             ])
 
         flags = 0x08000000 if sys.platform == "win32" else 0
-        self.data_dir.mkdir(parents=True, exist_ok=True)
-        backend_log = self.data_dir / "backend_server.log"
-        backend_log_fp = open(str(backend_log), "w", encoding="utf-8")
+        logs_dir = self.root_dir / "logs"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        for stale_dir in (self.root_dir, self.data_dir):
+            stale_log = stale_dir / "backend_server.log"
+            try:
+                if stale_log.is_file() and stale_log.stat().st_size == 0:
+                    stale_log.unlink()
+            except Exception:
+                pass
+        backend_log = logs_dir / "backend_server.log"
+        backend_log_fp = open(str(backend_log), "a", encoding="utf-8")
         self.backend_proc = subprocess.Popen(
             cmd,
             cwd=str(self.backend_dir),

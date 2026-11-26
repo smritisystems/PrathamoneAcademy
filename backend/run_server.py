@@ -20,11 +20,15 @@
 import argparse
 import asyncio
 import atexit
+import copy
 import ctypes
 import datetime
+import faulthandler
 import hashlib
 import ipaddress
 import json
+import logging
+from logging.handlers import RotatingFileHandler
 import os
 import re
 import secrets
@@ -85,7 +89,14 @@ def _resolve_data_root(app_root: Path) -> Path:
     if not in_program_files and (existing_local_data / "PG_VERSION").is_file() and _is_dir_writable(app_root):
         return app_root
 
-    local_app_data = os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if not local_app_data:
+        try:
+            local_app_data = str(Path.home() / "AppData" / "Local")
+        except Exception:
+            import tempfile
+            local_app_data = tempfile.gettempdir()
+
     if in_program_files or not _is_dir_writable(app_root):
         return Path(local_app_data) / "PrathamOneEduOS"
 
@@ -100,10 +111,50 @@ os.chdir(str(BACKEND_DIR))
 
 
 _LOG_FP = None
+_ROTATING_LOG_HANDLER: Optional[RotatingFileHandler] = None
+_STDIO_FALLBACK_LOCK = None
+LOG_MAX_BYTES = 5 * 1024 * 1024
+LOG_BACKUP_COUNT = 5
+
+
+def _is_compiled_runtime() -> bool:
+    exe_name = Path(sys.executable).name.lower()
+    return bool(getattr(sys, "frozen", False)) or (
+        exe_name not in ("python.exe", "pythonw.exe", "python", "python3")
+    )
+
+
+class _WindowsSafeRotatingFileHandler(RotatingFileHandler):
+    """RotatingFileHandler that safely falls back to copy-truncate on Windows if another FD holds the file open."""
+
+    def rotate(self, source: str, dest: str) -> None:
+        try:
+            super().rotate(source, dest)
+        except PermissionError:
+            if os.path.exists(source):
+                shutil.copy2(source, dest)
+                with open(source, "r+b") as fp:
+                    fp.truncate(0)
+
+
+def _clean_stray_root_logs(app_root: Path, data_root: Path) -> None:
+    """Remove stale 0-byte log files outside <dataRoot>/logs when centralized log directory is active."""
+    active_logs_dir = (data_root / "logs").resolve()
+    candidate_dirs = {app_root.resolve(), data_root.resolve(), (data_root / "data").resolve()}
+    for d in candidate_dirs:
+        if d == active_logs_dir or not d.is_dir():
+            continue
+        for fname in ("backend_server.log", "launcher.log", "frontend_errors.log"):
+            fpath = d / fname
+            try:
+                if fpath.is_file() and fpath.stat().st_size == 0:
+                    fpath.unlink()
+            except Exception:
+                pass
 
 
 def _ensure_stdio_streams(log_path: Path):
-    """Redirect None stdout/stderr (when built with --windows-console-mode=disable) to a persistent log file."""
+    """Unconditionally redirect stdout/stderr (plus OS FD 1/2 in frozen mode) to <dataRoot>/logs/backend_server.log."""
     global _LOG_FP
     log_path.parent.mkdir(parents=True, exist_ok=True)
     log_fp = open(str(log_path), "a", encoding="utf-8", buffering=1)
@@ -113,11 +164,98 @@ def _ensure_stdio_streams(log_path: Path):
         except Exception:
             pass
     _LOG_FP = log_fp
-    if sys.stdout is None:
-        sys.stdout = log_fp
-    if sys.stderr is None:
-        sys.stderr = log_fp
+    sys.stdout = log_fp
+    sys.stderr = log_fp
+    if _is_compiled_runtime():
+        try:
+            fd = log_fp.fileno()
+            os.dup2(fd, 1)
+            os.dup2(fd, 2)
+        except Exception:
+            pass
+        try:
+            faulthandler.enable(file=log_fp, all_threads=True)
+        except Exception:
+            pass
     return log_fp
+
+
+def _get_rotating_handler(log_path: Path) -> _WindowsSafeRotatingFileHandler:
+    global _ROTATING_LOG_HANDLER
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    if _ROTATING_LOG_HANDLER is None:
+        handler = _WindowsSafeRotatingFileHandler(
+            str(log_path),
+            maxBytes=LOG_MAX_BYTES,
+            backupCount=LOG_BACKUP_COUNT,
+            encoding="utf-8",
+        )
+        handler.setFormatter(
+            logging.Formatter("%(asctime)s [%(levelname)s] [%(name)s] %(message)s")
+        )
+        handler.setLevel(logging.INFO)
+        _ROTATING_LOG_HANDLER = handler
+    return _ROTATING_LOG_HANDLER
+
+
+def _configure_rotating_logging(log_path: Path) -> None:
+    """Attach a 5 MB x 5 RotatingFileHandler to root, uvicorn, fastapi, alembic, and app loggers."""
+    handler = _get_rotating_handler(log_path)
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    if handler not in root_logger.handlers:
+        root_logger.addHandler(handler)
+
+    for logger_name in ("uvicorn", "uvicorn.error", "uvicorn.access", "fastapi", "alembic", "app"):
+        target_logger = logging.getLogger(logger_name)
+        target_logger.setLevel(logging.INFO)
+        target_logger.handlers = [handler]
+        target_logger.propagate = False
+
+    def _log_uncaught_exc(exc_type, exc_value, exc_tb):
+        if issubclass(exc_type, KeyboardInterrupt):
+            return
+        logging.getLogger("app").critical(
+            "Uncaught backend exception", exc_info=(exc_type, exc_value, exc_tb)
+        )
+
+    sys.excepthook = _log_uncaught_exc
+    if hasattr(threading_mod := __import__("threading"), "excepthook"):
+        def _thread_exc_hook(args):
+            logging.getLogger("app").error(
+                "Uncaught exception in background thread %s",
+                getattr(args.thread, "name", "unknown"),
+                exc_info=(args.exc_type, args.exc_value, args.exc_traceback),
+            )
+        threading_mod.excepthook = _thread_exc_hook
+
+
+def _create_uvicorn_handler(log_path: Path):
+    """Return the shared Windows-safe rotating file handler for Uvicorn dictConfig."""
+    return _get_rotating_handler(log_path)
+
+
+def _build_uvicorn_log_config(log_path: Path) -> dict:
+    """Build Uvicorn logging config writing cleanly through the 5 MB x 5 RotatingFileHandler."""
+    import uvicorn.config
+
+    cfg = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)
+    cfg["formatters"]["default"] = {
+        "format": "%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
+    }
+    cfg["handlers"] = {
+        "rotating_file": {
+            "()": _create_uvicorn_handler,
+            "log_path": log_path,
+            "formatter": "default",
+        },
+    }
+    cfg["loggers"] = {
+        "uvicorn": {"handlers": ["rotating_file"], "level": "INFO", "propagate": False},
+        "uvicorn.error": {"handlers": ["rotating_file"], "level": "INFO", "propagate": False},
+        "uvicorn.access": {"handlers": ["rotating_file"], "level": "INFO", "propagate": False},
+    }
+    return cfg
 
 
 def _is_port_in_use(port: int) -> bool:
@@ -146,7 +284,7 @@ def _load_env_file(env_path: Path) -> dict[str, str]:
 
 
 def _get_institute_slug(root_dir: Path) -> str:
-    slug = "prashantacademy"
+    slug = "prathamone"
     cfg_file = root_dir / "setup_config.json"
     if cfg_file.is_file():
         try:
@@ -232,10 +370,6 @@ def generate_local_pki(output_dir: Path, extra_slugs: Optional[List[str]] = None
         "prathamone.local",
         "classesname",
         "classesname.local",
-        "aditiacademy",
-        "aditiacademy.local",
-        "prashantacademy",
-        "prashantacademy.local",
     ]
     if extra_slugs:
         for slug in extra_slugs:
@@ -325,15 +459,41 @@ def configure_local_domains(root_dir: Path, backend_port: int = 2026) -> None:
 def _ensure_env_file(root_dir: Path, db_port: int, db_password: str, institute_name: str = "", data_root: Optional[Path] = None) -> Path:
     effective_root = data_root or root_dir
     env_path = effective_root / ".env"
-    backend_env = root_dir / "backend" / ".env"
     env_example = root_dir / ".env.example"
 
     if env_path.exists():
-        if _is_dir_writable(backend_env.parent):
-            try:
-                backend_env.write_text(env_path.read_text(encoding="utf-8"), encoding="utf-8")
-            except Exception:
-                pass
+        # Keep existing <dataRoot>\.env intact as SSOT, but synchronize active embedded pg_port if drifted
+        try:
+            existing_lines = env_path.read_text(encoding="utf-8").splitlines()
+            expected_url = f"postgresql+asyncpg://postgres:{db_password}@127.0.0.1:{db_port}/prashant_academy"
+            updated_lines = []
+            changed = False
+            saw_port = False
+            saw_url = False
+            for line in existing_lines:
+                if line.startswith("POSTGRES_PORT="):
+                    saw_port = True
+                    target_line = f"POSTGRES_PORT={db_port}"
+                    if line != target_line:
+                        changed = True
+                    updated_lines.append(target_line)
+                elif line.startswith("DATABASE_URL="):
+                    saw_url = True
+                    if line != f"DATABASE_URL={expected_url}":
+                        changed = True
+                    updated_lines.append(f"DATABASE_URL={expected_url}")
+                else:
+                    updated_lines.append(line)
+            if not saw_port:
+                updated_lines.append(f"POSTGRES_PORT={db_port}")
+                changed = True
+            if not saw_url:
+                updated_lines.append(f"DATABASE_URL={expected_url}")
+                changed = True
+            if changed:
+                env_path.write_text("\n".join(updated_lines) + "\n", encoding="utf-8")
+        except Exception:
+            pass
         return env_path
 
     if not env_example.exists():
@@ -372,11 +532,6 @@ def _ensure_env_file(root_dir: Path, db_port: int, db_password: str, institute_n
 
     env_path.parent.mkdir(parents=True, exist_ok=True)
     env_path.write_text(content, encoding="utf-8")
-    if _is_dir_writable(backend_env.parent):
-        try:
-            backend_env.write_text(content, encoding="utf-8")
-        except Exception:
-            pass
     return env_path
 
 
@@ -453,10 +608,10 @@ def _run_inprocess_bootstrap(root_dir: Path, backend_dir: Path, pg_port: int, da
         except Exception:
             pass
 
-    admin_password = (
+    has_setup_wizard_config = bool(setup_config)
+    explicit_admin_pw = (
         setup_config.get("bootstrap_admin_secret")
         or setup_config.get("admin_password")
-        or secrets.token_urlsafe(16)
     )
     raw_inst_name = str(setup_config.get("institute_name") or "").strip()
     institute_name = (
@@ -485,17 +640,31 @@ def _run_inprocess_bootstrap(root_dir: Path, backend_dir: Path, pg_port: int, da
         except Exception:
             pass
 
-    env_vars = _load_env_file(effective_root / ".env")
-    if not env_vars:
+    env_path = effective_root / ".env"
+    env_vars = _load_env_file(env_path)
+    if not env_vars and not env_path.exists():
         env_vars = _load_env_file(root_dir / ".env")
     db_password = env_vars.get("POSTGRES_PASSWORD") or "postgres"
     _ensure_env_file(root_dir, pg_port, db_password, institute_name, data_root=effective_root)
-    env_vars = _load_env_file(effective_root / ".env")
+    env_vars = _load_env_file(env_path)
+    os.environ["PRATHAM_ENV_FILE"] = str(env_path)
     os.environ.update(env_vars)
 
     db_url = f"postgresql+asyncpg://postgres:{db_password}@127.0.0.1:{pg_port}/prashant_academy"
+    os.environ["POSTGRES_PORT"] = str(pg_port)
     os.environ["DATABASE_URL"] = db_url
-    os.environ["INITIAL_ADMIN_PASSWORD"] = admin_password
+    if explicit_admin_pw:
+        os.environ["INITIAL_ADMIN_PASSWORD"] = explicit_admin_pw
+        os.environ["FORCE_ADMIN_PASSWORD_RESET"] = "1"
+    else:
+        os.environ.pop("INITIAL_ADMIN_PASSWORD", None)
+        os.environ.pop("FORCE_ADMIN_PASSWORD_RESET", None)
+
+    if has_setup_wizard_config:
+        os.environ["FORCE_INSTITUTE_PROFILE_RESET"] = "1"
+    else:
+        os.environ.pop("FORCE_INSTITUTE_PROFILE_RESET", None)
+
     os.environ["INSTITUTE_NAME"] = institute_name
     os.environ["INSTITUTE_BRANCH"] = branch_name
     os.environ["INSTITUTE_ADDRESS"] = address
@@ -513,10 +682,18 @@ def _run_inprocess_bootstrap(root_dir: Path, backend_dir: Path, pg_port: int, da
 
         alembic_cfg = Config(str(alembic_ini))
         alembic_cfg.set_main_option("script_location", str(backend_dir / "alembic"))
-        command.upgrade(alembic_cfg, "head")
+        try:
+            command.upgrade(alembic_cfg, "head")
+        except Exception:
+            logging.getLogger("alembic").exception("Alembic upgrade head failed during bootstrap")
+            raise
 
     import seed
-    asyncio.run(seed.seed(bootstrap_only=True))
+    try:
+        asyncio.run(seed.seed(bootstrap_only=True))
+    except Exception:
+        logging.getLogger("app").exception("Database bootstrap seeding failed")
+        raise
 
     serial_number = str(setup_config.get("serial_number", "")).strip()
     activation_key = str(setup_config.get("activation_key", "")).strip()
@@ -708,12 +885,14 @@ def _nuitka_dependency_hints():
     import csv  # noqa
     import dataclasses  # noqa
     import decimal  # noqa
+    import faulthandler  # noqa
     import functools  # noqa
     import gzip  # noqa
     import hmac  # noqa
     import html  # noqa
     import ipaddress  # noqa
     import logging.config  # noqa
+    import logging.handlers  # noqa
     import math  # noqa
     import string  # noqa
     import struct  # noqa
@@ -743,11 +922,20 @@ def _create_progressive_asgi_app(shutdown_callback=None):
     @bootstrap_app.middleware("http")
     async def _bootstrap_ipc_guard(request: Request, call_next):
         desktop_token = os.getenv("PRATHAM_DESKTOP_TOKEN")
+        path = request.url.path or ""
+
+        async def _proceed():
+            resp = await call_next(request)
+            if path.startswith("/api/") or path == "/health" or path.startswith("/health/"):
+                resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+                resp.headers["Pragma"] = "no-cache"
+                resp.headers["Expires"] = "0"
+            return resp
+
         if not desktop_token:
-            return await call_next(request)
-        path = request.url.path
+            return await _proceed()
         if path == "/health" or path.startswith("/health/"):
-            return await call_next(request)
+            return await _proceed()
         client_host = request.client.host if request.client else "127.0.0.1"
         is_loopback = False
         is_private_lan = False
@@ -768,7 +956,7 @@ def _create_progressive_asgi_app(shutdown_callback=None):
                         "detail": "Direct loopback access forbidden. Please launch PrathamOne EduOS via the native desktop application."
                     },
                 )
-            response = await call_next(request)
+            response = await _proceed()
             if token_hdr == desktop_token and cookie_token != desktop_token:
                 response.set_cookie(
                     key="pratham_client_token",
@@ -791,7 +979,7 @@ def _create_progressive_asgi_app(shutdown_callback=None):
                 status_code=403,
                 content={"detail": "External untrusted network access forbidden."},
             )
-        return await call_next(request)
+        return await _proceed()
 
     static_dir = os.getenv(
         "STATIC_DIR",
@@ -810,8 +998,8 @@ def _create_progressive_asgi_app(shutdown_callback=None):
         return {
             "status": "healthy",
             "product": "PrathamOne EduOS",
-            "version": "1.0.0",
-            "alembic_head": "056_expense_and_cash_register",
+            "version": "1.182.0",
+            "alembic_head": "057_repair_teacher_assignments",
         }
 
     if os.path.isdir(static_dir) and os.path.isfile(os.path.join(static_dir, "index.html")):
@@ -842,6 +1030,7 @@ def _create_progressive_asgi_app(shutdown_callback=None):
             await loaded_app.router.startup()
             state["real_app"] = loaded_app
         except Exception as exc:
+            logging.getLogger("app").exception("FastAPI router startup failed")
             state["error"] = f"{type(exc).__name__}: {exc}"
         finally:
             if state["ready_event"] is not None:
@@ -852,6 +1041,7 @@ def _create_progressive_asgi_app(shutdown_callback=None):
             from app.main import app as loaded_app
             loop.call_soon_threadsafe(lambda: asyncio.create_task(_finalize_real_app(loaded_app)))
         except Exception as exc:
+            logging.getLogger("app").exception("Failed to import app.main in background loader")
             state["error"] = f"{type(exc).__name__}: {exc}"
             if state["ready_event"] is not None:
                 loop.call_soon_threadsafe(state["ready_event"].set)
@@ -914,7 +1104,15 @@ def _create_progressive_asgi_app(shutdown_callback=None):
             return
 
         if real_app is not None:
-            await real_app(scope, receive, send)
+            try:
+                await real_app(scope, receive, send)
+            except Exception:
+                logging.getLogger("app").exception(
+                    "Unhandled ASGI exception on %s %s",
+                    scope.get("method", "WS"),
+                    scope.get("path", ""),
+                )
+                raise
             return
 
         if scope_type == "websocket":
@@ -1009,7 +1207,11 @@ def main():
         print(f"SMOKE_OK paths={paths_count}")
         return
 
-    _ensure_stdio_streams(DATA_ROOT / "logs" / "backend_server.log")
+    backend_log_path = DATA_ROOT / "logs" / "backend_server.log"
+    _clean_stray_root_logs(APP_ROOT, DATA_ROOT)
+    _ensure_stdio_streams(backend_log_path)
+    _configure_rotating_logging(backend_log_path)
+    logging.getLogger("app").info("Starting PrathamOne EduOS standalone backend (data_root=%s)", DATA_ROOT)
     _verify_pyd_integrity()
 
     pg_proc: Optional[subprocess.Popen] = None
@@ -1018,14 +1220,22 @@ def main():
         pg_proc, pg_port = _start_embedded_postgres(APP_ROOT, BACKEND_DIR, data_root=DATA_ROOT)
         atexit.register(_stop_postgres_graceful, APP_ROOT, pg_proc, DATA_ROOT)
 
-    env_vars = _load_env_file(DATA_ROOT / ".env")
-    if not env_vars:
-        env_vars = _load_env_file(APP_ROOT / ".env")
+    data_env_path = DATA_ROOT / ".env"
+    if not data_env_path.exists():
+        db_pw = os.environ.get("POSTGRES_PASSWORD") or "postgres"
+        _ensure_env_file(APP_ROOT, pg_port, db_pw, data_root=DATA_ROOT)
+    elif not args.uvicorn_only and (APP_ROOT / "pgsql" / "bin" / "postgres.exe").exists():
+        cur_env = _load_env_file(data_env_path)
+        _ensure_env_file(APP_ROOT, pg_port, cur_env.get("POSTGRES_PASSWORD") or "postgres", data_root=DATA_ROOT)
+
+    os.environ["PRATHAM_ENV_FILE"] = str(data_env_path)
+    env_vars = _load_env_file(data_env_path)
     for k, v in env_vars.items():
-        os.environ.setdefault(k, v)
+        os.environ[k] = v
 
     if not args.uvicorn_only and (APP_ROOT / "pgsql" / "bin" / "postgres.exe").exists():
         db_pass = os.environ.get("POSTGRES_PASSWORD", "postgres")
+        os.environ["POSTGRES_PORT"] = str(pg_port)
         os.environ["DATABASE_URL"] = f"postgresql+asyncpg://postgres:{db_pass}@127.0.0.1:{pg_port}/prashant_academy"
 
     static_dist = APP_ROOT / "frontend" / "dist"
@@ -1068,15 +1278,20 @@ def main():
         "port": port,
         "log_level": "info",
         "use_colors": False,
+        "log_config": _build_uvicorn_log_config(backend_log_path),
     }
     if cert_file and key_file:
         uvicorn_kwargs["ssl_certfile"] = str(cert_file)
         uvicorn_kwargs["ssl_keyfile"] = str(key_file)
 
-    config = uvicorn.Config(progressive_app, **uvicorn_kwargs)
-    server = uvicorn.Server(config)
-    server_ref["server"] = server
-    server.run()
+    try:
+        config = uvicorn.Config(progressive_app, **uvicorn_kwargs)
+        server = uvicorn.Server(config)
+        server_ref["server"] = server
+        server.run()
+    except Exception:
+        logging.getLogger("app").exception("Standalone backend server terminated with fatal error")
+        raise
 
 
 if __name__ == "__main__":

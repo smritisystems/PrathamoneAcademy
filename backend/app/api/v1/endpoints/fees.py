@@ -27,7 +27,10 @@ from app.core.deps import (
     require_role,
     is_sysadmin,
     get_data_environment,
+    enforce_institution_access,
     check_institution_access,
+    resolve_environment_institution_id,
+    resolve_institution_academic_year_id,
 )
 import uuid
 import json
@@ -132,6 +135,7 @@ class FeeStructureUpdate(BaseModel):
 
 class StudentFeeAdjustmentRequest(BaseModel):
     fee_structure_id: Optional[int] = None
+    academic_year_id: Optional[int] = None
     custom_amount: Optional[Decimal] = None
     concession_amount: Optional[Decimal] = None
     remarks: Optional[str] = None
@@ -190,14 +194,18 @@ class CancelInvoiceRequest(BaseModel):
 @router.get("/categories")
 async def list_fee_categories(
     institution_id: Optional[int] = None,
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
-    if institution_id is not None:
-        check_institution_access(institution_id, current_user)
-    target_inst = institution_id if institution_id is not None else (
-        None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
-    )
+    if data_env == "TRAINING":
+        target_inst = await resolve_environment_institution_id(db, data_env, current_user)
+    else:
+        if institution_id is not None:
+            check_institution_access(institution_id, current_user)
+        target_inst = institution_id if institution_id is not None else (
+            None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
+        )
     query = select(FeeCategory).where(FeeCategory.is_active == True)
     if target_inst is not None:
         query = query.where(FeeCategory.institution_id == target_inst)
@@ -211,10 +219,15 @@ async def list_fee_categories(
 @router.post("/categories", status_code=201)
 async def create_fee_category(
     data: FeeCategoryCreate,
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "accountant", "principal")),
 ):
-    cat = FeeCategory(**data.model_dump())
+    payload = data.model_dump()
+    payload["institution_id"] = await resolve_environment_institution_id(
+        db, data_env, current_user, payload.get("institution_id")
+    )
+    cat = FeeCategory(**payload)
     db.add(cat)
     await db.commit()
     await db.refresh(cat)
@@ -227,17 +240,31 @@ async def list_fee_structures(
     academic_year_id: Optional[int] = None,
     standard_id: Optional[int] = None,
     institution_id: Optional[int] = None,
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
-    if institution_id is not None:
-        check_institution_access(institution_id, current_user)
-    target_inst = institution_id if institution_id is not None else (
-        None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
+    if data_env == "TRAINING":
+        target_inst = await resolve_environment_institution_id(db, data_env, current_user)
+        effective_ay_id = (
+            await resolve_institution_academic_year_id(db, target_inst, academic_year_id)
+            if academic_year_id is not None
+            else None
+        )
+    else:
+        if institution_id is not None:
+            check_institution_access(institution_id, current_user)
+        target_inst = institution_id if institution_id is not None else (
+            None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
+        )
+        effective_ay_id = academic_year_id
+    query = (
+        select(FeeStructure)
+        .options(selectinload(FeeStructure.category))
+        .where(FeeStructure.is_active == True)
     )
-    query = select(FeeStructure).where(FeeStructure.is_active == True)
-    if academic_year_id:
-        query = query.where(FeeStructure.academic_year_id == academic_year_id)
+    if effective_ay_id:
+        query = query.where(FeeStructure.academic_year_id == effective_ay_id)
     if standard_id:
         query = query.where(FeeStructure.standard_id == standard_id)
     if target_inst is not None:
@@ -251,7 +278,9 @@ async def list_fee_structures(
             "amount": float(s.amount),
             "frequency": s.frequency,
             "category_id": s.category_id,
+            "category": {"id": s.category.id, "name": s.category.name} if s.category else None,
             "standard_id": s.standard_id,
+            "academic_year_id": s.academic_year_id,
             "installments_count": s.installments_count,
             "late_fee_amount": float(s.late_fee_amount),
         }
@@ -262,10 +291,19 @@ async def list_fee_structures(
 @router.post("/structures", status_code=201)
 async def create_fee_structure(
     data: FeeStructureCreate,
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "accountant", "principal")),
 ):
-    structure = FeeStructure(**data.model_dump())
+    payload = data.model_dump()
+    target_inst = await resolve_environment_institution_id(
+        db, data_env, current_user, payload.get("institution_id")
+    )
+    payload["institution_id"] = target_inst
+    payload["academic_year_id"] = await resolve_institution_academic_year_id(
+        db, target_inst, payload.get("academic_year_id")
+    )
+    structure = FeeStructure(**payload)
     db.add(structure)
     await db.commit()
     await db.refresh(structure)
@@ -273,6 +311,8 @@ async def create_fee_structure(
         "id": structure.id,
         "name": structure.name,
         "amount": float(structure.amount),
+        "academic_year_id": structure.academic_year_id,
+        "institution_id": structure.institution_id,
     }
 
 
@@ -375,6 +415,7 @@ async def create_scholarship(
 async def list_fee_assignments(
     student_id: Optional[int] = None,
     academic_year_id: Optional[int] = None,
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -392,12 +433,20 @@ async def list_fee_assignments(
         .options(selectinload(StudentFeeAssignment.fee_structure))
         .join(Student, StudentFeeAssignment.student_id == Student.id)
     )
-    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+    if data_env == "TRAINING":
+        training_inst_id = await resolve_environment_institution_id(db, data_env, current_user)
+        query = query.where(Student.institution_id == training_inst_id)
+    elif not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
         query = query.where(Student.institution_id == current_user.institution_id)
     if student_id:
         query = query.where(StudentFeeAssignment.student_id == student_id)
     if academic_year_id:
-        query = query.where(StudentFeeAssignment.academic_year_id == academic_year_id)
+        if data_env == "TRAINING":
+            training_inst_id = await resolve_environment_institution_id(db, data_env, current_user)
+            effective_ay_id = await resolve_institution_academic_year_id(db, training_inst_id, academic_year_id)
+            query = query.where(StudentFeeAssignment.academic_year_id == effective_ay_id)
+        else:
+            query = query.where(StudentFeeAssignment.academic_year_id == academic_year_id)
     result = await db.execute(query)
     assignments = result.scalars().all()
     return [
@@ -453,6 +502,7 @@ async def create_fee_assignment(
 @router.get("/students/{student_id}/fee-details")
 async def get_student_fee_details(
     student_id: int,
+    academic_year_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -463,9 +513,17 @@ async def get_student_fee_details(
         raise HTTPException(status_code=404, detail=f"Student #{student_id} not found")
     _authorize_fee_student_record(student.id, student.institution_id, current_user)
 
-    ay_res = await db.execute(select(AcademicYear).where(AcademicYear.is_active == True).order_by(desc(AcademicYear.id)))
-    ay = ay_res.scalars().first()
-    ay_id = ay.id if ay else 1
+    enr_ay_id = (
+        await db.execute(
+            select(StudentEnrollment.academic_year_id)
+            .where(StudentEnrollment.student_id == student_id, StudentEnrollment.status == "active")
+            .order_by(desc(StudentEnrollment.id))
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    ay_id = await resolve_institution_academic_year_id(
+        db, student.institution_id, academic_year_id or enr_ay_id
+    )
 
     assign_res = await db.execute(
         select(StudentFeeAssignment)
@@ -480,13 +538,18 @@ async def get_student_fee_details(
     inv_res = await db.execute(
         select(FeeInvoice)
         .options(selectinload(FeeInvoice.installments))
-        .where(FeeInvoice.student_id == student_id)
+        .where(FeeInvoice.student_id == student_id, FeeInvoice.status != "cancelled")
         .order_by(desc(FeeInvoice.created_at))
     )
     invoice = inv_res.scalar_one_or_none()
 
-    # Active fee structures
-    structures_res = await db.execute(select(FeeStructure).where(FeeStructure.is_active == True))
+    # Active fee structures scoped to the student's institution
+    structures_res = await db.execute(
+        select(FeeStructure).where(
+            FeeStructure.is_active == True,
+            FeeStructure.institution_id == student.institution_id,
+        )
+    )
     structures = structures_res.scalars().all()
 
     assigned_structure = None
@@ -537,7 +600,13 @@ async def get_student_fee_details(
         "invoice": inv_data,
         "current_invoice": inv_data,
         "available_structures": [
-            {"id": s.id, "name": s.name, "amount": float(s.amount), "frequency": s.frequency}
+            {
+                "id": s.id,
+                "name": s.name,
+                "amount": float(s.amount),
+                "frequency": s.frequency,
+                "installments_count": s.installments_count,
+            }
             for s in structures
         ],
     }
@@ -575,9 +644,17 @@ async def adjust_student_fees(
         raise HTTPException(status_code=404, detail=f"Student #{student_id} not found")
     _authorize_fee_student_record(student.id, student.institution_id, current_user)
 
-    ay_res = await db.execute(select(AcademicYear).where(AcademicYear.is_active == True).order_by(desc(AcademicYear.id)))
-    ay = ay_res.scalars().first()
-    ay_id = ay.id if ay else 1
+    enr_ay_id = (
+        await db.execute(
+            select(StudentEnrollment.academic_year_id)
+            .where(StudentEnrollment.student_id == student_id, StudentEnrollment.status == "active")
+            .order_by(desc(StudentEnrollment.id))
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    ay_id = await resolve_institution_academic_year_id(
+        db, student.institution_id, data.academic_year_id or enr_ay_id
+    )
 
     assign_res = await db.execute(
         select(StudentFeeAssignment)
@@ -591,7 +668,14 @@ async def adjust_student_fees(
 
     target_structure_id = data.fee_structure_id or (assignment.fee_structure_id if assignment else None)
     if not target_structure_id:
-        default_fs = (await db.execute(select(FeeStructure).where(FeeStructure.is_active == True))).scalars().first()
+        default_fs = (
+            await db.execute(
+                select(FeeStructure).where(
+                    FeeStructure.is_active == True,
+                    FeeStructure.institution_id == student.institution_id,
+                )
+            )
+        ).scalars().first()
         if not default_fs:
             raise HTTPException(status_code=400, detail="No active fee structure available to assign.")
         target_structure_id = default_fs.id
@@ -701,6 +785,7 @@ async def list_invoices(
     student_id: Optional[int] = None,
     academic_year_id: Optional[int] = None,
     status: Optional[str] = None,
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -718,12 +803,20 @@ async def list_invoices(
         .options(selectinload(FeeInvoice.installments))
         .join(Student, FeeInvoice.student_id == Student.id)
     )
-    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+    if data_env == "TRAINING":
+        training_inst_id = await resolve_environment_institution_id(db, data_env, current_user)
+        query = query.where(Student.institution_id == training_inst_id)
+    elif not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
         query = query.where(Student.institution_id == current_user.institution_id)
     if student_id:
         query = query.where(FeeInvoice.student_id == student_id)
     if academic_year_id:
-        query = query.where(FeeInvoice.academic_year_id == academic_year_id)
+        if data_env == "TRAINING":
+            training_inst_id = await resolve_environment_institution_id(db, data_env, current_user)
+            eff_ay_id = await resolve_institution_academic_year_id(db, training_inst_id, academic_year_id)
+            query = query.where(FeeInvoice.academic_year_id == eff_ay_id)
+        else:
+            query = query.where(FeeInvoice.academic_year_id == academic_year_id)
     if status:
         query = query.where(FeeInvoice.status == status)
     result = await db.execute(query.order_by(FeeInvoice.created_at.desc()))
@@ -1739,6 +1832,10 @@ async def get_fee_register(
     Uses deduplicated latest_enr to avoid duplicate rows on transferred enrollments.
     """
     is_demo_filter = True if data_env == "TRAINING" else (False if data_env == "PRODUCTION" else None)
+    eff_ay_id = academic_year_id
+    if data_env == "TRAINING" and academic_year_id:
+        training_inst_id = await resolve_environment_institution_id(db, data_env, current_user)
+        eff_ay_id = await resolve_institution_academic_year_id(db, training_inst_id, academic_year_id)
     latest_enr = _latest_enrollment_sq()
     query = (
         select(
@@ -1778,8 +1875,8 @@ async def get_fee_register(
         query = query.where(Student.institution_id == current_user.institution_id)
     if is_demo_filter is not None:
         query = query.where(Student.is_demo.is_(is_demo_filter))
-    if academic_year_id:
-        query = query.where(FeeInvoice.academic_year_id == academic_year_id)
+    if eff_ay_id:
+        query = query.where(FeeInvoice.academic_year_id == eff_ay_id)
     if board_id:
         query = query.where(Division.board_id == board_id)
     if standard_id:
@@ -1865,6 +1962,96 @@ async def get_fee_register(
                 for inst in (inv.installments or [])
             ],
         })
+
+    if not status:
+        invoiced_pairs = {(inv.student_id, inv.academic_year_id) for inv, *_ in rows}
+        assign_q = (
+            select(StudentFeeAssignment, FeeStructure, Student, AcademicYear, Standard, Division, Board)
+            .join(FeeStructure, StudentFeeAssignment.fee_structure_id == FeeStructure.id)
+            .join(Student, StudentFeeAssignment.student_id == Student.id)
+            .join(AcademicYear, StudentFeeAssignment.academic_year_id == AcademicYear.id)
+            .outerjoin(
+                latest_enr,
+                (StudentFeeAssignment.student_id == latest_enr.c.student_id)
+                & (StudentFeeAssignment.academic_year_id == latest_enr.c.academic_year_id),
+            )
+            .outerjoin(Standard, latest_enr.c.standard_id == Standard.id)
+            .outerjoin(Division, latest_enr.c.division_id == Division.id)
+            .outerjoin(Board, Division.board_id == Board.id)
+        )
+        if data_env == "TRAINING":
+            training_inst_id = await resolve_environment_institution_id(db, data_env, current_user)
+            assign_q = assign_q.where(Student.institution_id == training_inst_id)
+        elif not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+            assign_q = assign_q.where(Student.institution_id == current_user.institution_id)
+        if is_demo_filter is not None:
+            assign_q = assign_q.where(Student.is_demo.is_(is_demo_filter))
+        if eff_ay_id:
+            assign_q = assign_q.where(StudentFeeAssignment.academic_year_id == eff_ay_id)
+        if board_id:
+            assign_q = assign_q.where(Division.board_id == board_id)
+        if standard_id:
+            assign_q = assign_q.where(latest_enr.c.standard_id == standard_id)
+        if division_id:
+            assign_q = assign_q.where(latest_enr.c.division_id == division_id)
+        if student_status:
+            st_lower = student_status.strip().lower()
+            if st_lower == "active":
+                assign_q = assign_q.where(Student.is_active.is_(True))
+            elif st_lower in ("former", "discontinued", "withdrawn"):
+                assign_q = assign_q.where(Student.is_active.is_(False))
+            elif st_lower == "transferred":
+                assign_q = assign_q.where(latest_enr.c.status == "transferred")
+            elif st_lower == "inactive":
+                assign_q = assign_q.where(Student.is_active.is_(False), Student.exit_date.is_(None))
+        if search:
+            search_term = f"%{search.strip()}%"
+            assign_q = assign_q.where(
+                or_(
+                    Student.first_name.ilike(search_term),
+                    Student.last_name.ilike(search_term),
+                    Student.admission_number.ilike(search_term),
+                )
+            )
+        assign_rows = (await db.execute(assign_q.order_by(Student.first_name.asc()))).all()
+        for assign, fs, student, ay, std, div, brd in assign_rows:
+            if (student.id, ay.id) in invoiced_pairs:
+                continue
+            pkg_amt = float(assign.custom_amount if assign.custom_amount is not None else fs.amount)
+            disc_amt = float(assign.concession_amount or 0)
+            net_amt = max(0.0, pkg_amt - disc_amt)
+            st_class = "active" if student.is_active else ("former" if (student.exit_date or student.exit_reason) else "inactive")
+            register_entries.append({
+                "student_id": student.id,
+                "admission_number": student.admission_number,
+                "student_name": f"{student.first_name} {student.last_name}",
+                "student_is_active": student.is_active,
+                "student_status": st_class,
+                "exit_date": str(student.exit_date) if student.exit_date else None,
+                "exit_reason": student.exit_reason or None,
+                "is_former": not student.is_active,
+                "phone": student.phone or "—",
+                "board_id": brd.id if brd else None,
+                "board_name": brd.name if brd else "General",
+                "standard_id": std.id if std else None,
+                "standard_name": std.name if std else "—",
+                "division_id": div.id if div else None,
+                "batch_name": div.name if div else "Unassigned",
+                "academic_year_id": ay.id,
+                "academic_year_name": ay.name,
+                "invoice_id": None,
+                "invoice_number": "Unbilled",
+                "total_amount": pkg_amt,
+                "discount_amount": disc_amt,
+                "net_amount": net_amt,
+                "paid_amount": 0.0,
+                "outstanding_amount": net_amt,
+                "status": "unbilled",
+                "due_date": None,
+                "payment_count": 0,
+                "last_payment_date": None,
+                "installments": [],
+            })
 
     user_inst_id = getattr(current_user, "institution_id", None) or 1
     register_entries = await CodeXService.mask_records_list(

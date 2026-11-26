@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-23
+#  * @updated     2026-11-26
 #  *
 #  * @description REST API router for Lead Management & CRM: Enquiries, Kanban Pipeline, Follow-ups, Demo Classes, and Lead-to-Admission Conversion.
 #  */
@@ -23,12 +23,13 @@ from pydantic import BaseModel, Field
 import json
 import re
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, func, desc, update, case
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
+from app.services.license_service import enforce_lease_quota
 from app.core.deps import (
     get_current_active_user,
     require_role,
@@ -1996,6 +1997,7 @@ async def log_lead_communication(
 async def convert_lead_to_admission(
     lead_id: int,
     data: ConvertToAdmissionRequest,
+    request: Request,
     effective_inst_id: Optional[int] = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_lead_write),
@@ -2119,6 +2121,8 @@ async def convert_lead_to_admission(
         cty = data.city or lead.city or "Mumbai"
         st = data.state or lead.state or "Maharashtra"
         pin = data.pincode or lead.pincode or "400001"
+
+        await enforce_lease_quota(request, db, effective_inst_id, resource_type="student", add_count=1)
 
         student = Student(
             institution_id=effective_inst_id,

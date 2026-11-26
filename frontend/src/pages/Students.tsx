@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-24
+ * @updated     2026-11-26
  *
  * @description Dedicated multi-workspace hub for Students & Admissions Centre comprising Overview, Master Register, KYC Admissions, Batch Allocations, ID Cards, Activity History, Reactivation, and Admission Policies.
  */
@@ -577,6 +577,11 @@ function StudentsContent() {
   const handleLifecycleSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['students'] })
     queryClient.invalidateQueries({ queryKey: ['enrollments'] })
+    queryClient.invalidateQueries({ queryKey: ['enrollments-list'] })
+    queryClient.invalidateQueries({ queryKey: ['enrollments-stats'] })
+    queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] })
+    queryClient.invalidateQueries({ queryKey: ['academic-overview'] })
+    queryClient.invalidateQueries({ queryKey: ['fee-register'] })
     refetchStudents()
     refetchInactive()
     refetchUnassigned()
@@ -622,6 +627,7 @@ function StudentsContent() {
     last_name: '',
     gender: 'male',
     date_of_birth: '2010-01-01',
+    admission_date: new Date().toISOString().split('T')[0],
     blood_group: 'O+',
     aadhar_number: '',
     phone: '',
@@ -643,7 +649,16 @@ function StudentsContent() {
       navigate('/students/directory')
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.detail || 'Failed to register student.')
+      const detail = err?.response?.data?.detail
+      const msg = Array.isArray(detail)
+        ? detail
+            .map((item: any) => (item && typeof item === 'object' ? item.msg || item.message : String(item || '')))
+            .filter(Boolean)
+            .join('; ')
+        : typeof detail === 'string' && detail.trim()
+          ? detail
+          : err?.userFriendlyMessage || 'Failed to register student.'
+      toast.error(msg || 'Failed to register student.')
     },
   })
 
@@ -657,8 +672,22 @@ function StudentsContent() {
       toast.error('First name and last name are required.')
       return
     }
+    const {
+      guardian_name,
+      guardian_relationship,
+      guardian_phone,
+      ...studentFields
+    } = admissionForm
     createStudentMutation.mutate({
-      ...admissionForm,
+      ...studentFields,
+      admission_date: admissionForm.admission_date || new Date().toISOString().split('T')[0],
+      guardian: guardian_name.trim()
+        ? {
+            full_name: guardian_name.trim(),
+            relationship: guardian_relationship || 'Father',
+            phone: guardian_phone || undefined,
+          }
+        : undefined,
       standard_id: admissionForm.standard_id ? Number(admissionForm.standard_id) : undefined,
       division_id: admissionForm.division_id ? Number(admissionForm.division_id) : undefined,
       institution_id: selectedInstitutionId,
@@ -1613,6 +1642,16 @@ function StudentsContent() {
                     disabled={!isEditMode}
                     value={admissionForm.date_of_birth}
                     onChange={(e) => setAdmissionForm({ ...admissionForm, date_of_birth: e.target.value })}
+                    className="input text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Admission Date</label>
+                  <input
+                    type="date"
+                    disabled={!isEditMode}
+                    value={admissionForm.admission_date}
+                    onChange={(e) => setAdmissionForm({ ...admissionForm, admission_date: e.target.value })}
                     className="input text-xs"
                   />
                 </div>

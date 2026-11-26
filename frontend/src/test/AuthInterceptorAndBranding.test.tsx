@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-18
+ * @updated     2026-11-26
  *
  * @description Vitest test suite validating authentication interceptors, 401 redirect loop prevention, and unauthenticated branding fallback.
  */
@@ -62,6 +62,9 @@ describe('Authentication Interceptor & Redirect Loop Prevention Specifications',
     config = { headers: {} }
     config = requestInterceptor(config)
     expect(config.headers.Authorization).toBe('Bearer test-jwt-token-12345')
+    expect(config.headers['Cache-Control']).toContain('no-store')
+    expect(config.headers['Pragma']).toBe('no-cache')
+    expect(config.params?._t).toBeTypeOf('number')
   })
 
   it('prevents infinite page reload loop by suppressing window.location.href redirection when already on /login', async () => {

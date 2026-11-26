@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-25
+ * @updated     2026-11-26
  *
  * @description Examinations flagship workspace featuring 7 dedicated submenus: overview, schedules, marks entry, analytics, report cards, question papers, and settings.
  */
@@ -498,6 +498,7 @@ function ExaminationsContent() {
     mutationFn: () => examinationsApi.savePolicies(policyForm),
     onSuccess: () => {
       toast.success('Examination grading policies saved successfully!')
+      qc.invalidateQueries({ queryKey: ['exam-policies'] })
       refetchPolicies()
     },
     onError: (err: any) => {

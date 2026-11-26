@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints for user account administration, RBAC roles, security scopes, and invitations.
 #  */
@@ -37,6 +37,7 @@ from app.core.deps import (
     require_role,
 )
 from app.core.security import get_password_hash
+from app.services.license_service import enforce_lease_quota
 from app.models.user import User, Role, Permission, AuditLog
 from app.models.student import Student
 from app.models.enrollment import StudentEnrollment
@@ -741,6 +742,9 @@ async def create_user(
     if data.institution_id is not None:
         check_institution_access(data.institution_id, current_user)
     await _validate_role_assignment(data.role, data.role_id, current_user, db)
+    target_inst_id = data.institution_id or current_user.institution_id or 1
+    if (data.role or "staff").strip().lower() != "student":
+        await enforce_lease_quota(request, db, target_inst_id, resource_type="staff", add_count=1)
 
     # Check username / email uniqueness
     existing = await db.execute(

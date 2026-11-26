@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-23
+#  * @updated     2026-11-26
 #  *
 #  * @description Comprehensive test suite verifying student exit workflows, reactivation, refunds, and withdrawal analytics.
 #  */
@@ -476,3 +476,209 @@ async def test_cross_institution_isolation(client: AsyncClient, setup_lifecycle_
         headers=headers,
     )
     assert res.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_complete_student_closed_loop_from_admission_to_full_payment(
+    client: AsyncClient, setup_lifecycle_data, db: AsyncSession, tmp_path, monkeypatch
+):
+    """
+    End-to-end closed-loop lifecycle verification:
+    Start 30-Day Machine Trial -> Admit New Student (with Enrollment & Guardian) ->
+    Mark Attendance -> Create Exam & Marks -> Assign Fee Structure -> Generate Invoice ->
+    Collect Partial Payment -> Collect Final Balance -> Verify Paid Status & Zero Outstanding Balance.
+    """
+    from app.models.subject import Subject
+
+    monkeypatch.setenv("PRATHAM_TRIAL_ANCHOR_DIR", str(tmp_path))
+    data = setup_lifecycle_data
+    inst = data["institution"]
+    ay = data["academic_year"]
+    std = data["standard"]
+    div = data["division"]
+    admin = data["admin"]
+
+    cat = FeeCategory(institution_id=inst.id, name="Tuition Fee Loop", is_active=True)
+    db.add(cat)
+    await db.flush()
+    fs = FeeStructure(
+        institution_id=inst.id,
+        academic_year_id=ay.id,
+        standard_id=std.id,
+        category_id=cat.id,
+        name="Annual Tuition Loop Package",
+        amount=Decimal("20000.00"),
+        frequency="annual",
+        installments_count=1,
+        is_active=True,
+    )
+    subj = Subject(
+        standard_id=std.id,
+        name="Physics Loop",
+        code=f"PHY-{inst.id}",
+        max_marks=100,
+        pass_marks=35,
+        is_active=True,
+    )
+    db.add(fs)
+    db.add(subj)
+    await db.commit()
+    await db.refresh(fs)
+    await db.refresh(subj)
+
+    token = create_access_token({"sub": str(admin.id), "institution_id": inst.id})
+    headers = {"Authorization": f"Bearer {token}", "X-Data-Environment": "PRODUCTION"}
+
+    # 1. Start 30-Day Unique-Machine Trial without a commercial license
+    trial_res = await client.post("/api/v1/license/trial/start", headers=headers)
+    assert trial_res.status_code == 200, trial_res.text
+    trial_json = trial_res.json()
+    assert trial_json["mode"] == "trial"
+    assert trial_json["days_remaining"] == 30
+    assert trial_json["limits"] == {"max_students": 100, "max_staff": 25, "seats": 10}
+
+    # 2. Student Admission (creates Student + Guardian + StudentEnrollment)
+    adm_res = await client.post(
+        "/api/v1/students/",
+        json={
+            "institution_id": inst.id,
+            "first_name": "Rohan",
+            "last_name": "Kulkarni",
+            "date_of_birth": "2010-06-15",
+            "gender": "male",
+            "phone": "9876500111",
+            "email": f"rohan.{inst.id}@example.test",
+            "admission_date": str(date.today()),
+            "standard_id": std.id,
+            "division_id": div.id,
+            "academic_year_id": ay.id,
+            "guardian": {
+                "relation": "Father",
+                "first_name": "Suresh",
+                "last_name": "Kulkarni",
+                "phone": "9876500112",
+            },
+        },
+        headers=headers,
+    )
+    assert adm_res.status_code == 201, adm_res.text
+    student_id = adm_res.json()["id"]
+
+    # Retrieve enrollment ID created during admission
+    enr_row = (
+        await db.execute(select(StudentEnrollment).where(StudentEnrollment.student_id == student_id))
+    ).scalar_one()
+
+    # 3. Mark Attendance
+    att_res = await client.post(
+        "/api/v1/attendance/bulk",
+        json={
+            "date": str(date.today()),
+            "entries": [{"student_id": student_id, "enrollment_id": enr_row.id, "status": "present", "remarks": "First day"}],
+        },
+        headers=headers,
+    )
+    assert att_res.status_code == 200, att_res.text
+
+    # 4. Create Examination & Enter Exam Marks
+    ex_res = await client.post(
+        "/api/v1/examinations/",
+        json={
+            "academic_year_id": ay.id,
+            "standard_id": std.id,
+            "name": "Closed Loop Unit Test",
+            "exam_type": "Unit Test",
+            "start_date": str(date.today()),
+            "end_date": str(date.today()),
+            "max_marks": 100,
+            "passing_marks": 35,
+        },
+        headers=headers,
+    )
+    assert ex_res.status_code == 201, ex_res.text
+    exam_id = ex_res.json()["id"]
+
+    marks_res = await client.post(
+        f"/api/v1/examinations/{exam_id}/marks",
+        json={"entries": [{"student_id": student_id, "subject_id": subj.id, "marks_obtained": 92.0, "is_absent": False}]},
+        headers=headers,
+    )
+    assert marks_res.status_code == 200, marks_res.text
+
+    # 5. Assign Fee Structure & Generate Fee Invoice
+    asgn_res = await client.post(
+        "/api/v1/fees/assignments",
+        json={"student_id": student_id, "fee_structure_id": fs.id, "academic_year_id": ay.id},
+        headers=headers,
+    )
+    assert asgn_res.status_code == 201, asgn_res.text
+    assignment_id = asgn_res.json()["id"]
+
+    inv_res = await client.post(
+        "/api/v1/fees/invoices",
+        json={
+            "student_id": student_id,
+            "assignment_id": assignment_id,
+            "academic_year_id": ay.id,
+            "issue_date": str(date.today()),
+            "due_date": str(date.today()),
+            "installments": [{"description": "Annual Fee", "due_date": str(date.today()), "amount": "20000.00"}],
+        },
+        headers=headers,
+    )
+    assert inv_res.status_code == 201, inv_res.text
+    invoice_id = inv_res.json()["id"]
+
+    # 6. Collect Partial Payment (#1: INR 8,000) -> Verify partial balance
+    pay1_res = await client.post(
+        "/api/v1/payments/",
+        json={
+            "student_id": student_id,
+            "academic_year_id": ay.id,
+            "amount": "8000.00",
+            "payment_date": str(date.today()),
+            "payment_method": "upi",
+            "transaction_reference": f"UPI-{inst.id}-1",
+            "allocations": [{"invoice_id": invoice_id, "amount": "8000.00"}],
+            "action": "post",
+        },
+        headers=headers,
+    )
+    assert pay1_res.status_code == 201, pay1_res.text
+    assert pay1_res.json().get("receipt_number")
+
+    await db.refresh(await db.get(FeeInvoice, invoice_id))
+    inv_mid = await db.get(FeeInvoice, invoice_id)
+    assert inv_mid.status == "partial"
+    assert inv_mid.outstanding_amount == Decimal("12000.00")
+
+    # 7. Collect Final Payment (#2: INR 12,000) -> Close the full payment loop
+    pay2_res = await client.post(
+        "/api/v1/payments/",
+        json={
+            "student_id": student_id,
+            "academic_year_id": ay.id,
+            "amount": "12000.00",
+            "payment_date": str(date.today()),
+            "payment_method": "cash",
+            "allocations": [{"invoice_id": invoice_id, "amount": "12000.00"}],
+            "action": "post",
+        },
+        headers=headers,
+    )
+    assert pay2_res.status_code == 201, pay2_res.text
+    assert pay2_res.json().get("receipt_number")
+
+    # 8. Assert Closed Loop on Student Ledger & Invoice
+    student_res = await client.get(f"/api/v1/students/{student_id}", headers=headers)
+    assert student_res.status_code == 200, student_res.text
+    fee_summary = student_res.json()["fee_summary"]
+    assert float(fee_summary["total_fees"]) == 20000.0
+    assert float(fee_summary["total_paid"]) == 20000.0
+    assert float(fee_summary["outstanding"]) == 0.0
+
+    inv_done = await db.get(FeeInvoice, invoice_id)
+    await db.refresh(inv_done)
+    assert inv_done.status == "paid"
+    assert inv_done.paid_amount == Decimal("20000.00")
+    assert inv_done.outstanding_amount == Decimal("0.00")

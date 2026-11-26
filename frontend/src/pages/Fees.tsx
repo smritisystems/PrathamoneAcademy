@@ -33,6 +33,7 @@ import {
 import { BatchMonthlyFeeMatrix } from '../components/fees/BatchMonthlyFeeMatrix'
 import { shareOrDownloadReceiptPdf, triggerBlobDownload, sanitizeReceiptFilename, ShareNotification } from '../utils/receiptShare'
 import { useEnvironmentStore } from '../store/environmentStore'
+import { extractApiErrorMessage } from '../utils/errorTaxonomy'
 import {
   ComposedChart, Bar, Line, PieChart, Pie, Cell, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, LabelList
@@ -1383,10 +1384,15 @@ function FeesContent() {
         queryClient.invalidateQueries({ queryKey: ['fee-invoices'] }),
         queryClient.invalidateQueries({ queryKey: ['collect-invoices'] }),
         queryClient.invalidateQueries({ queryKey: ['fees-overview'] }),
+        queryClient.invalidateQueries({ queryKey: ['student-admin-profile'] }),
+        queryClient.invalidateQueries({ queryKey: ['student-fees'] }),
+        queryClient.invalidateQueries({ queryKey: ['student-fee-details'] }),
+        queryClient.invalidateQueries({ queryKey: ['student-monthly-pivot'] }),
+        queryClient.invalidateQueries({ queryKey: ['batch-monthly-matrix'] }),
       ])
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Unable to issue fee invoice')
+      toast.error(extractApiErrorMessage(error, 'Unable to issue fee invoice'))
     },
   })
 
@@ -1570,7 +1576,7 @@ function FeesContent() {
               </span>
             </button>
           )}
-          {row.outstanding_amount > 0 && (
+          {row.outstanding_amount > 0 && row.status !== 'unbilled' && (
             <button
               type="button"
               onClick={() => {
@@ -1842,10 +1848,15 @@ function FeesContent() {
 
       queryClient.invalidateQueries({ queryKey: ['fees-overview'] })
       queryClient.invalidateQueries({ queryKey: ['fee-register'] })
+      queryClient.invalidateQueries({ queryKey: ['fee-invoices'] })
       queryClient.invalidateQueries({ queryKey: ['payments-list'] })
       queryClient.invalidateQueries({ queryKey: ['payments-page'] })
       queryClient.invalidateQueries({ queryKey: ['receipts-list'] })
       queryClient.invalidateQueries({ queryKey: ['collect-invoices'] })
+      queryClient.invalidateQueries({ queryKey: ['student-admin-profile'] })
+      queryClient.invalidateQueries({ queryKey: ['student-fees'] })
+      queryClient.invalidateQueries({ queryKey: ['student-monthly-pivot'] })
+      queryClient.invalidateQueries({ queryKey: ['batch-monthly-matrix'] })
       refetchCollectInvoices()
     },
     onError: (err: any) => {
@@ -2314,6 +2325,9 @@ function FeesContent() {
       setNewStructName('')
       setNewStructAmount('')
       queryClient.invalidateQueries({ queryKey: ['fee-structures'] })
+      queryClient.invalidateQueries({ queryKey: ['fees-overview'] })
+      queryClient.invalidateQueries({ queryKey: ['fee-register'] })
+      queryClient.invalidateQueries({ queryKey: ['student-fee-details'] })
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.detail || 'Failed to create fee structure')
@@ -2379,6 +2393,8 @@ function FeesContent() {
       setEditingStructure(null)
       queryClient.invalidateQueries({ queryKey: ['fee-structures'] })
       queryClient.invalidateQueries({ queryKey: ['fees-overview'] })
+      queryClient.invalidateQueries({ queryKey: ['fee-register'] })
+      queryClient.invalidateQueries({ queryKey: ['student-fee-details'] })
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.detail || 'Failed to update fee structure')

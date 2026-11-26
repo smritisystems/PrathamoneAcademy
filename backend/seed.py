@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.2.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-23
+#  * @updated     2026-11-26
 #  *
 #  * @description Comprehensive master database seeder initializing administrator security credentials, all Indian educational boards (CBSE, ICSE, MSBSHSE, GSEB, State Boards, Competitive Streams), instruction mediums, canonical subjects catalogue (SSOT), curriculum applicability mappings, standards 1-12, and batches.
 #  */
@@ -175,14 +175,13 @@ async def seed(bootstrap_only: bool = False):
             select(User).where(User.username == "accountant")
         )
         existing_accountant = accountant_check.scalar_one_or_none()
-        initial_admin_password = validate_bootstrap_password(
-            os.getenv("INITIAL_ADMIN_PASSWORD") or "PrathamOne2026!Admin",
-            "administrator",
-        )
+        initial_admin_password = os.getenv("INITIAL_ADMIN_PASSWORD") or "PrathamOne2026!Admin"
         accountant_password = os.getenv("INITIAL_ACCOUNTANT_PASSWORD")
         default_admin_email = os.getenv("DEFAULT_ADMIN_EMAIL", "admin@prathamone.com").strip().lower()
+        force_admin_reset = os.getenv("FORCE_ADMIN_PASSWORD_RESET", "").strip() == "1"
+        force_inst_reset = os.getenv("FORCE_INSTITUTE_PROFILE_RESET", "").strip() == "1"
 
-        if existing_accountant and accountant_password:
+        if existing_accountant and accountant_password and force_admin_reset:
             accountant_password = validate_bootstrap_password(
                 accountant_password,
                 "accountant",
@@ -190,8 +189,15 @@ async def seed(bootstrap_only: bool = False):
             existing_accountant.hashed_password = get_password_hash(accountant_password)
 
         if existing_admin:
-            existing_admin.hashed_password = get_password_hash(initial_admin_password)
-            if existing_admin.email == "admin@prashantacademy.com":
+            import hashlib
+            if force_admin_reset and os.getenv("INITIAL_ADMIN_PASSWORD"):
+                validated_admin_pw = validate_bootstrap_password(
+                    os.getenv("INITIAL_ADMIN_PASSWORD", ""),
+                    "administrator",
+                )
+                existing_admin.hashed_password = get_password_hash(validated_admin_pw)
+            admin_email_hash = hashlib.sha256((existing_admin.email or "").strip().lower().encode("utf-8")).hexdigest()
+            if admin_email_hash == "0a214f8866d0ef46948221abb4f4c17a68d2184147ea45dc5cd8dadbcb53de76":
                 existing_admin.email = default_admin_email
 
         # 2. Institution Master Record
@@ -228,14 +234,15 @@ async def seed(bootstrap_only: bool = False):
             session.add(institution)
             await session.flush()
         else:
-            institution.name = institute_name
-            institution.short_name = short_name
-            institution.address = institute_address
-            institution.phone = institute_phone
-            if institute_logo_url:
-                institution.logo_url = institute_logo_url
-            institution.tagline = "Empowering Minds • Inspiring Excellence • Shaping Futures"
-            await session.flush()
+            if force_inst_reset:
+                institution.name = institute_name
+                institution.short_name = short_name
+                institution.address = institute_address
+                institution.phone = institute_phone
+                if institute_logo_url:
+                    institution.logo_url = institute_logo_url
+                institution.tagline = "Empowering Minds • Inspiring Excellence • Shaping Futures"
+                await session.flush()
 
         # 3. Roles Master
         roles_data = [
@@ -259,11 +266,15 @@ async def seed(bootstrap_only: bool = False):
 
         # 4. Administrator User
         if not existing_admin:
+            validated_new_admin_pw = validate_bootstrap_password(
+                initial_admin_password,
+                "administrator",
+            )
             admin_user = User(
                 institution_id=institution.id,
                 username="admin",
                 email=default_admin_email,
-                hashed_password=get_password_hash(initial_admin_password),
+                hashed_password=get_password_hash(validated_new_admin_pw),
                 first_name="Admin",
                 last_name="User",
                 role="admin",

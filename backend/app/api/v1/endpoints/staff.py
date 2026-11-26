@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-16
+#  * @updated     2026-11-26
 #  *
 #  * @description Comprehensive API endpoints for Teacher & Staff Management, assignments, attendance, leaves, and documents.
 #  */
@@ -35,6 +35,7 @@ from app.core.deps import (
     check_institution_access,
 )
 from app.core.security import get_password_hash
+from app.services.license_service import enforce_lease_quota
 from app.models.user import User, Role, Permission, AuditLog
 from app.models.staff import (
     StaffProfile,
@@ -365,6 +366,8 @@ async def list_staff_members(
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_staff_member(
     data: StaffCreateRequest,
+    request: Request,
+    effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(*STAFF_ADMIN_ROLES)),
 ):
@@ -380,8 +383,9 @@ async def create_staff_member(
     if existing:
         raise HTTPException(status_code=400, detail="Username or Email already registered in system")
 
-    # 2. Determine target institution ID
-    user_inst_id = getattr(current_user, "institution_id", None) or 1
+    # 2. Determine target institution ID (honors TRAINING mode PA001-DEMO routing)
+    user_inst_id = effective_inst_id or getattr(current_user, "institution_id", None) or 1
+    await enforce_lease_quota(request, db, user_inst_id, resource_type="staff", add_count=1)
 
     # 3. Generate Next Employee ID (e.g. TCH-005, STF-001)
     prefix = "TCH" if data.staff_type == "Teacher" else ("ACC" if data.staff_type == "Accountant" else "STF")

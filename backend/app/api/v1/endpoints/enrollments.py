@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-16
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints for student course and batch enrollment, transfers, and status tracking.
 #  */
@@ -24,7 +24,15 @@ from pydantic import BaseModel
 from datetime import date, datetime
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role, check_institution_access, is_sysadmin
+from app.core.deps import (
+    get_current_active_user,
+    require_role,
+    check_institution_access,
+    get_data_environment,
+    resolve_environment_institution_id,
+    resolve_institution_academic_year_id,
+    is_sysadmin,
+)
 from app.models.enrollment import StudentEnrollment
 from app.models.student import Student
 from app.models.division import Division
@@ -63,6 +71,7 @@ class EnrollmentUpdate(BaseModel):
 @router.get("/stats")
 async def get_enrollment_stats(
     academic_year_id: Optional[int] = Query(None),
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -70,12 +79,19 @@ async def get_enrollment_stats(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students cannot access institute enrollment statistics")
 
     inst_id = None
-    if not is_sysadmin(current_user):
+    if data_env == "TRAINING":
+        inst_id = await resolve_environment_institution_id(db, data_env, current_user)
+    elif not is_sysadmin(current_user):
         inst_id = getattr(current_user, "institution_id", None)
         if inst_id is None:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Institution context required")
 
-    ay_id = academic_year_id or 1
+    target_ay_inst = inst_id or getattr(current_user, "institution_id", None) or 1
+    ay_id = (
+        await resolve_institution_academic_year_id(db, target_ay_inst, academic_year_id)
+        if data_env == "TRAINING" or not academic_year_id
+        else academic_year_id
+    )
 
     # Active enrollments
     enr_stmt = select(func.count(StudentEnrollment.id)).join(
@@ -142,6 +158,7 @@ async def list_enrollments(
     search: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     limit: int = Query(25, ge=1, le=100),
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -167,7 +184,12 @@ async def list_enrollments(
         .outerjoin(Board, Division.board_id == Board.id)
     )
 
-    if not is_sysadmin(current_user):
+    if data_env == "TRAINING":
+        training_inst_id = await resolve_environment_institution_id(db, data_env, current_user)
+        query = query.where(Student.institution_id == training_inst_id)
+        if academic_year_id:
+            academic_year_id = await resolve_institution_academic_year_id(db, training_inst_id, academic_year_id)
+    elif not is_sysadmin(current_user):
         inst_id = getattr(current_user, "institution_id", None)
         if inst_id is None:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Institution context required")
@@ -260,6 +282,7 @@ async def list_enrollments(
 async def list_unassigned_students(
     academic_year_id: Optional[int] = Query(None),
     search: Optional[str] = Query(None),
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -267,12 +290,19 @@ async def list_unassigned_students(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students cannot list unassigned peers")
 
     inst_id = None
-    if not is_sysadmin(current_user):
+    if data_env == "TRAINING":
+        inst_id = await resolve_environment_institution_id(db, data_env, current_user)
+    elif not is_sysadmin(current_user):
         inst_id = getattr(current_user, "institution_id", None)
         if inst_id is None:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Institution context required")
 
-    ay_id = academic_year_id or 1
+    target_ay_inst = inst_id or getattr(current_user, "institution_id", None) or 1
+    ay_id = (
+        await resolve_institution_academic_year_id(db, target_ay_inst, academic_year_id)
+        if data_env == "TRAINING" or not academic_year_id
+        else academic_year_id
+    )
 
     # Active enrolled student IDs
     active_enr_subq = (

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-14
- * @updated     2026-11-24
+ * @updated     2026-11-26
  *
  * @description Institution-scoped activation and refresh of signed software licenses.
  */
@@ -23,6 +23,7 @@ import {
   Award,
   Building2,
   CalendarDays,
+  Clock,
   Cloud,
   Download,
   FileText,
@@ -331,6 +332,21 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
       } else {
         toast.error(`License activation or refresh failed: ${detail}`)
       }
+    },
+  })
+
+  const startTrialMutation = useMutation({
+    mutationFn: () => licenseApi.startTrial(institutionId),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['license-status', institutionId] })
+      queryClient.invalidateQueries({ queryKey: ['license-status'] })
+      toast.success(
+        `30-Day Free Trial active (${res.data.days_remaining} days left · up to ${res.data.limits.max_students} students & ${res.data.limits.max_staff} staff).`,
+      )
+    },
+    onError: (error: any) => {
+      const detail = error.response?.data?.detail || error.message || 'Failed to start machine trial.'
+      toast.error(typeof detail === 'string' ? detail : 'Failed to start machine trial.')
     },
   })
 
@@ -1033,6 +1049,47 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
               <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
                 Signature status: {licenseStatus.error}
               </p>
+            )}
+            {!hasVerifiedLicense && !isLicenseLoading && !isLicenseStatusError && (
+              <div className={`mt-4 rounded-xl border p-4 ${
+                licenseStatus?.mode === 'trial'
+                  ? 'border-indigo-200 bg-indigo-50/70 text-indigo-950'
+                  : licenseStatus?.trial_expired
+                    ? 'border-rose-200 bg-rose-50 text-rose-950'
+                    : 'border-emerald-200 bg-emerald-50/70 text-emerald-950'
+              }`}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h4 className="flex items-center gap-2 text-sm font-bold">
+                      <Clock className="h-4 w-4 shrink-0" />
+                      {licenseStatus?.mode === 'trial'
+                        ? `30-Day Machine Trial Active (${licenseStatus.trial_days_remaining ?? 30} days remaining)`
+                        : licenseStatus?.trial_expired
+                          ? '30-Day Unique-Machine Trial Expired'
+                          : '30-Day Free Unique-Machine Trial'}
+                    </h4>
+                    <p className="mt-1 text-xs leading-relaxed opacity-90">
+                      {licenseStatus?.mode === 'trial'
+                        ? `Bound to this host hardware (${licenseStatus.trial_limits?.max_students ?? 100} students · ${licenseStatus.trial_limits?.max_staff ?? 25} staff · ${licenseStatus.trial_limits?.seats ?? 10} seats). Automatically reverts to read-only Evaluation Mode on expiry without deleting data.`
+                        : licenseStatus?.trial_expired
+                          ? 'This computer has finished its 30-day free trial. Entered records and reports stay readable; activate a commercial license below or use Training Mode.'
+                          : `Use full Live features on this computer without a commercial license for 30 days (up to ${licenseStatus?.trial_limits?.max_students ?? 100} students & ${licenseStatus?.trial_limits?.max_staff ?? 25} staff), then auto-reverts to read-only Evaluation Mode.`}
+                    </p>
+                  </div>
+                  {licenseStatus?.mode !== 'trial' && !licenseStatus?.trial_expired && (
+                    <button
+                      type="button"
+                      onClick={() => startTrialMutation.mutate()}
+                      disabled={!isEditMode || startTrialMutation.isPending}
+                      title={!isEditMode ? 'Enable Edit Mode first' : 'Activate 30-day free trial on this computer'}
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+                      {startTrialMutation.isPending ? 'Activating Trial…' : 'Start 30-Day Free Trial'}
+                    </button>
+                  )}
+                </div>
+              </div>
             )}
             {hasVerifiedLicense && (
               <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">

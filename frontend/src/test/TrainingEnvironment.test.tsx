@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-16
+ * @updated     2026-11-26
  *
  * @description Unit test suite for Global Training & Demo Environment state store, banner indicators, badges, and print governance overrides.
  */
@@ -31,6 +31,7 @@ vi.mock('../api/endpoints', () => ({
     pingSession: vi.fn().mockResolvedValue({ data: { status: 'OK' } }),
     exitSession: vi.fn().mockResolvedValue({ data: { status: 'OK' } }),
     triggerReset: vi.fn().mockResolvedValue({ data: { status: 'SUCCESS' } }),
+    resetEnvironment: vi.fn().mockResolvedValue({ data: { status: 'SUCCESS' } }),
     seedDataset: vi.fn().mockResolvedValue({ data: { status: 'SUCCESS' } }),
     getResetLogs: vi.fn().mockResolvedValue({ data: [] }),
     updateConfig: vi.fn().mockResolvedValue({ data: {} }),
@@ -143,6 +144,27 @@ describe('Global Training & Demo Environment Governance', () => {
       const confirmBtn = screen.getByRole('button', { name: /Switch to Training Mode/i })
       fireEvent.click(confirmBtn)
       await waitFor(() => {
+        expect(handleConfirm).toHaveBeenCalledTimes(1)
+      })
+    })
+
+    it('lets user pick clean empty demo preset before switching to TRAINING', async () => {
+      const { trainingApi } = await import('../api/endpoints')
+      vi.mocked(trainingApi.resetEnvironment).mockClear()
+      const handleConfirm = vi.fn()
+      render(
+        <EnvironmentSwitchModal
+          isOpen={true}
+          onClose={vi.fn()}
+          targetEnvironment="TRAINING"
+          onConfirm={handleConfirm}
+        />
+      )
+      const presetSelect = screen.getByLabelText('Demo dataset preset') as HTMLSelectElement
+      fireEvent.change(presetSelect, { target: { value: 'clean_empty' } })
+      fireEvent.click(screen.getByRole('button', { name: /Switch to Training Mode/i }))
+      await waitFor(() => {
+        expect(trainingApi.resetEnvironment).toHaveBeenCalledWith({ force: true, demo_mode: 'clean_empty' })
         expect(handleConfirm).toHaveBeenCalledTimes(1)
       })
     })

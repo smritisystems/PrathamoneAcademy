@@ -11,21 +11,23 @@
  *
  * @version     1.0.0
  * @created     2026-11-16
- * @updated     2026-11-24
+ * @updated     2026-11-26
  *
  * @description Tests the Institution Admin license activation entry point and institution scoping.
  */
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import LicenseActivation from '../pages/LicenseActivation'
 import { useAuthStore } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
 
-const { getStatusMock, printCertificateMock, createCertificateMock, downloadCertificateMock, shareCertificateMock } = vi.hoisted(() => ({
+const { getStatusMock, startTrialMock, printCertificateMock, createCertificateMock, downloadCertificateMock, shareCertificateMock } = vi.hoisted(() => ({
   getStatusMock: vi.fn(),
+  startTrialMock: vi.fn(),
   printCertificateMock: vi.fn(),
   createCertificateMock: vi.fn(),
   downloadCertificateMock: vi.fn(),
@@ -52,6 +54,7 @@ vi.mock('../api/endpoints', async (importOriginal) => {
     licenseApi: {
       ...actual.licenseApi,
       getStatus: getStatusMock,
+      startTrial: startTrialMock,
     },
   }
 })
@@ -109,7 +112,21 @@ describe('LicenseActivation', () => {
       selectedInstitutionId: 99,
     })
     useEnvironmentStore.getState().exitTrainingMode()
+    useEditModeStore.getState().resetAll()
     getStatusMock.mockReset()
+    startTrialMock.mockReset().mockResolvedValue({
+      data: {
+        ok: true,
+        already_started: false,
+        mode: 'trial',
+        license_model: 'offline_trial_30d',
+        edition: '30-Day Machine Trial',
+        started_at: '2026-11-26T10:00:00+00:00',
+        expires_at: '2026-12-26T10:00:00+00:00',
+        days_remaining: 30,
+        limits: { max_students: 100, max_staff: 25, seats: 10 },
+      },
+    })
     printCertificateMock.mockReset()
     createCertificateMock.mockReset().mockResolvedValue(new Blob(['%PDF'], { type: 'application/pdf' }))
     downloadCertificateMock.mockReset()
@@ -327,5 +344,40 @@ describe('LicenseActivation', () => {
     expect(alert.textContent).toContain('Activation and registration are hidden')
     expect(screen.queryByText('Customer registration details')).toBeNull()
     expect(screen.getByRole('button', { name: 'Retry license status check' })).toBeTruthy()
+  })
+
+  it('lets an Institution Admin start the 30-day unique-machine trial in Edit Mode and shows active countdown', async () => {
+    renderLicenseActivationPage()
+
+    expect(await screen.findByText('30-Day Free Unique-Machine Trial')).toBeTruthy()
+    const trialBtn = screen.getByRole('button', { name: 'Start 30-Day Free Trial' }) as HTMLButtonElement
+    expect(trialBtn.disabled).toBe(true)
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Enable Edit Mode' })[0])
+    expect(trialBtn.disabled).toBe(false)
+    fireEvent.click(trialBtn)
+    await waitFor(() => {
+      expect(startTrialMock).toHaveBeenCalledTimes(1)
+    })
+
+    cleanup()
+    getStatusMock.mockResolvedValueOnce({
+      data: {
+        mode: 'trial',
+        document_id: null,
+        edition: '30-Day Machine Trial',
+        license_model: 'offline_trial_30d',
+        rollout_stage: 'enforced',
+        expires_at: '2026-12-26T10:00:00+00:00',
+        issued_at: '2026-11-26T10:00:00+00:00',
+        refresh_status: 'not_activated',
+        trial_active: true,
+        trial_expired: false,
+        trial_days_remaining: 29,
+        trial_limits: { max_students: 100, max_staff: 25, seats: 10 },
+      },
+    })
+    renderLicenseActivationPage()
+    expect(await screen.findByText('30-Day Machine Trial Active (29 days remaining)')).toBeTruthy()
   })
 })

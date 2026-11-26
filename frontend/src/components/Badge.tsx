@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-26
  *
  * @description Reusable status badge and pill components with unified semantic color themes.
  */
@@ -27,6 +27,7 @@ export function StatusBadge({ status, label }: BadgeProps) {
   const classes: Record<string, string> = {
     paid: 'badge-paid',
     partial: 'badge-partial',
+    unbilled: 'badge-partial',
     unpaid: 'badge-unpaid',
     overdue: 'badge-overdue',
     active: 'badge-active',
@@ -40,6 +41,7 @@ export function StatusBadge({ status, label }: BadgeProps) {
   const labels: Record<string, string> = {
     paid: 'Paid',
     partial: 'Partial',
+    unbilled: 'Unbilled',
     unpaid: 'Unpaid',
     overdue: 'Overdue',
     active: 'Active',

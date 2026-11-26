@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-21
+#  * @updated     2026-11-26
 #  *
 #  * @description Service managing the Central Training Dataset (CRM-STAFF-TRAINING-V1), isolated demo tenant seeding, and dependency-aware training reset engine with strict production safety locks.
 #  */
@@ -19,9 +19,10 @@
 import time
 import logging
 from datetime import datetime, date, timedelta
+from decimal import Decimal
 from typing import Optional, Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, delete, and_, or_
+from sqlalchemy import select, func, delete, and_, or_, case
 
 from app.core.config import PRODUCT_APP_ICON_URL
 from app.models.institution import Institution
@@ -33,8 +34,17 @@ from app.models.subject import Subject
 from app.models.user import User
 from app.models.student import Student, Guardian
 from app.models.enrollment import StudentEnrollment
-from app.models.fee import FeeCategory, FeeStructure, FeeInvoice, FeeInvoiceItem
-from app.models.payment import Payment, PaymentReceipt, PaymentAllocation
+from app.models.fee import (
+    FeeCategory,
+    FeeConcessionAllocation,
+    FeeInvoice,
+    FeeInvoiceInstallment,
+    FeeInvoiceItem,
+    FeeStructure,
+    StudentConcessionApplication,
+    StudentFeeAssignment,
+)
+from app.models.payment import Payment, PaymentAllocation, PaymentReceipt, Refund
 from app.models.attendance import Attendance
 from app.models.exam import Examination, ExamMark
 from app.models.communication import CommunicationLog
@@ -48,6 +58,8 @@ from app.models.training import (
 logger = logging.getLogger(__name__)
 
 ACTIVE_DATASET_VERSION = "CRM-STAFF-TRAINING-V1"
+MIRROR_DATASET_VERSION = "MIRROR-LIVE-V1"
+CLEAN_DATASET_VERSION = "CLEAN-EMPTY-DEMO-V1"
 TRAINING_INSTITUTION_CODE = "PA001-DEMO"
 
 
@@ -136,12 +148,44 @@ async def get_training_environment_status(db: AsyncSession) -> Dict[str, Any]:
             "version": cfg.active_dataset_version,
         }
 
+    live_students_count = (
+        await db.execute(
+            select(func.count(Student.id)).where(
+                and_(Student.institution_id != inst.id, Student.is_demo == False)
+            )
+        )
+    ).scalar() or 0
+    batches_count = (
+        await db.execute(
+            select(func.count(Division.id))
+            .join(Standard, Division.standard_id == Standard.id)
+            .where(Standard.institution_id == inst.id, Division.is_active == True)
+        )
+    ).scalar() or 0
+    fee_structures_count = (
+        await db.execute(
+            select(func.count(FeeStructure.id)).where(
+                FeeStructure.institution_id == inst.id,
+                FeeStructure.is_active == True,
+            )
+        )
+    ).scalar() or 0
+
+    dataset_ver = cfg.active_dataset_version if cfg and cfg.active_dataset_version else ACTIVE_DATASET_VERSION
+    if students_count == 0 and leads_count == 0:
+        demo_profile = "clean_empty"
+    elif dataset_ver == MIRROR_DATASET_VERSION:
+        demo_profile = "mirror_live"
+    else:
+        demo_profile = "baseline"
+
     return {
         "is_enabled": cfg.is_enabled if cfg else True,
         "reset_policy": cfg.reset_policy if cfg else "manual_only",
         "inactivity_timeout_minutes": cfg.inactivity_timeout_minutes if cfg else 60,
         "daily_reset_time": cfg.daily_reset_time if cfg else "03:00",
-        "dataset_version": cfg.active_dataset_version if cfg else ACTIVE_DATASET_VERSION,
+        "dataset_version": dataset_ver,
+        "demo_profile": demo_profile,
         "institution_id": inst.id,
         "institution_code": inst.code,
         "record_counts": {
@@ -149,6 +193,9 @@ async def get_training_environment_status(db: AsyncSession) -> Dict[str, Any]:
             "students": students_count,
             "receipts": receipts_count,
             "follow_ups": followups_count,
+            "live_students": live_students_count,
+            "batches": batches_count,
+            "fee_structures": fee_structures_count,
         },
         "active_sessions_count": len(active_sessions),
         "active_sessions": [
@@ -208,6 +255,167 @@ async def end_training_session(db: AsyncSession, user_id: int) -> None:
     await db.flush()
 
 
+async def ensure_training_academic_foundation(
+    db: AsyncSession,
+    inst_id: int,
+) -> Dict[str, Any]:
+    """Ensure baseline academic year, boards, standards, batches, subjects, and fee structures exist in PA001-DEMO."""
+    ay = (
+        await db.execute(
+            select(AcademicYear).where(
+                and_(
+                    AcademicYear.institution_id == inst_id,
+                    AcademicYear.name == "2026-27 (Demo)",
+                )
+            )
+        )
+    ).scalar_one_or_none()
+    if not ay:
+        ay = AcademicYear(
+            institution_id=inst_id,
+            name="2026-27 (Demo)",
+            start_date=date(2026, 4, 1),
+            end_date=date(2027, 3, 31),
+            is_current=True,
+        )
+        db.add(ay)
+        await db.flush()
+
+    boards = {}
+    for b_code, b_name in [("CBSE", "CBSE (Demo)"), ("ICSE", "ICSE (Demo)"), ("STATE", "State Board (Demo)")]:
+        b_obj = (
+            await db.execute(
+                select(Board).where(and_(Board.institution_id == inst_id, Board.code == b_code))
+            )
+        ).scalar_one_or_none()
+        if not b_obj:
+            b_obj = Board(institution_id=inst_id, name=b_name, code=b_code)
+            db.add(b_obj)
+            await db.flush()
+        boards[b_code] = b_obj
+
+    standards = {}
+    std_specs = [
+        ("Std. 8", 8, "Middle School", Decimal("18000.00")),
+        ("Std. 9", 9, "Secondary", Decimal("22000.00")),
+        ("Std. 10", 10, "Secondary Board", Decimal("26000.00")),
+        ("Std. 11 Science", 11, "Higher Secondary Science", Decimal("32000.00")),
+        ("Std. 11 Commerce", 12, "Higher Secondary Commerce", Decimal("24000.00")),
+    ]
+    for std_name, std_level, std_desc, default_fee in std_specs:
+        s_obj = (
+            await db.execute(
+                select(Standard).where(and_(Standard.institution_id == inst_id, Standard.level == std_level))
+            )
+        ).scalar_one_or_none()
+        if not s_obj:
+            s_obj = Standard(
+                institution_id=inst_id,
+                name=std_name,
+                level=std_level,
+                description=std_desc,
+                is_active=True,
+            )
+            db.add(s_obj)
+            await db.flush()
+        standards[std_name] = (s_obj, default_fee)
+
+        div_code = f"DEMO-STD{std_level}-A"
+        div_obj = (
+            await db.execute(
+                select(Division).where(
+                    and_(Division.standard_id == s_obj.id, Division.code == div_code, Division.is_active == True)
+                )
+            )
+        ).scalar_one_or_none()
+        if not div_obj:
+            db.add(
+                Division(
+                    standard_id=s_obj.id,
+                    board_id=boards["CBSE"].id,
+                    name=f"{std_name} Morning Batch A",
+                    code=div_code,
+                    room_number="Room 101",
+                    schedule_timing="08:00 - 10:00",
+                    status="active",
+                    capacity=40,
+                    is_active=True,
+                )
+            )
+            await db.flush()
+
+    demo_subject = (
+        await db.execute(
+            select(Subject).where(
+                and_(Subject.standard_id == standards["Std. 10"][0].id, Subject.code == "MATH-10-DEMO")
+            )
+        )
+    ).scalar_one_or_none()
+    if not demo_subject:
+        demo_subject = Subject(
+            standard_id=standards["Std. 10"][0].id,
+            name="Mathematics (Demo)",
+            code="MATH-10-DEMO",
+            max_marks=100,
+            pass_marks=35,
+            is_active=True,
+        )
+        db.add(demo_subject)
+        await db.flush()
+
+    tuition_cat = (
+        await db.execute(
+            select(FeeCategory).where(
+                and_(FeeCategory.institution_id == inst_id, FeeCategory.name == "Tuition Fee (Demo)")
+            )
+        )
+    ).scalar_one_or_none()
+    if not tuition_cat:
+        tuition_cat = FeeCategory(
+            institution_id=inst_id,
+            name="Tuition Fee (Demo)",
+            description="Standard annual coaching tuition package for demo billing",
+            is_active=True,
+        )
+        db.add(tuition_cat)
+        await db.flush()
+
+    for std_name, (s_obj, fee_amt) in standards.items():
+        fs_exists = (
+            await db.execute(
+                select(FeeStructure).where(
+                    and_(
+                        FeeStructure.institution_id == inst_id,
+                        FeeStructure.academic_year_id == ay.id,
+                        FeeStructure.standard_id == s_obj.id,
+                        FeeStructure.category_id == tuition_cat.id,
+                    )
+                )
+            )
+        ).scalar_one_or_none()
+        if not fs_exists:
+            db.add(
+                FeeStructure(
+                    institution_id=inst_id,
+                    academic_year_id=ay.id,
+                    standard_id=s_obj.id,
+                    category_id=tuition_cat.id,
+                    name=f"{std_name} Full Year Package (Demo)",
+                    amount=fee_amt,
+                    frequency="annual",
+                    installments_count=1,
+                    is_active=True,
+                )
+            )
+    await db.flush()
+    return {
+        "ay": ay,
+        "boards": boards,
+        "standards": {k: v[0] for k, v in standards.items()},
+        "demo_subject": demo_subject,
+    }
+
+
 async def seed_training_dataset(
     db: AsyncSession,
     dataset_version: str = ACTIVE_DATASET_VERSION,
@@ -220,88 +428,11 @@ async def seed_training_dataset(
     inst = await get_or_create_training_institution(db)
     inst_id = inst.id
 
-    # 1. Academic Year (Demo)
-    ay_res = await db.execute(
-        select(AcademicYear).where(
-            and_(
-                AcademicYear.institution_id == inst_id,
-                AcademicYear.name == "2026-27 (Demo)",
-            )
-        )
-    )
-    ay = ay_res.scalar_one_or_none()
-    if not ay:
-        ay = AcademicYear(
-            institution_id=inst_id,
-            name="2026-27 (Demo)",
-            start_date=date(2026, 4, 1),
-            end_date=date(2027, 3, 31),
-            is_current=True,
-        )
-        db.add(ay)
-        await db.flush()
-
-    # 2. Boards (Demo)
-    boards = {}
-    for b_code, b_name in [("CBSE", "CBSE (Demo)"), ("ICSE", "ICSE (Demo)"), ("STATE", "State Board (Demo)")]:
-        b_res = await db.execute(
-            select(Board).where(
-                and_(Board.institution_id == inst_id, Board.code == b_code)
-            )
-        )
-        b_obj = b_res.scalar_one_or_none()
-        if not b_obj:
-            b_obj = Board(institution_id=inst_id, name=b_name, code=b_code)
-            db.add(b_obj)
-            await db.flush()
-        boards[b_code] = b_obj
-
-    # 3. Standards (Demo)
-    standards = {}
-    std_specs = [
-        ("Std. 8", 8, "Middle School"),
-        ("Std. 9", 9, "Secondary"),
-        ("Std. 10", 10, "Secondary Board"),
-        ("Std. 11 Science", 11, "Higher Secondary Science"),
-        ("Std. 11 Commerce", 12, "Higher Secondary Commerce"),
-    ]
-    for std_name, std_level, std_desc in std_specs:
-        s_res = await db.execute(
-            select(Standard).where(
-                and_(Standard.institution_id == inst_id, Standard.level == std_level)
-            )
-        )
-        s_obj = s_res.scalar_one_or_none()
-        if not s_obj:
-            s_obj = Standard(
-                institution_id=inst_id,
-                name=std_name,
-                level=std_level,
-                description=std_desc,
-                is_active=True,
-            )
-            db.add(s_obj)
-            await db.flush()
-        standards[std_name] = s_obj
-
-    # 4. Subjects (Demo)
-    sub_res = await db.execute(
-        select(Subject).where(
-            and_(Subject.standard_id == standards["Std. 10"].id, Subject.code == "MATH-10-DEMO")
-        )
-    )
-    demo_subject = sub_res.scalar_one_or_none()
-    if not demo_subject:
-        demo_subject = Subject(
-            standard_id=standards["Std. 10"].id,
-            name="Mathematics (Demo)",
-            code="MATH-10-DEMO",
-            max_marks=100,
-            pass_marks=35,
-            is_active=True,
-        )
-        db.add(demo_subject)
-        await db.flush()
+    foundation = await ensure_training_academic_foundation(db, inst_id)
+    ay = foundation["ay"]
+    boards = foundation["boards"]
+    standards = foundation["standards"]
+    demo_subject = foundation["demo_subject"]
 
     # 5. Counsellor / Staff Assignment User
     counsellor_res = await db.execute(
@@ -840,11 +971,41 @@ async def reset_training_environment(
     demo_st_ids = demo_st_ids_res.scalars().all()
 
     if demo_st_ids:
+        demo_inv_ids = (
+            await db.execute(
+                select(FeeInvoice.id).where(FeeInvoice.student_id.in_(demo_st_ids))
+            )
+        ).scalars().all()
+        demo_pay_ids = (
+            await db.execute(
+                select(Payment.id).where(
+                    or_(Payment.student_id.in_(demo_st_ids), Payment.is_demo == True)
+                )
+            )
+        ).scalars().all()
+
+        if demo_pay_ids or demo_inv_ids:
+            del_alloc = await db.execute(
+                delete(PaymentAllocation).where(
+                    or_(
+                        PaymentAllocation.payment_id.in_(demo_pay_ids) if demo_pay_ids else False,
+                        PaymentAllocation.invoice_id.in_(demo_inv_ids) if demo_inv_ids else False,
+                    )
+                )
+            )
+            records_cleared += del_alloc.rowcount or 0
+
+        del_ref = await db.execute(
+            delete(Refund).where(Refund.student_id.in_(demo_st_ids))
+        )
+        records_cleared += del_ref.rowcount or 0
+
         del_rcp = await db.execute(
             delete(PaymentReceipt).where(
                 or_(
                     PaymentReceipt.student_id.in_(demo_st_ids),
                     PaymentReceipt.receipt_number.like("DEMO-%"),
+                    PaymentReceipt.receipt_number.like("TRN-%"),
                 )
             )
         )
@@ -859,6 +1020,45 @@ async def reset_training_environment(
             )
         )
         records_cleared += del_pay.rowcount or 0
+
+        if demo_inv_ids:
+            del_ca = await db.execute(
+                delete(FeeConcessionAllocation).where(FeeConcessionAllocation.invoice_id.in_(demo_inv_ids))
+            )
+            records_cleared += del_ca.rowcount or 0
+            del_inst = await db.execute(
+                delete(FeeInvoiceInstallment).where(FeeInvoiceInstallment.invoice_id.in_(demo_inv_ids))
+            )
+            records_cleared += del_inst.rowcount or 0
+            del_item = await db.execute(
+                delete(FeeInvoiceItem).where(FeeInvoiceItem.invoice_id.in_(demo_inv_ids))
+            )
+            records_cleared += del_item.rowcount or 0
+
+        del_capp = await db.execute(
+            delete(StudentConcessionApplication).where(StudentConcessionApplication.student_id.in_(demo_st_ids))
+        )
+        records_cleared += del_capp.rowcount or 0
+
+        del_inv = await db.execute(
+            delete(FeeInvoice).where(FeeInvoice.student_id.in_(demo_st_ids))
+        )
+        records_cleared += del_inv.rowcount or 0
+
+        del_asgn = await db.execute(
+            delete(StudentFeeAssignment).where(StudentFeeAssignment.student_id.in_(demo_st_ids))
+        )
+        records_cleared += del_asgn.rowcount or 0
+
+        del_marks = await db.execute(
+            delete(ExamMark).where(ExamMark.student_id.in_(demo_st_ids))
+        )
+        records_cleared += del_marks.rowcount or 0
+
+        del_att = await db.execute(
+            delete(Attendance).where(Attendance.student_id.in_(demo_st_ids))
+        )
+        records_cleared += del_att.rowcount or 0
 
         del_enr = await db.execute(
             delete(StudentEnrollment).where(
@@ -897,14 +1097,17 @@ async def reset_training_environment(
             + seed_result.get("demo_classes_created", 0)
             + seed_result.get("demo_students", 0)
         )
+    else:
+        await ensure_training_academic_foundation(db, inst_id)
 
     duration_ms = int((time.time() - start_time) * 1000)
 
+    target_version = ACTIVE_DATASET_VERSION if restore_baseline else CLEAN_DATASET_VERSION
     # 8. Record in training_reset_logs
     reset_log = TrainingResetLog(
         user_id=user_id,
         initiated_by=initiated_by,
-        dataset_version=ACTIVE_DATASET_VERSION,
+        dataset_version=target_version,
         records_cleared=records_cleared,
         records_seeded=records_seeded,
         duration_ms=duration_ms,
@@ -916,6 +1119,7 @@ async def reset_training_environment(
     cfg_res = await db.execute(select(TrainingEnvironmentConfig).limit(1))
     cfg = cfg_res.scalar_one_or_none()
     if cfg:
+        cfg.active_dataset_version = target_version
         cfg.last_reset_at = datetime.utcnow()
         cfg.last_reset_by_id = user_id
         cfg.last_reset_status = "SUCCESS"
@@ -928,9 +1132,493 @@ async def reset_training_environment(
 
     return {
         "status": "SUCCESS",
-        "dataset_version": ACTIVE_DATASET_VERSION,
+        "dataset_version": target_version,
         "records_cleared": records_cleared,
         "records_seeded": records_seeded,
         "duration_ms": duration_ms,
         "timestamp": datetime.utcnow().isoformat(),
     }
+
+
+async def clone_live_to_training_environment(
+    db: AsyncSession,
+    user_id: Optional[int] = None,
+    initiated_by: str = "admin",
+    force: bool = False,
+    source_institution_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Mirrors the active local Live institution's academic setup, students, guardians, enrollments,
+    fee structures, invoices, and payments into the isolated PA001-DEMO tenant.
+    Falls back to baseline sample dataset if no live students exist yet.
+    """
+    t_start = time.time()
+    demo_inst = await get_or_create_training_institution(db)
+    demo_inst_id = demo_inst.id
+
+    live_inst = None
+    if source_institution_id and source_institution_id != demo_inst_id:
+        cand = (
+            await db.execute(
+                select(Institution).where(
+                    and_(Institution.id == source_institution_id, Institution.is_active == True)
+                )
+            )
+        ).scalar_one_or_none()
+        if cand:
+            cand_students = (
+                await db.execute(
+                    select(func.count(Student.id)).where(
+                        and_(Student.institution_id == cand.id, Student.is_demo == False)
+                    )
+                )
+            ).scalar() or 0
+            if cand_students > 0:
+                live_inst = cand
+
+    if not live_inst:
+        live_inst = (
+            await db.execute(
+                select(Institution)
+                .join(Student, and_(Student.institution_id == Institution.id, Student.is_demo == False))
+                .where(and_(Institution.id != demo_inst_id, Institution.is_active == True))
+                .group_by(Institution.id)
+                .order_by(case((Institution.id == 1, 0), else_=1), Institution.id.asc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+
+    if not live_inst:
+        res = await reset_training_environment(
+            db, user_id=user_id, initiated_by=initiated_by, force=force, restore_baseline=True
+        )
+        return {**res, "fallback_to_baseline": True}
+
+    live_students = (
+        await db.execute(
+            select(Student)
+            .where(and_(Student.institution_id == live_inst.id, Student.is_demo == False))
+            .order_by(Student.id.asc())
+        )
+    ).scalars().all()
+
+    if not live_students:
+        res = await reset_training_environment(
+            db, user_id=user_id, initiated_by=initiated_by, force=force, restore_baseline=True
+        )
+        return {**res, "fallback_to_baseline": True}
+
+    # First safely wipe existing PA001-DEMO data while keeping live institution untouched
+    wipe_res = await reset_training_environment(
+        db, user_id=user_id, initiated_by=initiated_by, force=force, restore_baseline=False
+    )
+    records_cleared = wipe_res.get("records_cleared", 0)
+    records_seeded = 0
+
+    demo_inst.name = f"{live_inst.name} (Demo Mirror)"
+    demo_inst.short_name = f"{live_inst.short_name or 'DEMO'}-SANDBOX"
+
+    # Map Academic Years
+    ay_map: Dict[int, int] = {}
+    live_ays = (
+        await db.execute(select(AcademicYear).where(AcademicYear.institution_id == live_inst.id))
+    ).scalars().all()
+    for lay in live_ays:
+        existing_ay = (
+            await db.execute(
+                select(AcademicYear).where(
+                    and_(AcademicYear.institution_id == demo_inst_id, AcademicYear.name == lay.name)
+                )
+            )
+        ).scalar_one_or_none()
+        if not existing_ay:
+            existing_ay = AcademicYear(
+                institution_id=demo_inst_id,
+                name=lay.name,
+                start_date=lay.start_date,
+                end_date=lay.end_date,
+                is_current=lay.is_current,
+            )
+            db.add(existing_ay)
+            await db.flush()
+        ay_map[lay.id] = existing_ay.id
+
+    # Map Boards
+    board_map: Dict[int, int] = {}
+    live_boards = (
+        await db.execute(select(Board).where(Board.institution_id == live_inst.id))
+    ).scalars().all()
+    for lb in live_boards:
+        demo_code = f"M-{lb.code or lb.id}"[:20]
+        existing_b = (
+            await db.execute(
+                select(Board).where(and_(Board.institution_id == demo_inst_id, Board.code == demo_code))
+            )
+        ).scalar_one_or_none()
+        if not existing_b:
+            existing_b = Board(institution_id=demo_inst_id, name=lb.name[:50], code=demo_code)
+            db.add(existing_b)
+            await db.flush()
+        board_map[lb.id] = existing_b.id
+
+    # Map Standards & Divisions
+    std_map: Dict[int, int] = {}
+    div_map: Dict[int, int] = {}
+    live_stds = (
+        await db.execute(select(Standard).where(Standard.institution_id == live_inst.id))
+    ).scalars().all()
+    for lstd in live_stds:
+        existing_s = (
+            await db.execute(
+                select(Standard).where(
+                    and_(
+                        Standard.institution_id == demo_inst_id,
+                        or_(Standard.name == lstd.name, Standard.level == lstd.level),
+                    )
+                ).limit(1)
+            )
+        ).scalar_one_or_none()
+        if not existing_s:
+            existing_s = Standard(
+                institution_id=demo_inst_id,
+                name=lstd.name[:50],
+                level=lstd.level,
+                description=lstd.description,
+                is_active=lstd.is_active,
+            )
+            db.add(existing_s)
+            await db.flush()
+        std_map[lstd.id] = existing_s.id
+
+        live_divs = (
+            await db.execute(select(Division).where(Division.standard_id == lstd.id))
+        ).scalars().all()
+        for ld in live_divs:
+            d_code = f"TRN-{ld.id}"[:50]
+            existing_d = (
+                await db.execute(
+                    select(Division).where(
+                        and_(Division.standard_id == existing_s.id, Division.code == d_code)
+                    )
+                )
+            ).scalar_one_or_none()
+            if not existing_d:
+                existing_d = Division(
+                    standard_id=existing_s.id,
+                    board_id=board_map.get(ld.board_id) if ld.board_id else None,
+                    name=ld.name,
+                    code=d_code,
+                    room_number=ld.room_number,
+                    schedule_timing=ld.schedule_timing,
+                    status=ld.status,
+                    capacity=ld.capacity,
+                    is_active=ld.is_active,
+                )
+                db.add(existing_d)
+                await db.flush()
+            div_map[ld.id] = existing_d.id
+
+    # Map Fee Categories & Structures
+    fcat_map: Dict[int, int] = {}
+    live_fcats = (
+        await db.execute(select(FeeCategory).where(FeeCategory.institution_id == live_inst.id))
+    ).scalars().all()
+    for lfc in live_fcats:
+        existing_fc = (
+            await db.execute(
+                select(FeeCategory).where(
+                    and_(FeeCategory.institution_id == demo_inst_id, FeeCategory.name == lfc.name)
+                )
+            )
+        ).scalar_one_or_none()
+        if not existing_fc:
+            existing_fc = FeeCategory(
+                institution_id=demo_inst_id,
+                name=lfc.name,
+                description=lfc.description,
+                is_active=lfc.is_active,
+            )
+            db.add(existing_fc)
+            await db.flush()
+        fcat_map[lfc.id] = existing_fc.id
+
+    fs_map: Dict[int, int] = {}
+    live_fss = (
+        await db.execute(select(FeeStructure).where(FeeStructure.institution_id == live_inst.id))
+    ).scalars().all()
+    for lfs in live_fss:
+        demo_ay_id = ay_map.get(lfs.academic_year_id)
+        demo_cat_id = fcat_map.get(lfs.category_id)
+        if not demo_ay_id or not demo_cat_id:
+            continue
+        existing_fs = (
+            await db.execute(
+                select(FeeStructure).where(
+                    and_(
+                        FeeStructure.institution_id == demo_inst_id,
+                        FeeStructure.academic_year_id == demo_ay_id,
+                        FeeStructure.category_id == demo_cat_id,
+                        FeeStructure.name == lfs.name,
+                    )
+                )
+            )
+        ).scalar_one_or_none()
+        if not existing_fs:
+            existing_fs = FeeStructure(
+                institution_id=demo_inst_id,
+                academic_year_id=demo_ay_id,
+                standard_id=std_map.get(lfs.standard_id) if lfs.standard_id else None,
+                category_id=demo_cat_id,
+                name=lfs.name,
+                amount=lfs.amount,
+                frequency=lfs.frequency,
+                installments_count=lfs.installments_count,
+                due_day=lfs.due_day,
+                late_fee_amount=lfs.late_fee_amount,
+                late_fee_days=lfs.late_fee_days,
+                is_active=lfs.is_active,
+            )
+            db.add(existing_fs)
+            await db.flush()
+        fs_map[lfs.id] = existing_fs.id
+
+    # Clone Students, Guardians, Enrollments, Fee Assignments, Invoices & Payments
+    student_map: Dict[int, int] = {}
+    for ls in live_students:
+        demo_adm = f"DEMO-MIR-{ls.id}-{ls.admission_number}"[:50]
+        ds = Student(
+            institution_id=demo_inst_id,
+            admission_number=demo_adm,
+            first_name=ls.first_name,
+            last_name=ls.last_name,
+            middle_name=ls.middle_name,
+            date_of_birth=ls.date_of_birth,
+            gender=ls.gender,
+            blood_group=ls.blood_group,
+            nationality=ls.nationality,
+            address=ls.address,
+            city=ls.city,
+            state=ls.state,
+            pincode=ls.pincode,
+            phone=ls.phone,
+            email=ls.email,
+            admission_date=ls.admission_date,
+            is_active=ls.is_active,
+            is_demo=True,
+            data_environment="TRAINING",
+            demo_dataset_id=MIRROR_DATASET_VERSION,
+        )
+        db.add(ds)
+        await db.flush()
+        student_map[ls.id] = ds.id
+        records_seeded += 1
+
+        guardians = (await db.execute(select(Guardian).where(Guardian.student_id == ls.id))).scalars().all()
+        for lg in guardians:
+            db.add(
+                Guardian(
+                    student_id=ds.id,
+                    relation=lg.relation,
+                    first_name=lg.first_name,
+                    last_name=lg.last_name,
+                    occupation=lg.occupation,
+                    phone=lg.phone,
+                    email=lg.email,
+                    annual_income=lg.annual_income,
+                    is_primary=lg.is_primary,
+                    is_demo=True,
+                    data_environment="TRAINING",
+                    demo_dataset_id=MIRROR_DATASET_VERSION,
+                )
+            )
+
+        enrollments = (
+            await db.execute(select(StudentEnrollment).where(StudentEnrollment.student_id == ls.id))
+        ).scalars().all()
+        for le in enrollments:
+            demo_ay_id = ay_map.get(le.academic_year_id)
+            demo_std_id = std_map.get(le.standard_id)
+            if not demo_ay_id or not demo_std_id:
+                continue
+            db.add(
+                StudentEnrollment(
+                    student_id=ds.id,
+                    academic_year_id=demo_ay_id,
+                    standard_id=demo_std_id,
+                    division_id=div_map.get(le.division_id) if le.division_id else None,
+                    roll_number=le.roll_number,
+                    enrollment_date=le.enrollment_date,
+                    status=le.status,
+                    is_demo=True,
+                    data_environment="TRAINING",
+                    demo_dataset_id=MIRROR_DATASET_VERSION,
+                )
+            )
+
+    live_student_ids = list(student_map.keys())
+    assign_map: Dict[int, int] = {}
+    if live_student_ids:
+        assignments = (
+            await db.execute(select(StudentFeeAssignment).where(StudentFeeAssignment.student_id.in_(live_student_ids)))
+        ).scalars().all()
+        for la in assignments:
+            demo_st = student_map.get(la.student_id)
+            demo_fs = fs_map.get(la.fee_structure_id)
+            demo_ay = ay_map.get(la.academic_year_id)
+            if not (demo_st and demo_fs and demo_ay):
+                continue
+            da = StudentFeeAssignment(
+                student_id=demo_st,
+                fee_structure_id=demo_fs,
+                academic_year_id=demo_ay,
+                custom_amount=la.custom_amount,
+                concession_amount=la.concession_amount,
+                remarks=la.remarks,
+            )
+            db.add(da)
+            await db.flush()
+            assign_map[la.id] = da.id
+
+        inv_map: Dict[int, int] = {}
+        invoices = (
+            await db.execute(select(FeeInvoice).where(FeeInvoice.student_id.in_(live_student_ids)))
+        ).scalars().all()
+        for linv in invoices:
+            demo_st = student_map.get(linv.student_id)
+            demo_asgn = assign_map.get(linv.assignment_id)
+            demo_ay = ay_map.get(linv.academic_year_id)
+            if not (demo_st and demo_asgn and demo_ay):
+                continue
+            dinv = FeeInvoice(
+                invoice_number=f"TRN-{linv.id}-{linv.invoice_number}"[:50],
+                student_id=demo_st,
+                assignment_id=demo_asgn,
+                academic_year_id=demo_ay,
+                total_amount=linv.total_amount,
+                discount_amount=linv.discount_amount,
+                net_amount=linv.net_amount,
+                paid_amount=linv.paid_amount,
+                outstanding_amount=linv.outstanding_amount,
+                status=linv.status,
+                issue_date=linv.issue_date,
+                due_date=linv.due_date,
+                notes=linv.notes,
+            )
+            db.add(dinv)
+            await db.flush()
+            inv_map[linv.id] = dinv.id
+            records_seeded += 1
+
+        payments = (
+            await db.execute(select(Payment).where(Payment.student_id.in_(live_student_ids)))
+        ).scalars().all()
+        for lp in payments:
+            demo_st = student_map.get(lp.student_id)
+            demo_ay = ay_map.get(lp.academic_year_id)
+            if not (demo_st and demo_ay):
+                continue
+            dp = Payment(
+                student_id=demo_st,
+                academic_year_id=demo_ay,
+                amount=lp.amount,
+                payment_date=lp.payment_date,
+                payment_method=lp.payment_method,
+                transaction_reference=lp.transaction_reference,
+                notes=lp.notes,
+                status=lp.status,
+                is_demo=True,
+                data_environment="TRAINING",
+                demo_dataset_id=MIRROR_DATASET_VERSION,
+            )
+            db.add(dp)
+            await db.flush()
+            records_seeded += 1
+            receipts = (
+                await db.execute(select(PaymentReceipt).where(PaymentReceipt.payment_id == lp.id))
+            ).scalars().all()
+            for lrc in receipts:
+                db.add(
+                    PaymentReceipt(
+                        receipt_number=f"TRN-RCP-{lrc.id}-{lrc.receipt_number}"[:50],
+                        payment_id=dp.id,
+                        student_id=demo_st,
+                        amount=lrc.amount,
+                        payment_date=lrc.payment_date,
+                        payment_method=lrc.payment_method,
+                        receipt_data=lrc.receipt_data,
+                        version=lrc.version,
+                        status=lrc.status,
+                        is_demo=True,
+                        data_environment="TRAINING",
+                        demo_dataset_id=MIRROR_DATASET_VERSION,
+                    )
+                )
+
+    duration_ms = int((time.time() - t_start) * 1000)
+    db.add(
+        TrainingResetLog(
+            user_id=user_id,
+            initiated_by=initiated_by,
+            dataset_version=MIRROR_DATASET_VERSION,
+            records_cleared=records_cleared,
+            records_seeded=records_seeded,
+            duration_ms=duration_ms,
+            status="SUCCESS",
+        )
+    )
+    cfg = (await db.execute(select(TrainingEnvironmentConfig).limit(1))).scalar_one_or_none()
+    if not cfg:
+        cfg = TrainingEnvironmentConfig(active_dataset_version=MIRROR_DATASET_VERSION)
+        db.add(cfg)
+    else:
+        cfg.active_dataset_version = MIRROR_DATASET_VERSION
+        cfg.last_reset_at = datetime.utcnow()
+        cfg.last_reset_by_id = user_id
+        cfg.last_reset_status = "SUCCESS"
+    await db.commit()
+    return {
+        "status": "SUCCESS",
+        "dataset_version": MIRROR_DATASET_VERSION,
+        "records_cleared": records_cleared,
+        "records_seeded": records_seeded,
+        "students_cloned": len(student_map),
+        "fallback_to_baseline": False,
+        "duration_ms": duration_ms,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+
+async def ensure_training_initialized_on_entry(
+    db: AsyncSession,
+    user_id: Optional[int] = None,
+) -> None:
+    """Auto-seed PA001-DEMO cleanly the very first time Training/Demo mode is entered."""
+    demo_inst = await get_or_create_training_institution(db)
+    has_students = (
+        await db.execute(select(func.count(Student.id)).where(Student.institution_id == demo_inst.id))
+    ).scalar() or 0
+    has_leads = (
+        await db.execute(select(func.count(Lead.id)).where(Lead.institution_id == demo_inst.id))
+    ).scalar() or 0
+    has_ays = (
+        await db.execute(select(func.count(AcademicYear.id)).where(AcademicYear.institution_id == demo_inst.id))
+    ).scalar() or 0
+    has_reset = (
+        await db.execute(select(func.count(TrainingResetLog.id)))
+    ).scalar() or 0
+    if has_students or has_leads or has_ays or has_reset:
+        return
+
+    live_students = (
+        await db.execute(
+            select(func.count(Student.id)).where(
+                and_(Student.institution_id != demo_inst.id, Student.is_demo == False)
+            )
+        )
+    ).scalar() or 0
+    if live_students > 0:
+        await clone_live_to_training_environment(
+            db, user_id=user_id, initiated_by="auto-mirror", force=True
+        )
+    else:
+        await seed_training_dataset(db, dataset_version=ACTIVE_DATASET_VERSION, seed_user_id=user_id)

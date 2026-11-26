@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-24
+ * @updated     2026-11-26
  *
  * @description Comprehensive My Menu customization studio supporting role presets, HTML5 drag-and-drop reordering, mode selection, personal groups, and live preview.
  */
@@ -50,6 +50,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
+import { extractApiErrorMessage } from '../../utils/errorTaxonomy'
 import { useNavigationStore } from '../../store/navigationStore'
 import { getAuthorizedModules } from '../../config/modules'
 import { useBranding } from '../../config/branding'
@@ -171,7 +172,7 @@ export default function MenuCustomizerModal() {
         closeCustomizer()
       }, 1000)
     } catch (err: any) {
-      setStatusMessage({ text: err?.message || 'Failed to save navigation preferences', type: 'error' })
+      setStatusMessage({ text: extractApiErrorMessage(err, 'Failed to save navigation preferences'), type: 'error' })
     }
   }
 

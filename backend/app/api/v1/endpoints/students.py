@@ -11,13 +11,13 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-24
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints for student CRUD, profile editing, guardian details, and identity documents.
 #  */
 
 import json
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, and_, desc, case
 from sqlalchemy.orm import selectinload
@@ -28,8 +28,11 @@ from app.core.deps import (
     require_role,
     enforce_institution_access,
     check_institution_access,
+    get_data_environment,
+    resolve_institution_academic_year_id,
     is_sysadmin,
 )
+from app.services.license_service import enforce_lease_quota
 from app.services.settings_service import get_institution_setting
 from app.models.student import Student, Guardian, StudentLifecycleLog
 from app.models.enrollment import StudentEnrollment
@@ -37,6 +40,8 @@ from app.models.fee import (
     FeeInvoice,
     FeeInstallment,
     FeeInvoiceItem,
+    FeeStructure,
+    StudentFeeAssignment,
     FeeConcessionType,
     StudentConcessionApplication,
     FeeConcessionAllocation,
@@ -92,7 +97,7 @@ class StudentCreate(BaseModel):
     pincode: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
-    admission_date: date
+    admission_date: date = Field(default_factory=date.today)
     guardians: List[GuardianCreate] = []
     guardian: Optional[Dict[str, Any]] = None
     standard_id: Optional[int] = None
@@ -279,7 +284,7 @@ async def list_students(
             )
         )
 
-    if standard_id or division_id or board_id or academic_year_id:
+    if standard_id or division_id or board_id:
         query = query.join(
             StudentEnrollment, Student.id == StudentEnrollment.student_id
         )
@@ -298,6 +303,21 @@ async def list_students(
         # Enforce active enrollment unless user specifically requested a different status or include_inactive
         if not status and include_inactive is not True:
             query = query.where(StudentEnrollment.status == "active")
+    elif academic_year_id:
+        # Include students enrolled in the requested academic year OR students without any enrollment yet
+        # so newly admitted students never disappear before batch allocation.
+        has_matching_enr = Student.enrollments.any(
+            and_(
+                StudentEnrollment.academic_year_id == academic_year_id,
+                *(
+                    [StudentEnrollment.status == "active"]
+                    if not status and include_inactive is not True
+                    else []
+                ),
+            )
+        )
+        has_no_active_enr = ~Student.enrollments.any(StudentEnrollment.status == "active")
+        query = query.where(or_(has_matching_enr, has_no_active_enr))
 
     count_q = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_q)).scalar() or 0
@@ -387,19 +407,28 @@ async def list_students(
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_student(
     data: StudentCreate,
+    request: Request,
+    effective_inst_id: int = Depends(enforce_institution_access),
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal", "staff")),
 ):
-    user_inst_id = getattr(current_user, "institution_id", None) or 1
-    if not is_sysadmin(current_user):
-        if data.institution_id is not None and data.institution_id != user_inst_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access forbidden: You cannot create students outside your assigned institution.",
-            )
-        data.institution_id = user_inst_id
-    elif not data.institution_id:
-        data.institution_id = user_inst_id
+    if data_env == "TRAINING":
+        # Always bind TRAINING admissions to PA001-DEMO regardless of client authStore selectedInstitutionId.
+        data.institution_id = effective_inst_id
+    else:
+        user_inst_id = getattr(current_user, "institution_id", None) or 1
+        if not is_sysadmin(current_user):
+            if data.institution_id is not None and data.institution_id != user_inst_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access forbidden: You cannot create students outside your assigned institution.",
+                )
+            data.institution_id = user_inst_id
+        elif not data.institution_id:
+            data.institution_id = effective_inst_id or user_inst_id
+
+    await enforce_lease_quota(request, db, data.institution_id, resource_type="student", add_count=1)
 
     # Auto-generate admission_number if missing
     if not data.admission_number:
@@ -439,6 +468,8 @@ async def create_student(
         )
 
     student_data = data.model_dump(exclude={"guardians", "guardian", "standard_id", "division_id", "academic_year_id"})
+    student_data["is_demo"] = data_env == "TRAINING"
+    student_data["data_environment"] = "TRAINING" if data_env == "TRAINING" else "PRODUCTION"
     student = Student(**student_data)
     db.add(student)
     await db.flush()
@@ -447,11 +478,14 @@ async def create_student(
         guardian = Guardian(student_id=student.id, **g_data.model_dump())
         db.add(guardian)
 
-    # Initial enrollment if standard and academic year provided
-    if data.standard_id and data.academic_year_id:
+    # Initial enrollment if standard provided (resolve institution-scoped academic year safely)
+    if data.standard_id:
+        resolved_ay_id = await resolve_institution_academic_year_id(
+            db, data.institution_id, data.academic_year_id
+        )
         enrollment = StudentEnrollment(
             student_id=student.id,
-            academic_year_id=data.academic_year_id,
+            academic_year_id=resolved_ay_id,
             standard_id=data.standard_id,
             division_id=data.division_id,
             enrollment_date=data.admission_date,
@@ -867,7 +901,11 @@ async def enroll_student(
 
     check_institution_access(student.institution_id, current_user)
 
-    enrollment = StudentEnrollment(student_id=student_id, **data.model_dump())
+    enr_payload = data.model_dump()
+    enr_payload["academic_year_id"] = await resolve_institution_academic_year_id(
+        db, student.institution_id, data.academic_year_id
+    )
+    enrollment = StudentEnrollment(student_id=student_id, **enr_payload)
     db.add(enrollment)
     await db.commit()
     await db.refresh(enrollment)
@@ -1132,7 +1170,35 @@ async def get_student_admin_profile(
     )
     stu_fin = stu_gov["financials"]
 
+    active_ay_id = enrollment_list[0]["academic_year_id"] if enrollment_list else await resolve_institution_academic_year_id(db, student.institution_id)
+    assign_stmt = (
+        select(StudentFeeAssignment)
+        .options(selectinload(StudentFeeAssignment.fee_structure))
+        .where(StudentFeeAssignment.student_id == student_id)
+        .order_by(
+            case((StudentFeeAssignment.academic_year_id == active_ay_id, 0), else_=1),
+            desc(StudentFeeAssignment.id),
+        )
+    )
+    active_assignment = (await db.execute(assign_stmt)).scalars().first()
+    assignment_summary = None
+    if active_assignment:
+        struct_amt = float(active_assignment.fee_structure.amount) if active_assignment.fee_structure else 0.0
+        pkg_amt = float(active_assignment.custom_amount) if active_assignment.custom_amount is not None else struct_amt
+        assignment_summary = {
+            "id": active_assignment.id,
+            "fee_structure_id": active_assignment.fee_structure_id,
+            "fee_structure_name": active_assignment.fee_structure.name if active_assignment.fee_structure else f"Fee Plan #{active_assignment.fee_structure_id}",
+            "academic_year_id": active_assignment.academic_year_id,
+            "base_amount": struct_amt,
+            "package_amount": pkg_amt,
+            "concession_amount": float(active_assignment.concession_amount or 0),
+            "remarks": active_assignment.remarks or "",
+            "has_invoice": any(inv.assignment_id == active_assignment.id for inv in invoices),
+        }
+
     fee_details = {
+        "assignment": assignment_summary,
         "summary": {
             "gross_fees": gross_fees,
             "total_concessions": total_concessions,

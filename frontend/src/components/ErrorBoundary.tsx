@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-26
  *
  * @description Centralized React Error Boundary catching component exceptions, logging technical diagnostics, and presenting friendly recovery UI.
  */
@@ -84,6 +84,7 @@ export class ErrorBoundary extends React.Component<
       error,
       category: effectiveCategory,
       componentStack: errorInfo.componentStack || undefined,
+      source: 'error_boundary',
     })
   }
 

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-23
+#  * @updated     2026-11-26
 #  *
 #  * @description FastAPI dependency injection providers for database sessions and authenticated user context.
 #  */
@@ -209,6 +209,99 @@ async def enforce_institution_access(
         )
 
     return user_inst_id
+
+
+async def resolve_environment_institution_id(
+    db: AsyncSession,
+    data_env: str,
+    current_user,
+    requested_institution_id: Optional[int] = None,
+) -> int:
+    """
+    Resolve authoritative institution_id for write/read paths:
+    - TRAINING always routes strictly to the isolated PA001-DEMO institution.
+    - PRODUCTION enforces tenant boundary and falls back to user's institution (or 1).
+    """
+    from app.models.institution import Institution
+
+    if data_env == "TRAINING":
+        user_role = (getattr(current_user, "role", "") or "").lower()
+        if not (is_sysadmin(current_user) or user_role in TRAINING_ALLOWED_ROLES):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access forbidden: You do not have permission to access the Training / Demo Environment.",
+            )
+        res = await db.execute(
+            select(Institution.id).where(Institution.code == TRAINING_INSTITUTION_CODE)
+        )
+        training_id = res.scalar_one_or_none()
+        if not training_id:
+            res_any = await db.execute(
+                select(Institution.id).where(Institution.code.like("%DEMO%"))
+            )
+            training_id = res_any.scalar_one_or_none()
+        return training_id or 2
+
+    user_inst_id = getattr(current_user, "institution_id", None) or 1
+    if is_sysadmin(current_user) or getattr(current_user, "institution_id", None) is None:
+        return requested_institution_id or user_inst_id
+
+    if requested_institution_id is not None and requested_institution_id != user_inst_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: You cannot access data outside your assigned institution.",
+        )
+    return user_inst_id
+
+
+async def resolve_institution_academic_year_id(
+    db: AsyncSession,
+    institution_id: int,
+    requested_academic_year_id: Optional[int] = None,
+) -> int:
+    """
+    Resolve an active AcademicYear ID belonging strictly to `institution_id`.
+    Prevents cross-tenant academic_year_id mismatches when PA001-DEMO and Production coexist.
+    """
+    from sqlalchemy import desc
+    from app.models.academic_year import AcademicYear
+
+    if requested_academic_year_id:
+        matched = (
+            await db.execute(
+                select(AcademicYear.id).where(
+                    AcademicYear.id == requested_academic_year_id,
+                    AcademicYear.institution_id == institution_id,
+                    AcademicYear.is_active == True,
+                )
+            )
+        ).scalar_one_or_none()
+        if matched is not None:
+            return matched
+
+    current_ay = (
+        await db.execute(
+            select(AcademicYear.id)
+            .where(
+                AcademicYear.institution_id == institution_id,
+                AcademicYear.is_active == True,
+            )
+            .order_by(AcademicYear.is_current.desc(), desc(AcademicYear.id))
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if current_ay is not None:
+        return current_ay
+
+    fallback_ay = (
+        await db.execute(
+            select(AcademicYear.id)
+            .where(AcademicYear.is_active == True)
+            .order_by(AcademicYear.is_current.desc(), desc(AcademicYear.id))
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    return fallback_ay or 1
 
 
 def check_institution_access(target_institution_id: Optional[int], current_user) -> None:

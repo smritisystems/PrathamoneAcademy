@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-26
  *
  * @description Batch directory page redirected to Academic Workspace batch management tab.
  */
@@ -75,7 +75,8 @@ export default function BatchesPage() {
       divisionsApi.create(data),
     onSuccess: () => {
       toast.success('Batch created successfully')
-      qc.invalidateQueries({ queryKey: ['divisions', currentStandardId] })
+      qc.invalidateQueries({ queryKey: ['divisions'] })
+      qc.invalidateQueries({ queryKey: ['academic-overview'] })
       setShowBatchModal(false)
       setBatchForm({ standard_id: '', board_id: '', name: '', capacity: '40', room_number: '' })
     },

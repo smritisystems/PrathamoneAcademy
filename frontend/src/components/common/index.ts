@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-23
+ * @updated     2026-11-26
  *
  * @description Central export index for shared common components including View-First Edit Mode governance tools.
  */
@@ -78,4 +78,6 @@ export type { CoachingLoginBackgroundProps } from './CoachingLoginBackground'
 
 export { CampusNoticeboardDrawer } from './CampusNoticeboardDrawer'
 export type { CampusNotice, TimetableSlot } from './CampusNoticeboardDrawer'
+
+export { default as SafeToaster, sanitizeToastMessage } from './SafeToaster'
 

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-26
  *
  * @description Comprehensive student profile workspace with multi-tab master record editing for administrators.
  */
@@ -218,11 +218,17 @@ export default function StudentDetailPage() {
       setAdjustFeesSuccess(res.data.message || 'Fee adjusted successfully.')
       queryClient.invalidateQueries({ queryKey: ['student-admin-profile', studentId] })
       queryClient.invalidateQueries({ queryKey: ['student-fees', studentId] })
+      queryClient.invalidateQueries({ queryKey: ['student-fee-details', studentId] })
       queryClient.invalidateQueries({ queryKey: ['student-invoices', studentId] })
       queryClient.invalidateQueries({ queryKey: ['student', studentId] })
       queryClient.invalidateQueries({ queryKey: ['student-lifecycle-history', studentId] })
       queryClient.invalidateQueries({ queryKey: ['students'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] })
+      queryClient.invalidateQueries({ queryKey: ['fee-register'] })
+      queryClient.invalidateQueries({ queryKey: ['fee-invoices'] })
+      queryClient.invalidateQueries({ queryKey: ['fees-overview'] })
+      queryClient.invalidateQueries({ queryKey: ['student-monthly-pivot'] })
+      queryClient.invalidateQueries({ queryKey: ['batch-monthly-matrix'] })
       setTimeout(() => {
         setShowAdjustFeesModal(false)
         setAdjustFeesSuccess(null)
@@ -1197,6 +1203,40 @@ export default function StudentDetailPage() {
                   )}
                 </div>
               </div>
+
+              {/* Active Assigned Fee Structure Card (visible even before invoice issuance) */}
+              {fees.assignment && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Assigned Fee Plan</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          fees.assignment.has_invoice
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-amber-50 text-amber-800 border border-amber-200'
+                        }`}
+                      >
+                        {fees.assignment.has_invoice ? 'Invoice Issued' : 'Pending Invoice Issuance'}
+                      </span>
+                    </div>
+                    <p className="text-sm font-extrabold text-slate-900 mt-1">
+                      {fees.assignment.fee_structure_name} — {fmt(fees.assignment.package_amount)}
+                    </p>
+                    {fees.assignment.remarks && (
+                      <p className="text-xs text-slate-500 mt-0.5">{fees.assignment.remarks}</p>
+                    )}
+                  </div>
+                  {!fees.assignment.has_invoice && (
+                    <Link
+                      to="/fees/invoicing"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold shrink-0"
+                    >
+                      Go to Fee Invoicing
+                    </Link>
+                  )}
+                </div>
+              )}
 
               {/* Invoices */}
               <div className="space-y-3">

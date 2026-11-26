@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-21
+#  * @updated     2026-11-26
 #  *
 #  * @description API endpoints for exam creation, marks entry, grading formulas, and report card generation.
 #  */
@@ -30,6 +30,8 @@ from app.core.deps import (
     require_role,
     enforce_institution_access,
     check_institution_access,
+    get_data_environment,
+    resolve_institution_academic_year_id,
     is_sysadmin,
 )
 from app.models.exam import Examination, ExamMark
@@ -139,6 +141,8 @@ async def list_examinations(
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_examination(
     data: ExamCreate,
+    data_env: str = Depends(get_data_environment),
+    effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role(*EXAM_STAFF_ROLES)),
 ):
@@ -147,7 +151,11 @@ async def create_examination(
         raise HTTPException(status_code=404, detail="Standard not found")
     check_institution_access(std.institution_id, current_user)
 
-    exam = Examination(**data.model_dump())
+    exam_payload = data.model_dump()
+    exam_payload["academic_year_id"] = await resolve_institution_academic_year_id(
+        db, std.institution_id, data.academic_year_id
+    )
+    exam = Examination(**exam_payload)
     db.add(exam)
     await db.commit()
     await db.refresh(exam)

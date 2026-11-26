@@ -28,6 +28,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -39,14 +40,93 @@ using Microsoft.Web.WebView2.WinForms;
 [assembly: AssemblyCompany("Smritisys & AITDL Networks")]
 [assembly: AssemblyProduct("PrathamOne EduOS")]
 [assembly: AssemblyCopyright("Copyright (c) 2026 PrathamOne EduOS")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.182.0.0")]
+[assembly: AssemblyFileVersion("1.182.0.0")]
 
 namespace PrathamOne
 {
     static class Program
     {
         private static Mutex singleInstanceMutex = null;
+        private static readonly object logFileLock = new object();
+        internal const long MaxLogBytes = 5L * 1024 * 1024;
+        internal const int LauncherLogBackups = 5;
+        internal const int FrontendLogBackups = 3;
+
+        internal static void AppendRotatingLog(string logFilePath, string line, int maxBackups)
+        {
+            try
+            {
+                lock (logFileLock)
+                {
+                    string dir = Path.GetDirectoryName(logFilePath);
+                    if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                    {
+                        Directory.CreateDirectory(dir);
+                    }
+
+                    if (File.Exists(logFilePath))
+                    {
+                        FileInfo fi = new FileInfo(logFilePath);
+                        if (fi.Length >= MaxLogBytes)
+                        {
+                            for (int i = maxBackups; i >= 1; i--)
+                            {
+                                string src = (i == 1) ? logFilePath : (logFilePath + "." + (i - 1));
+                                string dst = logFilePath + "." + i;
+                                if (File.Exists(dst)) File.Delete(dst);
+                                if (File.Exists(src)) File.Move(src, dst);
+                            }
+                        }
+                    }
+
+                    File.AppendAllText(logFilePath, line + Environment.NewLine, Encoding.UTF8);
+                }
+            }
+            catch { }
+        }
+
+        internal static void CleanStrayRootLogs(string installDir, string activeDataRoot)
+        {
+            try
+            {
+                string activeLogsDir = Path.GetFullPath(Path.Combine(activeDataRoot, "logs"))
+                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                string[] candidateDirs = new string[]
+                {
+                    installDir,
+                    activeDataRoot,
+                    Path.Combine(activeDataRoot, "data")
+                };
+                string[] logNames = new string[]
+                {
+                    "backend_server" + ".log",
+                    "launcher" + ".log",
+                    "frontend_errors" + ".log"
+                };
+
+                foreach (string dir in candidateDirs)
+                {
+                    if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir)) continue;
+                    string normDir = Path.GetFullPath(dir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                    if (string.Equals(normDir, activeLogsDir, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    foreach (string name in logNames)
+                    {
+                        string candidate = Path.Combine(normDir, name);
+                        try
+                        {
+                            if (File.Exists(candidate) && new FileInfo(candidate).Length == 0)
+                            {
+                                File.Delete(candidate);
+                            }
+                        }
+                        catch { }
+                    }
+                }
+            }
+            catch { }
+        }
 
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -96,16 +176,17 @@ namespace PrathamOne
             string dataRoot = ResolveWritableDataRoot(appDir);
             string logDir = Path.Combine(dataRoot, "logs");
             try { Directory.CreateDirectory(logDir); } catch { }
+            CleanStrayRootLogs(appDir, dataRoot);
             string logPath = Path.Combine(logDir, "launcher.log");
 
             Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
             Application.ThreadException += (s, e) =>
             {
-                try { File.AppendAllText(logPath, DateTime.Now + " [THREAD EXC]: " + e.Exception.ToString() + Environment.NewLine); } catch { }
+                AppendRotatingLog(logPath, DateTime.Now + " [THREAD EXC]: " + e.Exception.ToString(), LauncherLogBackups);
             };
             AppDomain.CurrentDomain.UnhandledException += (s, e) =>
             {
-                try { File.AppendAllText(logPath, DateTime.Now + " [DOMAIN EXC]: " + (e.ExceptionObject != null ? e.ExceptionObject.ToString() : "null") + Environment.NewLine); } catch { }
+                AppendRotatingLog(logPath, DateTime.Now + " [DOMAIN EXC]: " + (e.ExceptionObject != null ? e.ExceptionObject.ToString() : "null"), LauncherLogBackups);
             };
 
             Application.EnableVisualStyles();
@@ -116,7 +197,7 @@ namespace PrathamOne
 
             if (!createdNew)
             {
-                try { File.AppendAllText(logPath, DateTime.Now + " [MUTEX]: Existing instance detected. Bringing to front." + Environment.NewLine); } catch { }
+                AppendRotatingLog(logPath, DateTime.Now + " [MUTEX]: Existing instance detected. Bringing to front.", LauncherLogBackups);
                 try
                 {
                     IntPtr hWnd = FindWindow(null, "PrathamOne EduOS");
@@ -132,13 +213,13 @@ namespace PrathamOne
 
             try
             {
-                File.AppendAllText(logPath, DateTime.Now + " [STARTUP]: Launching MainWindow." + Environment.NewLine);
+                AppendRotatingLog(logPath, DateTime.Now + " [STARTUP]: Launching MainWindow.", LauncherLogBackups);
                 Application.Run(new MainWindow());
-                File.AppendAllText(logPath, DateTime.Now + " [SHUTDOWN]: MainWindow closed." + Environment.NewLine);
+                AppendRotatingLog(logPath, DateTime.Now + " [SHUTDOWN]: MainWindow closed.", LauncherLogBackups);
             }
             catch (Exception ex)
             {
-                try { File.AppendAllText(logPath, DateTime.Now + " [MAIN FATAL]: " + ex.ToString() + Environment.NewLine); } catch { }
+                AppendRotatingLog(logPath, DateTime.Now + " [MAIN FATAL]: " + ex.ToString(), LauncherLogBackups);
             }
         }
     }
@@ -203,12 +284,46 @@ namespace PrathamOne
 
         private void LogInfo(string msg)
         {
+            string logFile = Path.Combine(dataRoot, "logs", "launcher.log");
+            Program.AppendRotatingLog(logFile, DateTime.Now.ToString("HH:mm:ss.fff") + " " + msg, Program.LauncherLogBackups);
+        }
+
+        private void LogFrontendError(string sanitizedJson)
+        {
+            string logFile = Path.Combine(dataRoot, "logs", "frontend_errors.log");
+            string cleanLine = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " [FRONTEND] " + sanitizedJson;
+            Program.AppendRotatingLog(logFile, cleanLine, Program.FrontendLogBackups);
+        }
+
+        private static string ScrubFrontendErrorJson(string rawJson)
+        {
+            if (string.IsNullOrWhiteSpace(rawJson)) return "";
+            string singleLine = rawJson.Replace("\r", " ").Replace("\n", " ").Trim();
+            singleLine = Regex.Replace(singleLine, @"\bBearer\s+[A-Za-z0-9\-._~+/]+=*", "Bearer [REDACTED]", RegexOptions.IgnoreCase);
+            singleLine = Regex.Replace(singleLine, @"\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}(?:\.[A-Za-z0-9_-]+)?", "[REDACTED_JWT]");
+            singleLine = Regex.Replace(singleLine, @"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}\b", "[REDACTED_UID]");
+            if (singleLine.Length > 4096)
+            {
+                singleLine = singleLine.Substring(0, 4096) + "...[TRUNCATED]";
+            }
+            return singleLine;
+        }
+
+        private void OnCoreWebViewMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs args)
+        {
             try
             {
-                string logDir = Path.Combine(dataRoot, "logs");
-                if (!Directory.Exists(logDir)) Directory.CreateDirectory(logDir);
-                string logFile = Path.Combine(logDir, "launcher.log");
-                File.AppendAllText(logFile, DateTime.Now.ToString("HH:mm:ss.fff") + " " + msg + Environment.NewLine);
+                if (!IsLocalLoopbackUri(args.Source)) return;
+                string rawJson = args.WebMessageAsJson;
+                if (string.IsNullOrWhiteSpace(rawJson) || !rawJson.Contains("PRATHAMONE_FRONTEND_ERROR"))
+                {
+                    return;
+                }
+                string scrubbed = ScrubFrontendErrorJson(rawJson);
+                if (!string.IsNullOrEmpty(scrubbed))
+                {
+                    LogFrontendError(scrubbed);
+                }
             }
             catch { }
         }
@@ -347,7 +462,7 @@ namespace PrathamOne
 
             // Footer Label
             lblSplashFooter = new Label();
-            lblSplashFooter.Text = "Smritisys & AITDL Networks  •  Version 1.0.0";
+            lblSplashFooter.Text = "Smritisys & AITDL Networks  •  Version 1.182.0";
             lblSplashFooter.Font = new Font("Segoe UI", 8.5F, FontStyle.Regular);
             lblSplashFooter.ForeColor = Color.FromArgb(148, 163, 184);
             lblSplashFooter.TextAlign = ContentAlignment.MiddleCenter;
@@ -520,6 +635,13 @@ namespace PrathamOne
             settings.IsBuiltInErrorPageEnabled = false;
             settings.IsStatusBarEnabled = false;
             settings.IsZoomControlEnabled = true;
+            settings.IsWebMessageEnabled = true;
+
+            core.WebMessageReceived += OnCoreWebViewMessageReceived;
+            core.ProcessFailed += (s, args) =>
+            {
+                LogInfo("[WEBVIEW PROCESS FAILED] Kind=" + args.ProcessFailedKind + " Reason=" + args.Reason);
+            };
 
             // Accept local PKI certificates on loopback and local domains
             core.ServerCertificateErrorDetected += (s, args) =>
@@ -579,8 +701,7 @@ namespace PrathamOne
                 string host = (parsed.Host ?? "").ToLowerInvariant();
                 return host == "127.0.0.1" || host == "::1" || host == "localhost" ||
                        host == "prathamone" || host == "prathamone.local" ||
-                       host == "classesname" || host == "classesname.local" ||
-                       host == "prashantacademy" || host == "prashantacademy.local";
+                       host == "classesname" || host == "classesname.local";
             }
             catch
             {
@@ -704,6 +825,7 @@ namespace PrathamOne
                     psi.UseShellExecute = false;
                     psi.WindowStyle = ProcessWindowStyle.Hidden;
                     psi.EnvironmentVariables["PRATHAM_DATA_ROOT"] = dataRoot;
+                    psi.EnvironmentVariables["PRATHAM_ENV_FILE"] = Path.Combine(dataRoot, ".env");
                     if (!string.IsNullOrEmpty(desktopToken))
                     {
                         psi.EnvironmentVariables["PRATHAM_DESKTOP_TOKEN"] = desktopToken;

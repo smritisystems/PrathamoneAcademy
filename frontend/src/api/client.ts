@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-26
  *
  * @description Axios HTTP client instance configured with base URL, authentication headers, error classification, and response interceptors.
  */
@@ -41,6 +41,15 @@ apiClient.interceptors.request.use((config) => {
     ? useEnvironmentStore.getState()?.dataEnvironment
     : 'PRODUCTION'
   config.headers['X-Data-Environment'] = dataEnv || 'PRODUCTION'
+
+  if ((config.method || 'get').toLowerCase() === 'get') {
+    config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    config.headers['Pragma'] = 'no-cache'
+    config.headers['Expires'] = '0'
+    if (config.responseType !== 'blob' && config.responseType !== 'arraybuffer') {
+      config.params = { ...(config.params || {}), _t: Date.now() }
+    }
+  }
   return config
 })
 
