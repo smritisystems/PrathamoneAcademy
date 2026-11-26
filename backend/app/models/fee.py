@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-18
+#  * @updated     2026-11-26
 #  *
 #  * @description SQLAlchemy models defining fee structures, fee categories, invoices, installments, and fee concessions.
 #  */
@@ -58,6 +58,9 @@ class FeeCategory(Base):
 
 class FeeStructure(Base):
     __tablename__ = "fee_structures"
+    __table_args__ = (
+        Index("ix_fee_structures_inst_ay_std", "institution_id", "academic_year_id", "standard_id"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     institution_id: Mapped[int] = mapped_column(
@@ -137,6 +140,9 @@ class StudentFeeAssignment(Base):
 
 class FeeInvoice(Base):
     __tablename__ = "fee_invoices"
+    __table_args__ = (
+        Index("ix_fee_invoices_ay_student_status", "academic_year_id", "student_id", "status"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     invoice_number: Mapped[str] = mapped_column(
@@ -356,6 +362,14 @@ class FeeConcessionType(Base):
 
 class StudentConcessionApplication(Base):
     __tablename__ = "fee_concession_applications"
+    __table_args__ = (
+        Index(
+            "ix_fee_concession_apps_inst_ay_student",
+            "institution_id",
+            "academic_year_id",
+            "student_id",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     institution_id: Mapped[int] = mapped_column(

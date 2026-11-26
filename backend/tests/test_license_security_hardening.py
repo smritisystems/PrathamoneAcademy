@@ -59,6 +59,7 @@ async def test_hardware_bound_license_rejects_db_cloning_fallback(monkeypatch):
     )
     monkeypatch.setattr(license_endpoint.settings, "LICENSE_ENFORCEMENT_STAGE", "enforced")
     monkeypatch.setattr(license_endpoint.settings, "LICENSE_PRODUCT_CODE", "prathamone-eduos")
+    monkeypatch.setattr(license_endpoint.settings, "APP_RUNTIME_TARGET", "desktop")
 
     ctx = await license_endpoint._load_license_context(SimpleNamespace(), 1, "PA001")
     assert ctx["mode"] == "invalid"
@@ -176,6 +177,7 @@ async def test_trial_node_lock_rejects_db_clone_and_enforces_student_staff_caps(
     monkeypatch.setattr(license_endpoint, "verify_hardware_fingerprint", lambda _fp: (False, "Hardware mismatch!"))
     monkeypatch.setattr(license_endpoint.settings, "LICENSE_ENFORCEMENT_STAGE", "enforced")
     monkeypatch.setattr(license_endpoint.settings, "LICENSE_PRODUCT_CODE", "prathamone-eduos")
+    monkeypatch.setattr(license_endpoint.settings, "APP_RUNTIME_TARGET", "desktop")
 
     ctx = await license_endpoint._load_license_context(SimpleNamespace(), 1, "PA001")
     assert ctx["mode"] == "invalid"

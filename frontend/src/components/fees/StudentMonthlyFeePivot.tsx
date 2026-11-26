@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { feesApi, paymentsApi, communicationApi } from '../../api/endpoints'
+import { extractApiErrorMessage } from '../../utils/errorTaxonomy'
 import { formatINR } from '../../utils/formatters'
 import { exportToExcel, downloadCsvRows, downloadBlob } from '../../utils/reportExport'
 import { useTableSort } from '../../hooks/useTableSort'
@@ -115,11 +116,16 @@ export const StudentMonthlyFeePivot: React.FC<StudentMonthlyFeePivotProps> = ({
     search: searchQuery.trim() || undefined,
   }), [academicYearId, boardId, standardId, divisionId, paymentStatus, studentStatus, paymentMethod, searchQuery])
 
-  const { data, isLoading, isError, refetch } = useQuery<StudentMonthlyPivotResponse>({
+  const { data, isLoading, isError, error, refetch } = useQuery<StudentMonthlyPivotResponse>({
     queryKey: ['student-monthly-pivot', queryParams],
     queryFn: async () => {
       const res = await feesApi.getStudentMonthlyPivot(queryParams)
       return res.data
+    },
+    retry: (failureCount, err: any) => {
+      const status = err?.response?.status
+      if (status === 423 || status === 401 || status === 403) return false
+      return failureCount < 1
     },
     staleTime: 30_000,
   })
@@ -811,15 +817,20 @@ Prashant Academy Coaching Institute`
             <p className="text-xs font-bold text-slate-600">Calculating Student Collection Matrix & 12-Month Pivot...</p>
           </div>
         ) : isError ? (
-          <div className="p-8 text-center text-rose-600 space-y-2">
+          <div className="p-8 text-center text-rose-600 space-y-2" role="alert">
             <AlertCircle className="w-8 h-8 mx-auto" />
             <p className="font-bold text-sm">Failed to load student collection pivot</p>
-            <button
-              onClick={() => refetch()}
-              className="px-3 py-1 bg-rose-50 text-rose-700 rounded-lg text-xs font-bold border border-rose-200 cursor-pointer"
-            >
-              Retry
-            </button>
+            <p className="text-xs text-slate-600 max-w-md mx-auto">
+              {extractApiErrorMessage(error, 'Unable to load the student monthly pivot right now.')}
+            </p>
+            {(error as any)?.response?.status !== 423 && (
+              <button
+                onClick={() => refetch()}
+                className="px-3 py-1 bg-rose-50 text-rose-700 rounded-lg text-xs font-bold border border-rose-200 cursor-pointer"
+              >
+                Retry
+              </button>
+            )}
           </div>
         ) : !data?.students || data.students.length === 0 ? (
           <div className="p-12 text-center space-y-3">

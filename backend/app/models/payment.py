@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-18
+#  * @updated     2026-11-26
 #  *
 #  * @description SQLAlchemy models defining financial transactions, ERP payment workflow lifecycle, receipt versioning, and refunds.
 #  */
@@ -28,6 +28,7 @@ from sqlalchemy import (
     Integer,
     and_,
     CheckConstraint,
+    Index,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, foreign
@@ -39,6 +40,15 @@ from app.core.database import Base
 
 class Payment(Base):
     __tablename__ = "payments"
+    __table_args__ = (
+        Index(
+            "ix_payments_ay_student_status_date",
+            "academic_year_id",
+            "student_id",
+            "status",
+            "payment_date",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     student_id: Mapped[int] = mapped_column(

@@ -156,3 +156,19 @@ Every source code file (`.py`, `.ts`, `.tsx`, `.js`, `.jsx`, `.css`) must contai
 ```
 Run `python scripts/manage_headers.py check` before completing your work. It must report 100% compliance.
 
+---
+
+## 5. DUAL-TARGET DEPLOYMENT & UNIFIED RELEASE VERIFICATION (RULE 017)
+
+**PrathamOne EduOS** ships both Hosted Cloud deployments and compiled Windows Desktop EXE installers from a single unified codebase and synchronized `VERSION`:
+
+1. **`APP_RUNTIME_TARGET` (`backend/app/core/config.py`):**
+   - Automatically defaults to `"desktop"` when frozen/compiled (`prathamone_backend.exe`) and `"hosted"` otherwise (overrideable via `APP_RUNTIME_TARGET` env var).
+   - Hardware-locked offline machine trials (`30-day` anchor + hardware node lock) execute **only** in `desktop` mode; `hosted` mode enforces tenant subscription artifacts.
+   - Both targets share identical `Cache-Control: no-store` `/api/*` headers, `423` telemetry exemptions (`/api/v1/navigation/*`), and read-only analytics access (`/api/v1/fees/overview`, `/api/v1/fees/student-monthly-pivot`, `/api/v1/fees/matrix`).
+2. **Mandatory Dual-Target Release Checks (`installer/verify_market_readiness.py`):**
+   - Before every release tag or installer upload, verify **both** deployment targets from the unified `VERSION`:
+     - `python installer/verify_market_readiness.py --target hosted` (validates `APP_RUNTIME_TARGET=hosted`, frontend `dist/` bundle hygiene, zero `423` leaks on telemetry/fee analytics, and `<500ms` `/api/v1/fees/matrix` latency)
+     - `python installer/verify_market_readiness.py --target desktop` (validates `manage_headers.py check`, `verify_release_policy.py --strict`, Authenticode signatures on all 4 binaries, compiled `.exe` `POST -> GET` parity, and embedded PostgreSQL port `5433` isolation)
+
+

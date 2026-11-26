@@ -116,7 +116,16 @@ _ROUTE_MODULES = (
     ("/students", "students"),
     ("/student-portal", "students"),
     ("/attendance", "attendance"),
+    ("/fees/concessions/reports", "reports"),
+    ("/fees/concessions/dashboard", "dashboard"),
     ("/fees/concessions", "billing"),
+    ("/fees/overview", "dashboard"),
+    ("/fees/matrix", "reports"),
+    ("/fees/batch-monthly-matrix", "reports"),
+    ("/fees/month-collection-matrix", "reports"),
+    ("/fees/dimension-analytics", "reports"),
+    ("/fees/student-monthly-pivot", "reports"),
+    ("/fees/former-students-recovery", "reports"),
     ("/fees", "billing"),
     ("/payments", "accounting"),
     ("/finance", "accounting"),
@@ -672,11 +681,12 @@ async def _load_license_context(
     current_hw_fingerprint = get_machine_hardware_fingerprint()
 
     if not artifact_setting or not artifact_setting.value:
-        trial_ctx = await _load_trial_context(
-            db, institution_id, current_hw_fingerprint, configured_stage,
-        )
-        if trial_ctx is not None:
-            return trial_ctx
+        if settings.runtime_target == "desktop":
+            trial_ctx = await _load_trial_context(
+                db, institution_id, current_hw_fingerprint, configured_stage,
+            )
+            if trial_ctx is not None:
+                return trial_ctx
         return {
             "mode": "unactivated",
             "rollout_stage": configured_stage,
@@ -745,8 +755,14 @@ def _module_for_path(path: str) -> str | None:
     return None
 
 
+def _is_license_exempt_telemetry_path(path: str) -> bool:
+    return path == "/api/v1/navigation" or path.startswith("/api/v1/navigation/")
+
+
 def _resolve_license_module(path: str) -> str | None:
     if path == "/api/v1/license" or path.startswith("/api/v1/license/"):
+        return None
+    if _is_license_exempt_telemetry_path(path):
         return None
     module = _module_for_path(path)
     if module is None:
@@ -761,16 +777,34 @@ def _enforce_module_entitlement(path: str, entitlements: dict) -> str | None:
     return module
 
 
+_FEE_ANALYTICS_REPORT_PATHS = (
+    "/api/v1/fees/matrix",
+    "/api/v1/fees/batch-monthly-matrix",
+    "/api/v1/fees/month-collection-matrix",
+    "/api/v1/fees/dimension-analytics",
+    "/api/v1/fees/student-monthly-pivot",
+    "/api/v1/fees/former-students-recovery",
+)
+
+
 def _is_evaluation_read_allowed(request: Request, policy: dict) -> bool:
     path = request.url.path
     method = request.method.upper()
-    if path.startswith("/api/v1/license/"):
+    if path.startswith("/api/v1/license/") or _is_license_exempt_telemetry_path(path):
         return True
-    is_report = path == "/api/v1/reports" or path.startswith("/api/v1/reports/")
+    is_report = (
+        path == "/api/v1/reports"
+        or path.startswith("/api/v1/reports/")
+        or any(path == p or path.startswith(f"{p}/") for p in _FEE_ANALYTICS_REPORT_PATHS)
+    )
     is_export = path == "/api/v1/import-export/export" or path.endswith("/export")
     backup_root = "/api/v1/housekeeping/backups"
     is_backup = path == backup_root or path.startswith(f"{backup_root}/")
-    is_dashboard = path == "/api/v1/dashboard" or path.startswith("/api/v1/dashboard/")
+    is_dashboard = (
+        path == "/api/v1/dashboard"
+        or path.startswith("/api/v1/dashboard/")
+        or path == "/api/v1/fees/overview"
+    )
 
     if is_report:
         if not policy.get("allow_reports", True):
@@ -815,6 +849,10 @@ async def enforce_license_request(
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # Telemetry and navigation endpoints never trigger 423 Locked regardless of license/trial state.
+    if _is_license_exempt_telemetry_path(path):
+        return
 
     raw_institution_id = (
         request.path_params.get("institution_id")
@@ -995,6 +1033,11 @@ async def start_machine_trial(
     data_environment: str = Depends(get_data_environment),
 ):
     """Activate or resume a one-time 30-day offline trial strictly bound to this host machine."""
+    if settings.runtime_target != "desktop":
+        raise HTTPException(
+            status_code=409,
+            detail="Hardware-locked 30-day offline trials apply only to Desktop installations; activate a tenant subscription in Hosted mode.",
+        )
     if data_environment != "PRODUCTION":
         raise HTTPException(
             status_code=409,

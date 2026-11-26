@@ -11,13 +11,13 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-26
 #  *
 #  * @description SQLAlchemy model defining student personal profile, contact information, and parent records.
 #  */
 
 from typing import Optional
-from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Date, Text, Float
+from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Date, Text, Float, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime, date
 from app.core.database import Base
@@ -25,6 +25,9 @@ from app.core.database import Base
 
 class Student(Base):
     __tablename__ = "students"
+    __table_args__ = (
+        Index("ix_students_inst_demo_active", "institution_id", "is_demo", "is_active"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     institution_id: Mapped[int] = mapped_column(

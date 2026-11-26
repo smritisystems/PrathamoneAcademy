@@ -207,7 +207,7 @@ def _resolve_alembic_head() -> str:
                 return heads[0]
     except Exception:
         pass
-    return "057_repair_teacher_assignments"
+    return "058_fee_matrix_composite_indexes"
 
 
 _ALEMBIC_HEAD = _resolve_alembic_head()

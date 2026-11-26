@@ -25,6 +25,20 @@ import sys
 
 _EXPLICIT_ENV_FILE = os.getenv("PRATHAM_ENV_FILE", "").strip()
 
+
+def detect_default_runtime_target() -> str:
+    """Resolve default deployment target: 'desktop' when frozen/compiled, 'hosted' otherwise."""
+    explicit = os.getenv("APP_RUNTIME_TARGET", "").strip().lower()
+    if explicit in {"desktop", "hosted"}:
+        return explicit
+    main_mod = sys.modules.get("__main__")
+    is_compiled_main = bool(main_mod and hasattr(main_mod, "__compiled__"))
+    is_frozen = bool(getattr(sys, "frozen", False)) or "__compiled__" in globals() or is_compiled_main
+    exe_name = os.path.basename(getattr(sys, "executable", "") or "").lower()
+    is_bundled_exe = exe_name.startswith("prathamone_backend") or bool(os.getenv("PRATHAM_DESKTOP_TOKEN", "").strip())
+    return "desktop" if (is_frozen or is_bundled_exe) else "hosted"
+
+
 _INSECURE_DEFAULT = "changeme-in-production-use-long-random-string"
 _INSECURE_SECRETS = {
     _INSECURE_DEFAULT,
@@ -49,8 +63,8 @@ class Settings(BaseSettings):
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "COACHING MANAGEMENT. SIMPLIFIED."
-    VERSION: str = "1.183.0"
-    BUILD_NUMBER: str = "2026.11.26-REV-328-v1.183.0-41E21DD5"
+    VERSION: str = "1.184.0"
+    BUILD_NUMBER: str = "2026.11.26-REV-329-v1.184.0-FECA543D"
     RELEASE_CHANNEL: str = "Release Candidate"
     RELEASE_STATUS: str = "Minor Release Candidate"
     BUILD_DATE: str = "2026-11-26"
@@ -60,7 +74,13 @@ class Settings(BaseSettings):
     LICENSE_PRODUCT_CODE: str = "prathamone-eduos"
     LICENSE_PUBLIC_KEYS_JSON: str = '{"smritisys-ed25519-2026-11":"GWsJlKHUjTYmSDpi8JmsGb43NoR6S1qL1jIy1jzBC4w"}'
     LICENSE_ENFORCEMENT_STAGE: str = "enforced"
+    APP_RUNTIME_TARGET: str = detect_default_runtime_target()
     DEBUG: bool = False
+
+    @property
+    def runtime_target(self) -> str:
+        val = (self.APP_RUNTIME_TARGET or "").strip().lower()
+        return "desktop" if val == "desktop" else "hosted"
 
     # PRATHAMONE CodeX — Mandatory Default Directives (Opt-in only, System Default: DISABLED)
     CODEX_SYSTEM_DEFAULT: bool = False

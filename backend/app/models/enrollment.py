@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-16
+#  * @updated     2026-11-26
 #  *
 #  * @description SQLAlchemy model defining student enrollment in classes, batches, and academic years.
 #  */
@@ -50,6 +50,18 @@ class StudentEnrollment(Base):
             "academic_year_id",
             unique=True,
             postgresql_where=text("status = 'active'"),
+        ),
+        Index(
+            "ix_student_enrollments_ay_student_status",
+            "academic_year_id",
+            "student_id",
+            "status",
+        ),
+        Index(
+            "ix_student_enrollments_div_ay_student",
+            "division_id",
+            "academic_year_id",
+            "student_id",
         ),
     )
 

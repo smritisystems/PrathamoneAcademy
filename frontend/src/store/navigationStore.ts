@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-24
+ * @updated     2026-11-26
  *
  * @description Zustand state store managing user-defined menus, navigation modes, adaptive suggestions, and search palettes.
  */
@@ -82,6 +82,9 @@ interface NavigationState {
   savePreferences: (institutionId?: number) => Promise<void>
   resetToDefaults: (institutionId?: number) => Promise<void>
 }
+
+const _recentVisitSentAt = new Map<string, number>()
+const VISIT_TRACK_COOLDOWN_MS = 3000
 
 const DEFAULT_POLICY: NavigationPolicy = {
   enable_user_customization: true,
@@ -258,7 +261,13 @@ export const useNavigationStore = create<NavigationState>()(
           return { recentVisits: [newVisit, ...filtered].slice(0, 8) }
         })
 
-        // Send to backend (debounced)
+        // Deduplicate rapid repeated visits to identical route within 3 seconds
+        const dedupeKey = `${institutionId ?? 'default'}:${item.module_key}:${item.route_path}`
+        const nowMs = Date.now()
+        const lastSent = _recentVisitSentAt.get(dedupeKey) || 0
+        if (nowMs - lastSent < VISIT_TRACK_COOLDOWN_MS) return
+        _recentVisitSentAt.set(dedupeKey, nowMs)
+
         navigationApi.trackActivity(item, institutionId).catch(() => {})
       },
 

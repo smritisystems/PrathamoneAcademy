@@ -33,18 +33,21 @@ printConsoleBrandingBanner()
 initializeAppearance()
 installGlobalErrorBridge()
 
+const NON_RETRYABLE_HTTP_STATUSES = new Set([400, 401, 403, 404, 409, 422, 423])
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: (failureCount, error: any) => {
-        // Avoid retrying terminal authentication or not-found errors
+        // Never retry terminal client, auth, validation, or 423 license-lock errors
         const status = error?.response?.status
-        if (status === 401 || status === 403 || status === 404) return false
+        if (typeof status === 'number' && NON_RETRYABLE_HTTP_STATUSES.has(status)) return false
         return failureCount < 1
       },
       staleTime: 15_000,
       gcTime: 10 * 60_000,
       refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
       refetchOnMount: true,
     },
   },

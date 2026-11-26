@@ -50,6 +50,7 @@ import {
 import toast from 'react-hot-toast'
 import writeXlsxFile, { type Row as ExcelRow } from 'write-excel-file/browser'
 import { feesApi, academicYearsApi, boardsApi, standardsApi } from '../../api/endpoints'
+import { extractApiErrorMessage } from '../../utils/errorTaxonomy'
 import { downloadCsvRows, downloadBlob } from '../../utils/reportExport'
 import {
   BatchMonthlyMatrixResponse,
@@ -138,6 +139,7 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
     data: batchData,
     isLoading: isBatchLoading,
     isError: isBatchError,
+    error: batchError,
     refetch: refetchBatch,
   } = useQuery<BatchMonthlyMatrixResponse>({
     queryKey: [
@@ -164,6 +166,7 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
     data: monthData,
     isLoading: isMonthLoading,
     isError: isMonthError,
+    error: monthError,
     refetch: refetchMonth,
   } = useQuery<MonthCollectionMatrixResponse>({
     queryKey: [
@@ -192,6 +195,7 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
     data: dimensionData,
     isLoading: isDimensionLoading,
     isError: isDimensionError,
+    error: dimensionError,
     refetch: refetchDimensions,
   } = useQuery<FeeDimensionAnalyticsResponse>({
     queryKey: [
@@ -981,6 +985,23 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
           <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
             {isBatchLoading ? (
               <div className="p-16 text-center text-slate-500 text-xs">Loading Batch Matrix...</div>
+            ) : isBatchError ? (
+              <div role="alert" className="p-8 text-center text-amber-700 space-y-2">
+                <AlertCircle className="w-7 h-7 mx-auto" />
+                <p className="font-bold text-sm">Failed to load Batch Monthly Matrix</p>
+                <p className="text-xs text-slate-600 max-w-md mx-auto">
+                  {extractApiErrorMessage(batchError, 'Unable to load batch fee matrix right now.')}
+                </p>
+                {(batchError as any)?.response?.status !== 423 && (
+                  <button
+                    type="button"
+                    onClick={() => refetchBatch()}
+                    className="px-3 py-1 bg-amber-50 text-amber-800 rounded-lg text-xs font-bold border border-amber-200"
+                  >
+                    Retry
+                  </button>
+                )}
+              </div>
             ) : !isTransposed ? (
               /* STANDARD ORIENTATION (Months on Rows) */
               <div className="overflow-x-auto custom-scrollbar">
@@ -1260,14 +1281,32 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
             </div>
 
             <div className="mt-3">
-              <EnterpriseDataTable
-                data={monthData?.students || []}
-                columns={studentRosterColumns}
-                isLoading={isMonthLoading}
-                tableId="month-collection-roster"
-                searchPlaceholder="Search student name, admission #, receipt..."
-                pageSize={25}
-              />
+              {isMonthError ? (
+                <div role="alert" className="p-6 text-center text-amber-700 space-y-2">
+                  <AlertCircle className="w-6 h-6 mx-auto" />
+                  <p className="text-xs font-bold">
+                    {extractApiErrorMessage(monthError, 'Unable to load monthly collection matrix.')}
+                  </p>
+                  {(monthError as any)?.response?.status !== 423 && (
+                    <button
+                      type="button"
+                      onClick={() => refetchMonth()}
+                      className="px-3 py-1 bg-amber-50 text-amber-800 rounded-lg text-xs font-bold border border-amber-200"
+                    >
+                      Retry
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <EnterpriseDataTable
+                  data={monthData?.students || []}
+                  columns={studentRosterColumns}
+                  isLoading={isMonthLoading}
+                  tableId="month-collection-roster"
+                  searchPlaceholder="Search student name, admission #, receipt..."
+                  pageSize={25}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -1510,14 +1549,32 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
               Students Roster • Standard Dimension View
             </h3>
             <div className="mt-3">
-              <EnterpriseDataTable
-                data={dimensionData?.students || []}
-                columns={studentRosterColumns}
-                isLoading={isDimensionLoading}
-                tableId="standard-dimension-roster"
-                searchPlaceholder="Search student name, standard, admission #..."
-                pageSize={25}
-              />
+              {isDimensionError ? (
+                <div role="alert" className="p-6 text-center text-amber-700 space-y-2">
+                  <AlertCircle className="w-6 h-6 mx-auto" />
+                  <p className="text-xs font-bold">
+                    {extractApiErrorMessage(dimensionError, 'Unable to load dimension analytics.')}
+                  </p>
+                  {(dimensionError as any)?.response?.status !== 423 && (
+                    <button
+                      type="button"
+                      onClick={() => refetchDimensions()}
+                      className="px-3 py-1 bg-amber-50 text-amber-800 rounded-lg text-xs font-bold border border-amber-200"
+                    >
+                      Retry
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <EnterpriseDataTable
+                  data={dimensionData?.students || []}
+                  columns={studentRosterColumns}
+                  isLoading={isDimensionLoading}
+                  tableId="standard-dimension-roster"
+                  searchPlaceholder="Search student name, standard, admission #..."
+                  pageSize={25}
+                />
+              )}
             </div>
           </div>
         </div>

@@ -16,11 +16,12 @@
 #  * @description API endpoints for fee obligations, payment collections, receipts, trends, and ledger reconciliation.
 #  */
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_, desc, asc, case
 from sqlalchemy.orm import selectinload
-from typing import Optional, List
+from typing import Optional, List, Dict, Any, Sequence
+import re
 from app.core.database import get_db
 from app.core.deps import (
     get_current_active_user,
@@ -70,6 +71,63 @@ from decimal import Decimal
 import uuid
 
 router = APIRouter()
+
+_RE_PRIORITY = re.compile(r"\[PRIORITY:\s*(\w+)\]", re.IGNORECASE)
+_RE_STATUS = re.compile(r"\[STATUS:\s*(\w+)\]", re.IGNORECASE)
+_RE_PRIORITY_STRIP = re.compile(r"\[PRIORITY:[^\]]+\]")
+_RE_STATUS_STRIP = re.compile(r"\[STATUS:[^\]]+\]")
+_RE_ACTOR_STRIP = re.compile(r"\(by [^\)]+\)")
+
+
+def _sql_year_month(db: AsyncSession, col):
+    """Dialect-safe YYYY-MM extraction for PostgreSQL and SQLite test sessions."""
+    bind = getattr(db, "bind", None)
+    dialect_name = getattr(getattr(bind, "dialect", None), "name", "postgresql")
+    if dialect_name == "sqlite":
+        return func.strftime("%Y-%m", col)
+    return func.to_char(col, "YYYY-MM")
+
+
+async def _fetch_batched_invoice_aggregates(
+    db: AsyncSession,
+    student_ids: Sequence[int],
+    academic_year_id: Optional[int] = None,
+) -> Dict[int, Dict[str, Any]]:
+    """Aggregate FeeInvoice obligations per student in a single SQL GROUP BY round-trip."""
+    if not student_ids:
+        return {}
+    stmt = (
+        select(
+            FeeInvoice.student_id,
+            func.min(FeeInvoice.id).label("invoice_id"),
+            func.max(FeeInvoice.invoice_number).label("invoice_number"),
+            func.max(FeeInvoice.due_date).label("due_date"),
+            func.max(FeeInvoice.notes).label("invoice_notes"),
+            func.coalesce(func.sum(FeeInvoice.net_amount), 0).label("net_amount"),
+            func.coalesce(func.sum(FeeInvoice.paid_amount), 0).label("paid_amount"),
+            func.coalesce(func.sum(FeeInvoice.outstanding_amount), 0).label("outstanding_amount"),
+        )
+        .where(
+            FeeInvoice.student_id.in_(list(student_ids)),
+            FeeInvoice.status != "cancelled",
+        )
+    )
+    if academic_year_id:
+        stmt = stmt.where(FeeInvoice.academic_year_id == academic_year_id)
+    stmt = stmt.group_by(FeeInvoice.student_id)
+    rows = (await db.execute(stmt)).all()
+    return {
+        r.student_id: {
+            "invoice_id": r.invoice_id,
+            "invoice_number": r.invoice_number,
+            "due_date": r.due_date,
+            "invoice_notes": r.invoice_notes,
+            "net_amount": float(r.net_amount or 0),
+            "paid_amount": float(r.paid_amount or 0),
+            "outstanding_amount": float(r.outstanding_amount or 0),
+        }
+        for r in rows
+    }
 
 FEE_STAFF_VIEW_ROLES = (
     "superadmin",
@@ -1491,13 +1549,11 @@ async def get_fees_overview(
         for r in batch_rows
     ]
 
-    # Monthly collection trends
-    month_key = func.to_char(Payment.payment_date, "YYYY-MM")
-    month_label = func.to_char(Payment.payment_date, "Mon YYYY")
+    # Monthly collection trends (dialect-safe YYYY-MM aggregation)
+    month_key = _sql_year_month(db, Payment.payment_date)
     trend_query = (
         select(
             month_key.label("month_key"),
-            month_label.label("month_label"),
             func.coalesce(func.sum(Payment.amount), 0).label("collected"),
         )
         .join(Student, Payment.student_id == Student.id)
@@ -1522,15 +1578,20 @@ async def get_fees_overview(
     if division_id:
         trend_query = trend_query.where(latest_enr.c.division_id == division_id)
 
-    trend_query = trend_query.group_by(month_key, month_label).order_by(month_key.asc())
+    trend_query = trend_query.group_by(month_key).order_by(month_key.asc())
     trend_rows = (await db.execute(trend_query)).all()
     cumulative_amount = 0.0
     monthly_trends = []
     for r in trend_rows:
         coll = float(r.collected)
         cumulative_amount += coll
+        m_lbl = str(r.month_key or "")
+        try:
+            m_lbl = datetime.strptime(m_lbl, "%Y-%m").strftime("%b %Y")
+        except Exception:
+            pass
         monthly_trends.append({
-            "month": r.month_label,
+            "month": m_lbl,
             "collected": coll,
             "cumulative": cumulative_amount,
         })
@@ -2075,23 +2136,34 @@ async def get_fee_register(
     return register_entries
 
 
+@router.get("/matrix")
 @router.get("/batch-monthly-matrix")
 async def get_batch_monthly_matrix(
     academic_year_id: Optional[int] = None,
+    institution_id: Optional[int] = None,
     division_id: Optional[int] = None,
     standard_id: Optional[int] = None,
     board_id: Optional[int] = None,
+    limit: int = Query(default=500, ge=1, le=2000),
+    offset: int = Query(default=0, ge=0),
     data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role(*FEE_STAFF_VIEW_ROLES)),
 ):
     """
     2D Batch Monthly Fee Collection Matrix (Executive Spreadsheet View).
-    Cross-tabulates enrolled batch students (Columns) across 12 Academic Months (Rows),
-    providing single-screen visibility into realized receipts, dates, package obligation, and overdue gaps.
+    Cross-tabulates enrolled batch students across 12 Academic Months using batched SQL aggregation.
     """
     from datetime import datetime
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
     is_demo_filter = True if data_env == "TRAINING" else (False if data_env == "PRODUCTION" else None)
+    if data_env == "TRAINING":
+        eff_inst_id = await resolve_environment_institution_id(db, data_env, current_user)
+    elif is_sysadmin(current_user):
+        eff_inst_id = institution_id or getattr(current_user, "institution_id", None)
+    else:
+        eff_inst_id = getattr(current_user, "institution_id", None)
 
     # 1. Fetch all active divisions/batches that have enrolled students
     div_query = (
@@ -2101,15 +2173,15 @@ async def get_batch_monthly_matrix(
             Division.standard_id,
             Standard.name.label("standard_name"),
             Board.name.label("board_name"),
-            func.count(StudentEnrollment.id).label("student_count"),
+            func.count(func.distinct(StudentEnrollment.student_id)).label("student_count"),
         )
         .join(Standard, Division.standard_id == Standard.id)
         .outerjoin(Board, Division.board_id == Board.id)
         .join(StudentEnrollment, StudentEnrollment.division_id == Division.id)
         .join(Student, StudentEnrollment.student_id == Student.id)
     )
-    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
-        div_query = div_query.where(Student.institution_id == current_user.institution_id)
+    if eff_inst_id:
+        div_query = div_query.where(Student.institution_id == eff_inst_id)
     if is_demo_filter is not None:
         div_query = div_query.where(Student.is_demo.is_(is_demo_filter))
     if academic_year_id:
@@ -2125,12 +2197,11 @@ async def get_batch_monthly_matrix(
         Division.standard_id,
         Standard.name,
         Board.name,
-    ).having(func.count(StudentEnrollment.id) > 0).order_by(Division.id.asc())
+    ).having(func.count(func.distinct(StudentEnrollment.student_id)) > 0).order_by(Division.id.asc())
 
     div_rows = (await db.execute(div_query)).all()
-    available_batches = []
-    for d_id, d_name, std_id, std_name, brd_name, st_cnt in div_rows:
-        available_batches.append({
+    available_batches = [
+        {
             "id": d_id,
             "name": d_name,
             "tab_label": d_name,
@@ -2138,7 +2209,9 @@ async def get_batch_monthly_matrix(
             "standard_name": std_name,
             "board_name": brd_name or "General",
             "student_count": st_cnt,
-        })
+        }
+        for d_id, d_name, std_id, std_name, brd_name, st_cnt in div_rows
+    ]
 
     # Pick active batch: prefer passed division_id, else division 25 ('ICSE X') if available, else first batch
     active_batch_id = division_id
@@ -2159,6 +2232,7 @@ async def get_batch_monthly_matrix(
             "active_batch": None,
             "months": [],
             "students": [],
+            "pagination": {"total": 0, "limit": limit, "offset": offset},
             "summary": {
                 "total_students": 0,
                 "total_package_value": 0.0,
@@ -2168,54 +2242,50 @@ async def get_batch_monthly_matrix(
             },
         }
 
-    # 2. Fetch distinct enrolled students in active division
+    # 2. Fetch paginated scalar student cohort in active division (eliminates raw FeeInvoice join multiplication)
+    stud_base_filter = [StudentEnrollment.division_id == active_batch_id]
+    if eff_inst_id:
+        stud_base_filter.append(Student.institution_id == eff_inst_id)
+    if is_demo_filter is not None:
+        stud_base_filter.append(Student.is_demo.is_(is_demo_filter))
+    if academic_year_id:
+        stud_base_filter.append(StudentEnrollment.academic_year_id == academic_year_id)
+
     stud_query = (
         select(
-            Student,
-            FeeInvoice,
-            Division,
-            Standard,
-            Board,
+            Student.id,
+            Student.admission_number,
+            Student.first_name,
+            Student.last_name,
+            func.max(StudentEnrollment.roll_number).label("roll_number"),
+            func.count().over().label("_total_count"),
         )
         .join(StudentEnrollment, StudentEnrollment.student_id == Student.id)
-        .outerjoin(
-            FeeInvoice,
-            (FeeInvoice.student_id == Student.id)
-            & (FeeInvoice.status != "cancelled")
-            & ((FeeInvoice.academic_year_id == academic_year_id) if academic_year_id else True),
-        )
-        .join(Division, StudentEnrollment.division_id == Division.id)
-        .join(Standard, Division.standard_id == Standard.id)
-        .outerjoin(Board, Division.board_id == Board.id)
-        .where(StudentEnrollment.division_id == active_batch_id)
+        .where(*stud_base_filter)
+        .group_by(Student.id, Student.admission_number, Student.first_name, Student.last_name)
+        .order_by(Student.id.asc())
+        .offset(offset)
+        .limit(limit)
     )
-    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
-        stud_query = stud_query.where(Student.institution_id == current_user.institution_id)
-    if is_demo_filter is not None:
-        stud_query = stud_query.where(Student.is_demo.is_(is_demo_filter))
-    if academic_year_id:
-        stud_query = stud_query.where(StudentEnrollment.academic_year_id == academic_year_id)
-
-    stud_query = stud_query.order_by(Student.id.asc())
     stud_rows = (await db.execute(stud_query)).all()
+    total_cohort_students = int(stud_rows[0]._total_count) if stud_rows else 0
+    student_id_list = [r.id for r in stud_rows]
 
-    # Deduplicate students by id
-    seen_student_ids = set()
-    students_data = []
-    student_id_list = []
-    for st, inv, div, std, brd in stud_rows:
-        if st.id in seen_student_ids:
-            continue
-        seen_student_ids.add(st.id)
-        student_id_list.append(st.id)
-        students_data.append((st, inv, div, std, brd))
+    # 3. Batched SQL GROUP BY Invoice Aggregation
+    invoice_agg = await _fetch_batched_invoice_aggregates(db, student_id_list, academic_year_id)
 
-    # 3. Query all payments for these students
-    payments_by_student = {sid: [] for sid in student_id_list}
+    # 4. Batched Payment query pre-indexed by (student_id, YYYY-MM)
+    payments_by_student_month: Dict[tuple, List[Dict[str, Any]]] = {}
+    paid_sum_by_student: Dict[int, float] = {}
     if student_id_list:
         pay_query = (
             select(
-                Payment,
+                Payment.id,
+                Payment.student_id,
+                Payment.amount,
+                Payment.payment_date,
+                Payment.payment_method,
+                Payment.notes,
                 PaymentReceipt.receipt_number,
             )
             .outerjoin(
@@ -2231,17 +2301,23 @@ async def get_batch_monthly_matrix(
         if academic_year_id:
             pay_query = pay_query.where(Payment.academic_year_id == academic_year_id)
         pay_rows = (await db.execute(pay_query)).all()
-        for p, r_num in pay_rows:
-            payments_by_student[p.student_id].append({
+        for p in pay_rows:
+            p_date = str(p.payment_date)
+            p_ym = p_date[:7]
+            if p_ym <= "2026-03":
+                p_ym = "2026-04"
+            amt = float(p.amount)
+            paid_sum_by_student[p.student_id] = paid_sum_by_student.get(p.student_id, 0.0) + amt
+            payments_by_student_month.setdefault((p.student_id, p_ym), []).append({
                 "id": p.id,
-                "amount": float(p.amount),
-                "payment_date": str(p.payment_date),
+                "amount": amt,
+                "payment_date": p_date,
                 "payment_method": p.payment_method,
-                "receipt_number": r_num or f"RCP-{p.id:04d}",
+                "receipt_number": p.receipt_number or f"RCP-{p.id:04d}",
                 "notes": p.notes or "",
             })
 
-    # 4. Define the 12 standard Academic Months (April 2026 to March 2027)
+    # 5. Define the 12 standard Academic Months (April 2026 to March 2027)
     months = [
         {"key": "2026-04", "month_name": "April", "year": 2026, "academic_order": 1},
         {"key": "2026-05", "month_name": "May", "year": 2026, "academic_order": 2},
@@ -2273,33 +2349,20 @@ async def get_batch_monthly_matrix(
     if current_month_key < "2026-04":
         current_month_key = "2026-11"
 
-    for st, inv, div, std, brd in students_data:
-        pkg_fee = float(inv.net_amount) if inv else 0.0
-        tot_paid = float(inv.paid_amount) if inv else sum(p["amount"] for p in payments_by_student.get(st.id, []))
-        tot_out = float(inv.outstanding_amount) if inv else max(0.0, pkg_fee - tot_paid)
+    for st in stud_rows:
+        inv_info = invoice_agg.get(st.id)
+        pkg_fee = float(inv_info["net_amount"]) if inv_info else 0.0
+        tot_paid = float(inv_info["paid_amount"]) if inv_info else paid_sum_by_student.get(st.id, 0.0)
+        tot_out = float(inv_info["outstanding_amount"]) if inv_info else max(0.0, pkg_fee - tot_paid)
 
         total_batch_pkg += pkg_fee
         total_batch_collected += tot_paid
         total_batch_outstanding += tot_out
 
-        st_payments = payments_by_student.get(st.id, [])
-
-        monthly_map = {}
-        for m in months:
-            monthly_map[m["key"]] = []
-
-        for p in st_payments:
-            p_date = p["payment_date"]
-            p_ym = p_date[:7]
-            if p_ym <= "2026-03":
-                p_ym = "2026-04"
-            if p_ym in monthly_map:
-                monthly_map[p_ym].append(p)
-
         monthly_cells = {}
         for m in months:
             m_key = m["key"]
-            cell_pays = monthly_map[m_key]
+            cell_pays = payments_by_student_month.get((st.id, m_key), [])
             if cell_pays:
                 cell_sum = sum(cp["amount"] for cp in cell_pays)
                 dates = [format_date_label(cp["payment_date"]) for cp in cell_pays]
@@ -2327,13 +2390,13 @@ async def get_batch_monthly_matrix(
         students_result.append({
             "student_id": st.id,
             "admission_number": st.admission_number,
-            "roll_number": getattr(st, "roll_number", None) or getattr(st, "admission_number", "—"),
+            "roll_number": st.roll_number or st.admission_number or "—",
             "first_name": st.first_name,
             "last_name": st.last_name,
             "short_name": st.first_name,
             "full_name": f"{st.first_name} {st.last_name}",
-            "invoice_id": inv.id if inv else None,
-            "invoice_number": inv.invoice_number if inv else "UNINVOICED",
+            "invoice_id": inv_info["invoice_id"] if inv_info else None,
+            "invoice_number": inv_info["invoice_number"] if inv_info else "UNINVOICED",
             "package_fee": pkg_fee,
             "package_fee_k": int(round(pkg_fee / 1000.0)),
             "total_paid": tot_paid,
@@ -2344,7 +2407,7 @@ async def get_batch_monthly_matrix(
 
     overall_recovery = round((total_batch_collected / total_batch_pkg * 100.0), 1) if total_batch_pkg > 0 else 0.0
 
-    user_inst_id = getattr(current_user, "institution_id", None) or 1
+    user_inst_id = eff_inst_id or getattr(current_user, "institution_id", None) or 1
     students_result = await CodeXService.mask_records_list(
         db=db,
         institution_id=user_inst_id,
@@ -2360,6 +2423,7 @@ async def get_batch_monthly_matrix(
         "academic_year": {"id": academic_year_id or 1, "name": "AY 2026-27"},
         "months": months,
         "students": students_result,
+        "pagination": {"total": total_cohort_students, "limit": limit, "offset": offset},
         "summary": {
             "total_students": len(students_result),
             "total_package_value": total_batch_pkg,
@@ -3200,6 +3264,7 @@ async def get_dimension_analytics(
 @router.get("/student-monthly-pivot")
 async def get_student_monthly_pivot(
     academic_year_id: Optional[int] = None,
+    institution_id: Optional[int] = None,
     board_id: Optional[str] = None,
     standard_id: Optional[str] = None,
     division_id: Optional[str] = None,
@@ -3209,40 +3274,42 @@ async def get_student_monthly_pivot(
     search: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    limit: int = Query(default=500, ge=1, le=2000),
+    offset: int = Query(default=0, ge=0),
     data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role(*FEE_STAFF_VIEW_ROLES)),
 ):
     """
-    Dynamic Student-wise Fee Collection Pivot with Advanced Multi-Dimensional Filters:
-    - Rows: Student name, admission #, board, standard/grade, division, batch, package fee
-    - Columns: 12 months (March to February), Total Collected, Balance
-    - Individual payment amounts with drilldown transaction details
-    - Summary metrics: total students, agreed package, total collected, balance, collection %, defaulters
+    Dynamic Student-wise Fee Collection Pivot with batched SQL aggregation & pagination.
     """
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
     is_demo_filter = True if data_env == "TRAINING" else (False if data_env == "PRODUCTION" else None)
-    inst_id = getattr(current_user, "institution_id", None) if not is_sysadmin(current_user) else None
+    if data_env == "TRAINING":
+        inst_id = await resolve_environment_institution_id(db, data_env, current_user)
+    elif is_sysadmin(current_user):
+        inst_id = institution_id or getattr(current_user, "institution_id", None)
+    else:
+        inst_id = getattr(current_user, "institution_id", None)
 
-    # 1. Resolve Academic Year
+    # 1. Resolve Academic Year scoped to institution
     if not academic_year_id:
-        curr_ay_query = select(AcademicYear).where(AcademicYear.is_current.is_(True))
-        if inst_id:
-            curr_ay_query = curr_ay_query.where(AcademicYear.institution_id == inst_id)
-        curr_ay = (await db.execute(curr_ay_query)).scalars().first()
-        effective_ay_id = curr_ay.id if curr_ay else 1
+        effective_ay_id = await resolve_institution_academic_year_id(db, inst_id) or 1
     else:
         effective_ay_id = academic_year_id
 
-    # 2. Fetch Filter Master Options
+    # 2. Fetch Filter Master Options scoped to institution
     ay_q = select(AcademicYear).order_by(AcademicYear.id.desc())
     bd_q = select(Board).order_by(Board.name.asc())
     std_q = select(Standard).order_by(Standard.level.asc(), Standard.name.asc())
-    div_q = select(Division).order_by(Division.name.asc())
+    div_q = select(Division).join(Standard, Division.standard_id == Standard.id).order_by(Division.name.asc())
 
     if inst_id:
         ay_q = ay_q.where(AcademicYear.institution_id == inst_id)
         bd_q = bd_q.where(Board.institution_id == inst_id)
         std_q = std_q.where(Standard.institution_id == inst_id)
+        div_q = div_q.where(Standard.institution_id == inst_id)
 
     all_ays = (await db.execute(ay_q)).scalars().all()
     all_bds = (await db.execute(bd_q)).scalars().all()
@@ -3273,19 +3340,50 @@ async def get_student_monthly_pivot(
     def parse_int_list(val: Optional[str]) -> List[int]:
         if not val or val.strip().lower() in ("all", ""):
             return []
-        res = []
-        for p in val.split(","):
-            p = p.strip()
-            if p.isdigit():
-                res.append(int(p))
-        return res
+        return [int(p.strip()) for p in val.split(",") if p.strip().isdigit()]
 
     selected_bds = parse_int_list(board_id)
     selected_stds = parse_int_list(standard_id)
     selected_divs = parse_int_list(division_id)
     selected_statuses = [s.strip().lower() for s in (payment_status or "").split(",") if s.strip() and s.strip().lower() != "all"]
 
-    # 4. Query Enrolled Students for Selected AY
+    # 4. Query Paginated Enrolled Students for Selected AY (no FeeInvoice join duplication)
+    stud_filters = [StudentEnrollment.academic_year_id == effective_ay_id]
+    if inst_id:
+        stud_filters.append(Student.institution_id == inst_id)
+    if is_demo_filter is not None:
+        stud_filters.append(Student.is_demo.is_(is_demo_filter))
+    if selected_bds:
+        stud_filters.append(Division.board_id.in_(selected_bds))
+    if selected_stds:
+        stud_filters.append(Division.standard_id.in_(selected_stds))
+    if selected_divs:
+        stud_filters.append(Division.id.in_(selected_divs))
+    if student_status and student_status.lower() != "all":
+        if student_status.lower() == "active":
+            stud_filters.append(Student.is_active.is_(True))
+        elif student_status.lower() in ("former", "inactive"):
+            stud_filters.append(Student.is_active.is_(False))
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        stud_filters.append(
+            or_(
+                Student.first_name.ilike(term),
+                Student.last_name.ilike(term),
+                Student.admission_number.ilike(term),
+                Student.phone.ilike(term),
+            )
+        )
+
+    total_enrolled_count = (
+        await db.execute(
+            select(func.count(func.distinct(Student.id)))
+            .join(StudentEnrollment, StudentEnrollment.student_id == Student.id)
+            .join(Division, StudentEnrollment.division_id == Division.id)
+            .where(*stud_filters)
+        )
+    ).scalar() or 0
+
     stud_q = (
         select(
             Student.id,
@@ -3302,69 +3400,33 @@ async def get_student_monthly_pivot(
             Standard.name.label("standard_name"),
             Board.id.label("board_id"),
             Board.name.label("board_name"),
-            FeeInvoice.id.label("invoice_id"),
-            FeeInvoice.net_amount,
-            FeeInvoice.due_date,
-            FeeInvoice.outstanding_amount,
-            FeeInvoice.notes.label("invoice_notes"),
         )
         .join(StudentEnrollment, StudentEnrollment.student_id == Student.id)
         .join(Division, StudentEnrollment.division_id == Division.id)
         .join(Standard, Division.standard_id == Standard.id)
         .outerjoin(Board, Division.board_id == Board.id)
-        .outerjoin(
-            FeeInvoice,
-            (FeeInvoice.student_id == Student.id)
-            & (FeeInvoice.status != "cancelled")
-            & (FeeInvoice.academic_year_id == effective_ay_id),
-        )
-        .where(StudentEnrollment.academic_year_id == effective_ay_id)
+        .where(*stud_filters)
+        .order_by(StudentEnrollment.id.desc())
+        .offset(offset)
+        .limit(limit * 2)
     )
-    if inst_id:
-        stud_q = stud_q.where(Student.institution_id == inst_id)
-    if is_demo_filter is not None:
-        stud_q = stud_q.where(Student.is_demo.is_(is_demo_filter))
-
-    # Apply Dependent Multi-Select Filters
-    if selected_bds:
-        stud_q = stud_q.where(Division.board_id.in_(selected_bds))
-    if selected_stds:
-        stud_q = stud_q.where(Division.standard_id.in_(selected_stds))
-    if selected_divs:
-        stud_q = stud_q.where(Division.id.in_(selected_divs))
-
-    # Student Status Filter
-    if student_status and student_status.lower() != "all":
-        if student_status.lower() == "active":
-            stud_q = stud_q.where(Student.is_active.is_(True))
-        elif student_status.lower() in ("former", "inactive"):
-            stud_q = stud_q.where(Student.is_active.is_(False))
-
-    # Search filter
-    if search and search.strip():
-        term = f"%{search.strip()}%"
-        stud_q = stud_q.where(
-            or_(
-                Student.first_name.ilike(term),
-                Student.last_name.ilike(term),
-                Student.admission_number.ilike(term),
-                Student.phone.ilike(term),
-            )
-        )
-
-    stud_q = stud_q.order_by(StudentEnrollment.id.desc())
     stud_rows = (await db.execute(stud_q)).all()
 
-    # Deduplicate students
     student_dict = {}
     for r in stud_rows:
         if r.id not in student_dict:
             student_dict[r.id] = r
+            if len(student_dict) >= limit:
+                break
 
     student_ids = list(student_dict.keys())
 
-    # 5. Query Completed Payments for these students
-    payments_by_student = {}
+    # 5. Batched SQL GROUP BY Invoice Aggregation
+    invoice_agg = await _fetch_batched_invoice_aggregates(db, student_ids, effective_ay_id)
+
+    # 6. Batched Payment Details + O(1) (student_id, YYYY-MM) lookup map
+    payments_by_student_month: Dict[tuple, List[Dict[str, Any]]] = {}
+    paid_sum_by_student: Dict[int, float] = {}
     if student_ids:
         pay_q = (
             select(
@@ -3373,7 +3435,6 @@ async def get_student_monthly_pivot(
                 Payment.amount,
                 Payment.payment_date,
                 Payment.payment_method,
-                Payment.status,
                 PaymentReceipt.receipt_number,
             )
             .outerjoin(
@@ -3385,7 +3446,7 @@ async def get_student_monthly_pivot(
                 Payment.academic_year_id == effective_ay_id,
                 Payment.status.in_(["completed", "verified", "reconciled", "posted"]),
             )
-            .order_by(Payment.payment_date.asc())
+            .order_by(Payment.payment_date.asc(), Payment.id.asc())
         )
         if payment_method and payment_method.strip().lower() != "all":
             pay_q = pay_q.where(Payment.payment_method.ilike(f"%{payment_method.strip()}%"))
@@ -3396,15 +3457,19 @@ async def get_student_monthly_pivot(
 
         pay_rows = (await db.execute(pay_q)).all()
         for p in pay_rows:
-            payments_by_student.setdefault(p.student_id, []).append({
+            p_date = str(p.payment_date)
+            ym = p_date[:7]
+            amt = float(p.amount)
+            paid_sum_by_student[p.student_id] = paid_sum_by_student.get(p.student_id, 0.0) + amt
+            payments_by_student_month.setdefault((p.student_id, ym), []).append({
                 "id": p.id,
-                "amount": float(p.amount),
-                "payment_date": str(p.payment_date),
+                "amount": amt,
+                "payment_date": p_date,
                 "payment_method": p.payment_method or "CASH",
                 "receipt_number": p.receipt_number or f"RCP-{p.id:04d}",
             })
 
-    # 6. Define 12 Months (March through February)
+    # 7. Define 12 Months (March through February)
     months_def = [
         {"key": "2026-03", "name": "March", "short_name": "Mar", "year": 2026},
         {"key": "2026-04", "name": "April", "short_name": "Apr", "year": 2026},
@@ -3419,39 +3484,36 @@ async def get_student_monthly_pivot(
         {"key": "2027-01", "name": "January", "short_name": "Jan", "year": 2027},
         {"key": "2027-02", "name": "February", "short_name": "Feb", "year": 2027},
     ]
-    month_keys = [m["key"] for m in months_def]
     monthly_col_totals = {m["key"]: 0.0 for m in months_def}
 
-    # 7. Build Student Pivot Rows
+    # 8. Build Student Pivot Rows using O(1) cell lookup
     pivot_students = []
     total_agreed = 0.0
     total_col = 0.0
     total_bal = 0.0
     defaulters_cnt = 0
     pending_installments_cnt = 0
-
-    today_ym = "2026-11"  # Current institute operating cycle
+    today_ym = "2026-11"
 
     for s_id, r in student_dict.items():
         s_name = f"{r.first_name} {r.last_name or ''}".strip()
-        pkg_fee = float(r.net_amount or 0.0)
-        st_pays = payments_by_student.get(s_id, [])
-        paid_val = sum(p["amount"] for p in st_pays)
+        inv_info = invoice_agg.get(s_id)
+        pkg_fee = float(inv_info["net_amount"]) if inv_info else 0.0
+        paid_val = paid_sum_by_student.get(s_id, 0.0)
         bal_due = max(0.0, round(pkg_fee - paid_val, 2))
+        due_date_ym = str(inv_info["due_date"])[:7] if (inv_info and inv_info["due_date"]) else None
 
-        # Monthly breakdown
         months_data = {}
+        has_pending_inst = False
         for m in months_def:
             m_key = m["key"]
-            m_pays = [p for p in st_pays if p["payment_date"][:7] == m_key]
+            m_pays = payments_by_student_month.get((s_id, m_key), [])
             m_amt = sum(p["amount"] for p in m_pays)
 
-            # Check if pending installment exists in this month
-            is_pending = False
-            pending_amt = 0.0
-            if r.due_date and str(r.due_date)[:7] == m_key and bal_due > 0 and m_key <= today_ym:
-                is_pending = True
-                pending_amt = bal_due
+            is_pending = bool(due_date_ym == m_key and bal_due > 0 and m_key <= today_ym)
+            pending_amt = bal_due if is_pending else 0.0
+            if is_pending:
+                has_pending_inst = True
 
             if m_amt > 0:
                 cell_status = "paid"
@@ -3482,10 +3544,9 @@ async def get_student_monthly_pivot(
         else:
             calc_status = "upcoming"
 
-        if any(v["is_pending"] for v in months_data.values()):
+        if has_pending_inst:
             pending_installments_cnt += 1
 
-        # Check Payment Status filter
         if selected_statuses and calc_status not in selected_statuses:
             continue
 
@@ -3494,25 +3555,22 @@ async def get_student_monthly_pivot(
         total_bal += bal_due
 
         student_st_str = "active" if r.is_active else "former"
-
-        # Parse collection remark & priority from invoice notes
-        raw_notes = getattr(r, "invoice_notes", None) or ""
+        raw_notes = (inv_info.get("invoice_notes") if inv_info else None) or ""
         parsed_priority = None
         parsed_status = "follow_up_required"
         parsed_remark = ""
         if raw_notes:
             parsed_remark = raw_notes
             if "[PRIORITY:" in raw_notes:
-                import re
-                p_match = re.search(r"\[PRIORITY:\s*(\w+)\]", raw_notes, re.IGNORECASE)
+                p_match = _RE_PRIORITY.search(raw_notes)
                 if p_match:
                     parsed_priority = p_match.group(1).lower()
-                s_match = re.search(r"\[STATUS:\s*(\w+)\]", raw_notes, re.IGNORECASE)
+                s_match = _RE_STATUS.search(raw_notes)
                 if s_match:
                     parsed_status = s_match.group(1).lower()
-                clean_rem = re.sub(r"\[PRIORITY:[^\]]+\]", "", raw_notes)
-                clean_rem = re.sub(r"\[STATUS:[^\]]+\]", "", clean_rem)
-                clean_rem = re.sub(r"\(by [^\)]+\)", "", clean_rem)
+                clean_rem = _RE_PRIORITY_STRIP.sub("", raw_notes)
+                clean_rem = _RE_STATUS_STRIP.sub("", clean_rem)
+                clean_rem = _RE_ACTOR_STRIP.sub("", clean_rem)
                 parsed_remark = clean_rem.strip()
             else:
                 parsed_priority = "normal"
@@ -3536,7 +3594,7 @@ async def get_student_monthly_pivot(
             "collection_rate": round((paid_val / pkg_fee * 100.0), 1) if pkg_fee > 0 else 0.0,
             "status": calc_status,
             "student_status": student_st_str,
-            "invoice_id": getattr(r, "invoice_id", None),
+            "invoice_id": inv_info["invoice_id"] if inv_info else None,
             "remark": parsed_remark,
             "priority": parsed_priority,
             "follow_up_status": parsed_status,
@@ -3554,6 +3612,7 @@ async def get_student_monthly_pivot(
             "defaulters_count": defaulters_cnt,
             "pending_installments_count": pending_installments_cnt,
         },
+        "pagination": {"total": total_enrolled_count, "limit": limit, "offset": offset},
         "months": months_def,
         "students": pivot_students,
         "monthly_totals": {k: round(v, 2) for k, v in monthly_col_totals.items()},

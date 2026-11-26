@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-16
+#  * @updated     2026-11-26
 #  *
 #  * @description Comprehensive domain service for CodeX configurable feature activation, digit-to-symbol encoding, and scope precedence resolution.
 #  */
@@ -692,9 +692,10 @@ class CodeXService:
         5. User Override
         A more restrictive rule always overrides a permissive one.
         """
-        # Step 1: System Default Policy & Master Business Config
-        config = await CodeXService.get_config(db, institution_id)
-        if not config.is_master_enabled:
+        # Step 1: System Default Policy & Master Business Config (read-only on hot path; never INSERT+COMMIT during GETs)
+        cfg_res = await db.execute(select(CodexConfig).where(CodexConfig.institution_id == institution_id))
+        config = cfg_res.scalar_one_or_none()
+        if not config or not config.is_master_enabled:
             return {
                 "is_enabled": False,
                 "visibility_mode": "actual_only",

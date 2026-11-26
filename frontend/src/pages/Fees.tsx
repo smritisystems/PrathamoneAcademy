@@ -1203,7 +1203,13 @@ function FeesContent() {
   // ─────────────────────────────────────────────────────────────────────────────
   // TAB 1: OVERVIEW DATA
   // ─────────────────────────────────────────────────────────────────────────────
-  const { data: overviewData, isLoading: loadingOverview } = useQuery({
+  const {
+    data: overviewData,
+    isLoading: loadingOverview,
+    isError: isOverviewError,
+    error: overviewError,
+    refetch: refetchOverview,
+  } = useQuery({
     queryKey: ['fees-overview', appliedFilters],
     queryFn: () =>
       feesApi
@@ -4529,6 +4535,26 @@ function FeesContent() {
                   </div>
                 )
               })()}
+            </div>
+          ) : isOverviewError ? (
+            <div
+              role="alert"
+              className="bg-white rounded-2xl border border-amber-200 p-8 text-center space-y-3 shadow-xs"
+            >
+              <AlertCircle className="w-8 h-8 mx-auto text-amber-600" />
+              <p className="font-bold text-sm text-slate-900">Unable to load Fees Overview</p>
+              <p className="text-xs text-slate-600 max-w-md mx-auto">
+                {extractApiErrorMessage(overviewError, 'Failed to fetch financial overview metrics.')}
+              </p>
+              {(overviewError as any)?.response?.status !== 423 && (
+                <button
+                  type="button"
+                  onClick={() => refetchOverview()}
+                  className="px-3.5 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold hover:bg-amber-100"
+                >
+                  Retry
+                </button>
+              )}
             </div>
           ) : null}
         </div>
