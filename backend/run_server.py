@@ -12,7 +12,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-25
-#  * @updated     2026-11-26
+#  * @updated     2026-11-27
 #  *
 #  * @description Standalone Windows backend entrypoint compiled with Nuitka.
 #  */
@@ -758,12 +758,27 @@ def _start_embedded_postgres(root_dir: Path, backend_dir: Path, data_root: Optio
             creationflags=flags,
         )
 
-    pg_port = 5433 if _is_port_in_use(5432) else 5432
-    if pg_port == 5433:
+    own_pid_file = data_dir / "postmaster.pid"
+    own_running_port = None
+    if own_pid_file.exists():
+        try:
+            pid_lines = own_pid_file.read_text(encoding="utf-8", errors="ignore").splitlines()
+            if len(pid_lines) >= 4 and pid_lines[3].strip().isdigit():
+                cand_port = int(pid_lines[3].strip())
+                if _is_port_in_use(cand_port):
+                    own_running_port = cand_port
+        except Exception:
+            pass
+
+    if own_running_port:
+        pg_port = own_running_port
+    else:
+        pg_port = next((p for p in range(5432, 5450) if not _is_port_in_use(p)), 5433)
+    if pg_port != 5432:
         conf_file = data_dir / "postgresql.conf"
-        if conf_file.exists() and "port = 5433" not in conf_file.read_text(encoding="utf-8"):
+        if conf_file.exists() and f"port = {pg_port}" not in conf_file.read_text(encoding="utf-8"):
             with open(conf_file, "a", encoding="utf-8") as f:
-                f.write("\nport = 5433\n")
+                f.write(f"\nport = {pg_port}\n")
 
     pg_proc = None
     if not _is_port_in_use(pg_port):

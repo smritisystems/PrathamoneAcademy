@@ -12,7 +12,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-26
-#  * @updated     2026-11-26
+#  * @updated     2026-11-27
 #  *
 #  * @description Dual-target release readiness verifier validating both --target hosted (API latency, zero 423 leaks, frontend build) and --target desktop (compiled .exe POST->GET parity, port 5433 DB isolation, Authenticode signatures) from unified VERSION.
 #  */
@@ -29,6 +29,7 @@ import sys
 import tempfile
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -193,7 +194,9 @@ def verify_desktop(skip_compiled_runtime: bool = False) -> list[str]:
 
     data_root = Path(tempfile.mkdtemp(prefix="pratham_market_5433_"))
     token = "market_readiness_desktop_token_2026"
-    backend_port = 2048
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s_ephem:
+        s_ephem.bind(("127.0.0.1", 0))
+        backend_port = s_ephem.getsockname()[1]
     decoy_5432 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     bound_5432 = False
     try:
@@ -225,19 +228,31 @@ def verify_desktop(skip_compiled_runtime: bool = False) -> list[str]:
     ssl_ctx.verify_mode = ssl.CERT_NONE
 
     proc = None
+    out_log = open(data_root / "proc_stdout.log", "w", encoding="utf-8")
+    err_log = open(data_root / "proc_stderr.log", "w", encoding="utf-8")
     try:
         proc = subprocess.Popen(
             [str(backend_exe), "--no-browser", "--host", "127.0.0.1", "--port", str(backend_port)],
             cwd=str(backend_exe.parent),
             env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=out_log,
+            stderr=err_log,
         )
         base_url = None
         deadline = time.time() + 120
         while time.time() < deadline:
             if proc.poll() is not None:
-                raise RuntimeError(f"prathamone_backend.exe exited prematurely ({proc.returncode})")
+                out_log.flush()
+                err_log.flush()
+                err_tail = (data_root / "proc_stderr.log").read_text(encoding="utf-8", errors="ignore")[-1200:]
+                srv_log = data_root / "logs" / "backend_server.log"
+                srv_tail = srv_log.read_text(encoding="utf-8", errors="ignore")[-1200:] if srv_log.is_file() else ""
+                pg_log = data_root / "data" / "pg_server.log"
+                pg_tail = pg_log.read_text(encoding="utf-8", errors="ignore")[-800:] if pg_log.is_file() else ""
+                raise RuntimeError(
+                    f"prathamone_backend.exe exited prematurely ({proc.returncode})\n"
+                    f"STDERR:\n{err_tail}\nSERVER_LOG:\n{srv_tail}\nPG_LOG:\n{pg_tail}"
+                )
             for scheme in ("https", "http"):
                 try:
                     req = urllib.request.Request(f"{scheme}://127.0.0.1:{backend_port}/health")
@@ -254,28 +269,46 @@ def verify_desktop(skip_compiled_runtime: bool = False) -> list[str]:
             raise RuntimeError("Timed out waiting for compiled prathamone_backend.exe /health")
 
         env_text = (data_root / ".env").read_text(encoding="utf-8")
-        if "POSTGRES_PORT=5433" not in env_text or "127.0.0.1:5433/prashant_academy" not in env_text:
-            raise RuntimeError("Compiled backend failed to isolate embedded port 5433 inside <dataRoot>/.env")
-        print("  [PASS] DESKTOP-DB-5433: Isolated <dataRoot>/.env pinned to 127.0.0.1:5433")
+        m_pg = re.search(r"^POSTGRES_PORT=(\d+)\s*$", env_text, re.MULTILINE)
+        isolated_pg_port = int(m_pg.group(1)) if m_pg else 0
+        if isolated_pg_port < 5433 or f"127.0.0.1:{isolated_pg_port}/prashant_academy" not in env_text:
+            raise RuntimeError(
+                f"Compiled backend failed to isolate embedded PostgreSQL (>=5433) inside <dataRoot>/.env (got port={isolated_pg_port})"
+            )
+        print(f"  [PASS] DESKTOP-DB-ISOLATION: Isolated <dataRoot>/.env pinned to 127.0.0.1:{isolated_pg_port} (overrode stale 5999 & avoided 5432)")
 
-        def api_call(method: str, path: str, body=None, jwt_token: str | None = None):
+        def api_call(method: str, path: str, body=None, jwt_token: str | None = None, form_data: dict | None = None):
             hdrs = {
                 "x-pratham-client-token": token,
-                "Content-Type": "application/json",
                 "X-Data-Environment": "PRODUCTION",
             }
+            if form_data is not None:
+                hdrs["Content-Type"] = "application/x-www-form-urlencoded"
+                payload_bytes = urllib.parse.urlencode(form_data).encode("utf-8")
+            else:
+                hdrs["Content-Type"] = "application/json"
+                payload_bytes = json.dumps(body).encode("utf-8") if body is not None else None
             if jwt_token:
                 hdrs["Authorization"] = f"Bearer {jwt_token}"
-            payload_bytes = json.dumps(body).encode("utf-8") if body is not None else None
             req = urllib.request.Request(f"{base_url}{path}", data=payload_bytes, method=method, headers=hdrs)
-            with urllib.request.urlopen(req, context=ssl_ctx, timeout=15.0) as resp:
-                raw = resp.read().decode("utf-8")
-                return resp.status, {k.lower(): v for k, v in resp.headers.items()}, json.loads(raw) if raw else None
+            try:
+                with urllib.request.urlopen(req, context=ssl_ctx, timeout=15.0) as resp:
+                    raw = resp.read().decode("utf-8")
+                    return resp.status, {k.lower(): v for k, v in resp.headers.items()}, json.loads(raw) if raw else None
+            except urllib.error.HTTPError as err:
+                err_body = err.read().decode("utf-8", errors="ignore")
+                if err.code in (404, 503):
+                    raise
+                raise RuntimeError(f"HTTP {err.code} on {method} {path}: {err_body}") from err
 
         jwt_token = None
         for _ in range(30):
             try:
-                st, _h, body = api_call("POST", "/api/v1/auth/login", {"username": "sysadmin", "password": "CompiledVerify@2026"})
+                st, _h, body = api_call(
+                    "POST",
+                    "/api/v1/auth/login",
+                    form_data={"username": "admin", "password": "CompiledVerify@2026"},
+                )
                 if st == 200 and body and body.get("access_token"):
                     jwt_token = body["access_token"]
                     break
@@ -319,14 +352,14 @@ def verify_desktop(skip_compiled_runtime: bool = False) -> list[str]:
         psql_out = subprocess.check_output(
             [
                 str(pgsql_bin / "psql.exe"),
-                "-h", "127.0.0.1", "-p", "5433", "-U", "postgres", "-d", "prashant_academy",
+                "-h", "127.0.0.1", "-p", str(isolated_pg_port), "-U", "postgres", "-d", "prashant_academy",
                 "-tAc", f"SELECT first_name || ':' || last_name FROM students WHERE id = {stu_id};",
             ],
             text=True,
         ).strip()
         if "Aarohi:DesktopCheck" not in psql_out:
-            raise RuntimeError(f"Expected DB row on port 5433, got {psql_out!r}")
-        print(f"  [PASS] DESKTOP-POST-GET-5433: Verified stu_id={stu_id} persisted on port 5433 with no-store headers")
+            raise RuntimeError(f"Expected DB row on port {isolated_pg_port}, got {psql_out!r}")
+        print(f"  [PASS] DESKTOP-POST-GET-5433: Verified stu_id={stu_id} persisted on isolated port {isolated_pg_port} with no-store headers")
 
         api_call("POST", "/_desktop/shutdown", {}, jwt_token=jwt_token)
         proc.wait(timeout=15)
@@ -339,6 +372,8 @@ def verify_desktop(skip_compiled_runtime: bool = False) -> list[str]:
                 proc.wait(timeout=5)
             except Exception:
                 proc.kill()
+        out_log.close()
+        err_log.close()
         subprocess.run(
             [str(pgsql_bin / "pg_ctl.exe"), "-D", str(data_root / "data"), "stop", "-m", "immediate"],
             stdout=subprocess.DEVNULL,

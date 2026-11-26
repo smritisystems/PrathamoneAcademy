@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-26
+#  * @updated     2026-11-27
 #  *
 #  * @description Global application settings, environment variables, security secrets, and CORS policies.
 #  */
@@ -24,6 +24,11 @@ import json
 import sys
 
 _EXPLICIT_ENV_FILE = os.getenv("PRATHAM_ENV_FILE", "").strip()
+
+
+def _cy_probe() -> None:
+    """Marker callable whose runtime type covers Cython cyfunction in Pydantic ignored_types."""
+    return None
 
 
 def detect_default_runtime_target() -> str:
@@ -63,8 +68,8 @@ class Settings(BaseSettings):
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "COACHING MANAGEMENT. SIMPLIFIED."
-    VERSION: str = "1.184.0"
-    BUILD_NUMBER: str = "2026.11.26-REV-329-v1.184.0-FECA543D"
+    VERSION: str = "1.185.0"
+    BUILD_NUMBER: str = "2026.11.26-REV-330-v1.185.0-919158C1"
     RELEASE_CHANNEL: str = "Release Candidate"
     RELEASE_STATUS: str = "Minor Release Candidate"
     BUILD_DATE: str = "2026-11-26"
@@ -199,6 +204,7 @@ class Settings(BaseSettings):
     model_config = {
         "env_file": (_EXPLICIT_ENV_FILE,) if _EXPLICIT_ENV_FILE else (".env", "../.env"),
         "extra": "ignore",
+        "ignored_types": (type(_cy_probe),),
     }
 
 

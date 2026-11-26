@@ -12,7 +12,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-16
+#  * @updated     2026-11-27
 #  *
 #  * @description Automated versioning engine dynamically calculating semantic versions, revision counts, and build metadata across frontend and backend.
 #  */
@@ -481,6 +481,42 @@ def synchronize_all_version_sources(
             os.path.join(root_dir, "frontend", "src", "config", "branding.ts"),
             r"releaseDate:\s*'[^']+'",
             f"releaseDate: '{today_date}'",
+        ),
+        # 5. Installer & desktop launcher version parity (VER-PARITY)
+        (
+            os.path.join(root_dir, "installer", "prathamone_setup.iss"),
+            r'#define\s+MyAppVersion\s+"[^"]+"',
+            f'#define MyAppVersion "{version}"',
+        ),
+        (
+            os.path.join(root_dir, "installer", "prathamone_setup.iss"),
+            r'#define\s+MyAppFileVersion\s+"[^"]+"',
+            f'#define MyAppFileVersion "{version}.0"',
+        ),
+        (
+            os.path.join(root_dir, "installer", "src", "PrathamOneLauncher.cs"),
+            r'\[assembly:\s*AssemblyVersion\("[^"]+"\)\]',
+            f'[assembly: AssemblyVersion("{version}.0")]',
+        ),
+        (
+            os.path.join(root_dir, "installer", "src", "PrathamOneLauncher.cs"),
+            r'\[assembly:\s*AssemblyFileVersion\("[^"]+"\)\]',
+            f'[assembly: AssemblyFileVersion("{version}.0")]',
+        ),
+        (
+            os.path.join(root_dir, "installer", "src", "PrathamOneLauncher.cs"),
+            r'Smritisys & AITDL Networks\s+•\s+Version\s+[^"]+"',
+            f'Smritisys & AITDL Networks  •  Version {version}"',
+        ),
+        (
+            os.path.join(root_dir, "installer", "src", "StopPrathamOne.cs"),
+            r'\[assembly:\s*AssemblyVersion\("[^"]+"\)\]',
+            f'[assembly: AssemblyVersion("{version}.0")]',
+        ),
+        (
+            os.path.join(root_dir, "installer", "src", "StopPrathamOne.cs"),
+            r'\[assembly:\s*AssemblyFileVersion\("[^"]+"\)\]',
+            f'[assembly: AssemblyFileVersion("{version}.0")]',
         ),
     ]
 
