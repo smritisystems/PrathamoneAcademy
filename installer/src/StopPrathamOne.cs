@@ -27,8 +27,8 @@ using System.Windows.Forms;
 [assembly: AssemblyCompany("Smritisys & AITDL Networks")]
 [assembly: AssemblyProduct("PrathamOne EduOS")]
 [assembly: AssemblyCopyright("Copyright (c) 2026 PrathamOne EduOS")]
-[assembly: AssemblyVersion("1.186.1.0")]
-[assembly: AssemblyFileVersion("1.186.1.0")]
+[assembly: AssemblyVersion("1.187.0.0")]
+[assembly: AssemblyFileVersion("1.187.0.0")]
 
 namespace PrathamOne
 {

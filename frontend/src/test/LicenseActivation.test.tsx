@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-16
- * @updated     2026-11-26
+ * @updated     2026-11-27
  *
  * @description Tests the Institution Admin license activation entry point and institution scoping.
  */
@@ -81,6 +81,11 @@ vi.mock('../utils/licenseCertificatePdf', () => ({
   ),
   formatLicenseCertificateDate: vi.fn((value: string | null, fallback = 'Not recorded') => value || fallback),
   formatLicenseCertificateDateTime: vi.fn((value: string | null) => value || 'Not recorded'),
+  formatLicenseCertificateValidThrough: vi.fn((expiresAt: string | null, model: string | null) =>
+    !expiresAt && model?.toLowerCase().includes('perpetual')
+      ? 'Perpetual (No Expiry)'
+      : expiresAt || 'No expiry date recorded',
+  ),
   groupLicenseCertificateEntitlements: vi.fn((entitlements: Array<{ key: string; value: string }>) => ({
     groups: [
       { label: 'Licensed Users', value: entitlements.find(({ key }) => key === 'Users')?.value || 'Not recorded in signed snapshot' },
@@ -200,7 +205,7 @@ describe('LicenseActivation', () => {
     expect(screen.queryByLabelText('License serial number')).toBeNull()
     expect(screen.queryByLabelText('License activation key')).toBeNull()
     expect(screen.getByText('Change registered license email')).toBeTruthy()
-    expect(screen.getByText('license@example.test')).toBeTruthy()
+    expect(screen.getAllByText('license@example.test')).toHaveLength(2)
     await waitFor(() => {
       expect((screen.getByLabelText('Current registered license email') as HTMLInputElement).value).toBe('license@example.test')
     })
@@ -209,26 +214,33 @@ describe('LicenseActivation', () => {
     expect(certificate.textContent).toContain('Prashant Academy')
     expect(certificate.textContent).toContain('signed-license-001')
     expect(certificate.textContent).toContain('license-1042')
+    expect(certificate.textContent).toContain('license@example.test')
+    expect(certificate.textContent).toContain('Registered Email ID')
+    expect(certificate.textContent).toContain('Perpetual (No Expiry)')
     expect(certificate.textContent).toContain('Users')
-    expect(certificate.textContent).toContain('License entitlement details')
-    expect(certificate.textContent).toContain('Certificate generated on')
+    expect(certificate.textContent).toContain('Entitlements')
+    expect(certificate.textContent).toContain('Certificate Generated')
+    expect(certificate.textContent).toContain('Scan to verify this license')
+    expect(certificate.textContent).toContain('Product Architect · SmritiSys & AITDL Networks')
     expect(certificate.textContent).not.toContain('Support validity')
     expect(certificate.textContent).not.toContain('private-binding')
     expect(certificate.textContent).not.toContain('do-not-share-hardware-id')
     expect(certificate.textContent).not.toContain('Digitally Signed')
-    expect(certificate.querySelector('img[alt="PrathamOne EduOS logo"][src="/artwork/18112026/03/license-certificate-logo.svg"]')).toBeTruthy()
-    expect(certificate.querySelector('img[src="/artwork/18112026/03/license-certificate-watermark.svg"]')).toBeTruthy()
+    expect(certificate.textContent).not.toContain('profile@example.test')
+    const headerLogo = certificate.querySelector('img[alt="PrathamOne EduOS logo"][src="/artwork/25112026/widelogofinal/batch_g55.svg"]')
+    const footerLogo = certificate.querySelector('footer img[alt="PrathamOne EduOS footer logo"][src="/artwork/25112026/widelogofinal/batch_g55.svg"]')
+    expect(headerLogo?.className).toContain('print-wide-logo')
+    expect(footerLogo?.className).toContain('print-wide-logo')
+    expect(certificate.querySelector('img[src="/artwork/25112026/widelogofinal/batch_g52-2-2-2_icon.svg"]')).toBeTruthy()
     const brandingRow = certificate.querySelector('[data-testid="certificate-branding-row"]')
     const titleRow = certificate.querySelector('[data-testid="certificate-title-row"]')
-    expect(brandingRow?.parentElement?.children[2]).toBe(titleRow)
-    expect(titleRow?.textContent).toContain('License Certificate')
+    expect(brandingRow).toBeTruthy()
+    expect(titleRow?.textContent).toContain('COACHING INSTITUTE EDITION')
     const signatoryGroup = certificate.querySelector('[data-testid="certificate-signatory-group"]')
     const issuerBadge = certificate.querySelector('[data-testid="certificate-issuer-badge"]')
     expect(signatoryGroup?.textContent).toContain('Jawahar R. Mallah')
     expect(signatoryGroup?.querySelector('img[alt="Authorized issuer signature of Jawahar R. Mallah"]')).toBeTruthy()
-    expect(issuerBadge?.parentElement?.children[0]).toBe(issuerBadge)
-    expect(issuerBadge?.parentElement?.children[1]).toBe(signatoryGroup)
-    expect(issuerBadge?.parentElement?.className).toContain('sm:grid-cols-[minmax(0,1fr)_auto]')
+    expect(issuerBadge).toBeTruthy()
     expect(await screen.findByAltText('Secure verification for license document signed-license-001')).toBeTruthy()
     expect(screen.getByAltText('Authorized issuer signature of Jawahar R. Mallah')).toBeTruthy()
 
@@ -333,6 +345,7 @@ describe('LicenseActivation', () => {
     expect(await screen.findByText('License registration complete')).toBeTruthy()
     expect((screen.getByLabelText('Current registered license email') as HTMLInputElement).value).toBe('')
     expect(screen.queryByText('profile@example.test')).toBeNull()
+    expect(screen.getByTestId('license-certificate').textContent).not.toContain('profile@example.test')
   })
 
   it('does not show activation or registration fields when license status cannot be checked', async () => {

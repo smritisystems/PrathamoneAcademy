@@ -33,6 +33,7 @@ export interface LicenseCertificateEntitlement {
 export interface LicenseCertificateData {
   institutionName: string
   institutionAddress: string | null
+  registeredEmail?: string | null
   mode: string
   licenseStatus: string | null
   licenseId: string | null
@@ -53,7 +54,7 @@ export interface LicenseCertificateEntitlementGroup {
 }
 
 const entitlementGroupDefinitions = [
-  { label: 'Licensed Users', matches: /user|seat/ },
+  { label: 'Licensed Users', matches: /user|seat|student|staff/ },
   { label: 'Branches / locations', matches: /branch|location|site|campus|institute/ },
   { label: 'Licensed modules', matches: /module|feature/ },
   { label: 'Deployment type', matches: /deployment|hosting|environment/ },
@@ -260,6 +261,13 @@ const formatDate = (value: string | null, fallback = 'No expiry date recorded') 
     : new Intl.DateTimeFormat('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }).format(date)
 }
 
+const formatValidThrough = (expiresAt: string | null, licenseModel: string | null) => {
+  if (!expiresAt && licenseModel?.toLowerCase().includes('perpetual')) {
+    return 'Perpetual (No Expiry)'
+  }
+  return formatDate(expiresAt)
+}
+
 const formatModel = (value: string | null) =>
   value ? value.replace(/[_-]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) : 'Not recorded'
 
@@ -339,6 +347,16 @@ export function formatLicenseCertificateDate(value: string | null, fallback = 'N
     : new Intl.DateTimeFormat('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }).format(date)
 }
 
+export function formatLicenseCertificateValidThrough(
+  expiresAt: string | null,
+  licenseModel: string | null,
+): string {
+  if (!expiresAt && licenseModel?.toLowerCase().includes('perpetual')) {
+    return 'Perpetual (No Expiry)'
+  }
+  return formatLicenseCertificateDate(expiresAt, 'No expiry date recorded')
+}
+
 export function formatLicenseCertificateDateTime(value: string | null): string {
   if (!value) return 'Not recorded'
   const date = new Date(value)
@@ -400,18 +418,8 @@ async function fetchFont(url: string) {
   return new Uint8Array(await response.arrayBuffer())
 }
 
-function stripBackdropAndCropSvg(
-  svgText: string,
-  backdropFillHex: string,
-  viewBox: string,
-  width: number,
-  height: number,
-) {
-  const withoutBackdrop = svgText.replace(
-    new RegExp(`<path[^>]*fill:${backdropFillHex}[^>]*/>`, 'gi'),
-    '',
-  )
-  return withoutBackdrop
+function prepareSvgBounds(svgText: string, viewBox: string, width: number, height: number) {
+  return svgText
     .replace(/\s+width="[^"]*"/, ` width="${width}"`)
     .replace(/\s+height="[^"]*"/, ` height="${height}"`)
     .replace(/\s+viewBox="[^"]*"/, ` viewBox="${viewBox}"`)
@@ -456,21 +464,20 @@ async function fetchSvgAsPng(
 }
 
 async function fetchProductLogo() {
-  return fetchSvgAsPng('/artwork/25112026/batch_g45.svg', 'the PrathamOne logo', (svgText) =>
-    stripBackdropAndCropSvg(svgText, '#002255', '9.35 19.64 82.73 17.66', 827, 177),
+  return fetchSvgAsPng('/artwork/25112026/widelogofinal/batch_g55.svg', 'the PrathamOne logo', (svgText) =>
+    prepareSvgBounds(svgText, '-0.5 -0.5 83.59 19.09', 836, 191),
   )
 }
 
 async function fetchCertificateWatermark() {
-  const response = await fetch('/artwork/25112026/batch_g47.svg')
+  const response = await fetch('/artwork/25112026/widelogofinal/batch_g52-2-2-2_icon.svg')
   if (!response.ok) throw new Error(`Unable to load the certificate watermark (${response.status}).`)
   const rawSvg = new TextDecoder().decode(await response.arrayBuffer())
-  const colorSvg = stripBackdropAndCropSvg(
+  const colorSvg = prepareSvgBounds(
     rawSvg,
-    '#ffffff',
-    '10.60 16.55 36.45 24.05',
-    546,
-    360,
+    '-0.5 -0.5 27.22 18.41',
+    544,
+    368,
   )
   // Flat solid black 2D monochrome variant with zero transparency
   const monoSvg = colorSvg.replace(/fill:#[0-9a-fA-F]{3,8}/gi, 'fill:#000000')
@@ -813,7 +820,7 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
   const summaryCards = [
     { label: 'PRODUCT EDITION', value: data.edition || 'Not recorded', width: 180, accent: NAVY },
     { label: 'LICENSE MODEL', value: formatModel(data.licenseModel), width: 175, accent: NAVY },
-    { label: 'VALID THROUGH', value: formatDate(data.expiresAt), width: 140.28, accent: ORANGE },
+    { label: 'VALID THROUGH', value: formatValidThrough(data.expiresAt, data.licenseModel), width: 140.28, accent: ORANGE },
   ]
   const cardGap = 10
   const cardValueLines = summaryCards.map((card) =>
@@ -857,7 +864,7 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
     })
     cardX += card.width + cardGap
   })
-  cursor -= summaryCardHeight + 32
+  cursor -= summaryCardHeight + 24
 
   // ENTITLEMENTS Section
   const entitlementCols = entitlementSummary.groups.map((group) => ({
@@ -941,12 +948,13 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
     cursor -= 11
     drawParagraph(otherText, LEFT, CONTENT_WIDTH, 7.5, MUTED, 10, false, 120)
   }
-  cursor -= 22
+  cursor -= 16
 
   // LICENSE RECORD & VERIFICATION Section
   const identification = [
     ['LICENSE SERIAL', data.serialNumber || 'Not recorded'],
     ['LICENSE ID', data.licenseId || 'Not recorded'],
+    ['REGISTERED EMAIL ID', data.registeredEmail?.trim() || 'Not recorded'],
     ['SIGNED DOCUMENT REF.', data.documentId],
     ['CERTIFICATE GENERATED', formatLicenseCertificateDateTime(generatedAt)],
     ...(data.issuedAt ? [['LICENSE ISSUED', formatDate(data.issuedAt, 'Not recorded')]] : []),
@@ -1036,7 +1044,7 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
   noteLines.forEach((line, index) => {
     drawText(page, line, LEFT + 14, cursor - 26.5 - index * 10, 7.8, MUTED, latin, indic)
   })
-  cursor = noteBottom - 46
+  cursor = noteBottom - 30
 
   // Signatory Section (and place subtle watermark safely in the open seal gap)
   ensureSpace(70, 0)
@@ -1046,7 +1054,7 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
     thickness: 0.5,
     color: BORDER,
   })
-  const signerTop = cursor - 18
+  const signerTop = cursor - 16
   const badgeColor = statusColors('ACTIVE')
   drawRoundedRect(page, {
     x: LEFT,
@@ -1110,7 +1118,7 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
     latinBold,
     indicBold,
   )
-  const attrib = 'Authorized issuer attribution'
+  const attrib = 'Product Architect · SmritiSys & AITDL Networks'
   const attribW = textWidth(attrib, 7.5, latin, indic)
   drawText(page, attrib, sigTextRight - attribW, signerTop - 32, 7.5, MUTED, latin, indic)
   page.drawImage(issuerSignature, {
@@ -1176,10 +1184,17 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
     })
   }
 
+  const footerLogoSize = logo.scaleToFit(92, 20)
   pages.forEach((currentPage, index) => {
     currentPage.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: 34, color: NAVY })
     currentPage.drawRectangle({ x: 0, y: 34, width: PAGE_WIDTH, height: 2, color: ORANGE })
     drawText(currentPage, 'www.prathamone.com', LEFT, 13, 7.5, FOOTER_TEXT, latin, indic)
+    currentPage.drawImage(logo, {
+      x: (PAGE_WIDTH - footerLogoSize.width) / 2,
+      y: (34 - footerLogoSize.height) / 2,
+      width: footerLogoSize.width,
+      height: footerLogoSize.height,
+    })
     const footerLabel =
       pages.length > 1
         ? `PrathamOne EduOS · Powered by SmritiSys · ${index + 1} / ${pages.length}`

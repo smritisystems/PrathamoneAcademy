@@ -20,10 +20,10 @@
 #define MyAppName "PrathamOne EduOS"
 #define MyAppDirName "PrathamOneEduOS"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.186.1"
+  #define MyAppVersion "1.187.0"
 #endif
 #ifndef MyAppFileVersion
-  #define MyAppFileVersion "1.186.1.0"
+  #define MyAppFileVersion "1.187.0.0"
 #endif
 #ifndef MyOutputBaseFilename
   #ifdef UseReleasePayload
@@ -584,10 +584,27 @@ end;
 function InitializeSetup: Boolean;
 var
   ResultCode: Integer;
+  PgCtl: String;
+  ExistingDir: String;
+  LocalDataDir: String;
 begin
   Result := True;
-  // 1. Terminate any previous running or stuck instances so files are not locked
-  Exec('taskkill.exe', '/F /IM PrathamOne.exe /IM prathamone_backend.exe /IM pythonw.exe /IM postgres.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  // 1. Stop desktop shell & backend first, then gracefully stop embedded PostgreSQL before any force-kill
+  Exec('taskkill.exe', '/F /IM PrathamOne.exe /IM prathamone_backend.exe /IM pythonw.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  ExistingDir := GetExistingInstallDir;
+  PgCtl := '';
+  if (ExistingDir <> '') and FileExists(ExistingDir + '\pgsql\bin\pg_ctl.exe') then
+    PgCtl := ExistingDir + '\pgsql\bin\pg_ctl.exe'
+  else if FileExists(ExpandConstant('{app}\pgsql\bin\pg_ctl.exe')) then
+    PgCtl := ExpandConstant('{app}\pgsql\bin\pg_ctl.exe');
+
+  LocalDataDir := ExpandConstant('{localappdata}\{#MyAppDirName}\data');
+  if (PgCtl <> '') and FileExists(LocalDataDir + '\postmaster.pid') then
+    Exec(PgCtl, 'stop -w -t 20 -D "' + LocalDataDir + '" -m fast', ExtractFileDir(PgCtl), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  if (PgCtl <> '') and (ExistingDir <> '') and FileExists(ExistingDir + '\data\postmaster.pid') then
+    Exec(PgCtl, 'stop -w -t 20 -D "' + ExistingDir + '\data" -m fast', ExtractFileDir(PgCtl), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+  Exec('taskkill.exe', '/F /IM postgres.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   // 2. Remove stale database lock if updating/reinstalling across possible paths
   if FileExists(ExpandConstant('{localappdata}\{#MyAppDirName}\data\postmaster.pid')) then
     DeleteFile(ExpandConstant('{localappdata}\{#MyAppDirName}\data\postmaster.pid'));
@@ -936,10 +953,19 @@ begin
 
   if FileExists(PgDump) and FileExists(PgCtl) and FileExists(DataDir + '\PG_VERSION') then
   begin
-    Exec(PgCtl, 'start -w -t 30 -D "' + DataDir + '" -o "-p ' + PgPort + '" -l "' + DataDir + '\pg_upgrade_backup.log"', PgBinDir, SW_HIDE, ewWaitUntilTerminated, StartCode);
+    ForceDirectories(DataRootDir + '\logs');
+    // Clean stale crash-recovery log file inside data/ from prior versions before starting Postgres
+    if FileExists(DataDir + '\pg_upgrade_backup.log') then
+      DeleteFile(DataDir + '\pg_upgrade_backup.log');
+    Exec(PgCtl, 'start -w -t 90 -D "' + DataDir + '" -o "-p ' + PgPort + '" -l "' + DataRootDir + '\logs\pg_upgrade_backup.log"', PgBinDir, SW_HIDE, ewWaitUntilTerminated, StartCode);
     VerifiedBackupDumpFile := BackupDir + '\pre_upgrade_v{#MyAppVersion}_' + GetDateTimeString('yyyymmdd_hhnnss', #0, #0) + '.dump';
     Exec(PgDump, '-h 127.0.0.1 -p ' + PgPort + ' -U postgres -Fc -f "' + VerifiedBackupDumpFile + '" prashant_academy', PgBinDir, SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    Exec(PgCtl, 'stop -w -t 15 -D "' + DataDir + '" -m fast', PgBinDir, SW_HIDE, ewWaitUntilTerminated, StartCode);
+    if ResultCode <> 0 then
+    begin
+      Sleep(2000);
+      Exec(PgDump, '-h 127.0.0.1 -p ' + PgPort + ' -U postgres -Fc -f "' + VerifiedBackupDumpFile + '" prashant_academy', PgBinDir, SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    end;
+    Exec(PgCtl, 'stop -w -t 20 -D "' + DataDir + '" -m fast', PgBinDir, SW_HIDE, ewWaitUntilTerminated, StartCode);
 
     DumpSize := 0;
     if FileExists(VerifiedBackupDumpFile) then
@@ -1049,10 +1075,13 @@ begin
 
         if FileExists(PgDump) and FileExists(PgCtl) and FileExists(DataDir + '\PG_VERSION') then
         begin
-          Exec(PgCtl, 'start -w -t 30 -D "' + DataDir + '" -o "-p ' + PgPort + '" -l "' + DataDir + '\pg_upgrade_backup.log"', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+          ForceDirectories(DataRootDir + '\logs');
+          if FileExists(DataDir + '\pg_upgrade_backup.log') then
+            DeleteFile(DataDir + '\pg_upgrade_backup.log');
+          Exec(PgCtl, 'start -w -t 90 -D "' + DataDir + '" -o "-p ' + PgPort + '" -l "' + DataRootDir + '\logs\pg_upgrade_backup.log"', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
           DumpFile := BackupDir + '\pre_upgrade_v' + '{#MyAppVersion}' + '_' + GetDateTimeString('yyyymmdd_hhnnss', #0, #0) + '.dump';
           Exec(PgDump, '-h 127.0.0.1 -p ' + PgPort + ' -U postgres -Fc -f "' + DumpFile + '" prashant_academy', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
-          Exec(PgCtl, 'stop -w -t 15 -D "' + DataDir + '" -m fast', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+          Exec(PgCtl, 'stop -w -t 20 -D "' + DataDir + '" -m fast', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
           VerifiedBackupDumpFile := DumpFile;
         end;
 
@@ -1194,7 +1223,7 @@ begin
         ForceDirectories(BackupDir);
         PgPort := DetectPostgresPort(DataDir);
         if FileExists(PgCtl) then
-          Exec(PgCtl, 'start -w -t 30 -D "' + DataDir + '" -o "-p ' + PgPort + '" -l "' + DataDir + '\pg_uninstall_backup.log"', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+          Exec(PgCtl, 'start -w -t 90 -D "' + DataDir + '" -o "-p ' + PgPort + '" -l "' + BackupDir + '\pg_uninstall_backup.log"', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
         Exec(PgDump, '-h 127.0.0.1 -p ' + PgPort + ' -U postgres -Fc -f "' + BackupDir + '\prathamone_uninstall_backup.dump" prashant_academy', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
         if FileExists(PgCtl) then
           Exec(PgCtl, 'stop -w -t 15 -D "' + DataDir + '" -m fast', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);

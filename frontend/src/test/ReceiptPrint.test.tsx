@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-19
+ * @updated     2026-11-27
  *
  * @description Unit and DOM integration tests for isolated fee receipt printing and container isolation.
  */
@@ -213,6 +213,27 @@ describe('Receipt Printing Specification & Container Isolation', () => {
     expect(printStyles).toContain('#print-root[data-paper-size="A5"] .fee-invoice-brand-row');
     expect(printStyles).toContain('#print-root[data-paper-size="A5"] .fee-invoice-parties');
     expect(printStyles).toContain('#print-root[data-paper-size="A5"] .fee-invoice-totals');
+  });
+
+  it('does not clamp .print-wide-logo wordmarks to 48px width when printing certificates', () => {
+    const cert = document.createElement('div');
+    cert.id = 'license-certificate-print-content';
+    cert.innerHTML = `
+      <header><img src="/artwork/25112026/widelogofinal/batch_g55.svg" alt="PrathamOne EduOS logo" class="print-wide-logo" /></header>
+      <footer><img src="/artwork/25112026/widelogofinal/batch_g55.svg" alt="PrathamOne EduOS footer logo" class="print-wide-logo" /></footer>
+    `;
+    document.body.appendChild(cert);
+
+    expect(printReceiptElement({ elementId: cert.id, paperSize: 'A4' })).toBe(true);
+
+    const iframe = document.getElementById('receipt-isolated-print-frame') as HTMLIFrameElement;
+    const wideLogos = Array.from(iframe.contentDocument?.querySelectorAll('img.print-wide-logo') || []) as HTMLImageElement[];
+    expect(wideLogos).toHaveLength(2);
+    for (const logo of wideLogos) {
+      expect(logo.style.maxWidth).toBe('100%');
+      expect(logo.style.width).toBe('auto');
+      expect(logo.style.maxWidth).not.toBe('48px');
+    }
   });
 
   it('PaymentReceiptView marks header with .print-header and matches selected paper size on container & embedded print CSS', () => {

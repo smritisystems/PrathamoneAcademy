@@ -25,6 +25,7 @@ import {
   createLicenseCertificatePdf,
   formatLicenseCertificateEntitlements,
   formatLicenseCertificateDateTime,
+  formatLicenseCertificateValidThrough,
   groupLicenseCertificateEntitlements,
   getLicenseCertificateStatus,
   shareLicenseCertificatePdf,
@@ -40,8 +41,8 @@ async function mockCertificateAssets() {
       readFile(`${fontDirectory}/noto-sans-devanagari-devanagari-700-normal.woff`),
       readFile(`${process.cwd()}/public/logo/logoone256.png`),
       readFile(`${process.cwd()}/public/logo/license-issuer-signature.png`),
-      readFile(`${process.cwd()}/public/artwork/25112026/batch_g45.svg`),
-      readFile(`${process.cwd()}/public/artwork/25112026/batch_g47.svg`),
+      readFile(`${process.cwd()}/public/artwork/25112026/widelogofinal/batch_g55.svg`),
+      readFile(`${process.cwd()}/public/artwork/25112026/widelogofinal/batch_g52-2-2-2_icon.svg`),
     ])
   const png = new Uint8Array(logoPng)
   const MockUrl = class extends URL {}
@@ -73,7 +74,7 @@ async function mockCertificateAssets() {
           ? latinBoldFont
           : source.includes('license-issuer-signature')
             ? signature
-            : source.includes('batch_g45.svg')
+            : source.includes('batch_g55.svg')
               ? headerSvg
               : source.endsWith('.svg')
                 ? watermarkSvg
@@ -87,25 +88,26 @@ async function mockCertificateAssets() {
 }
 
 describe('License certificate PDF', () => {
-  it('uses a white, stroke-free embossed header logo', async () => {
-    const logo = await readFile(
-      `${process.cwd()}/public/artwork/18112026/03/license-certificate-logo.svg`,
-      'utf8',
-    )
+  it('uses the canonical widelogofinal SVG branding assets without cropping or backdrop locks', async () => {
+    const [wideLogo, iconWatermark] = await Promise.all([
+      readFile(`${process.cwd()}/public/artwork/25112026/widelogofinal/batch_g55.svg`, 'utf8'),
+      readFile(`${process.cwd()}/public/artwork/25112026/widelogofinal/batch_g52-2-2-2_icon.svg`, 'utf8'),
+    ])
 
-    expect(logo).toContain('fill="#FFFFFF" stroke="none"')
-    expect(logo).toContain('filter="url(#emboss)"')
-    expect(logo).toContain('<filter id="emboss"')
+    expect(wideLogo).toContain('viewBox="0 0 82.589165 18.093019"')
+    expect(wideLogo).toContain('fill:#f9f9f9')
+    expect(iconWatermark).toContain('viewBox="0 0 26.218561 17.409672"')
   })
 
   it(
-    'creates an A4 portrait summary with the redesigned PrathamOne branding, signed entitlement, single QR, and PDF metadata',
+    'creates an A4 portrait summary with the redesigned PrathamOne branding, registered email, signed entitlement, single QR, and PDF metadata',
     async () => {
       const fetchMock = await mockCertificateAssets()
 
     const blob = await createLicenseCertificatePdf({
       institutionName: 'प्रशांत अकादमी',
       institutionAddress: '123 Education Road, Mumbai, Maharashtra, 400001',
+      registeredEmail: 'director@prashantacademy.in',
       mode: 'active',
       licenseStatus: 'ACTIVE',
       licenseId: '1042',
@@ -126,8 +128,8 @@ describe('License certificate PDF', () => {
     expect(pdf.getPages()[0].getSize().height).toBeCloseTo(841.89, 1)
     expect(pdf.getTitle()).toBe('PrathamOne EduOS Software License Certificate')
     expect(fetchMock).toHaveBeenCalledTimes(7)
-    expect(fetchMock).toHaveBeenCalledWith('/artwork/25112026/batch_g45.svg')
-    expect(fetchMock).toHaveBeenCalledWith('/artwork/25112026/batch_g47.svg')
+    expect(fetchMock).toHaveBeenCalledWith('/artwork/25112026/widelogofinal/batch_g55.svg')
+    expect(fetchMock).toHaveBeenCalledWith('/artwork/25112026/widelogofinal/batch_g52-2-2-2_icon.svg')
     expect(fetchMock).toHaveBeenCalledWith('/logo/license-issuer-signature.png')
   }, 15000)
 
@@ -216,9 +218,14 @@ describe('License certificate PDF', () => {
       ],
       other: [{ key: 'Offline Lease Days', value: '14' }],
     })
+    expect(groupLicenseCertificateEntitlements([
+      { key: 'max_students', value: '500' },
+      { key: 'max_staff', value: '30' },
+    ]).groups[0]).toEqual({ label: 'Licensed Users', value: '500, 30' })
     expect(groupLicenseCertificateEntitlements([]).groups.every(({ value }) =>
       value === 'Not recorded in signed snapshot',
     )).toBe(true)
+    expect(formatLicenseCertificateValidThrough(null, 'on_premise_perpetual')).toBe('Perpetual (No Expiry)')
     expect(formatLicenseCertificateDateTime('2026-11-24T09:00:00Z')).toContain('IST')
   })
 

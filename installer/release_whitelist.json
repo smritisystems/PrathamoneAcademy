@@ -26,7 +26,8 @@
         "artwork/CSM",
         "artwork/16112026/001",
         "artwork/18112026/03",
-        "artwork/25112026"
+        "artwork/25112026",
+        "artwork/25112026/widelogofinal"
       ],
       "allowed_artwork_files": [
         "artwork/prathamone.svg",
@@ -37,7 +38,9 @@
         "artwork/25112026/batch_g44.svg",
         "artwork/25112026/batch_g45.svg",
         "artwork/25112026/batch_g47.svg",
-        "artwork/25112026/batch_g48.svg"
+        "artwork/25112026/batch_g48.svg",
+        "artwork/25112026/widelogofinal/batch_g55.svg",
+        "artwork/25112026/widelogofinal/batch_g52-2-2-2_icon.svg"
       ],
       "allowed_media_files": [
         "media/premium-login-mockup.svg",
