@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Coaching login background preview</title>
+<style>html,body{margin:0;height:100%;background:#0a1228}#root{height:100%}</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+</head><body><div id="root"></div>
+<script>
+const { useEffect, useRef } = React;
+const MAX_SHIFT = 15, DAMPING = 0.06, LAYERS = [0.5, 0.75, 1];
+const bucket = (k) => k < 0.65 ? 0.5 : k < 0.85 ? 0.75 : 1;
+const Frac = ({ n, d }) => /* @__PURE__ */ React.createElement("span", { className: "clb-frac" }, /* @__PURE__ */ React.createElement("span", null, n), /* @__PURE__ */ React.createElement("span", null, d));
+const ICONS = {
+  dna: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("path", { d: "M14 4C14 14 34 14 34 24S14 34 14 44" }), /* @__PURE__ */ React.createElement("path", { d: "M34 4C34 14 14 14 14 24S34 34 34 44" }), /* @__PURE__ */ React.createElement("path", { d: "M17 9h14M15 15h18M15 33h18M17 39h14" })),
+  atom: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("ellipse", { cx: "24", cy: "24", rx: "20", ry: "8" }), /* @__PURE__ */ React.createElement("ellipse", { cx: "24", cy: "24", rx: "20", ry: "8", transform: "rotate(60 24 24)" }), /* @__PURE__ */ React.createElement("ellipse", { cx: "24", cy: "24", rx: "20", ry: "8", transform: "rotate(120 24 24)" }), /* @__PURE__ */ React.createElement("circle", { cx: "24", cy: "24", r: "2.5" })),
+  flask: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("path", { d: "M19 5h10M21 5v15L8 40a3 3 0 0 0 3 4h26a3 3 0 0 0 3-4L27 20V5" }), /* @__PURE__ */ React.createElement("path", { d: "M13 32h22" }), /* @__PURE__ */ React.createElement("circle", { cx: "21", cy: "37", r: "1.5" })),
+  compass: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("circle", { cx: "24", cy: "8", r: "3" }), /* @__PURE__ */ React.createElement("path", { d: "M24 11L11 43M24 11l13 32" }), /* @__PURE__ */ React.createElement("path", { d: "M14 35c6 4 14 4 20 0" })),
+  globe: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("circle", { cx: "24", cy: "24", r: "19" }), /* @__PURE__ */ React.createElement("ellipse", { cx: "24", cy: "24", rx: "8", ry: "19" }), /* @__PURE__ */ React.createElement("path", { d: "M5 24h38M8 14h32M8 34h32" })),
+  books: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("rect", { x: "6", y: "32", width: "36", height: "9", rx: "1" }), /* @__PURE__ */ React.createElement("rect", { x: "9", y: "22", width: "30", height: "9", rx: "1" }), /* @__PURE__ */ React.createElement("rect", { x: "12", y: "12", width: "24", height: "9", rx: "1" })),
+  nib: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("path", { d: "M24 4l12 18-12 22L12 22z" }), /* @__PURE__ */ React.createElement("circle", { cx: "24", cy: "21", r: "2.5" }), /* @__PURE__ */ React.createElement("path", { d: "M24 23.5V44M17 12h14" })),
+  music: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("path", { d: "M17 35V12l19-4v23" }), /* @__PURE__ */ React.createElement("path", { d: "M17 19l19-4" }), /* @__PURE__ */ React.createElement("ellipse", { cx: "13", cy: "36", rx: "5", ry: "4" }), /* @__PURE__ */ React.createElement("ellipse", { cx: "32", cy: "32", rx: "5", ry: "4" })),
+  bar: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("path", { d: "M6 6v36h36" }), /* @__PURE__ */ React.createElement("path", { d: "M12 42V28h6v14M22 42V17h6v25M32 42V10h6v32" })),
+  line: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("path", { d: "M6 6v36h36" }), /* @__PURE__ */ React.createElement("path", { d: "M10 34l9-10 8 6 13-18" })),
+  pie: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("circle", { cx: "24", cy: "25", r: "17" }), /* @__PURE__ */ React.createElement("path", { d: "M24 25V8M24 25l14.7 8.5M24 25l-13 11" }), /* @__PURE__ */ React.createElement("path", { d: "M28 20V3a22 22 0 0 1 17 15z" })),
+  parabola: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("path", { d: "M24 4v40M4 24h40" }), /* @__PURE__ */ React.createElement("path", { d: "M12 6C16 42 32 42 36 6" })),
+  venn: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("circle", { cx: "18", cy: "24", r: "13" }), /* @__PURE__ */ React.createElement("circle", { cx: "30", cy: "24", r: "13" })),
+  triangle: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("path", { d: "M8 40V10l32 30z" }), /* @__PURE__ */ React.createElement("path", { d: "M8 32h8v8" })),
+  benzene: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("path", { d: "M24 5l16 9.5v19L24 43 8 33.5v-19z" }), /* @__PURE__ */ React.createElement("circle", { cx: "24", cy: "24", r: "8" })),
+  bell: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("path", { d: "M4 40h40" }), /* @__PURE__ */ React.createElement("path", { d: "M6 40C16 40 17 8 24 8s8 32 18 32" }), /* @__PURE__ */ React.createElement("path", { d: "M24 8v32" })),
+  flow: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("rect", { x: "15", y: "3", width: "18", height: "9", rx: "2" }), /* @__PURE__ */ React.createElement("path", { d: "M24 12v6M24 34v4" }), /* @__PURE__ */ React.createElement("path", { d: "M24 18l11 8-11 8-11-8z" }), /* @__PURE__ */ React.createElement("rect", { x: "15", y: "38", width: "18", height: "8", rx: "2" })),
+  cap: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("path", { d: "M24 10L4 20l20 10 20-10z" }), /* @__PURE__ */ React.createElement("path", { d: "M12 25v10c0 3 6 6 12 6s12-3 12-6V25M44 20v12" })),
+  trophy: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("path", { d: "M14 6h20v12a10 10 0 0 1-20 0z" }), /* @__PURE__ */ React.createElement("path", { d: "M14 10H6c0 8 3 11 8 12M34 10h8c0 8-3 11-8 12M24 28v8M18 36h12M16 42h16" })),
+  teacher: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("rect", { x: "4", y: "6", width: "26", height: "20", rx: "1" }), /* @__PURE__ */ React.createElement("path", { d: "M9 12h12M9 18h8" }), /* @__PURE__ */ React.createElement("circle", { cx: "38", cy: "22", r: "4" }), /* @__PURE__ */ React.createElement("path", { d: "M30 44V36a8 8 0 0 1 16 0v8" })),
+  masks: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("path", { d: "M4 8h22v13a11 11 0 0 1-22 0z" }), /* @__PURE__ */ React.createElement("path", { d: "M10 16h2M18 16h2M9 25c3 3 9 3 12 0" }), /* @__PURE__ */ React.createElement("path", { d: "M22 18h22v13a11 11 0 0 1-22 0z" }))
+};
+const Icon = ({ name }) => /* @__PURE__ */ React.createElement("svg", { viewBox: "0 0 48 48", className: "clb-icon", fill: "none", stroke: "currentColor", strokeWidth: "1.7", strokeLinecap: "round", strokeLinejoin: "round" }, ICONS[name]);
+const ITEMS = [
+  { id: "f1", x: 22.1, y: 84.5, k: 0.7, dur: 32, o: 0.18, pulse: 1, c: /* @__PURE__ */ React.createElement(React.Fragment, null, "sin\xB2\u03B1 + cos\xB2\u03B1 = 1") },
+  { id: "f2", x: 89.8, y: 11.1, k: 0.9, dur: 27, o: 0.17, c: /* @__PURE__ */ React.createElement(React.Fragment, null, "(a \u2212 b)\xB2 = a\xB2 \u2212 2ab + b\xB2") },
+  { id: "f3", x: 9.3, y: 17.4, k: 0.8, dur: 36, o: 0.18, pulse: 1, c: /* @__PURE__ */ React.createElement(React.Fragment, null, "x = ", /* @__PURE__ */ React.createElement(Frac, { n: /* @__PURE__ */ React.createElement(React.Fragment, null, "\u2212b \xB1 \u221A(b\xB2 \u2212 4ac)"), d: "2a" })) },
+  { id: "f4", x: 91.5, y: 90.2, k: 0.6, dur: 29, o: 0.17, c: /* @__PURE__ */ React.createElement(React.Fragment, null, "\u222B", /* @__PURE__ */ React.createElement("sub", null, "0"), /* @__PURE__ */ React.createElement("sup", null, "x"), " ", /* @__PURE__ */ React.createElement(Frac, { n: /* @__PURE__ */ React.createElement(React.Fragment, null, "t\u207F dt"), d: /* @__PURE__ */ React.createElement(React.Fragment, null, "e\u1D57 \u2212 1") })) },
+  { id: "f5", x: 9, y: 50, k: 0.5, dur: 38, o: 0.16, pulse: 1, c: /* @__PURE__ */ React.createElement(React.Fragment, null, "ax\xB2 + bx + c = 0") },
+  { id: "f6", x: 92, y: 48, k: 0.5, dur: 34, o: 0.15, c: /* @__PURE__ */ React.createElement(React.Fragment, null, "sin\xB2\u03B1 + cos\xB2\u03B1 = 1") },
+  { id: "i1", x: 58.2, y: 86.7, k: 1, dur: 30, o: 0.19, icon: "dna" },
+  { id: "i2", x: 44.7, y: 82.9, k: 0.8, dur: 26, o: 0.18, icon: "atom" },
+  { id: "i3", x: 95, y: 28, k: 0.9, dur: 35, o: 0.18, icon: "flask" },
+  { id: "i4", x: 44.1, y: 17.1, k: 0.7, dur: 24, o: 0.17, icon: "compass" },
+  { id: "i5", x: 6, y: 74, k: 0.9, dur: 33, o: 0.19, icon: "globe" },
+  { id: "i6", x: 72.8, y: 70.3, k: 0.8, dur: 28, o: 0.18, icon: "books" },
+  { id: "i7", x: 94, y: 70, k: 1, dur: 31, o: 0.18, icon: "nib" },
+  { id: "i8", x: 57.5, y: 9.2, k: 0.7, dur: 37, o: 0.17, icon: "music" },
+  { id: "i9", x: 20, y: 30, k: 0.6, dur: 40, o: 0.14, icon: "masks", small: 1 },
+  { id: "i10", x: 80, y: 32, k: 0.6, dur: 39, o: 0.14, icon: "atom", small: 1 },
+  { id: "i11", x: 21, y: 72, k: 0.6, dur: 36, o: 0.14, icon: "flask", small: 1 },
+  { id: "b1", x: 70.8, y: 89.5, k: 0.7, dur: 30, o: 0.18, board: "CBSE" },
+  { id: "b2", x: 33.6, y: 7.4, k: 0.6, dur: 25, o: 0.16, board: "ICSE" },
+  { id: "b3", x: 27.8, y: 39.2, k: 0.8, dur: 33, o: 0.17, board: "ISC" },
+  { id: "b4", x: 8, y: 36, k: 0.6, dur: 38, o: 0.16, board: "NIOS" },
+  { id: "b5", x: 91, y: 59, k: 0.7, dur: 27, o: 0.17, board: "UPMSP" },
+  { id: "b6", x: 10, y: 62, k: 0.7, dur: 35, o: 0.17, board: "HSC" },
+  { id: "b7", x: 36, y: 90, k: 0.6, dur: 29, o: 0.16, board: "WBBSE" },
+  { id: "b9", x: 42, y: 8, k: 0.6, dur: 28, o: 0.16, board: "JEE" },
+  { id: "b10", x: 60.7, y: 18.1, k: 0.7, dur: 34, o: 0.16, board: "NEET" },
+  { id: "b11", x: 32.1, y: 15.4, k: 0.8, dur: 31, o: 0.16, board: "UPSC" },
+  { id: "b8", x: 22.7, y: 59.7, k: 0.8, dur: 32, o: 0.17, board: "STATE BOARDS" },
+  { id: "s1", x: 73.8, y: 55.2, k: 0.7, dur: 28, o: 0.15, subject: "PHYSICS" },
+  { id: "s2", x: 68, y: 15, k: 0.7, dur: 33, o: 0.15, subject: "CHEMISTRY" },
+  { id: "s3", x: 90, y: 38, k: 0.7, dur: 26, o: 0.15, subject: "MATHS" },
+  { id: "s4", x: 19, y: 46, k: 0.7, dur: 37, o: 0.15, subject: "BIOLOGY" },
+  { id: "s5", x: 82, y: 72, k: 0.7, dur: 30, o: 0.15, subject: "ECONOMICS" },
+  { id: "s6", x: 74.5, y: 42.1, k: 0.7, dur: 35, o: 0.15, subject: "HISTORY" },
+  { id: "s7", x: 22.6, y: 20.8, k: 0.7, dur: 27, o: 0.15, subject: "GEOGRAPHY" },
+  { id: "s8", x: 7.2, y: 90, k: 0.7, dur: 32, o: 0.15, subject: "ACCOUNTANCY" },
+  { id: "t1", x: 72.3, y: 30.7, k: 0.6, dur: 31, o: 0.15, icon: "cap", small: 1 },
+  { id: "t2", x: 50.5, y: 92.9, k: 0.6, dur: 29, o: 0.15, icon: "trophy", small: 1 },
+  { id: "t3", x: 78.5, y: 85.5, k: 0.6, dur: 34, o: 0.15, icon: "teacher", small: 1 },
+  { id: "n1", x: 23.8, y: 9.9, k: 0.7, dur: 33, o: 0.17, pulse: 1, board: "NEP 2020" },
+  { id: "t4", x: 81.3, y: 23.8, k: 0.6, dur: 27, o: 0.15, subject: "PRINCIPAL" },
+  { id: "t5", x: 81.3, y: 61.8, k: 0.7, dur: 36, o: 0.15, subject: "TEACHERS" },
+  { id: "t6", x: 13.5, y: 70.9, k: 0.6, dur: 30, o: 0.15, subject: "ANNUAL DAY" },
+  { id: "c1", x: 50.2, y: 7.7, k: 0.7, dur: 31, o: 0.17, icon: "bar", md: 1 },
+  { id: "c2", x: 64.9, y: 82.3, k: 0.7, dur: 27, o: 0.17, icon: "pie", md: 1 },
+  { id: "c3", x: 15.7, y: 36.1, k: 0.7, dur: 35, o: 0.17, icon: "parabola", md: 1 },
+  { id: "c4", x: 51.4, y: 83.8, k: 0.7, dur: 29, o: 0.17, icon: "venn", md: 1 },
+  { id: "c5", x: 51.9, y: 17.7, k: 0.7, dur: 33, o: 0.17, icon: "line", md: 1 },
+  { id: "c6", x: 26.6, y: 30.2, k: 0.7, dur: 37, o: 0.17, icon: "triangle", md: 1 },
+  { id: "c7", x: 64.1, y: 92.8, k: 0.7, dur: 30, o: 0.17, icon: "benzene", md: 1 },
+  { id: "c8", x: 80.5, y: 50.2, k: 0.7, dur: 34, o: 0.17, icon: "bell", md: 1 },
+  { id: "c9", x: 27.9, y: 72.4, k: 0.7, dur: 28, o: 0.17, icon: "flow", md: 1 },
+  { id: "m-hi", x: 94.1, y: 79.6, k: 0.6, dur: 28, o: 0.16, script: "\u0936\u093F\u0915\u094D\u0937\u093E", lang: "hi" },
+  { id: "m-mr", x: 73.4, y: 81.6, k: 0.6, dur: 34, o: 0.16, script: "\u091C\u094D\u091E\u093E\u0928", lang: "mr" },
+  { id: "m-gu", x: 75.8, y: 9, k: 0.6, dur: 31, o: 0.16, script: "\u0AB6\u0ABF\u0A95\u0ACD\u0AB7\u0AA3", lang: "gu" },
+  { id: "m-bn", x: 45.1, y: 92.2, k: 0.6, dur: 37, o: 0.16, script: "\u09B6\u09BF\u0995\u09CD\u09B7\u09BE", lang: "bn" },
+  { id: "m-ta", x: 82.3, y: 40, k: 0.6, dur: 29, o: 0.16, script: "\u0B95\u0BB2\u0BCD\u0BB5\u0BBF", lang: "ta" },
+  { id: "m-te", x: 83.3, y: 80.8, k: 0.6, dur: 35, o: 0.16, script: "\u0C35\u0C3F\u0C26\u0C4D\u0C2F", lang: "te" },
+  { id: "m-kn", x: 26.5, y: 47.2, k: 0.6, dur: 32, o: 0.16, script: "\u0CB5\u0CBF\u0CA6\u0CCD\u0CAF\u0CC6", lang: "kn" },
+  { id: "m-ml", x: 88.6, y: 30.4, k: 0.6, dur: 38, o: 0.16, script: "\u0D35\u0D3F\u0D26\u0D4D\u0D2F", lang: "ml" }
+];
+const DROP = /* @__PURE__ */ new Set(["f5", "f6", "i9", "i10", "i11", "b4", "b6", "b9", "b10", "b11", "s4", "s5", "s6", "s7", "s8","t3","b3","t1", "c5", "c6", "c7", "c8", "m-te", "m-kn", "m-ml"]);
+for (let i = ITEMS.length - 1; i >= 0; i--) if (DROP.has(ITEMS[i].id)) ITEMS.splice(i, 1);
+const STATES = ["ANDHRA PRADESH", "ARUNACHAL PRADESH", "ASSAM", "BIHAR", "CHHATTISGARH", "GOA", "GUJARAT", "HARYANA", "HIMACHAL PRADESH", "JHARKHAND", "KARNATAKA", "KERALA", "MADHYA PRADESH", "MAHARASHTRA", "MANIPUR", "MEGHALAYA", "MIZORAM", "NAGALAND", "ODISHA", "PUNJAB", "RAJASTHAN", "SIKKIM", "TAMIL NADU", "TELANGANA", "TRIPURA", "UTTAR PRADESH", "UTTARAKHAND", "WEST BENGAL"];
+(function placeStates() {
+  let a = 20261123;
+  const rnd = () => {
+    a |= 0;
+    a = a + 1831565813 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+  const box = (it) => it.board ? { w: it.board.length * 0.7, h: 3 } : it.subject ? { w: it.subject.length * 0.8, h: 2.5 } : it.c ? { w:15,h:9 } : it.script ? { w: 7, h: 4 } : { w: 6, h: 7 };
+  const boxes = ITEMS.map((it) => ({ x: it.x, y: it.y, ...box(it) }));
+  boxes.push({x:50,y:50,w:56,h:58});
+  const names = [...STATES].sort((p,q)=>((q==="UTTAR PRADESH")-(p==="UTTAR PRADESH"))||q.length-p.length);
+  names.forEach((name, n) => {
+    const isUP = name === "UTTAR PRADESH";
+    const r = rnd();
+    let sz = isUP ? 1.5 : (r < 0.08 ? 1.35 : r < 0.4 ? 1 : 0.7) * (0.9 + rnd() * 0.2);
+    for (let tries = 0; tries<2000; tries++) {
+      if (tries && tries%300===0) sz *= 0.88;
+      const w = name.length * 0.96 * sz * 1.2, h = 2.1 * sz + 2;
+      const x = 4 + w / 2 + rnd() * (92 - w), y = 5 + h / 2 + rnd() * (90 - h);
+      if (x - w / 2 < 1 || x + w / 2 > 99) continue;
+      if (boxes.some((b) => Math.abs(b.x - x) < (b.w + w) /2+1.6&&Math.abs(b.y-y)<(b.h+h)/2+1.6)) continue;
+      boxes.push({ x, y, w, h });
+      ITEMS.push({ id: "st-" + n, x: +x.toFixed(1), y: +y.toFixed(1), k: [0.5, 0.7, 0.9][n % 3], dur: 24 + Math.floor(rnd() * 16), o: isUP ? 0.2 : 0.15 + rnd() * 0.04, pulse: isUP ? 1 : 0, board: name, state: 1, cyc: isUP ? 0 : 1, cd: n, sz: +sz.toFixed(2), hm: sz < 0.95 || n % 2 });
+      break;
+    }
+  });
+})();
+ITEMS.forEach((it, i) => {
+  it.o *= [0.55, 1.35, 0.85, 1.7, 0.65, 1.05][i % 6];
+  it.a = [-24, -16, -8, 4, -20, 12, -12, -4][i * 3 % 8];
+});
+const STARS = [[16, 5], [33, 12], [4, 12], [47, 4], [57, 10], [68, 4], [96, 8], [82, 20], [97, 40], [3, 45], [2, 58], [15, 80], [31, 97], [46, 96], [60, 92], [88, 78], [98, 88], [4, 94], [93, 96], [27, 20], [75, 24]].map(([x, y], i) => ({ x, y, d: 3 + i % 5 * 1.1, delay: -(i * 1.7) % 9, s: 2 + i % 3 }));
+const NAVY = "radial-gradient(circle at 50% 50%, rgba(99,102,241,.22), transparent 60%),linear-gradient(135deg,#0a1228 0%,#12214a 55%,#1a2f63 100%)";
+const LOGO_D = "M 278.6,301.9 C 266.6,292.8 247,282.5 229,275.9 C 211,269.2 187.5,264.1 163.4,261.7 C 140.8,259.5 106.4,260.4 82.6,264 C 78.8,264.6 75.5,265 75.3,265 C 75.1,265 74.9,213.8 74.9,151.2 L 74.9,37.4 L 88.3,37.6 L 101.7,37.8 L 101.5,49.2 L 101.3,60.6 L 99.2,60.9 L 97,61.1 L 97.2,150.2 L 97.4,239.2 L 122.4,239.6 C 139.4,239.8 149.8,240.3 155.1,241.1 C 206.9,248.5 243.2,263.5 269.1,288.5 C 275.8,294.9 285.1,305.8 283.8,305.7 C 283.7,305.7 281.3,304 278.6,301.9 L 278.6,301.9 M 286.8,283.2 C 251.6,247.5 193.4,225.8 128.1,223.8 L 113.1,223.3 L 112.9,112 C 112.8,50.9 113,0.6 113.3,0.3 C 113.5,-0 119.2,0.1 125.9,0.4 C 180.6,3.4 228.2,19 259.8,44.5 C 267.3,50.5 277.2,61.2 282.3,68.7 C 286,74 292.5,85.8 292.5,87.1 C 292.5,87.3 291,85.6 289.1,83.3 C 276.3,68 253.7,52.8 228.7,42.8 C 202.5,32.3 176,26.6 142.5,24.2 L 135.5,23.7 L 135.5,112.3 L 135.5,200.8 L 137.6,200.8 C 138.7,200.8 141.1,201 142.9,201.3 L 146.3,201.7 L 146.3,176.7 L 146.3,151.6 L 158,151.6 L 169.8,151.6 L 169.8,178.3 L 169.8,205.1 L 172.5,205.7 C 173.9,206.1 176.2,206.6 177.5,206.9 L 179.8,207.4 L 179.8,158.4 L 179.8,109.5 L 191.2,109.5 L 202.6,109.5 L 202.6,161.6 L 202.6,213.7 L 205.9,215.1 C 207.7,215.9 209.9,216.7 210.9,217 L 212.6,217.4 L 212.6,174.5 L 212.6,131.6 L 224,131.8 L 235.5,132 L 235.5,177.6 C 235.5,202.8 235.7,224.6 236,226.1 C 236.4,228.6 237,229.2 241,231.6 L 245.4,234.3 L 245.4,158 L 245.4,81.7 L 257.2,81.7 L 269,81.7 L 269,167.7 L 269,253.7 L 274,259.6 C 276.8,262.8 280.8,267.9 283,270.9 C 286.9,276.5 293.6,288.4 293.1,289 C 292.9,289.1 290.1,286.5 286.8,283.1 L 286.8,283.2 M 314.6,305.1 C 314.6,304.5 320.4,297 323.5,293.6 C 328.2,288.5 339.4,279.4 347.8,273.9 C 370.7,258.8 397,249 429.8,243.4 C 447.7,240.3 459.8,239.4 481.5,239.4 L 501.5,239.4 L 501.5,156.5 L 501.5,73.6 L 506.2,68.4 L 510.9,63.1 L 517.3,63.1 C 523.3,63.1 523.6,63.2 524,64.7 C 524.5,66.9 524.1,264.1 523.6,264.6 C 523.3,264.9 519.7,264.6 515.4,264 C 479.1,259.1 449.3,259.2 416.3,264.4 C 381,270 351.2,281.1 325.9,298 C 319.7,302.1 314.6,305.3 314.6,305.1 L 314.6,305.1 M 307.1,285.2 C 309.9,278.6 318,266.7 325.7,258.3 C 332.4,250.9 346.1,239.6 355.8,233.4 C 382.4,216.7 419.2,204.8 454.4,201.5 C 459.3,201.1 462.8,200.4 463.2,199.9 C 463.5,199.4 463.7,180.5 463.6,157.8 L 463.5,116.6 L 465.3,114.7 C 466.3,113.6 470.7,108.5 475.3,103.4 C 479.8,98.3 484,93.7 484.7,93.2 C 485.8,92.3 485.8,96.7 485.7,157.8 L 485.5,223.3 L 472.2,223.8 C 438.4,225 401,232.4 373.8,243.3 C 350.7,252.6 330.1,265.5 314.2,280.9 C 310.2,284.7 306.8,287.9 306.5,287.9 C 306.2,287.9 306.5,286.7 307.1,285.2 L 307.1,285.2 M 382.9,182.8 C 380.8,180.4 373.5,171.8 366.8,163.7 L 354.5,149.1 L 349.4,148.7 C 340.6,147.9 334.6,143.7 331.7,136.1 C 328.8,128.3 330.7,120.5 336.9,114.7 C 349.3,103.3 369.5,112.2 369.5,129.2 C 369.6,133.1 369.8,133.6 371.5,135 C 372.6,135.8 376.1,138.7 379.4,141.5 C 382.6,144.3 385.6,146.6 386.1,146.6 C 387.1,146.6 389.3,144.6 422.4,113.1 C 438.3,98 461.8,75.7 474.7,63.6 C 494.4,45 498,41.3 497.6,40 C 496.4,36 496.4,29.7 497.6,26.1 C 500.5,17.3 511.5,11.4 520.5,13.8 C 533.4,17.3 539.3,32.2 532.2,43.4 C 527.4,50.9 517.9,54.2 509,51.4 C 507.8,51 505.7,53 496.5,63.6 C 478.3,84.6 414.5,157.3 394.7,179.6 C 391,183.8 387.6,187.3 387.3,187.3 C 387,187.3 385,185.3 382.9,182.8 L 382.9,182.8 M 307.1,84.5 C 309.5,76.7 321.6,60.3 332.5,50 C 341.6,41.4 354.6,32.5 367.1,26.2 C 397.4,11 438.7,1.3 477.6,0.2 L 485.5,0 L 485.7,20.1 L 485.9,40.2 L 479.3,46.1 C 475.7,49.4 470.7,53.9 468.3,56.2 L 463.9,60.3 L 463.5,57 C 463.2,55.2 463.2,50.1 463.5,45.8 C 463.7,41.4 463.7,34.7 463.4,30.8 L 462.9,23.9 L 457.1,24.3 C 414.8,27.3 378.6,36.8 350.3,52.2 C 334.8,60.5 324.6,68.1 313.6,79.2 C 308.8,84.1 306.8,85.8 307.1,84.5 L 307.1,84.5";
+const Mark = ({ name, cy = 2, ...p }) => {
+  const t = name.trim(), words = t.split(/\s+/);
+  let lines = [t];
+  if (t.length > 16 && words.length > 1) {
+    let best = 1, bd = 1e9;
+    for (let i = 1; i < words.length; i++) {
+      const a = words.slice(0, i).join(" ").length, b = words.slice(i).join(" ").length;
+      if (Math.abs(a - b) < bd) {
+        bd = Math.abs(a - b);
+        best = i;
+      }
+    }
+    lines = [words.slice(0, best).join(" "), words.slice(best).join(" ")];
+  }
+  const cx = Mark.c || (Mark.c = document.createElement("canvas").getContext("2d"));
+  cx.font = "800 100px Inter,'Segoe UI','Noto Sans Devanagari',system-ui,sans-serif";
+  const w100 = Math.max(...lines.map((l) => cx.measureText(l.toUpperCase()).width + 3 * l.length));
+  const fs = Math.max(28, Math.min(lines.length > 1 ? 54 : 100, 56e3 / w100));
+  const lh = fs * 1.1, y0 = cy - (lines.length - 1) * lh / 2 + fs * 0.35;
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, lines.map((l, i) => /* @__PURE__ */ React.createElement("text", { key: i, x: "305", y: y0 + i * lh, textAnchor: "middle", fontFamily: "Inter,'Segoe UI','Noto Sans Devanagari',system-ui,sans-serif", fontWeight: "800", fontSize: fs, letterSpacing: fs * 0.03, ...p }, l.toUpperCase())));
+};
+function Bg({ name = "" }) {
+  const rootRef = useRef(null);
+  const boltRef = useRef(null), spotRef = useRef(null), spotG = useRef(null);
+  const VB = name.trim() ? "0 -100 610.17 405.69" : "0 0 610.17 305.69";
+  const Shape = (p) => /* @__PURE__ */ React.createElement(React.Fragment, null, name.trim() && /* @__PURE__ */ React.createElement(Mark, { name, ...p }), /* @__PURE__ */ React.createElement("g", { transform: "translate(305.1 152.8) scale(.56) translate(-305.1 -152.8)" }, /* @__PURE__ */ React.createElement("path", { d: LOGO_D, ...p })));
+  useEffect(() => {
+    const svg = boltRef.current, g = spotRef.current, box = spotG.current;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const coarse = matchMedia("(pointer: coarse)").matches;
+    let tx = 305, ty = 150, cx = 305, cy = 150, raf = 0, idle = 0, stop = 0;
+    const loop = (t) => {
+      if (coarse) {
+        tx = 305 + 270 * Math.sin(t * 4e-4);
+        ty = 150 + 85 * Math.sin(t * 7e-4 + 1);
+      }
+      cx += (tx - cx) * 0.12;
+      cy += (ty - cy) * 0.12;
+      g.setAttribute("cx", cx.toFixed(1));
+      g.setAttribute("cy", cy.toFixed(1));
+      raf = requestAnimationFrame(loop);
+    };
+    const hide = () => {
+      box.style.opacity = 0;
+      clearTimeout(stop);
+      stop = setTimeout(() => {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }, 800);
+    };
+    const mv = (e) => {
+      const r = svg.getBoundingClientRect();
+      const vb = svg.viewBox.baseVal;
+      tx = vb.x + (e.clientX - r.left) / r.width * vb.width;
+      ty = vb.y + (e.clientY - r.top) / r.height * vb.height;
+      box.style.opacity = 1;
+      clearTimeout(idle);
+      clearTimeout(stop);
+      idle = setTimeout(hide, 2500);
+      if (!raf) raf = requestAnimationFrame(loop);
+    };
+    if (coarse) {
+      box.style.opacity = 0.8;
+      raf = requestAnimationFrame(loop);
+    } else {
+      addEventListener("mousemove", mv, { passive: true });
+      document.addEventListener("mouseleave", hide);
+    }
+    return () => {
+      removeEventListener("mousemove", mv);
+      document.removeEventListener("mouseleave", hide);
+      cancelAnimationFrame(raf);
+      clearTimeout(idle);
+      clearTimeout(stop);
+    };
+  }, []);
+  useEffect(() => {
+    const root = rootRef.current;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches || matchMedia("(pointer: coarse)").matches) return;
+    const layers = [...root.querySelectorAll("[data-k]")];
+    let tx = 0, ty = 0, cx = 0, cy = 0, raf = 0;
+    const tick = () => {
+      cx += (tx - cx) * DAMPING;
+      cy += (ty - cy) * DAMPING;
+      for (const el of layers) {
+        const k = +el.dataset.k;
+        el.style.transform = `translate3d(${(cx * k).toFixed(2)}px,${(cy * k).toFixed(2)}px,0)`;
+      }
+      raf = Math.abs(tx - cx) + Math.abs(ty - cy) > 0.05 ? requestAnimationFrame(tick) : 0;
+    };
+    const mv = (e) => {
+      tx = -(e.clientX / innerWidth * 2 - 1) * MAX_SHIFT;
+      ty = -(e.clientY / innerHeight * 2 - 1) * MAX_SHIFT;
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+    addEventListener("mousemove", mv, { passive: true });
+    return () => {
+      removeEventListener("mousemove", mv);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+  return /* @__PURE__ */ React.createElement("div", { ref: rootRef, className: "clb-root", style: { background: NAVY, "--i": 1.5 }, "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("div", { className: "clb-layer", "data-k": "0.3" }, /* @__PURE__ */ React.createElement("div", { className: "clb-pos", style: { left: "50%", top: "50%" } }, /* @__PURE__ */ React.createElement("div", { className: "clb-logo-float" }, /* @__PURE__ */ React.createElement("svg", { className: "clb-logo", viewBox: VB, role: "img", fill: "currentColor", fillOpacity: ".35", stroke: "currentColor", strokeWidth: "1.4", strokeLinejoin: "round", fillRule: "evenodd" }, /* @__PURE__ */ React.createElement(Shape, { vectorEffect: "non-scaling-stroke" })), /* @__PURE__ */ React.createElement("svg", { ref: boltRef, className: "clb-bolt", viewBox: VB, fill: "none", strokeLinecap: "round", strokeLinejoin: "round", fillRule: "evenodd" }, /* @__PURE__ */ React.createElement("defs", null, /* @__PURE__ */ React.createElement("linearGradient", { id: "clb-sh", gradientUnits: "userSpaceOnUse", x1: "-90", y1: "0", x2: "90", y2: "0", gradientTransform: "skewX(-25)" }, /* @__PURE__ */ React.createElement("stop", { offset: "0", stopColor: "#fff", stopOpacity: "0" }), /* @__PURE__ */ React.createElement("stop", { offset: ".5", stopColor: "#fff", stopOpacity: ".9" }), /* @__PURE__ */ React.createElement("stop", { offset: "1", stopColor: "#fff", stopOpacity: "0" }), /* @__PURE__ */ React.createElement("animateTransform", { attributeName: "gradientTransform", type: "translate", additive: "sum", values: "-250 0;850 0;850 0", keyTimes: "0;.5;1", dur: "9s", repeatCount: "indefinite" })), /* @__PURE__ */ React.createElement("radialGradient", { ref: spotRef, id: "clb-sp", gradientUnits: "userSpaceOnUse", cx: "305", cy: "150", r: "144" }, /* @__PURE__ */ React.createElement("stop", { offset: "0", stopColor: "#e0f2fe", stopOpacity: "1" }), /* @__PURE__ */ React.createElement("stop", { offset: ".45", stopColor: "#7dd3fc", stopOpacity: ".5" }), /* @__PURE__ */ React.createElement("stop", { offset: "1", stopColor: "#38bdf8", stopOpacity: "0" }))), /* @__PURE__ */ React.createElement(Shape, { fill: "url(#clb-sh)", stroke: "url(#clb-sh)", strokeWidth: "1.5", opacity: ".55" }), /* @__PURE__ */ React.createElement("g", { ref: spotG, className: "clb-spot" }, /* @__PURE__ */ React.createElement(Shape, { stroke: "url(#clb-sp)", strokeWidth: "9", opacity: ".3" }), /* @__PURE__ */ React.createElement(Shape, { stroke: "url(#clb-sp)", strokeWidth: "1.6" })))))), STARS.map((s, i) => /* @__PURE__ */ React.createElement("span", { key: i, className: "clb-star", style: { left: s.x + "%", top: s.y + "%", width: s.s, height: s.s, animationDuration: s.d + "s", animationDelay: s.delay + "s" } })), LAYERS.map((L) => /* @__PURE__ */ React.createElement("div", { key: L, className: "clb-layer", "data-k": L }, ITEMS.map((it, i) => {
+    var _a;
+    if (bucket(it.k) !== L) return null;
+    const dir = i % 2 ? 1 : -1;
+    return /* @__PURE__ */ React.createElement("div", { key: it.id, className: "clb-pos" + (it.hm ? " clb-hm" : "") + (it.cyc ? " clb-cycle" : ""), style: { left: it.x + "%", top: it.y + "%", animationDelay: it.cyc ? -(it.cd * 1.07) + "s" : void 0 } }, /* @__PURE__ */ React.createElement("div", { className: "clb-float", style: { animationDuration: it.dur + "s", animationDelay: -(i * 3.7) + "s", "--d": dir, "--a": ((_a = it.a) != null ? _a : -20) + "deg" } }, /* @__PURE__ */ React.createElement("div", { className: "clb-body" + (it.pulse ? " clb-pulse" : ""), style: { "--o": it.o, "--s": it.sz || 1 } }, it.icon && /* @__PURE__ */ React.createElement("span", { className: it.small ? "clb-sm" : it.md ? "clb-md" : "" }, /* @__PURE__ */ React.createElement(Icon, { name: it.icon })), it.board && /* @__PURE__ */ React.createElement("span", { className: "clb-board" + (it.state ? " clb-state" : "") }, it.board), it.subject && /* @__PURE__ */ React.createElement("span", { className: "clb-subject" }, it.subject), it.script && /* @__PURE__ */ React.createElement("span", { className: "clb-script", lang: it.lang }, it.script), it.c && /* @__PURE__ */ React.createElement("span", { className: "clb-formula" }, it.c))));
+  }))));
+}
+const SAMPLES = ["Sunrise Coaching Academy", "Vidya Mandir Classes", "IITian's Hub", "\u091C\u094D\u091E\u093E\u0928 \u0926\u0940\u092A \u0938\u0902\u0938\u094D\u0925\u093E\u0928", "Alpha Tutorials"];
+function App() {
+  const [name, setName] = React.useState("");
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(Bg, { name }), /* @__PURE__ */ React.createElement("div", { className: "ctl" }, /* @__PURE__ */ React.createElement("label", null, "Institute name ", /* @__PURE__ */ React.createElement("span", null, "(preview only)")), /* @__PURE__ */ React.createElement("input", { value: name, onChange: (e) => setName(e.target.value.slice(0, 40)), placeholder: "Type institute name\u2026 (shown above the logo)", maxLength: 40 }), /* @__PURE__ */ React.createElement("div", { className: "chips" }, SAMPLES.map((s) => /* @__PURE__ */ React.createElement("button", { key: s, onClick: () => setName(s) }, s)), /* @__PURE__ */ React.createElement("button", { className: "reset", onClick: () => setName("") }, "Clear name"))));
+}
+const css = `
+.clb-root{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;user-select:none;color:#f1f5f9;contain:strict}
+.clb-layer{position:absolute;inset:0;will-change:transform}
+.clb-pos{position:absolute;translate:-50% -50%}
+.clb-logo{width:min(58vw,820px);height:auto;display:block;color:#e2e8f0;opacity:.26}
+.clb-logo-float{position:relative;animation:clb-breathe 38s ease-in-out infinite}
+.clb-bolt{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.clb-cycle{opacity:0;animation:clb-cyc 30s linear infinite}
+@keyframes clb-cyc{0%{opacity:0}8%{opacity:1}45%{opacity:1}55%{opacity:0}100%{opacity:0}}
+.clb-spot{opacity:0;transition:opacity .7s ease}
+@keyframes clb-run{to{stroke-dashoffset:-560}}
+@keyframes clb-flick{0%{opacity:.85}6%{opacity:.3}8%{opacity:1}30%{opacity:.7}33%{opacity:.25}35%{opacity:.95}62%{opacity:.8}65%{opacity:.35}67%{opacity:1}}
+.clb-float{animation:clb-drift 30s ease-in-out infinite}
+.clb-body{opacity:min(.42,calc(var(--o)*var(--i)))}
+.clb-pulse{animation:clb-pulse 7s ease-in-out infinite}
+.clb-icon{width:clamp(34px,4.6vw,64px);height:auto;display:block}
+.clb-md .clb-icon{width:clamp(30px,3.8vw,52px)}.clb-sm .clb-icon{width:clamp(24px,3vw,40px)}
+.clb-board{font:800 clamp(14px,1.9vw,28px)/1 Inter,system-ui,sans-serif;letter-spacing:.08em;white-space:nowrap}
+.clb-state{font-size:calc(clamp(9px,1.2vw,18px)*var(--s,1));letter-spacing:.12em;font-weight:700}
+.clb-subject{font:600 clamp(12px,1.35vw,19px)/1 Inter,system-ui,sans-serif;letter-spacing:.22em;white-space:nowrap}
+.clb-script{font:600 clamp(15px,1.8vw,26px)/1.3 "Noto Sans Devanagari","Nirmala UI",system-ui,sans-serif;white-space:nowrap;display:inline-block}
+.clb-formula{font:italic 400 clamp(13px,1.5vw,22px)/1.2 "Cambria Math","STIX Two Text",Georgia,serif;white-space:nowrap;display:inline-flex;align-items:center;gap:.3em}
+.clb-formula sub,.clb-formula sup{font-size:.6em;line-height:0}
+.clb-frac{display:inline-flex;flex-direction:column;align-items:center}
+.clb-frac>span:first-child{border-bottom:1.2px solid currentColor;padding:0 .25em .08em}
+.clb-star{position:absolute;border-radius:50%;background:#f1f5f9;opacity:.08;box-shadow:0 0 6px 1px rgba(226,232,240,.5);animation:clb-twinkle 5s ease-in-out infinite}
+@keyframes clb-drift{0%,100%{transform:translate3d(0,0,0) rotate(calc(var(--a,-20deg) - var(--d)*3deg))}50%{transform:translate3d(0,-22px,0) rotate(calc(var(--a,-20deg) + var(--d)*3deg))}}
+@keyframes clb-breathe{0%,100%{transform:scale(1)}50%{transform:translate3d(0,-10px,0) scale(1.015)}}
+@keyframes clb-pulse{0%,100%{opacity:calc(.08*var(--i))}50%{opacity:min(.42,calc(.22*var(--i)))}}
+@keyframes clb-twinkle{0%,100%{opacity:calc(.08*var(--i));transform:scale(.8)}50%{opacity:min(.5,calc(.3*var(--i)));transform:scale(1.4)}}
+@media (max-width:640px){.clb-hm{display:none}}
+.ctl{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));translate:-50% 0;z-index:5;width:min(560px,92vw);padding:12px 14px;border-radius:14px;background:rgba(15,23,42,.82);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.14);color:#e2e8f0;font:14px Inter,system-ui,sans-serif;box-sizing:border-box}
+.ctl label{display:block;font-weight:700;margin-bottom:6px}.ctl label span{font-weight:400;opacity:.6}
+.ctl input{width:100%;padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:15px;box-sizing:border-box}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips button{padding:5px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#cbd5e1;font-size:12px;cursor:pointer}
+.chips button:hover{background:rgba(255,255,255,.1)}.chips .reset{border-color:#f59e0b;color:#fbbf24}
+@media (prefers-reduced-motion:reduce){.clb-float,.clb-pulse,.clb-star,.clb-logo-float,.clb-gl{animation:none}.clb-cycle{animation:none;opacity:1}.clb-bolt{display:none}.clb-float{transform:rotate(var(--a,-20deg))}}
+`;
+document.head.appendChild(Object.assign(document.createElement("style"), { textContent: css }));
+ReactDOM.createRoot(document.getElementById("root")).render(/* @__PURE__ */ React.createElement(App, null));
+
+</script></body></html>
