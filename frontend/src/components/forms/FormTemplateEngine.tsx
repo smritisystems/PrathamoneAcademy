@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-27
  *
  * @description Standardized A4 print and preview template engine with DPDP Act 2023 compliance, Aadhaar masking, and signatures.
  */
@@ -588,7 +588,7 @@ export default function FormTemplateEngine({
               <span className="font-mono font-bold border-b border-dotted border-slate-900 px-1">
                 {renderValue(data.admission_number)}
               </span>
-              , is a bonafide student of <strong>Prashant Academy Coaching Institute</strong> for the Academic Session{' '}
+              , is a bonafide student of <strong>{institution?.name || 'our Coaching Institute'}</strong> for the Academic Session{' '}
               <strong>{data.academic?.academic_year || '2026-2027'}</strong>, enrolled in{' '}
               <strong>{data.academic?.standard || 'Class X'}</strong> ({data.academic?.board || 'ICSE'} Curriculum).
             </div>
@@ -660,18 +660,18 @@ export default function FormTemplateEngine({
           <div className="flex flex-col justify-end">
             <div className="h-10 border-b border-slate-400 mb-1 flex items-end justify-center">
               <span className="text-[9px] text-slate-400 italic">
-                {isBlank ? '' : `For ${institution?.name || 'Prashant Academy'}`}
+                {isBlank ? '' : `For ${institution?.name || 'Institute Management'}`}
               </span>
             </div>
             <span className="text-[10px] font-bold text-slate-900 uppercase">Center Head / Principal</span>
-            <span className="text-[8px] text-slate-500">Authorised Seal & Stamp</span>
+            <span className="text-[8px] text-slate-500">Authorised Seal &amp; Stamp</span>
           </div>
         </div>
 
         {/* Institutional Statutory Audit Notice */}
         <div className="mt-4 pt-2 border-t border-slate-200 text-[8px] text-slate-500 font-mono">
           <span>
-            {institution?.name || 'Prashant Academy'} IMS &bull; DPDP Compliance Certified
+            {institution?.name || 'PrathamOne EduOS'} IMS &bull; DPDP Compliance Certified
           </span>
         </div>
 

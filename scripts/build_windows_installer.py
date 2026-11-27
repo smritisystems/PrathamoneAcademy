@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-15
-#  * @updated     2026-11-26
+#  * @updated     2026-11-27
 #  *
 #  * @description Automated build pipeline: compiles React frontend, stages embedded runtimes,
 #  */
@@ -74,14 +74,20 @@ def prune_non_essential_distribution_assets(dist_dir: Path):
             else:
                 r.unlink()
 
-    # Remove non-essential artwork draft directories (keep only CSM, 16112026 essential SVGs)
+    # Remove non-essential artwork draft directories (keep only CSM, 16112026, 18112026, 25112026 SVGs)
     artwork = dist_dir / "artwork"
     if artwork.exists():
         for item in list(artwork.iterdir()):
-            if item.is_dir() and item.name not in ("CSM", "16112026"):
+            if item.is_dir() and item.name not in ("CSM", "16112026", "18112026", "25112026"):
                 shutil.rmtree(item)
             elif item.is_file() and (item.suffix in (".png", ".mp4", ".zip", ".tar.gz") or item.stat().st_size > 500_000):
                 item.unlink()
+        for sub_name in ("18112026", "25112026"):
+            sub_dir = artwork / sub_name
+            if sub_dir.is_dir():
+                for asset_file in list(sub_dir.rglob("*")):
+                    if asset_file.is_file() and asset_file.suffix.lower() in (".png", ".jpg", ".jpeg", ".gif"):
+                        asset_file.unlink()
 
     # Remove extra video formats and master brand logos from dist root
     for ext in ("*.mp4", "*.mov", "*.avi", "*.wmv", "*.zip", "*.tar.gz", "Prathamone Master Logo*.png"):

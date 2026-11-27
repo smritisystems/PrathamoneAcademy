@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-18
+ * @updated     2026-11-27
  *
  * @description Print-optimized Master Employee Dossier document layout for Teachers and Staff.
  */
@@ -55,10 +55,10 @@ export interface EmployeeDossierDocumentProps {
 export default function EmployeeDossierDocument({
   id = 'employee-dossier-print-content',
   profile,
-  institutionName = 'Prashant Academy Coaching Institute',
-  institutionAddress = 'Central Knowledge Campus, High Street Powai, Mumbai - 400076',
-  institutionPhone = '+91 98200 12345 / 022-25701122',
-  institutionEmail = 'admin@prathamone.com',
+  institutionName = 'Coaching Institute',
+  institutionAddress = '',
+  institutionPhone = '',
+  institutionEmail = '',
   sections = {
     personal: true,
     addresses: true,

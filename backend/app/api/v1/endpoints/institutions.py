@@ -11,21 +11,30 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-26
+#  * @updated     2026-11-27
 #  *
 #  * @description API endpoints for multi-branch institute profile configuration and campus metadata.
 #  */
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Optional
 from app.core.config import PRODUCT_APP_ICON_URL
 from app.core.database import get_db
 from app.core.deps import get_current_active_user, require_role, is_sysadmin, check_institution_access
-from app.models.institution import Institution
+from app.models.institution import Institution, InstitutionBranch
 from app.models.academic_year import AcademicYear
 from app.models.settings import InstitutionSetting
+from app.services.institution_profile_service import (
+    apply_validated_profile_updates,
+    compute_profile_completeness,
+    derive_monogram,
+    ensure_unique_branch_and_save,
+    record_audit_change,
+    serialize_branch,
+    serialize_institution_profile,
+)
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -38,10 +47,15 @@ class InstitutionCreate(BaseModel):
     short_name: Optional[str] = None
     tagline: Optional[str] = None
     address: Optional[str] = None
+    address_line_2: Optional[str] = None
+    area_locality: Optional[str] = None
     city: Optional[str] = None
+    district: Optional[str] = None
     state: Optional[str] = None
     pincode: Optional[str] = None
+    country: Optional[str] = None
     phone: Optional[str] = None
+    alternate_phone: Optional[str] = None
     email: Optional[str] = None
     website: Optional[str] = None
     institute_type: Optional[str] = "Coaching Institute"
@@ -50,21 +64,70 @@ class InstitutionCreate(BaseModel):
 class InstitutionUpdate(BaseModel):
     name: Optional[str] = None
     short_name: Optional[str] = None
+    branch_name: Optional[str] = None
     tagline: Optional[str] = None
     address: Optional[str] = None
+    address_line_1: Optional[str] = None
+    address_line_2: Optional[str] = None
+    area_locality: Optional[str] = None
     city: Optional[str] = None
+    district: Optional[str] = None
     state: Optional[str] = None
     pincode: Optional[str] = None
+    country: Optional[str] = None
     phone: Optional[str] = None
+    alternate_phone: Optional[str] = None
     email: Optional[str] = None
     website: Optional[str] = None
     logo_url: Optional[str] = None
+    favicon_url: Optional[str] = None
     primary_color: Optional[str] = None
     secondary_color: Optional[str] = None
     accent_color: Optional[str] = None
     institute_type: Optional[str] = None
     establishment_year: Optional[int] = None
     registration_number: Optional[str] = None
+    gstin: Optional[str] = None
+    pan: Optional[str] = None
+    onboarding_completed: Optional[bool] = None
+    reason: Optional[str] = None
+
+
+class BranchCreate(BaseModel):
+    branch_name: str
+    branch_code: Optional[str] = None
+    is_main_branch: bool = False
+    address_line_1: Optional[str] = None
+    address_line_2: Optional[str] = None
+    area_locality: Optional[str] = None
+    city: Optional[str] = None
+    district: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
+    country: Optional[str] = "India"
+    phone: Optional[str] = None
+    alternate_phone: Optional[str] = None
+    email: Optional[str] = None
+    gstin: Optional[str] = None
+
+
+class BranchUpdate(BaseModel):
+    branch_name: Optional[str] = None
+    branch_code: Optional[str] = None
+    is_main_branch: Optional[bool] = None
+    address_line_1: Optional[str] = None
+    address_line_2: Optional[str] = None
+    area_locality: Optional[str] = None
+    city: Optional[str] = None
+    district: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
+    country: Optional[str] = None
+    phone: Optional[str] = None
+    alternate_phone: Optional[str] = None
+    email: Optional[str] = None
+    gstin: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 @router.get("/")
@@ -83,28 +146,15 @@ async def list_institutions(
     if not institutions and is_sysadmin(current_user):
         res_any = await db.execute(select(Institution))
         institutions = res_any.scalars().all()
-    return [
-        {
-            "id": i.id,
-            "name": i.name,
-            "code": i.code,
-            "short_name": i.short_name or "PA",
-            "tagline": i.tagline or "Learn • Practice • Achieve",
-            "city": i.city,
-            "state": i.state,
-            "pincode": i.pincode,
-            "phone": i.phone,
-            "email": i.email,
-            "website": i.website,
-            "address": i.address,
-            "logo_url": i.logo_url or "/logo.svg",
-            "favicon_url": i.favicon_url or PRODUCT_APP_ICON_URL,
-            "primary_color": i.primary_color or "#0B2D6B",
-            "secondary_color": i.secondary_color or "#071C44",
-            "accent_color": i.accent_color or "#F57C00",
-        }
-        for i in institutions
-    ]
+    output = []
+    for inst in institutions:
+        b_res = await db.execute(
+            select(InstitutionBranch)
+            .where(InstitutionBranch.institution_id == inst.id, InstitutionBranch.is_active == True)
+            .order_by(InstitutionBranch.is_main_branch.desc(), InstitutionBranch.id.asc())
+        )
+        output.append(serialize_institution_profile(inst, b_res.scalars().all()))
+    return output
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
@@ -128,6 +178,7 @@ async def create_institution(
 @public_router.get("/public/branding", operation_id="get_public_institution_branding")
 async def get_public_institution_branding(
     institution_id: Optional[int] = None,
+    branch_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
 ):
     target_id = institution_id or 1
@@ -138,6 +189,18 @@ async def get_public_institution_branding(
         inst = res_any.scalar_one_or_none()
     if not inst:
         raise HTTPException(status_code=404, detail="Institution not found")
+
+    branch_res = await db.execute(
+        select(InstitutionBranch)
+        .where(InstitutionBranch.institution_id == inst.id, InstitutionBranch.is_active == True)
+        .order_by(InstitutionBranch.is_main_branch.desc(), InstitutionBranch.id.asc())
+    )
+    branches = list(branch_res.scalars().all())
+    selected_branch = (
+        next((b for b in branches if b.id == branch_id), None)
+        if branch_id
+        else next((b for b in branches if b.is_main_branch), branches[0] if branches else None)
+    )
 
     # Fetch branding category settings (background, styles, presets)
     settings_res = await db.execute(
@@ -172,36 +235,37 @@ async def get_public_institution_branding(
         except (ValueError, TypeError):
             return default
 
-    fallback_monogram = "YA"
-    if inst.name and inst.name != "Your Academy Name":
-        parts = inst.name.split()
-        if len(parts) >= 2:
-            fallback_monogram = f"{parts[0][0]}{parts[1][0]}".upper()
-        elif len(parts) == 1 and len(parts[0]) >= 2:
-            fallback_monogram = parts[0][:2].upper()
-
+    completeness = compute_profile_completeness(inst)
     return {
         "id": inst.id,
         "name": inst.name,
         "code": inst.code,
-        "short_name": inst.short_name or fallback_monogram,
-        "tagline": inst.tagline or "Empowering Minds • Inspiring Excellence • Shaping Futures",
+        "short_name": derive_monogram(inst.name, inst.short_name),
+        "tagline": inst.tagline or "COACHING MANAGEMENT. SIMPLIFIED.",
         "academic_session": academic_session,
-        "branch_name": inst.city or "Main Campus",
+        "branch_id": selected_branch.id if selected_branch else None,
+        "branch_name": selected_branch.branch_name if selected_branch else (inst.city or "Main Branch"),
         "institute_type": inst.institute_type or "Coaching Institute",
-        "establishment_year": inst.establishment_year or 2018,
+        "establishment_year": inst.establishment_year,
         "logo_url": inst.logo_url,
         "favicon_url": inst.favicon_url or PRODUCT_APP_ICON_URL,
         "primary_color": inst.primary_color or "#0B2D6B",
         "secondary_color": inst.secondary_color or "#071C44",
         "accent_color": inst.accent_color or "#F57C00",
-        "phone": inst.phone,
-        "email": inst.email,
+        "phone": selected_branch.phone if (selected_branch and selected_branch.phone) else inst.phone,
+        "alternate_phone": selected_branch.alternate_phone if (selected_branch and selected_branch.alternate_phone) else inst.alternate_phone,
+        "email": selected_branch.email if (selected_branch and selected_branch.email) else inst.email,
         "website": inst.website,
-        "address": inst.address,
-        "city": inst.city,
-        "state": inst.state,
-        "pincode": inst.pincode,
+        "address": selected_branch.address_line_1 if (selected_branch and selected_branch.address_line_1) else inst.address,
+        "address_line_2": selected_branch.address_line_2 if (selected_branch and selected_branch.address_line_2) else inst.address_line_2,
+        "area_locality": selected_branch.area_locality if (selected_branch and selected_branch.area_locality) else inst.area_locality,
+        "city": selected_branch.city if (selected_branch and selected_branch.city) else inst.city,
+        "district": selected_branch.district if (selected_branch and selected_branch.district) else inst.district,
+        "state": selected_branch.state if (selected_branch and selected_branch.state) else inst.state,
+        "pincode": selected_branch.pincode if (selected_branch and selected_branch.pincode) else inst.pincode,
+        "country": selected_branch.country if (selected_branch and selected_branch.country) else inst.country,
+        "onboarding_completed": completeness["onboarding_completed"],
+        "is_placeholder_profile": completeness["is_placeholder_profile"],
         "background": {
             "mode": b_settings.get("login_bg_mode", "waves"),
             "image_url": b_settings.get("login_bg_image_url", ""),
@@ -228,25 +292,12 @@ async def get_institution(
     institution = result.scalar_one_or_none()
     if not institution:
         raise HTTPException(status_code=404, detail="Institution not found")
-    return {
-        "id": institution.id,
-        "name": institution.name,
-        "code": institution.code,
-        "short_name": institution.short_name or "PA",
-        "tagline": institution.tagline or "Learn • Practice • Achieve",
-        "address": institution.address,
-        "city": institution.city,
-        "state": institution.state,
-        "pincode": institution.pincode,
-        "phone": institution.phone,
-        "email": institution.email,
-        "website": institution.website,
-        "logo_url": institution.logo_url or "/logo.svg",
-        "favicon_url": institution.favicon_url or PRODUCT_APP_ICON_URL,
-        "primary_color": institution.primary_color or "#0B2D6B",
-        "secondary_color": institution.secondary_color or "#071C44",
-        "accent_color": institution.accent_color or "#F57C00",
-    }
+    branch_res = await db.execute(
+        select(InstitutionBranch)
+        .where(InstitutionBranch.institution_id == institution.id, InstitutionBranch.is_active == True)
+        .order_by(InstitutionBranch.is_main_branch.desc(), InstitutionBranch.id.asc())
+    )
+    return serialize_institution_profile(institution, branch_res.scalars().all())
 
 
 @router.put("/{institution_id}")
@@ -263,11 +314,126 @@ async def update_institution(
     institution = result.scalar_one_or_none()
     if not institution:
         raise HTTPException(status_code=404, detail="Institution not found")
-    for key, value in data.model_dump(exclude_none=True).items():
-        setattr(institution, key, value)
+
+    updates = data.model_dump(exclude_unset=True)
+    mark_complete = updates.pop("onboarding_completed", None)
+    reason = str(updates.pop("reason", None) or "Updated via Institutions API")
+    await apply_validated_profile_updates(
+        db,
+        institution,
+        updates,
+        actor=current_user,
+        reason=reason,
+        mark_onboarding_complete=mark_complete,
+    )
     await db.commit()
     await db.refresh(institution)
-    return {"id": institution.id, "name": institution.name}
+    branch_res = await db.execute(
+        select(InstitutionBranch)
+        .where(InstitutionBranch.institution_id == institution.id, InstitutionBranch.is_active == True)
+        .order_by(InstitutionBranch.is_main_branch.desc(), InstitutionBranch.id.asc())
+    )
+    return serialize_institution_profile(institution, branch_res.scalars().all())
+
+
+@router.get("/{institution_id}/branches")
+async def list_institution_branches(
+    institution_id: int,
+    include_inactive: bool = Query(False),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    check_institution_access(institution_id, current_user)
+    stmt = (
+        select(InstitutionBranch)
+        .where(InstitutionBranch.institution_id == institution_id)
+        .order_by(InstitutionBranch.is_main_branch.desc(), InstitutionBranch.id.asc())
+    )
+    if not include_inactive:
+        stmt = stmt.where(InstitutionBranch.is_active == True)
+    rows = (await db.execute(stmt)).scalars().all()
+    return [serialize_branch(b) for b in rows]
+
+
+@router.post("/{institution_id}/branches", status_code=status.HTTP_201_CREATED)
+async def create_institution_branch(
+    institution_id: int,
+    data: BranchCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "sysadmin", "super_admin", "admin", "principal")),
+):
+    check_institution_access(institution_id, current_user)
+    inst = await db.get(Institution, institution_id)
+    if not inst:
+        raise HTTPException(status_code=404, detail="Institution not found")
+    branch = await ensure_unique_branch_and_save(
+        db,
+        institution_id=institution_id,
+        payload=data.model_dump(exclude_unset=True),
+        actor=current_user,
+    )
+    await db.commit()
+    await db.refresh(branch)
+    return serialize_branch(branch)
+
+
+@router.put("/{institution_id}/branches/{branch_id}")
+async def update_institution_branch(
+    institution_id: int,
+    branch_id: int,
+    data: BranchUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "sysadmin", "super_admin", "admin", "principal")),
+):
+    check_institution_access(institution_id, current_user)
+    branch = await ensure_unique_branch_and_save(
+        db,
+        institution_id=institution_id,
+        payload=data.model_dump(exclude_unset=True),
+        actor=current_user,
+        branch_id=branch_id,
+    )
+    await db.commit()
+    await db.refresh(branch)
+    return serialize_branch(branch)
+
+
+@router.delete("/{institution_id}/branches/{branch_id}")
+async def deactivate_institution_branch(
+    institution_id: int,
+    branch_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "sysadmin", "super_admin", "admin", "principal")),
+):
+    check_institution_access(institution_id, current_user)
+    res = await db.execute(
+        select(InstitutionBranch).where(
+            InstitutionBranch.id == branch_id,
+            InstitutionBranch.institution_id == institution_id,
+            InstitutionBranch.is_active == True,
+        )
+    )
+    branch = res.scalar_one_or_none()
+    if not branch:
+        raise HTTPException(status_code=404, detail="Branch not found")
+    if branch.is_main_branch:
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot delete or archive the primary Main Branch. Assign another Main Branch first.",
+        )
+    branch.is_active = False
+    record_audit_change(
+        db,
+        institution_id=institution_id,
+        setting_key=f"branch.{branch.id}.is_active",
+        category="branches",
+        old_val=True,
+        new_val=False,
+        actor=current_user,
+        reason="Deactivated secondary branch",
+    )
+    await db.commit()
+    return {"status": "success", "id": branch_id, "is_active": False}
 
 
 @public_router.get("/public/notices")

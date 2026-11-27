@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-26
+ * @updated     2026-11-27
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -103,24 +103,57 @@ export interface PaymentPermissions {
   permissions: string[]
 }
 
+export interface InstitutionBranch {
+  id: number
+  institution_id: number
+  branch_name: string
+  branch_code: string
+  is_main_branch: boolean
+  address_line_1?: string | null
+  address_line_2?: string | null
+  area_locality?: string | null
+  city?: string | null
+  district?: string | null
+  state?: string | null
+  pincode?: string | null
+  country?: string | null
+  phone?: string | null
+  alternate_phone?: string | null
+  email?: string | null
+  gstin?: string | null
+  is_active: boolean
+}
+
 export interface Institution {
   id: number
   name: string
   code: string
-  short_name?: string
-  tagline?: string
-  address?: string
-  city?: string
-  state?: string
-  pincode?: string
-  phone?: string
-  email?: string
-  website?: string
-  logo_url?: string
-  favicon_url?: string
-  primary_color?: string
-  secondary_color?: string
-  accent_color?: string
+  short_name?: string | null
+  tagline?: string | null
+  branch_name?: string | null
+  branches?: InstitutionBranch[]
+  address?: string | null
+  address_line_1?: string | null
+  address_line_2?: string | null
+  area_locality?: string | null
+  city?: string | null
+  district?: string | null
+  state?: string | null
+  pincode?: string | null
+  country?: string | null
+  phone?: string | null
+  alternate_phone?: string | null
+  email?: string | null
+  website?: string | null
+  gstin?: string | null
+  pan?: string | null
+  logo_url?: string | null
+  favicon_url?: string | null
+  primary_color?: string | null
+  secondary_color?: string | null
+  accent_color?: string | null
+  onboarding_completed?: boolean
+  is_placeholder_profile?: boolean
 }
 
 export interface AcademicYear {
@@ -3138,28 +3171,43 @@ export interface InstituteProfile {
   id: number
   name: string
   code: string
-  short_name: string
-  tagline: string
-  institute_type: string
-  establishment_year: number
-  registration_number: string
-  tax_id: string
-  description: string
+  short_name: string | null
+  branch_name?: string | null
+  branches?: InstitutionBranch[]
+  tagline: string | null
+  institute_type: string | null
+  establishment_year: number | null
+  registration_number: string | null
+  tax_id: string | null
+  gstin?: string | null
+  pan?: string | null
+  description: string | null
   is_active: boolean
   default_language: string
   timezone: string
-  address: string
-  city: string
-  state: string
-  pincode: string
-  phone: string
-  email: string
-  website: string
-  logo_url: string
-  favicon_url: string
+  address: string | null
+  address_line_1?: string | null
+  address_line_2?: string | null
+  area_locality?: string | null
+  city: string | null
+  district?: string | null
+  state: string | null
+  pincode: string | null
+  country?: string | null
+  phone: string | null
+  alternate_phone?: string | null
+  email: string | null
+  website: string | null
+  logo_url: string | null
+  favicon_url: string | null
   primary_color: string
   secondary_color: string
   accent_color: string
+  onboarding_completed?: boolean
+  is_placeholder_profile?: boolean
+  missing_recommended_fields?: string[]
+  completeness_pct?: number
+  reason?: string
 }
 
 export interface LookupItem {

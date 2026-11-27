@@ -9,9 +9,9 @@
  * @copyright   Copyright (c) 2026 PrathamOne EduOS
  * @license     Proprietary
  *
- * @version     1.6.0
+ * @version     1.7.0
  * @created     2026-11-03
- * @updated     2026-11-23
+ * @updated     2026-11-27
  *
  * @description Premium enterprise authentication portal featuring organic curved wave architecture, original PrathamOne navy/saffron theme colors, single unified Zero-Tab authentication, server-enforced role routing, and comprehensive academic curriculum spectrum overlays.
  */
@@ -333,7 +333,7 @@ export default function LoginPage() {
           ========================================================================= */}
       <div className="relative w-full lg:w-[54%] xl:w-[56%] shrink-0 text-white flex flex-col justify-between p-6 sm:p-8 lg:p-10 xl:p-14 lg:pr-24 xl:pr-32 overflow-hidden min-h-[460px] lg:min-h-screen z-10 order-2 lg:order-1"
         style={{
-          background: `linear-gradient(145deg, #051632 0%, ${secondaryBrandColor} 45%, ${primaryBrandColor} 100%)`,
+          background: `radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.22), transparent 60%), linear-gradient(135deg, #0a1228 0%, ${secondaryBrandColor} 52%, ${primaryBrandColor} 100%)`,
         }}
       >
         {/* Organic Curved Wave Divider (SVG edge facing the right side on desktop) */}
@@ -725,10 +725,25 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Bottom Pane Footer: Privacy, Help & Attribution */}
-        <div className="relative z-10 w-full max-w-[460px] mx-auto pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between text-[11px] text-slate-400">
-          <div>Privacy · Help · Secure Access</div>
-          <div>© 2026 {branding.suiteName} {branding.versionDisplay}</div>
+        {/* Bottom Pane Footer: Responsive Copyright & Powered By Attribution (Mobile: Option A, Tablet/Desktop: Option B) */}
+        <div className="relative z-10 w-full max-w-[460px] mx-auto pt-3.5 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 text-[11px] text-slate-500">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 sm:flex-col sm:items-start sm:justify-center sm:gap-0.5 leading-relaxed">
+            <span>Privacy · Help · Secure Access</span>
+            <span>
+              © 2026 <strong className="font-semibold text-slate-700">{branding.organization || 'SmritiSys'}</strong> · {branding.suiteName}{' '}
+              <span className="font-mono text-[10px] text-slate-400">{branding.versionDisplay}</span>
+            </span>
+          </div>
+          <div className="flex items-center justify-center gap-2 pt-2 border-t border-dashed border-slate-200 sm:pt-0 sm:border-t-0 sm:flex-col sm:items-end sm:gap-0.5 shrink-0">
+            <span className="text-[9.5px] sm:uppercase sm:tracking-wider text-slate-400 font-medium">
+              Powered by
+            </span>
+            <img
+              src={branding.assets.softwareLogoSvgUrl}
+              alt={branding.suiteName}
+              className="h-7 w-auto object-contain"
+            />
+          </div>
         </div>
 
         {/* Accessible Modal: Initial Setup & Support */}

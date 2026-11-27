@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-22
+ * @updated     2026-11-27
  *
  * @description Source component for Sysadminworkspace in the src.pages module.
  */
@@ -119,9 +119,9 @@ export default function SysAdminWorkspace() {
 
   // System Settings State
   const [settingsForm, setSettingsForm] = useState({
-    site_name: 'Prashant Academy',
-    contact_email: 'admin@prathamone.com',
-    contact_phone: '+91 98765 43210',
+    site_name: 'Your Coaching Institute',
+    contact_email: '',
+    contact_phone: '',
     session_timeout_minutes: 60,
     maintenance_mode: false,
     enable_mfa_requirement: false,
@@ -276,11 +276,10 @@ export default function SysAdminWorkspace() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
-              className={`flex items-center gap-2 px-4 py-3.5 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
-                isActive
+              className={`flex items-center gap-2 px-4 py-3.5 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${isActive
                   ? 'border-primary-600 text-primary-600'
                   : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-              }`}
+                }`}
             >
               <Icon className="w-4 h-4" />
               <span>{tab.label}</span>
@@ -473,13 +472,12 @@ export default function SysAdminWorkspace() {
                         {log.created_at ? new Date(log.created_at).toLocaleString() : 'N/A'}
                       </td>
                       <td className="px-6 py-4 font-sans">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
-                          log.severity === 'critical'
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${log.severity === 'critical'
                             ? 'bg-rose-100 text-rose-800 border border-rose-200'
                             : log.severity === 'warning'
-                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                            : 'bg-primary-100 text-primary-800 border border-blue-200'
-                        }`}>
+                              ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                              : 'bg-primary-100 text-primary-800 border border-blue-200'
+                          }`}>
                           {log.severity}
                         </span>
                       </td>
@@ -571,11 +569,10 @@ export default function SysAdminWorkspace() {
                       key={allowedField}
                       type="button"
                       onClick={() => setFieldKey(allowedField)}
-                      className={`px-2 py-0.5 rounded text-[10px] font-mono transition border ${
-                        fieldKey === allowedField
+                      className={`px-2 py-0.5 rounded text-[10px] font-mono transition border ${fieldKey === allowedField
                           ? 'bg-primary-100 text-primary-700 border-indigo-300 font-bold'
                           : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-                      }`}
+                        }`}
                     >
                       {allowedField}
                     </button>

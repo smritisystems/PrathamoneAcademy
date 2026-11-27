@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-22
+ * @updated     2026-11-27
  *
  * @description Dedicated student portal dashboard presenting enrolled courses, timetable, and exam results.
  */
@@ -1822,7 +1822,7 @@ export default function StudentDashboardPage() {
             </div>
             <div className="p-3 bg-gray-50 rounded-lg text-xs text-gray-500 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <span>All payment transactions and receipts are verified by Prashant Academy administration. For payment assistance, please contact the academy office.</span>
+              <span>All payment transactions and receipts are verified by the institute administration. For payment assistance, please contact the academy office.</span>
             </div>
           </div>
         </div>
@@ -2633,7 +2633,7 @@ export default function StudentDashboardPage() {
                   <div className="text-right">
                     <div className="border-b border-slate-400 w-36 mb-1"></div>
                     <p className="font-bold text-slate-800">Authorized Signatory</p>
-                    <p className="text-[10px]">Prashant Academy Coaching Institute</p>
+                    <p className="text-[10px]">Institute Administration</p>
                   </div>
                 </div>
               </div>

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-27
  *
  * @description Legacy fee register import wizard for spreadsheet mapping, preview, and validation.
  */
@@ -657,7 +657,7 @@ export default function ImportFeeRegister() {
               <div>
                 <h3 className="text-sm font-bold text-amber-900">Reconciliation & Financial Integrity Guarantee</h3>
                 <p className="text-xs text-amber-800 mt-1">
-                  The Prashant Academy import engine preserves historical payment records with 100% exactitude. Discrepancies between calculated balances (Total Fees − Sum of Payment Entries) and the author's stated balance cell are systematically flagged below. No historical amounts are altered or forced to match.
+                  The PrathamOne EduOS import engine preserves historical payment records with 100% exactitude. Discrepancies between calculated balances (Total Fees − Sum of Payment Entries) and the author's stated balance cell are systematically flagged below. No historical amounts are altered or forced to match.
                 </p>
               </div>
             </div>

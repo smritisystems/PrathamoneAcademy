@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-05
- * @updated     2026-11-26
+ * @updated     2026-11-27
  *
  * @description Official A5 portrait fee receipt document featuring compact header, transaction metadata,
  */
@@ -201,14 +201,14 @@ export default function PaymentReceiptView({
   const showSovereignTrim = Boolean(documentSettings?.print_sovereign_trim ?? false)
   const showVerificationSeal = Boolean(documentSettings?.print_verification_seal ?? false)
 
-  // Authoritative branding fields from receipt or existing Institute Profile
+  // Authoritative branding fields from receipt or existing Institute Profile (never fabricate dummy customer values)
   const instFromServer = receipt.institution
-  const academyName = (instFromServer?.name || branding.academyName || branding.appName || 'Prashant Academy').toUpperCase()
-  const academyTagline = instFromServer?.tagline || branding.tagline || 'Centre for Academic Excellence • Estd. 2018'
-  const academyAddress = instFromServer?.address || branding.institutionAddress || branding.support?.address || 'Shop No16, 14, 12, Aquarius Taurus Building, Jankalyan Nagar, Malad West, Mumbai - 400095'
-  const academyPhone = instFromServer?.phone || branding.institutionPhone || branding.support?.phone || '+91-7021789907'
-  const academyEmail = instFromServer?.email || branding.institutionEmail || branding.support?.academyEmail || 'tejam.prashnat@gmail.com'
-  const academyWebsite = instFromServer?.website || branding.institutionWebsite || branding.support?.website || ''
+  const academyName = (instFromServer?.name || branding.academyName || branding.appName || 'Coaching Institute').toUpperCase()
+  const academyTagline = instFromServer?.tagline || branding.tagline || ''
+  const academyAddress = instFromServer?.address || branding.institutionAddress || ''
+  const academyPhone = instFromServer?.phone || branding.institutionPhone || ''
+  const academyEmail = instFromServer?.email || branding.institutionEmail || ''
+  const academyWebsite = instFromServer?.website || branding.institutionWebsite || ''
 
   const [paperSize, setPaperSize] = useState<'A5' | 'A4'>(initialPaperSize)
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false)

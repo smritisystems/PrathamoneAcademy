@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-16
+ * @updated     2026-11-27
  *
  * @description Comprehensive unit and integration test suite for Workforce Extensions: Employee Dossier, Dual Addresses, Multiple Bank Accounts, Key Contacts, and Global Profile Editing.
  */
@@ -112,8 +112,8 @@ const mockProfile = {
 
 describe('Workforce Extensions & Employee Dossier Specifications', () => {
   it('1. EmployeeDossierDocument renders institutional branding and employee identification', () => {
-    render(<EmployeeDossierDocument profile={mockProfile} />)
-    expect(screen.getAllByText(/Prashant Academy Coaching Institute/i).length).toBeGreaterThan(0)
+    render(<EmployeeDossierDocument profile={mockProfile} institutionName="Sankalp Coaching Institute" />)
+    expect(screen.getAllByText(/Sankalp Coaching Institute/i).length).toBeGreaterThan(0)
     expect(screen.getByText(/Official Employee Dossier/i)).toBeDefined()
     expect(screen.getAllByText(/Dr. Anjali Sharma/i).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/TCH-1008/i).length).toBeGreaterThan(0)

@@ -9,14 +9,14 @@
  * @copyright   Copyright (c) 2026 PrathamOne EduOS
  * @license     Proprietary
  *
- * @version     1.4.0
+ * @version     2.0.0
  * @created     2026-11-23
- * @updated     2026-11-23
+ * @updated     2026-11-27
  *
- * @description Master enterprise visual architecture for coaching institute authentication portal. Features the Grand Brand Logo Crown positioned prominently above the Living Academic Command Bento Deck, volumetric Aurora Mesh lighting, high-tech precision dot-matrix grid, interactive constellation laser network, real-time classroom telemetry waveform, and Maharashtra Apex Flagship accreditation with GPU-accelerated 3D parallax physics.
+ * @description Interactive academic parallax background for the coaching institute authentication portal. Features translucent sheen-swept PrathamOne emblem, cursor-tracking spotlight gradient, dynamic SVG institute typography crown, twinkling stardust, mathematical formulas, scientific vector icons, pan-India state markers, and regional Indian scripts cleanly framed inside panel safe-zones.
  */
 
-import React, { useEffect, useRef, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 
 export interface CoachingLoginBackgroundProps {
   className?: string
@@ -30,131 +30,667 @@ export interface CoachingLoginBackgroundProps {
   logoOpacity?: number
 }
 
-const MAX_SHIFT = 16 // px, parallax maximum translation
-const DAMPING = 0.05 // smooth spring physics
+const MAX_SHIFT = 15
+const DAMPING = 0.06
+const LAYERS = [0.5, 0.75, 1] as const
+const NAVY_BG =
+  'radial-gradient(circle at 50% 50%, rgba(99,102,241,.22), transparent 60%), linear-gradient(135deg,#0a1228 0%,#12214a 55%,#1a2f63 100%)'
 
-/* Authentic PrathamOne EduOS logo compound path */
 const LOGO_D =
-  'm 304.98108,0.00384004 c -3.694,0.0858 -9.1467,1.71053996 -14.6328,3.62303996 -5.4861,1.9125 -11.0006,4.11565 -14.7735,5.36328 -19.2396,6.37986 -38.5187,12.65973 -57.8183,18.84961 -20.2222,6.49068 -40.2615,13.52066 -60.42,20.16016 -2.0114,0.66551 -5.962,1.58865 -9.6582,2.80859 -1.848,0.60997 -3.6333,1.29363 -5.0878,2.0625 -1.4545,0.76888 -2.582,1.61978 -3.1036,2.58985 -0.7502,1.39774 -0.506,2.66227 -0.4961,4.11914 a 0.1250125,0.1250125 0 0 0 0.025,0.0742 c 3.9171,5.29361 12.9545,7.06916 18.8672,9.21289 12.2775,4.44908 24.419,9.29926 36.7422,13.65039 4.57,1.61646 9.1959,3.91179 14.0235,4.5957 a 0.1250125,0.1250125 0 0 0 0.1386,-0.0918 c 0.531,-2.01245 0.9348,-5.79974 1.4532,-9.41796 0.2591,-1.80911 0.5465,-3.57504 0.8886,-5.04688 0.3421,-1.47184 0.7458,-2.65287 1.2071,-3.27344 1.0964,-1.48141 3.2532,-2.58755 5.5664,-3.4707 2.3131,-0.88316 4.7779,-1.5468 6.498,-2.18555 11.2219,-4.14698 22.7744,-7.0854 34.4805,-9.47461 34.94,-7.11593 71.472,-5.64844 105.9648,3.11719 11.5671,2.93673 24.2919,5.59806 34.6387,11.74414 1.1862,6.08995 2.3823,12.17983 3.5684,18.26953 a 0.1250125,0.1250125 0 0 0 0.166,0.0937 c 13.444,-4.87969 26.8976,-9.76079 40.3418,-14.65039 v 11.11914 c -3.2136,3.04906 -4.3222,5.29002 -4.2071,7.64258 0.1154,2.35603 1.4199,4.79949 2.9297,8.31055 -2.9329,8.33204 -4.1231,17.24135 -5.5,25.92187 -0.6016,3.79875 -1.5723,7.67831 -1.4316,11.51368 h 0.2558 25.295 0.2578 c 0.2103,-3.82322 -1.1969,-7.74487 -1.8906,-11.42774 -1.7179,-9.08841 -3.8755,-17.96572 -6.0118,-26.93945 1.8547,-2.59352 2.9933,-5.50788 2.8711,-8.20899 -0.122,-2.69741 -1.5205,-5.16767 -4.6582,-6.83398 V 69.94127 c 3.1533,-1.93319 8.3194,-2.90711 12.7754,-4.5293 2.2391,-0.81513 4.2984,-1.79747 5.832,-3.16602 1.5337,-1.36855 2.5361,-3.13066 2.6426,-5.4707 a 0.1250125,0.1250125 0 0 0 -0.018,-0.0723 c -1.7845,-2.91 -5.0601,-4.58377 -8.6172,-5.8125 -3.557,-1.22872 -7.4056,-2.0148 -10.3554,-3.11914 -1.5844,-0.59043 -2.7298,-1.60989 -3.8653,-2.65039 -1.1354,-1.04049 -2.2602,-2.10273 -3.8007,-2.73828 -4.0982,-1.68986 -8.5298,-0.54485 -12.6797,-1.52539 -8.616,-2.02669 -16.9429,-5.56388 -25.3907,-8.23633 -24.008,-7.58938 -47.8384,-15.77095 -71.7695,-23.61132 -4.1925,-1.36756 -9.8897,-3.66221 -15.5918,-5.59375 -5.702,-1.93154 -11.4051,-3.50281996 -15.6484,-3.41210996 z'
+  'M 278.6,301.9 C 266.6,292.8 247,282.5 229,275.9 C 211,269.2 187.5,264.1 163.4,261.7 C 140.8,259.5 106.4,260.4 82.6,264 C 78.8,264.6 75.5,265 75.3,265 C 75.1,265 74.9,213.8 74.9,151.2 L 74.9,37.4 L 88.3,37.6 L 101.7,37.8 L 101.5,49.2 L 101.3,60.6 L 99.2,60.9 L 97,61.1 L 97.2,150.2 L 97.4,239.2 L 122.4,239.6 C 139.4,239.8 149.8,240.3 155.1,241.1 C 206.9,248.5 243.2,263.5 269.1,288.5 C 275.8,294.9 285.1,305.8 283.8,305.7 C 283.7,305.7 281.3,304 278.6,301.9 L 278.6,301.9 M 286.8,283.2 C 251.6,247.5 193.4,225.8 128.1,223.8 L 113.1,223.3 L 112.9,112 C 112.8,50.9 113,0.6 113.3,0.3 C 113.5,-0 119.2,0.1 125.9,0.4 C 180.6,3.4 228.2,19 259.8,44.5 C 267.3,50.5 277.2,61.2 282.3,68.7 C 286,74 292.5,85.8 292.5,87.1 C 292.5,87.3 291,85.6 289.1,83.3 C 276.3,68 253.7,52.8 228.7,42.8 C 202.5,32.3 176,26.6 142.5,24.2 L 135.5,23.7 L 135.5,112.3 L 135.5,200.8 L 137.6,200.8 C 138.7,200.8 141.1,201 142.9,201.3 L 146.3,201.7 L 146.3,176.7 L 146.3,151.6 L 158,151.6 L 169.8,151.6 L 169.8,178.3 L 169.8,205.1 L 172.5,205.7 C 173.9,206.1 176.2,206.6 177.5,206.9 L 179.8,207.4 L 179.8,158.4 L 179.8,109.5 L 191.2,109.5 L 202.6,109.5 L 202.6,161.6 L 202.6,213.7 L 205.9,215.1 C 207.7,215.9 209.9,216.7 210.9,217 L 212.6,217.4 L 212.6,174.5 L 212.6,131.6 L 224,131.8 L 235.5,132 L 235.5,177.6 C 235.5,202.8 235.7,224.6 236,226.1 C 236.4,228.6 237,229.2 241,231.6 L 245.4,234.3 L 245.4,158 L 245.4,81.7 L 257.2,81.7 L 269,81.7 L 269,167.7 L 269,253.7 L 274,259.6 C 276.8,262.8 280.8,267.9 283,270.9 C 286.9,276.5 293.6,288.4 293.1,289 C 292.9,289.1 290.1,286.5 286.8,283.1 L 286.8,283.2 M 314.6,305.1 C 314.6,304.5 320.4,297 323.5,293.6 C 328.2,288.5 339.4,279.4 347.8,273.9 C 370.7,258.8 397,249 429.8,243.4 C 447.7,240.3 459.8,239.4 481.5,239.4 L 501.5,239.4 L 501.5,156.5 L 501.5,73.6 L 506.2,68.4 L 510.9,63.1 L 517.3,63.1 C 523.3,63.1 523.6,63.2 524,64.7 C 524.5,66.9 524.1,264.1 523.6,264.6 C 523.3,264.9 519.7,264.6 515.4,264 C 479.1,259.1 449.3,259.2 416.3,264.4 C 381,270 351.2,281.1 325.9,298 C 319.7,302.1 314.6,305.3 314.6,305.1 L 314.6,305.1 M 307.1,285.2 C 309.9,278.6 318,266.7 325.7,258.3 C 332.4,250.9 346.1,239.6 355.8,233.4 C 382.4,216.7 419.2,204.8 454.4,201.5 C 459.3,201.1 462.8,200.4 463.2,199.9 C 463.5,199.4 463.7,180.5 463.6,157.8 L 463.5,116.6 L 465.3,114.7 C 466.3,113.6 470.7,108.5 475.3,103.4 C 479.8,98.3 484,93.7 484.7,93.2 C 485.8,92.3 485.8,96.7 485.7,157.8 L 485.5,223.3 L 472.2,223.8 C 438.4,225 401,232.4 373.8,243.3 C 350.7,252.6 330.1,265.5 314.2,280.9 C 310.2,284.7 306.8,287.9 306.5,287.9 C 306.2,287.9 306.5,286.7 307.1,285.2 L 307.1,285.2 M 382.9,182.8 C 380.8,180.4 373.5,171.8 366.8,163.7 L 354.5,149.1 L 349.4,148.7 C 340.6,147.9 334.6,143.7 331.7,136.1 C 328.8,128.3 330.7,120.5 336.9,114.7 C 349.3,103.3 369.5,112.2 369.5,129.2 C 369.6,133.1 369.8,133.6 371.5,135 C 372.6,135.8 376.1,138.7 379.4,141.5 C 382.6,144.3 385.6,146.6 386.1,146.6 C 387.1,146.6 389.3,144.6 422.4,113.1 C 438.3,98 461.8,75.7 474.7,63.6 C 494.4,45 498,41.3 497.6,40 C 496.4,36 496.4,29.7 497.6,26.1 C 500.5,17.3 511.5,11.4 520.5,13.8 C 533.4,17.3 539.3,32.2 532.2,43.4 C 527.4,50.9 517.9,54.2 509,51.4 C 507.8,51 505.7,53 496.5,63.6 C 478.3,84.6 414.5,157.3 394.7,179.6 C 391,183.8 387.6,187.3 387.3,187.3 C 387,187.3 385,185.3 382.9,182.8 L 382.9,182.8 M 307.1,84.5 C 309.5,76.7 321.6,60.3 332.5,50 C 341.6,41.4 354.6,32.5 367.1,26.2 C 397.4,11 438.7,1.3 477.6,0.2 L 485.5,0 L 485.7,20.1 L 485.9,40.2 L 479.3,46.1 C 475.7,49.4 470.7,53.9 468.3,56.2 L 463.9,60.3 L 463.5,57 C 463.2,55.2 463.2,50.1 463.5,45.8 C 463.7,41.4 463.7,34.7 463.4,30.8 L 462.9,23.9 L 457.1,24.3 C 414.8,27.3 378.6,36.8 350.3,52.2 C 334.8,60.5 324.6,68.1 313.6,79.2 C 308.8,84.1 306.8,85.8 307.1,84.5 L 307.1,84.5'
+
+const bucket = (k: number) => (k < 0.65 ? 0.5 : k < 0.85 ? 0.75 : 1)
+
+const Frac: React.FC<{ n: React.ReactNode; d: React.ReactNode }> = ({ n, d }) => (
+  <span className="clb-frac">
+    <span>{n}</span>
+    <span>{d}</span>
+  </span>
+)
+
+const ICONS: Record<string, React.ReactNode> = {
+  dna: (
+    <>
+      <path d="M14 4C14 14 34 14 34 24S14 34 14 44" />
+      <path d="M34 4C34 14 14 14 14 24S34 34 34 44" />
+      <path d="M17 9h14M15 15h18M15 33h18M17 39h14" />
+    </>
+  ),
+  atom: (
+    <>
+      <ellipse cx="24" cy="24" rx="20" ry="8" />
+      <ellipse cx="24" cy="24" rx="20" ry="8" transform="rotate(60 24 24)" />
+      <ellipse cx="24" cy="24" rx="20" ry="8" transform="rotate(120 24 24)" />
+      <circle cx="24" cy="24" r="2.5" />
+    </>
+  ),
+  flask: (
+    <>
+      <path d="M19 5h10M21 5v15L8 40a3 3 0 0 0 3 4h26a3 3 0 0 0 3-4L27 20V5" />
+      <path d="M13 32h22" />
+      <circle cx="21" cy="37" r="1.5" />
+    </>
+  ),
+  compass: (
+    <>
+      <circle cx="24" cy="8" r="3" />
+      <path d="M24 11L11 43M24 11l13 32" />
+      <path d="M14 35c6 4 14 4 20 0" />
+    </>
+  ),
+  globe: (
+    <>
+      <circle cx="24" cy="24" r="19" />
+      <ellipse cx="24" cy="24" rx="8" ry="19" />
+      <path d="M5 24h38M8 14h32M8 34h32" />
+    </>
+  ),
+  books: (
+    <>
+      <rect x="6" y="32" width="36" height="9" rx="1" />
+      <rect x="9" y="22" width="30" height="9" rx="1" />
+      <rect x="12" y="12" width="24" height="9" rx="1" />
+    </>
+  ),
+  nib: (
+    <>
+      <path d="M24 4l12 18-12 22L12 22z" />
+      <circle cx="24" cy="21" r="2.5" />
+      <path d="M24 23.5V44M17 12h14" />
+    </>
+  ),
+  music: (
+    <>
+      <path d="M17 35V12l19-4v23" />
+      <path d="M17 19l19-4" />
+      <ellipse cx="13" cy="36" rx="5" ry="4" />
+      <ellipse cx="32" cy="32" rx="5" ry="4" />
+    </>
+  ),
+  bar: (
+    <>
+      <path d="M6 6v36h36" />
+      <path d="M12 42V28h6v14M22 42V17h6v25M32 42V10h6v32" />
+    </>
+  ),
+  line: (
+    <>
+      <path d="M6 6v36h36" />
+      <path d="M10 34l9-10 8 6 13-18" />
+    </>
+  ),
+  pie: (
+    <>
+      <circle cx="24" cy="25" r="17" />
+      <path d="M24 25V8M24 25l14.7 8.5M24 25l-13 11" />
+      <path d="M28 20V3a22 22 0 0 1 17 15z" />
+    </>
+  ),
+  parabola: (
+    <>
+      <path d="M24 4v40M4 24h40" />
+      <path d="M12 6C16 42 32 42 36 6" />
+    </>
+  ),
+  venn: (
+    <>
+      <circle cx="18" cy="24" r="13" />
+      <circle cx="30" cy="24" r="13" />
+    </>
+  ),
+  triangle: (
+    <>
+      <path d="M8 40V10l32 30z" />
+      <path d="M8 32h8v8" />
+    </>
+  ),
+  benzene: (
+    <>
+      <path d="M24 5l16 9.5v19L24 43 8 33.5v-19z" />
+      <circle cx="24" cy="24" r="8" />
+    </>
+  ),
+  bell: (
+    <>
+      <path d="M4 40h40" />
+      <path d="M6 40C16 40 17 8 24 8s8 32 18 32" />
+      <path d="M24 8v32" />
+    </>
+  ),
+  flow: (
+    <>
+      <rect x="15" y="3" width="18" height="9" rx="2" />
+      <path d="M24 12v6M24 34v4" />
+      <path d="M24 18l11 8-11 8-11-8z" />
+      <rect x="15" y="38" width="18" height="8" rx="2" />
+    </>
+  ),
+  cap: (
+    <>
+      <path d="M24 10L4 20l20 10 20-10z" />
+      <path d="M12 25v10c0 3 6 6 12 6s12-3 12-6V25M44 20v12" />
+    </>
+  ),
+  trophy: (
+    <>
+      <path d="M14 6h20v12a10 10 0 0 1-20 0z" />
+      <path d="M14 10H6c0 8 3 11 8 12M34 10h8c0 8-3 11-8 12M24 28v8M18 36h12M16 42h16" />
+    </>
+  ),
+  teacher: (
+    <>
+      <rect x="4" y="6" width="26" height="20" rx="1" />
+      <path d="M9 12h12M9 18h8" />
+      <circle cx="38" cy="22" r="4" />
+      <path d="M30 44V36a8 8 0 0 1 16 0v8" />
+    </>
+  ),
+}
+
+interface AmbientItem {
+  id: string
+  x: number
+  y: number
+  k: number
+  dur: number
+  o: number
+  a: number
+  pulse?: number
+  c?: React.ReactNode
+  icon?: string
+  small?: number
+  md?: number
+  board?: string
+  subject?: string
+  script?: string
+  lang?: string
+  state?: number
+  cyc?: number
+  cd?: number
+  sz?: number
+  hm?: boolean | number
+}
+
+const BASE_ITEMS: Omit<AmbientItem, 'a'>[] = [
+  { id: 'f1', x: 22.1, y: 84.5, k: 0.7, dur: 32, o: 0.18, pulse: 1, c: <>sin²α + cos²α = 1</> },
+  { id: 'f2', x: 89.8, y: 11.1, k: 0.9, dur: 27, o: 0.17, c: <>(a − b)² = a² − 2ab + b²</> },
+  {
+    id: 'f3',
+    x: 14.5,
+    y: 22.5,
+    k: 0.8,
+    dur: 36,
+    o: 0.18,
+    pulse: 1,
+    c: (
+      <>
+        x = <Frac n={<>−b ± √(b² − 4ac)</>} d="2a" />
+      </>
+    ),
+  },
+  {
+    id: 'f4',
+    x: 91.5,
+    y: 90.2,
+    k: 0.6,
+    dur: 29,
+    o: 0.17,
+    c: (
+      <>
+        ∫<sub>0</sub>
+        <sup>x</sup> <Frac n={<>tⁿ dt</>} d={<>eᵗ − 1</>} />
+      </>
+    ),
+  },
+  { id: 'i1', x: 58.2, y: 86.7, k: 1, dur: 30, o: 0.19, icon: 'dna' },
+  { id: 'i2', x: 44.7, y: 82.9, k: 0.8, dur: 26, o: 0.18, icon: 'atom' },
+  { id: 'i3', x: 95, y: 28, k: 0.9, dur: 35, o: 0.18, icon: 'flask' },
+  { id: 'i4', x: 44.1, y: 17.1, k: 0.7, dur: 24, o: 0.17, icon: 'compass' },
+  { id: 'i5', x: 6, y: 74, k: 0.9, dur: 33, o: 0.19, icon: 'globe' },
+  { id: 'i6', x: 72.8, y: 70.3, k: 0.8, dur: 28, o: 0.18, icon: 'books' },
+  { id: 'i7', x: 94, y: 70, k: 1, dur: 31, o: 0.18, icon: 'nib' },
+  { id: 'i8', x: 57.5, y: 9.2, k: 0.7, dur: 37, o: 0.17, icon: 'music' },
+  { id: 'b1', x: 70.8, y: 89.5, k: 0.7, dur: 30, o: 0.18, board: 'CBSE' },
+  { id: 'b2', x: 33.6, y: 7.4, k: 0.6, dur: 25, o: 0.16, board: 'ICSE' },
+  { id: 'b5', x: 91, y: 59, k: 0.7, dur: 27, o: 0.17, board: 'UPMSP' },
+  { id: 'b7', x: 36, y: 90, k: 0.6, dur: 29, o: 0.16, board: 'WBBSE' },
+  { id: 'b8', x: 22.7, y: 59.7, k: 0.8, dur: 32, o: 0.17, board: 'STATE BOARDS' },
+  { id: 's1', x: 73.8, y: 55.2, k: 0.7, dur: 28, o: 0.15, subject: 'PHYSICS' },
+  { id: 's2', x: 68, y: 15, k: 0.7, dur: 33, o: 0.15, subject: 'CHEMISTRY' },
+  { id: 's3', x: 90, y: 38, k: 0.7, dur: 26, o: 0.15, subject: 'MATHS' },
+  { id: 't2', x: 50.5, y: 92.9, k: 0.6, dur: 29, o: 0.15, icon: 'trophy', small: 1 },
+  { id: 'n1', x: 23.8, y: 9.9, k: 0.7, dur: 33, o: 0.17, pulse: 1, board: 'NEP 2020' },
+  { id: 't4', x: 81.3, y: 23.8, k: 0.6, dur: 27, o: 0.15, subject: 'PRINCIPAL' },
+  { id: 't5', x: 81.3, y: 61.8, k: 0.7, dur: 36, o: 0.15, subject: 'TEACHERS' },
+  { id: 't6', x: 13.5, y: 70.9, k: 0.6, dur: 30, o: 0.15, subject: 'ANNUAL DAY' },
+  { id: 'c1', x: 50.2, y: 7.7, k: 0.7, dur: 31, o: 0.17, icon: 'bar', md: 1 },
+  { id: 'c2', x: 64.9, y: 82.3, k: 0.7, dur: 27, o: 0.17, icon: 'pie', md: 1 },
+  { id: 'c3', x: 15.7, y: 36.1, k: 0.7, dur: 35, o: 0.17, icon: 'parabola', md: 1 },
+  { id: 'c4', x: 51.4, y: 83.8, k: 0.7, dur: 29, o: 0.17, icon: 'venn', md: 1 },
+  { id: 'c9', x: 27.9, y: 72.4, k: 0.7, dur: 28, o: 0.17, icon: 'flow', md: 1 },
+  { id: 'm-hi', x: 94.1, y: 79.6, k: 0.6, dur: 28, o: 0.16, script: 'शिक्षा', lang: 'hi' },
+  { id: 'm-mr', x: 73.4, y: 81.6, k: 0.6, dur: 34, o: 0.16, script: 'ज्ञान', lang: 'mr' },
+  { id: 'm-gu', x: 75.8, y: 9, k: 0.6, dur: 31, o: 0.16, script: 'शिक्षण', lang: 'gu' },
+  { id: 'm-bn', x: 45.1, y: 92.2, k: 0.6, dur: 37, o: 0.16, script: 'শিক্ষা', lang: 'bn' },
+  { id: 'm-ta', x: 82.3, y: 40, k: 0.6, dur: 29, o: 0.16, script: 'கல்வி', lang: 'ta' },
+]
+
+const STATES = [
+  'ANDHRA PRADESH',
+  'ARUNACHAL PRADESH',
+  'ASSAM',
+  'BIHAR',
+  'CHHATTISGARH',
+  'GOA',
+  'GUJARAT',
+  'HARYANA',
+  'HIMACHAL PRADESH',
+  'JHARKHAND',
+  'KARNATAKA',
+  'KERALA',
+  'MADHYA PRADESH',
+  'MAHARASHTRA',
+  'MANIPUR',
+  'MEGHALAYA',
+  'MIZORAM',
+  'NAGALAND',
+  'ODISHA',
+  'PUNJAB',
+  'RAJASTHAN',
+  'SIKKIM',
+  'TAMIL NADU',
+  'TELANGANA',
+  'TRIPURA',
+  'UTTAR PRADESH',
+  'UTTARAKHAND',
+  'WEST BENGAL',
+]
+
+function buildAmbientItems(isPanel: boolean, priorityState?: string): AmbientItem[] {
+  const items: Omit<AmbientItem, 'a'>[] = BASE_ITEMS.map((it) => ({ ...it }))
+  let seed = 20261123
+  const rnd = () => {
+    seed |= 0
+    seed = (seed + 1831565813) | 0
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+  const box = (it: Omit<AmbientItem, 'a'>) =>
+    it.board
+      ? { w: it.board.length * 0.7, h: 3 }
+      : it.subject
+        ? { w: it.subject.length * 0.8, h: 2.5 }
+        : it.c
+          ? { w: 15, h: 9 }
+          : it.script
+            ? { w: 7, h: 4 }
+            : { w: 6, h: 7 }
+
+  const boxes = items.map((it) => ({ x: it.x, y: it.y, ...box(it) }))
+  boxes.push({ x: 50, y: 50, w: 56, h: 58 })
+
+  const heroState = (priorityState || 'UTTAR PRADESH').trim().toUpperCase()
+  const sortedStates = [...STATES].sort(
+    (p, q) => Number(q === heroState) - Number(p === heroState) || q.length - p.length,
+  )
+
+  sortedStates.forEach((name, idx) => {
+    const isHero = name === heroState
+    const r = rnd()
+    let sz = isHero ? 1.45 : (r < 0.08 ? 1.35 : r < 0.4 ? 1 : 0.7) * (0.9 + rnd() * 0.2)
+    for (let tries = 0; tries < 2000; tries++) {
+      if (tries && tries % 300 === 0) sz *= 0.88
+      const w = name.length * 0.96 * sz * 1.2
+      const h = 2.1 * sz + 2
+      const x = 4 + w / 2 + rnd() * (92 - w)
+      const y = 5 + h / 2 + rnd() * (90 - h)
+      if (x - w / 2 < 1 || x + w / 2 > 99) continue
+      if (boxes.some((b) => Math.abs(b.x - x) < (b.w + w) / 2 + 1.6 && Math.abs(b.y - y) < (b.h + h) / 2 + 1.6)) {
+        continue
+      }
+      boxes.push({ x, y, w, h })
+      items.push({
+        id: `st-${idx}`,
+        x: +x.toFixed(1),
+        y: +y.toFixed(1),
+        k: [0.5, 0.7, 0.9][idx % 3],
+        dur: 24 + Math.floor(rnd() * 16),
+        o: isHero ? 0.2 : 0.15 + rnd() * 0.04,
+        pulse: isHero ? 1 : 0,
+        board: name,
+        state: 1,
+        cyc: isHero ? 0 : 1,
+        cd: idx,
+        sz: +sz.toFixed(2),
+        hm: sz < 0.95 || idx % 2,
+      })
+      break
+    }
+  })
+
+  const filtered = isPanel ? items.filter((it) => it.y >= 14 && it.y <= 72 && it.x <= 83) : items
+  const opacities = [0.55, 1.35, 0.85, 1.7, 0.65, 1.05]
+  const angles = [-24, -16, -8, 4, -20, 12, -12, -4]
+  return filtered.map((it, i) => ({
+    ...it,
+    o: it.o * opacities[i % 6],
+    a: angles[(i * 3) % 8],
+  }))
+}
 
 const STARS = [
-  [14, 8], [32, 14], [8, 22], [48, 6], [62, 12], [88, 10], [94, 25],
-  [6, 48], [12, 72], [28, 92], [45, 95], [68, 88], [85, 82], [96, 75],
-  [22, 38], [78, 28], [82, 64], [18, 84]
-].map(([x, y], i) => ({
-  x, y,
-  s: 1.5 + (i % 3) * 0.8,
-  d: 3.5 + (i % 4) * 1.2,
-  delay: -((i * 1.8) % 7)
-}))
+  [16, 5],
+  [33, 12],
+  [4, 12],
+  [47, 4],
+  [57, 10],
+  [68, 4],
+  [96, 8],
+  [82, 20],
+  [97, 40],
+  [3, 45],
+  [2, 58],
+  [15, 80],
+  [31, 97],
+  [46, 96],
+  [60, 92],
+  [88, 78],
+  [98, 88],
+  [4, 94],
+  [93, 96],
+  [27, 20],
+  [75, 24],
+].map(([x, y], i) => ({ x, y, d: 3 + (i % 5) * 1.1, delay: -(i * 1.7) % 9, s: 2 + (i % 3) }))
 
-/* Constellation Nodes around the Central Bento Hub */
-const CONSTELLATION_NODES = [
-  { id: 'n-math', x: 14, y: 22, label: 'CALCULUS', sub: '∫ tⁿ dt', icon: '∑', k: 0.6 },
-  { id: 'n-phys', x: 86, y: 16, label: 'PHYSICS', sub: 'QUANTUM', icon: '⚛', k: 0.8 },
-  { id: 'n-chem', x: 88, y: 78, label: 'CHEMISTRY', sub: 'ORGANIC', icon: '⬡', k: 0.7 },
-  { id: 'n-bio', x: 12, y: 80, label: 'GENETICS', sub: 'CELLULAR', icon: '🧬', k: 0.9 },
-  { id: 'n-cbse', x: 26, y: 12, label: 'CBSE • ICSE', sub: 'BOARD APEX', icon: '★', k: 0.5 },
-  { id: 'n-jee', x: 74, y: 88, label: 'JEE • NEET', sub: 'SUPER-60', icon: '🎯', k: 0.6 }
-]
+const Mark: React.FC<{ name: string; cy?: number } & React.SVGProps<SVGTextElement>> = ({
+  name,
+  cy = 2,
+  ...props
+}) => {
+  const t = name.trim()
+  const words = t.split(/\s+/)
+  let lines = [t]
+  if (t.length > 16 && words.length > 1) {
+    let best = 1
+    let bd = 1e9
+    for (let i = 1; i < words.length; i++) {
+      const a = words.slice(0, i).join(' ').length
+      const b = words.slice(i).join(' ').length
+      if (Math.abs(a - b) < bd) {
+        bd = Math.abs(a - b)
+        best = i
+      }
+    }
+    lines = [words.slice(0, best).join(' '), words.slice(best).join(' ')]
+  }
+
+  let w100 = Math.max(...lines.map((l) => l.length * 72 + 3 * l.length))
+  if (typeof document !== 'undefined') {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    if (ctx) {
+      ctx.font = "800 100px Inter,'Segoe UI','Noto Sans Devanagari',system-ui,sans-serif"
+      w100 = Math.max(...lines.map((l) => ctx.measureText(l.toUpperCase()).width + 3 * l.length))
+    }
+  }
+  const fs = Math.max(28, Math.min(lines.length > 1 ? 54 : 100, 56000 / Math.max(w100, 1)))
+  const lh = fs * 1.1
+  const y0 = cy - ((lines.length - 1) * lh) / 2 + fs * 0.35
+
+  return (
+    <>
+      {lines.map((line, i) => (
+        <text
+          key={i}
+          x="305"
+          y={y0 + i * lh}
+          textAnchor="middle"
+          fontFamily="Inter,'Segoe UI','Noto Sans Devanagari',system-ui,sans-serif"
+          fontWeight="800"
+          fontSize={fs}
+          letterSpacing={fs * 0.03}
+          {...props}
+        >
+          {line.toUpperCase()}
+        </text>
+      ))}
+    </>
+  )
+}
 
 export default function CoachingLoginBackground({
   className = '',
   parallax = true,
   layout = 'panel',
-  instituteName = 'MY NO.1 ACADEMY',
-  instituteState = 'MAHARASHTRA',
-  logoUrl,
+  instituteName = '',
+  instituteState = 'Maharashtra',
   background,
-  intensity = 1.0,
+  intensity,
+  logoOpacity = 0.28,
 }: CoachingLoginBackgroundProps) {
   const isPanel = layout === 'panel'
   const rootRef = useRef<HTMLDivElement>(null)
-  const deckRef = useRef<HTMLDivElement>(null)
+  const boltRef = useRef<SVGSVGElement>(null)
+  const spotRef = useRef<SVGRadialGradientElement>(null)
+  const spotG = useRef<SVGGElement>(null)
 
-  const activeName = (instituteName || 'MY NO.1 ACADEMY').trim()
-  const activeState = (instituteState || 'MAHARASHTRA').trim().toUpperCase()
+  const trimmedName = (instituteName || '').trim()
+  const vb = trimmedName ? '0 -100 610.17 405.69' : '0 0 610.17 305.69'
 
-  // Dynamic Audio/Classroom Equalizer Waveform Heights
-  const [waveHeights, setWaveHeights] = useState<number[]>([
-    45, 75, 90, 60, 35, 85, 100, 70, 50, 80, 95, 65, 40, 70, 85, 55
-  ])
+  const ambientItems = useMemo(
+    () => buildAmbientItems(isPanel, instituteState),
+    [isPanel, instituteState],
+  )
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setWaveHeights(prev =>
-        prev.map(() => Math.floor(25 + Math.random() * 75))
-      )
-    }, 1400)
-    return () => clearInterval(timer)
+    const svg = boltRef.current
+    const grad = spotRef.current
+    const box = spotG.current
+    if (!svg || !grad || !box || typeof window === 'undefined') return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const coarse = window.matchMedia?.('(pointer: coarse)').matches
+
+    let tx = 305
+    let ty = 150
+    let cx = 305
+    let cy = 150
+    let raf = 0
+    let idle: ReturnType<typeof setTimeout> | undefined
+    let stop: ReturnType<typeof setTimeout> | undefined
+
+    const loop = (t: number) => {
+      if (coarse) {
+        tx = 305 + 270 * Math.sin(t * 4e-4)
+        ty = 150 + 85 * Math.sin(t * 7e-4 + 1)
+      }
+      cx += (tx - cx) * 0.12
+      cy += (ty - cy) * 0.12
+      grad.setAttribute('cx', cx.toFixed(1))
+      grad.setAttribute('cy', cy.toFixed(1))
+      raf = requestAnimationFrame(loop)
+    }
+
+    const hide = () => {
+      box.style.opacity = '0'
+      if (stop) clearTimeout(stop)
+      stop = setTimeout(() => {
+        cancelAnimationFrame(raf)
+        raf = 0
+      }, 800)
+    }
+
+    const mv = (e: MouseEvent) => {
+      const r = svg.getBoundingClientRect()
+      if (!r.width || !r.height) return
+      const v = svg.viewBox.baseVal
+      tx = v.x + ((e.clientX - r.left) / r.width) * v.width
+      ty = v.y + ((e.clientY - r.top) / r.height) * v.height
+      box.style.opacity = '1'
+      if (idle) clearTimeout(idle)
+      if (stop) clearTimeout(stop)
+      idle = setTimeout(hide, 2500)
+      if (!raf) raf = requestAnimationFrame(loop)
+    }
+
+    if (coarse) {
+      box.style.opacity = '0.8'
+      raf = requestAnimationFrame(loop)
+    } else {
+      window.addEventListener('mousemove', mv, { passive: true })
+      document.addEventListener('mouseleave', hide)
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', mv)
+      document.removeEventListener('mouseleave', hide)
+      cancelAnimationFrame(raf)
+      if (idle) clearTimeout(idle)
+      if (stop) clearTimeout(stop)
+    }
   }, [])
 
-  // GPU-Accelerated Mouse Parallax and 3D Card Tilt
   useEffect(() => {
     if (!parallax || typeof window === 'undefined') return
     const root = rootRef.current
-    const deck = deckRef.current
     if (!root) return
-
-    let tx = 0, ty = 0, cx = 0, cy = 0, raf = 0
+    if (
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ||
+      window.matchMedia?.('(pointer: coarse)').matches
+    ) {
+      return
+    }
     const layers = Array.from(root.querySelectorAll<HTMLElement>('[data-k]'))
+    let tx = 0
+    let ty = 0
+    let cx = 0
+    let cy = 0
+    let raf = 0
 
     const tick = () => {
       cx += (tx - cx) * DAMPING
       cy += (ty - cy) * DAMPING
-
-      // Multi-layer parallax shift
       for (const el of layers) {
         const k = +(el.dataset.k || '1')
-        el.style.transform = `translate3d(${(cx * k).toFixed(2)}px, ${(cy * k).toFixed(2)}px, 0)`
+        el.style.transform = `translate3d(${(cx * k).toFixed(2)}px,${(cy * k).toFixed(2)}px,0)`
       }
-
-      // Subtle 3D Card Tilt on Hero Bento Deck
-      if (deck) {
-        const rotX = -(cy * 0.35).toFixed(2)
-        const rotY = (cx * 0.35).toFixed(2)
-        deck.style.transform = `perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg) translate3d(${(cx * 0.35).toFixed(2)}px, ${(cy * 0.35).toFixed(2)}px, 0)`
-      }
-
-      raf = Math.abs(tx - cx) + Math.abs(ty - cy) > 0.04 ? requestAnimationFrame(tick) : 0
+      raf = Math.abs(tx - cx) + Math.abs(ty - cy) > 0.05 ? requestAnimationFrame(tick) : 0
     }
 
-    const onMove = (e: MouseEvent) => {
+    const mv = (e: MouseEvent) => {
       tx = -((e.clientX / window.innerWidth) * 2 - 1) * MAX_SHIFT
       ty = -((e.clientY / window.innerHeight) * 2 - 1) * MAX_SHIFT
       if (!raf) raf = requestAnimationFrame(tick)
     }
 
-    window.addEventListener('mousemove', onMove, { passive: true })
+    window.addEventListener('mousemove', mv, { passive: true })
     return () => {
-      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mousemove', mv)
       if (raf) cancelAnimationFrame(raf)
     }
   }, [parallax])
+
+  const renderShape = (extraProps: React.SVGProps<SVGPathElement> = {}) => (
+    <>
+      {trimmedName && <Mark name={trimmedName} />}
+      <g transform="translate(305.1 152.8) scale(.56) translate(-305.1 -152.8)">
+        <path d={LOGO_D} {...extraProps} />
+      </g>
+    </>
+  )
 
   return (
     <div
       ref={rootRef}
       className={`clb-root ${isPanel ? 'clb-panel' : ''} ${className}`}
-      style={{ background: background || 'transparent' }}
+      style={
+        {
+          background: background ?? (isPanel ? 'transparent' : NAVY_BG),
+          '--i': intensity ?? (isPanel ? 1.75 : 1.5),
+          '--lo': logoOpacity,
+          '--lw': isPanel ? 'min(36vw, 540px)' : undefined,
+        } as React.CSSProperties
+      }
       aria-hidden="true"
     >
       <style>{CSS}</style>
 
-      {/* 1. ATMOSPHERIC AURORA MESH VOLUMETRIC LIGHTING */}
-      <div className="clb-aurora-layer pointer-events-none select-none">
-        {/* Electric Cyan Radial Flare (Top Left) */}
-        <div className="clb-orb clb-orb-cyan" />
-        {/* Royal Indigo / Sapphire Core (Center Right) */}
-        <div className="clb-orb clb-orb-indigo" />
-        {/* Saffron / Amber Radiant Aura (Bottom Left Maharashtra Tribute) */}
-        <div className="clb-orb clb-orb-saffron" />
+      {/* Center Watermark Crown & Interactive Spotlight Emblem */}
+      <div className="clb-layer" data-k="0.3">
+        <div
+          className="clb-pos"
+          style={{ left: isPanel ? '45%' : '50%', top: isPanel ? '44%' : '50%' }}
+        >
+          <div className="clb-logo-float">
+            <svg
+              className="clb-logo"
+              viewBox={vb}
+              role="img"
+              fill="currentColor"
+              fillOpacity=".35"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinejoin="round"
+              fillRule="evenodd"
+            >
+              {renderShape({ vectorEffect: 'non-scaling-stroke' })}
+            </svg>
+            <svg
+              ref={boltRef}
+              className="clb-bolt"
+              viewBox={vb}
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fillRule="evenodd"
+            >
+              <defs>
+                <linearGradient
+                  id="clb-sh"
+                  gradientUnits="userSpaceOnUse"
+                  x1="-90"
+                  y1="0"
+                  x2="90"
+                  y2="0"
+                  gradientTransform="skewX(-25)"
+                >
+                  <stop offset="0" stopColor="#fff" stopOpacity="0" />
+                  <stop offset=".5" stopColor="#fff" stopOpacity=".9" />
+                  <stop offset="1" stopColor="#fff" stopOpacity="0" />
+                  <animateTransform
+                    attributeName="gradientTransform"
+                    type="translate"
+                    additive="sum"
+                    values="-250 0;850 0;850 0"
+                    keyTimes="0;.5;1"
+                    dur="9s"
+                    repeatCount="indefinite"
+                  />
+                </linearGradient>
+                <radialGradient
+                  ref={spotRef}
+                  id="clb-sp"
+                  gradientUnits="userSpaceOnUse"
+                  cx="305"
+                  cy="150"
+                  r="144"
+                >
+                  <stop offset="0" stopColor="#e0f2fe" stopOpacity="1" />
+                  <stop offset=".45" stopColor="#7dd3fc" stopOpacity=".5" />
+                  <stop offset="1" stopColor="#38bdf8" stopOpacity="0" />
+                </radialGradient>
+              </defs>
+              {renderShape({ fill: 'url(#clb-sh)', stroke: 'url(#clb-sh)', strokeWidth: 1.5, opacity: 0.55 })}
+              <g ref={spotG} className="clb-spot">
+                {renderShape({ stroke: 'url(#clb-sp)', strokeWidth: 9, opacity: 0.3 })}
+                {renderShape({ stroke: 'url(#clb-sp)', strokeWidth: 1.6 })}
+              </g>
+            </svg>
+          </div>
+        </div>
       </div>
 
-      {/* 2. HIGH-TECH PRECISION DOT-MATRIX ENGINEERING GRID */}
-      <div className="clb-tech-grid pointer-events-none select-none" />
-
-      {/* 3. SUBTLE TWINKLING CELESTIAL STARDUST */}
+      {/* Subtle Twinkling Stars */}
       {STARS.map((s, i) => (
         <span
           key={i}
@@ -162,340 +698,118 @@ export default function CoachingLoginBackground({
           style={{
             left: `${s.x}%`,
             top: `${s.y}%`,
-            width: `${s.s}px`,
-            height: `${s.s}px`,
+            width: s.s,
+            height: s.s,
             animationDuration: `${s.d}s`,
             animationDelay: `${s.delay}s`,
           }}
         />
       ))}
 
-      {/* 4. CONSTELLATION LASER WEB & HARMONIC ORBITAL NODES */}
-      <svg className="clb-constellation-lines pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="clb-laser-1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.4" />
-            <stop offset="50%" stopColor="#818cf8" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.3" />
-          </linearGradient>
-        </defs>
-        <line x1="14" y1="22" x2="50" y2="45" stroke="url(#clb-laser-1)" strokeWidth="0.2" strokeDasharray="1, 1.5" />
-        <line x1="86" y1="16" x2="50" y2="45" stroke="url(#clb-laser-1)" strokeWidth="0.2" strokeDasharray="1, 1.5" />
-        <line x1="88" y1="78" x2="50" y2="55" stroke="url(#clb-laser-1)" strokeWidth="0.2" strokeDasharray="1, 1.5" />
-        <line x1="12" y1="80" x2="50" y2="55" stroke="url(#clb-laser-1)" strokeWidth="0.2" strokeDasharray="1, 1.5" />
-        <line x1="26" y1="12" x2="50" y2="30" stroke="url(#clb-laser-1)" strokeWidth="0.18" />
-        <line x1="74" y1="88" x2="50" y2="70" stroke="url(#clb-laser-1)" strokeWidth="0.18" />
-      </svg>
-
-      {/* Parallax Floating Discipline Orbit Chips */}
-      {CONSTELLATION_NODES.map((node) => (
-        <div
-          key={node.id}
-          data-k={node.k}
-          className="clb-node-pos hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-md shadow-xs select-none"
-          style={{ left: `${node.x}%`, top: `${node.y}%` }}
-        >
-          <span className="text-[12px] text-cyan-400 font-mono">{node.icon}</span>
-          <div className="flex flex-col leading-none">
-            <span className="text-[9.5px] font-mono tracking-wider text-slate-200 font-semibold uppercase">{node.label}</span>
-            <span className="text-[8px] font-mono text-cyan-300/70">{node.sub}</span>
-          </div>
+      {/* Parallax Ambient Field Layers */}
+      {LAYERS.map((layerK) => (
+        <div key={layerK} className="clb-layer" data-k={layerK}>
+          {ambientItems.map((it, i) => {
+            if (bucket(it.k) !== layerK) return null
+            const dir = i % 2 ? 1 : -1
+            return (
+              <div
+                key={it.id}
+                className={`clb-pos${it.hm ? ' clb-hm' : ''}${it.cyc ? ' clb-cycle' : ''}`}
+                style={{
+                  left: `${it.x}%`,
+                  top: `${it.y}%`,
+                  animationDelay: it.cyc ? `${-(it.cd || 0) * 1.07}s` : undefined,
+                }}
+              >
+                <div
+                  className="clb-float"
+                  style={
+                    {
+                      animationDuration: `${it.dur}s`,
+                      animationDelay: `${-(i * 3.7)}s`,
+                      '--d': dir,
+                      '--a': `${it.a ?? -20}deg`,
+                    } as React.CSSProperties
+                  }
+                >
+                  <div
+                    className={`clb-body${it.pulse ? ' clb-pulse' : ''}`}
+                    style={
+                      {
+                        '--o': it.o,
+                        '--s': it.sz || 1,
+                      } as React.CSSProperties
+                    }
+                  >
+                    {it.icon && (
+                      <span className={it.small ? 'clb-sm' : it.md ? 'clb-md' : ''}>
+                        <svg
+                          viewBox="0 0 48 48"
+                          className="clb-icon"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          {ICONS[it.icon]}
+                        </svg>
+                      </span>
+                    )}
+                    {it.board && (
+                      <span className={`clb-board${it.state ? ' clb-state' : ''}`}>{it.board}</span>
+                    )}
+                    {it.subject && <span className="clb-subject">{it.subject}</span>}
+                    {it.script && (
+                      <span className="clb-script" lang={it.lang}>
+                        {it.script}
+                      </span>
+                    )}
+                    {it.c && <span className="clb-formula">{it.c}</span>}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
       ))}
-
-      {/* 5. THE CENTERPIECE: BRAND CROWN + LIVING ACADEMIC COMMAND BENTO DECK */}
-      <div className="clb-bento-anchor">
-        <div ref={deckRef} className="clb-hero-stack">
-
-          {/* SECTION A: GRAND BRAND LOGO CROWN (PROUDLY ELEVATED ABOVE THE BOX) */}
-          <div className="flex flex-col items-center text-center mb-3.5 select-none">
-            {/* Illuminated Brand Logo Crest Plate */}
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/[0.1] border border-white/25 p-2 sm:p-2.5 flex items-center justify-center shrink-0 shadow-2xl shadow-cyan-950/80 backdrop-blur-md relative overflow-hidden group mb-2.5">
-              {logoUrl ? (
-                <img
-                  src={logoUrl}
-                  alt={activeName}
-                  className="w-full h-full object-contain filter drop-shadow(0 4px 10px rgba(0,0,0,0.6))"
-                />
-              ) : (
-                <svg viewBox="0 0 610.17 305.69" className="w-full h-full text-cyan-300 fill-current" fillRule="evenodd">
-                  <path d={LOGO_D} />
-                </svg>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/15 to-transparent pointer-events-none" />
-            </div>
-
-            {/* Prominent Institute Title */}
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-200 bg-clip-text text-transparent font-sans">
-              {activeName}
-            </h1>
-
-            {/* Official Maharashtra Accreditation Beacon */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 mt-1 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-300 font-mono text-[10.5px] font-bold tracking-wider uppercase">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-              <span>{activeState} APEX CAMPUS • STATE RANK #1</span>
-            </div>
-          </div>
-
-          {/* SECTION B: THE COMMAND BENTO BOX */}
-          <div className="clb-bento-deck">
-            {/* Shimmering Top Laser Prism Edge */}
-            <div className="clb-deck-prism" />
-
-            {/* TIER 1: LIVE OPERATIONS HEADER */}
-            <div className="flex items-center justify-between gap-3 pb-3 border-b border-white/10 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[11px] font-mono font-semibold text-slate-200 tracking-wide uppercase">
-                  Academic Command Deck
-                </span>
-              </div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 font-mono text-[10px] font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                <span>OPERATIONAL</span>
-              </div>
-            </div>
-
-            {/* TIER 2: REAL-TIME CLASSROOM VITALITY WAVEFORM */}
-            <div className="my-3 px-3.5 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="w-2 h-2 rounded-full bg-cyan-400" />
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] font-mono text-cyan-300 font-bold uppercase tracking-wider">
-                    Campus Vitality Spectrum
-                  </span>
-                  <span className="text-[11.5px] text-slate-300 font-sans truncate font-medium">
-                    14 Batches in Session • Term-2 & Pre-Board Acceleration
-                  </span>
-                </div>
-              </div>
-
-              {/* Harmonic Visualizer Bars */}
-              <div className="flex items-end gap-1 h-6 shrink-0" title="Live Academic Activity Pulse">
-                {waveHeights.map((h, i) => (
-                  <div
-                    key={i}
-                    className="w-1 rounded-full transition-all duration-700 ease-out"
-                    style={{
-                      height: `${h}%`,
-                      background: i % 3 === 0
-                        ? 'linear-gradient(to top, #0ea5e9, #38bdf8)'
-                        : i % 2 === 0
-                        ? 'linear-gradient(to top, #10b981, #34d399)'
-                        : 'linear-gradient(to top, #f59e0b, #fbbf24)',
-                      opacity: 0.75 + (h / 100) * 0.25
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* TIER 3: TRIPLE BENTO METRICS GRID */}
-            <div className="grid grid-cols-3 gap-2.5">
-              {/* Tile 1: Board Mastery */}
-              <div className="p-2.5 sm:p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 transition-colors flex flex-col justify-between">
-                <div className="text-cyan-300 font-mono text-lg sm:text-xl font-extrabold tracking-tight">
-                  99.4%
-                </div>
-                <div className="mt-1">
-                  <div className="text-[10.5px] font-sans font-semibold text-slate-200 leading-tight">Board Mastery</div>
-                  <div className="text-[9px] font-mono text-slate-400 mt-0.5 truncate">Class 10 & 12 Pass</div>
-                </div>
-                <div className="w-full bg-white/10 h-1 rounded-full mt-2 overflow-hidden">
-                  <div className="bg-cyan-400 h-full rounded-full" style={{ width: '99.4%' }} />
-                </div>
-              </div>
-
-              {/* Tile 2: Active Scholars */}
-              <div className="p-2.5 sm:p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 transition-colors flex flex-col justify-between">
-                <div className="text-emerald-400 font-mono text-lg sm:text-xl font-extrabold tracking-tight">
-                  1,250+
-                </div>
-                <div className="mt-1">
-                  <div className="text-[10.5px] font-sans font-semibold text-slate-200 leading-tight">Scholars Enrolled</div>
-                  <div className="text-[9px] font-mono text-slate-400 mt-0.5 truncate">NEET & JEE Super-60</div>
-                </div>
-                <div className="w-full bg-white/10 h-1 rounded-full mt-2 overflow-hidden">
-                  <div className="bg-emerald-400 h-full rounded-full" style={{ width: '92%' }} />
-                </div>
-              </div>
-
-              {/* Tile 3: Maharashtra Flagship */}
-              <div className="p-2.5 sm:p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.07] border border-amber-400/25 transition-colors flex flex-col justify-between">
-                <div className="text-amber-300 font-mono text-lg sm:text-xl font-extrabold tracking-tight truncate">
-                  APEX
-                </div>
-                <div className="mt-1">
-                  <div className="text-[10.5px] font-sans font-semibold text-amber-200 leading-tight truncate">
-                    {activeState}
-                  </div>
-                  <div className="text-[9px] font-mono text-amber-400/80 mt-0.5 truncate">Pinnacle Centre</div>
-                </div>
-                <div className="w-full bg-white/10 h-1 rounded-full mt-2 overflow-hidden">
-                  <div className="bg-gradient-to-r from-amber-400 to-orange-400 h-full rounded-full" style={{ width: '100%' }} />
-                </div>
-              </div>
-            </div>
-
-            {/* TIER 4: CULTURAL ANCHOR & CITATION */}
-            <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[10.5px] font-mono text-slate-400 select-none">
-              <span className="flex items-center gap-1.5 text-slate-300">
-                <span className="text-amber-400">⚡</span>
-                <span>Autonomous Education Operating System</span>
-              </span>
-              <span className="text-cyan-300/80 font-semibold tracking-wider">
-                PRATHAMONE EduOS
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
 
 const CSS = `
-.clb-root {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  user-select: none;
-  contain: strict;
-  background: radial-gradient(circle at 50% 40%, #081736 0%, #040c1d 60%, #020610 100%);
-}
-.clb-panel {
-  position: absolute;
-}
-.clb-aurora-layer {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-.clb-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-  will-change: transform, opacity;
-}
-.clb-orb-cyan {
-  top: -10%;
-  left: 15%;
-  width: 32rem;
-  height: 32rem;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.35) 0%, rgba(14, 165, 233, 0.15) 50%, transparent 80%);
-  animation: clb-drift-cyan 18s ease-in-out infinite alternate;
-}
-.clb-orb-indigo {
-  top: 35%;
-  right: 5%;
-  width: 34rem;
-  height: 34rem;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.28) 0%, rgba(79, 70, 229, 0.12) 60%, transparent 80%);
-  animation: clb-drift-indigo 22s ease-in-out infinite alternate;
-}
-.clb-orb-saffron {
-  bottom: -5%;
-  left: 5%;
-  width: 28rem;
-  height: 28rem;
-  background: radial-gradient(circle, rgba(245, 158, 11, 0.22) 0%, rgba(217, 119, 6, 0.08) 55%, transparent 75%);
-  animation: clb-drift-saffron 20s ease-in-out infinite alternate;
-}
-@keyframes clb-drift-cyan {
-  0% { transform: translate3d(0, 0, 0) scale(1); }
-  100% { transform: translate3d(40px, 30px, 0) scale(1.08); }
-}
-@keyframes clb-drift-indigo {
-  0% { transform: translate3d(0, 0, 0) scale(1); }
-  100% { transform: translate3d(-35px, -25px, 0) scale(1.06); }
-}
-@keyframes clb-drift-saffron {
-  0% { transform: translate3d(0, 0, 0) scale(1); }
-  100% { transform: translate3d(25px, -30px, 0) scale(1.1); }
-}
-.clb-tech-grid {
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: radial-gradient(circle at 45% 50%, black 50%, transparent 95%);
-  -webkit-mask-image: radial-gradient(circle at 45% 50%, black 50%, transparent 95%);
-  opacity: 0.85;
-}
-.clb-star {
-  position: absolute;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 0 6px 1px rgba(224, 242, 254, 0.7);
-  animation: clb-star-twinkle 6s ease-in-out infinite;
-}
-@keyframes clb-star-twinkle {
-  0%, 100% { opacity: 0.15; transform: scale(0.8); }
-  50% { opacity: 0.8; transform: scale(1.3); }
-}
-.clb-constellation-lines {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.55;
-}
-.clb-node-pos {
-  position: absolute;
-  translate: -50% -50%;
-  will-change: transform;
-  z-index: 5;
-}
-.clb-bento-anchor {
-  position: absolute;
-  left: 48%;
-  top: 50%;
-  translate: -50% -50%;
-  width: min(92%, 530px);
-  z-index: 10;
-}
-.clb-hero-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  transition: transform 0.15s ease-out;
-  will-change: transform;
-}
-.clb-bento-deck {
-  position: relative;
-  width: 100%;
-  background: rgba(10, 22, 48, 0.78);
-  backdrop-filter: blur(24px) saturate(200%);
-  -webkit-backdrop-filter: blur(24px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow:
-    0 30px 60px -15px rgba(0, 0, 0, 0.7),
-    0 0 50px rgba(56, 189, 248, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  border-radius: 24px;
-  padding: 20px;
-}
-.clb-deck-prism {
-  position: absolute;
-  top: 0;
-  left: 10%;
-  right: 10%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.8), rgba(245, 158, 11, 0.8), transparent);
-  border-radius: 2px;
-}
-@media (max-width: 640px) {
-  .clb-bento-anchor {
-    left: 50%;
-    width: 95%;
-  }
-  .clb-bento-deck {
-    padding: 16px;
-    border-radius: 18px;
-  }
-}
+.clb-root{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;user-select:none;color:#f1f5f9;contain:strict}
+.clb-panel{position:absolute;height:auto;bottom:0}
+.clb-layer{position:absolute;inset:0;will-change:transform}
+.clb-pos{position:absolute;translate:-50% -50%}
+.clb-logo{width:var(--lw,min(58vw,820px));height:auto;display:block;color:#e2e8f0;opacity:var(--lo,.28)}
+.clb-logo-float{position:relative;animation:clb-breathe 38s ease-in-out infinite}
+.clb-bolt{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.clb-cycle{opacity:0;animation:clb-cyc 30s linear infinite}
+@keyframes clb-cyc{0%{opacity:0}8%{opacity:1}45%{opacity:1}55%{opacity:0}100%{opacity:0}}
+.clb-spot{opacity:0;transition:opacity .7s ease}
+.clb-float{animation:clb-drift 30s ease-in-out infinite}
+.clb-body{opacity:min(.48,calc(var(--o)*var(--i,1.5)))}
+.clb-pulse{animation:clb-pulse 7s ease-in-out infinite}
+.clb-icon{width:clamp(28px,3.4vw,48px);height:auto;display:block}
+.clb-md .clb-icon{width:clamp(24px,2.8vw,40px)}
+.clb-sm .clb-icon{width:clamp(20px,2.3vw,32px)}
+.clb-board{font:800 clamp(12px,1.45vw,22px)/1 Inter,system-ui,sans-serif;letter-spacing:.08em;white-space:nowrap}
+.clb-state{font-size:calc(clamp(8.5px,1vw,15px)*var(--s,1));letter-spacing:.12em;font-weight:700}
+.clb-subject{font:600 clamp(10.5px,1.1vw,16px)/1 Inter,system-ui,sans-serif;letter-spacing:.22em;white-space:nowrap}
+.clb-script{font:600 clamp(13px,1.45vw,22px)/1.3 "Noto Sans Devanagari","Nirmala UI",system-ui,sans-serif;white-space:nowrap;display:inline-block}
+.clb-formula{font:italic 400 clamp(11.5px,1.25vw,18px)/1.2 "Cambria Math","STIX Two Text",Georgia,serif;white-space:nowrap;display:inline-flex;align-items:center;gap:.3em}
+.clb-formula sub,.clb-formula sup{font-size:.6em;line-height:0}
+.clb-frac{display:inline-flex;flex-direction:column;align-items:center}
+.clb-frac>span:first-child{border-bottom:1.2px solid currentColor;padding:0 .2em .06em}
+.clb-star{position:absolute;border-radius:50%;background:#f1f5f9;opacity:.18;box-shadow:0 0 6px 1px rgba(226,232,240,.5);animation:clb-twinkle 5s ease-in-out infinite}
+@keyframes clb-drift{0%,100%{transform:translate3d(0,0,0) rotate(calc(var(--a,-20deg) - var(--d)*3deg))}50%{transform:translate3d(0,-22px,0) rotate(calc(var(--a,-20deg) + var(--d)*3deg))}}
+@keyframes clb-breathe{0%,100%{transform:scale(1)}50%{transform:translate3d(0,-10px,0) scale(1.015)}}
+@keyframes clb-pulse{0%,100%{opacity:calc(.08*var(--i,1.5))}50%{opacity:min(.48,calc(.24*var(--i,1.5)))}}
+@keyframes clb-twinkle{0%,100%{opacity:calc(.08*var(--i,1.5));transform:scale(.8)}50%{opacity:min(.5,calc(.32*var(--i,1.5)));transform:scale(1.4)}}
+@media (max-width:640px){.clb-hm{display:none}}
+@media (prefers-reduced-motion:reduce){.clb-float,.clb-pulse,.clb-star,.clb-logo-float{animation:none}.clb-cycle{animation:none;opacity:1}.clb-bolt{display:none}.clb-float{transform:rotate(var(--a,-20deg))}}
 `
 
 export { CoachingLoginBackground }

@@ -80,13 +80,14 @@ def test_transient_wmi_timeout_does_not_poison_cache(monkeypatch):
     """A transient WMI timeout must never cache a degraded fingerprint or hash ProcessorNameString."""
     _reset_hardware_cache()
     monkeypatch.setattr(hardware.os, "name", "nt")
+    monkeypatch.setattr(hardware.time, "sleep", lambda _s: None)
     monkeypatch.setattr(hardware, "_get_registry_machine_guid", lambda: "080ca378-b70a-41d3-b533-89e9e56ef97a")
 
     calls = {"count": 0}
 
     def _mock_batch():
         calls["count"] += 1
-        if calls["count"] == 1:
+        if calls["count"] <= 2:
             return ("D494AFEF-4878-E911-B5AD-00D8615DBA73", "UNKNOWN", "EVSI512G09202272217")
         return ("D494AFEF-4878-E911-B5AD-00D8615DBA73", "BFEBFBFF000906EA", "EVSI512G09202272217")
 
@@ -94,8 +95,8 @@ def test_transient_wmi_timeout_does_not_poison_cache(monkeypatch):
 
     def _mock_prop(_cmd: str) -> str:
         wmi_prop_calls["n"] += 1
-        # Retry still fails once during initial degraded startup, recovers on next call
-        return "UNKNOWN" if wmi_prop_calls["n"] == 1 else "BFEBFBFF000906EA"
+        # Retry attempts during the first two degraded probes fail, then third call recovers cleanly
+        return "UNKNOWN" if wmi_prop_calls["n"] <= 4 else "BFEBFBFF000906EA"
 
     monkeypatch.setattr(hardware, "_query_wmi_batch", _mock_batch)
     monkeypatch.setattr(hardware, "_query_wmi_property", _mock_prop)
@@ -103,6 +104,9 @@ def test_transient_wmi_timeout_does_not_poison_cache(monkeypatch):
     degraded = get_hardware_components()
     assert degraded["cpu_id"] == "UNKNOWN"
     assert hardware._CACHED_HW_COMPONENTS is None
+    ok_incomplete, incomplete_msg = verify_hardware_fingerprint("PRATHAM-B347-9CFE-842B-E65C")
+    assert ok_incomplete is False
+    assert "insufficient immutable hardware identifiers" in incomplete_msg.lower()
 
     recovered = get_machine_hardware_fingerprint()
     assert recovered == "PRATHAM-B347-9CFE-842B-E65C"

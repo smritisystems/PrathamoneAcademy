@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-21
+#  * @updated     2026-11-27
 #  *
 #  * @description High-fidelity PDF generation engine and bulk export service for fee receipts strictly matching executive UI card layout with vector donut charts, metadata pills, and historical payment registers.
 #  */
@@ -350,14 +350,17 @@ class ReceiptPdfService:
         page = doc.new_page(width=420.0, height=595.0)
 
         inst = institution_data or {}
-        inst_name = (str(inst.get("name") or "").strip() or "PRASHANT ACADEMY").upper()
-        inst_tagline = str(inst.get("tagline") or "").strip() or "Learn • Practice • Achieve"
-        inst_address = str(inst.get("address") or "").strip() or "Shop No16, 14, 12, Aquarius Taurus Building, Jankalyan Nagar, Malad West"
-        inst_city = str(inst.get("city") or "").strip() or "Mumbai"
-        inst_state = str(inst.get("state") or "").strip() or "Maharashtra"
-        inst_pincode = str(inst.get("pincode") or "").strip() or "400095"
-        inst_phone = str(inst.get("phone") or "").strip() or "+91 8779 123 007"
-        inst_email = str(inst.get("email") or "").strip() or "contact@prathamone.com"
+        from app.services.institution_profile_service import derive_monogram
+        raw_inst_name = str(inst.get("name") or "").strip()
+        inst_name = (raw_inst_name or "Coaching Institute").upper()
+        inst_monogram = derive_monogram(raw_inst_name, inst.get("short_name"))
+        inst_tagline = str(inst.get("tagline") or "").strip()
+        inst_address = str(inst.get("address") or "").strip()
+        inst_city = str(inst.get("city") or "").strip()
+        inst_state = str(inst.get("state") or "").strip()
+        inst_pincode = str(inst.get("pincode") or "").strip()
+        inst_phone = str(inst.get("phone") or "").strip()
+        inst_email = str(inst.get("email") or "").strip()
 
         # Check settings for logo, tagline, sovereign trim, and verification seal visibility
         show_logo = inst.get("print_receipt_logo", True)
@@ -392,23 +395,23 @@ class ReceiptPdfService:
             target_rect = fitz.Rect(18, 17, 56, 55)
             if logo_path is not None:
                 page.insert_image(target_rect, filename=str(logo_path), keep_proportion=True)
-                page.insert_text(fitz.Point(28, 38), "PA", fontname="hebo", fontsize=8, render_mode=3)
+                page.insert_text(fitz.Point(28, 38), inst_monogram, fontname="hebo", fontsize=8, render_mode=3)
                 rendered_logo = True
             elif logo_bytes is not None:
                 page.insert_image(target_rect, stream=logo_bytes, keep_proportion=True)
-                page.insert_text(fitz.Point(28, 38), "PA", fontname="hebo", fontsize=8, render_mode=3)
+                page.insert_text(fitz.Point(28, 38), inst_monogram, fontname="hebo", fontsize=8, render_mode=3)
                 rendered_logo = True
             elif logo_pixmap is not None:
                 page.insert_image(target_rect, pixmap=logo_pixmap, keep_proportion=True)
-                page.insert_text(fitz.Point(28, 38), "PA", fontname="hebo", fontsize=8, render_mode=3)
+                page.insert_text(fitz.Point(28, 38), inst_monogram, fontname="hebo", fontsize=8, render_mode=3)
                 rendered_logo = True
 
             if not rendered_logo:
                 cx_logo, cy_logo = 36, 38
                 page.draw_circle(fitz.Point(cx_logo, cy_logo), 17.5, color=cls.C_DARK_NAVY, fill=cls.C_DARK_NAVY)
                 page.draw_circle(fitz.Point(cx_logo, cy_logo), 15.0, color=(0.85, 0.69, 0.22), width=0.8)
-                pa_l = fitz.get_text_length("PA", fontname="hebo", fontsize=11.5)
-                page.insert_text(fitz.Point(cx_logo - pa_l / 2.0, cy_logo + 4.2), "PA", fontname="hebo", fontsize=11.5, color=(1, 1, 1))
+                pa_l = fitz.get_text_length(inst_monogram, fontname="hebo", fontsize=11.5)
+                page.insert_text(fitz.Point(cx_logo - pa_l / 2.0, cy_logo + 4.2), inst_monogram, fontname="hebo", fontsize=11.5, color=(1, 1, 1))
             header_text_x = 62
         else:
             header_text_x = 20
@@ -418,9 +421,7 @@ class ReceiptPdfService:
 
         if show_tagline and inst_tagline:
             sub_txt = inst_tagline.upper()
-        else:
-            sub_txt = "CENTRE FOR ACADEMIC EXCELLENCE  •  ESTD. 2018"
-        page.insert_text(fitz.Point(header_text_x, 34.5), sub_txt, fontname="hebo", fontsize=5.2, color=(0.10, 0.35, 0.70))
+            page.insert_text(fitz.Point(header_text_x, 34.5), sub_txt, fontname="hebo", fontsize=5.2, color=(0.10, 0.35, 0.70))
 
         # Center-Left: Complete Address (wrapped cleanly without truncation) & Contact Lines
         addr_lower = inst_address.lower()

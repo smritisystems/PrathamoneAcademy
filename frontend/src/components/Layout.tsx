@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-27
  *
  * @description Master application shell component providing header navigation, collapsible sidebar, and main view outlet.
  */
@@ -31,9 +31,10 @@ import { useNavigationTracker } from '../hooks/useNavigationTracker'
 import GlobalNavigationSearch from './navigation/GlobalNavigationSearch'
 import MenuCustomizerModal from './navigation/MenuCustomizerModal'
 import InitialLaunchActivationModal from './InitialLaunchActivationModal'
+import InstitutionOnboardingWizard from './InstitutionOnboardingWizard'
 import ForcePasswordChangeModal from './ForcePasswordChangeModal'
 import { useEditModeStore } from '../store/editModeStore'
-import { institutionsApi, academicYearsApi, licenseApi } from '../api/endpoints'
+import { institutionsApi, academicYearsApi, licenseApi, settingsApi } from '../api/endpoints'
 import { usePWA } from '../hooks/usePWA'
 import { useBranding } from '../config/branding'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
@@ -131,11 +132,20 @@ export default function Layout() {
   const currentInst = institutions.find((i) => i.id === selectedInstitutionId) ?? institutions[0]
   const effectiveHeaderLogo = currentInst?.logo_url || branding.assets.logoUrl
 
-  // Initial launch license activation prompt evaluation
+  // Initial launch license activation & institution profile onboarding wizard evaluation
   const [isInitialLicenseModalOpen, setIsInitialLicenseModalOpen] = useState(false)
+  const [isOnboardingWizardDeferred, setIsOnboardingWizardDeferred] = useState(false)
   const user = useAuthStore((s) => s.user)
   const isSysAdmin = isUserSysAdmin(user)
-  const isInstitutionAdmin = (user?.role || '').toLowerCase() === 'admin' || isSysAdmin
+  const isInstitutionAdmin = (user?.role || '').toLowerCase() === 'admin' || (user?.role || '').toLowerCase() === 'principal' || isSysAdmin
+
+  const { data: instituteProfile } = useQuery({
+    queryKey: ['institute_profile', selectedInstitutionId],
+    queryFn: () => settingsApi.getProfile().then((res) => res.data),
+    enabled: !!token && !isTrainingMode && isInstitutionAdmin,
+    staleTime: 60_000,
+    retry: false,
+  })
 
   const { data: licenseStatus } = useQuery({
     queryKey: ['license-status', selectedInstitutionId],
@@ -461,6 +471,24 @@ export default function Layout() {
         onClose={() => setIsInitialLicenseModalOpen(false)}
         licenseStatus={licenseStatus}
         institutionId={selectedInstitutionId ?? undefined}
+      />
+
+      {/* First-Launch Institution Profile Setup Wizard */}
+      <InstitutionOnboardingWizard
+        isOpen={
+          !isTrainingMode &&
+          !user?.must_change_password &&
+          !isInitialLicenseModalOpen &&
+          !isOnboardingWizardDeferred &&
+          isInstitutionAdmin &&
+          Boolean(
+            instituteProfile &&
+              (instituteProfile.onboarding_completed === false || instituteProfile.is_placeholder_profile)
+          )
+        }
+        initialProfile={instituteProfile}
+        onComplete={() => setIsOnboardingWizardDeferred(true)}
+        onDefer={() => setIsOnboardingWizardDeferred(true)}
       />
 
       {/* Mandatory First-Run Master Password Change Modal */}

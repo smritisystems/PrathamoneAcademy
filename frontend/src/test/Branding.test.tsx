@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-05
- * @updated     2026-11-18
+ * @updated     2026-11-27
  *
  * @description Unit and integration tests verifying centralized branding configuration, AITDL parent organization, product ecosystem, and dynamic tenant resolution.
  */
@@ -26,9 +26,9 @@ describe('Centralized Application Branding & Identity System', () => {
     expect(BRANDING_CONFIG.shortName).toBe('PrathamOne')
     expect(BRANDING_CONFIG.suiteName).toBe('PrathamOne EduOS')
     expect(BRANDING_CONFIG.edition).toBe('Coaching Institute Edition')
-    expect(BRANDING_CONFIG.defaultAcademyName).toBe('Prashant Academy')
-    expect(BRANDING_CONFIG.defaultAcademyCode).toBe('PA001')
-    expect(BRANDING_CONFIG.monogram).toBe('PA')
+    expect(BRANDING_CONFIG.defaultAcademyName).toBe('Your Coaching Institute')
+    expect(BRANDING_CONFIG.defaultAcademyCode).toBe('EDU001')
+    expect(BRANDING_CONFIG.monogram).toBe('YC')
   })
 
   it('exposes version, build number, and environment without leakage', () => {
@@ -81,15 +81,19 @@ describe('Centralized Application Branding & Identity System', () => {
     expect(colors.success).toMatch(/^#[0-9a-fA-F]{6}$/)
   })
 
-  it('uses the supplied 18112026 artwork for software branding', () => {
-    const artworkRoot = '/artwork/18112026/03'
+  it('uses the supplied 25112026 artwork for global software branding', () => {
+    const artworkRoot = '/artwork/25112026'
     expect(BRANDING_CONFIG.assets.horizontalLogoTransparentUrl).toBe(
-      `${artworkRoot}/batch_g2.png`
+      `${artworkRoot}/batch_g44.svg`
     )
-    expect(BRANDING_CONFIG.assets.softwareLogoSvgUrl).toBe(`${artworkRoot}/batch_g2.svg`)
+    expect(BRANDING_CONFIG.assets.softwareLogoSvgUrl).toBe(`${artworkRoot}/batch_g44.svg`)
+    expect(BRANDING_CONFIG.assets.horizontalLogoDarkUrl).toBe(`${artworkRoot}/batch_g45.svg`)
     expect(BRANDING_CONFIG.assets.appIconUrl).toBe('/icons/icon-512x512.png')
     expect(BRANDING_CONFIG.assets.softwareIconSvgUrl).toBe(
-      `${artworkRoot}/batch_path1-9.svg`
+      `${artworkRoot}/batch_g47.svg`
+    )
+    expect(BRANDING_CONFIG.assets.softwareIconWhiteSvgUrl).toBe(
+      `${artworkRoot}/batch_g48.svg`
     )
     expect(BRANDING_CONFIG.assets.faviconUrl).toBe('/icons/icon-32x32.png')
     expect(BRANDING_CONFIG.assets.academyLogoUrl).toBe('/media/logo/prashant-academy-logo.svg')
@@ -104,7 +108,7 @@ describe('Centralized Application Branding & Identity System', () => {
     })
     expect(resolved.assets.logoUrl).toBe('/media/logo/prashant-academy-logo.svg')
     expect(resolved.assets.horizontalLogoTransparentUrl).toBe(
-      `${artworkRoot}/batch_g2.png`
+      `${artworkRoot}/batch_g44.svg`
     )
     expect(resolved.assets.faviconUrl).toBe(BRANDING_CONFIG.assets.faviconUrl)
 
@@ -115,7 +119,7 @@ describe('Centralized Application Branding & Identity System', () => {
   it('provides official support contact information', () => {
     const { support } = BRANDING_CONFIG
     expect(support.email).toBe('support@prathamone.com')
-    expect(support.phone).toBe('+91-22-12345678')
+    expect(support.phone).toBe('')
     expect(support.website).toBe('https://prathamone.com')
     expect(support.academyWebsite).toBe('https://prathamone.com')
   })
@@ -131,11 +135,11 @@ describe('Centralized Application Branding & Identity System', () => {
   })
 
   describe('resolveBranding() Tenant Overrides', () => {
-    it('returns default academy branding when no institution is provided', () => {
+    it('returns neutral onboarding branding when no institution is provided', () => {
       const resolved = resolveBranding(null)
-      expect(resolved.academyName).toBe('Prashant Academy')
-      expect(resolved.academyCode).toBe('PA001')
-      expect(resolved.monogram).toBe('PA')
+      expect(resolved.academyName).toBe('Your Coaching Institute')
+      expect(resolved.academyCode).toBe('EDU001')
+      expect(resolved.monogram).toBe('YC')
       expect(resolved.appName).toBe('PrathamOne EduOS')
       expect(resolved.parentOrganization.name).toBe('SmritiSys')
       expect(resolved.products).toHaveLength(3)

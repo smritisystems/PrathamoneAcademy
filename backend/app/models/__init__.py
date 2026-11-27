@@ -16,7 +16,7 @@
 #  * @description SQLAlchemy ORM models package exporting all database entity definitions.
 #  */
 
-from app.models.institution import Institution
+from app.models.institution import Institution, InstitutionBranch
 from app.models.academic_year import AcademicYear
 from app.models.board import Board
 from app.models.user import User, Role, Permission, AuditLog, RevokedToken
@@ -104,6 +104,7 @@ from app.models.budgeting import (
 
 __all__ = [
     "Institution",
+    "InstitutionBranch",
     "AcademicYear",
     "Board",
     "User",

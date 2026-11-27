@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-26
+ * @updated     2026-11-27
  *
  * @description Flagship Fees & Payments workspace featuring overview analytics, fee register, payments, and receipts.
  */
@@ -255,7 +255,7 @@ function FeesContent() {
   const [defaulterSearchQuery, setDefaulterSearchQuery] = useState('')
   const [defaulterStandardFilter, setDefaulterStandardFilter] = useState<string>('')
   const [isBulkReminderModalOpen, setIsBulkReminderModalOpen] = useState(false)
-  const [reminderTemplate, setReminderTemplate] = useState('Dear Guardian, this is a gentle fee reminder from Prashant Academy for pending dues. Please clear at your earliest convenience.')
+  const [reminderTemplate, setReminderTemplate] = useState('Dear Guardian, this is a gentle fee reminder from our Coaching Institute for pending dues. Please clear at your earliest convenience.')
 
   // Live Fee Defaulters from canonical backend reports ledger
   const { data: rawDefaulters = [] } = useQuery<any[]>({
@@ -2916,8 +2916,8 @@ function FeesContent() {
     return {
       receiptPrefix: 'RCP-',
       startingSequence: 1001,
-      headerTitle: 'Prashant Academy Coaching Institute',
-      gstNumber: '27AABCP1234F1Z5',
+      headerTitle: branding?.academyName || 'Coaching Institute',
+      gstNumber: '',
       receiptFooterTerms: 'Fees once paid are non-refundable and non-transferable under any circumstances.',
       gracePeriodDays: 7,
       lateFeeDailyAmount: 50,

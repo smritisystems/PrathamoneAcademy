@@ -293,3 +293,47 @@ def test_migrate_only_verifies_head_and_records_audit_without_downgrade(tmp_path
     assert '"operation": "migrate_only"' in audit_text
     assert '"outcome": "success"' in audit_text
     assert "postgres:postgres@" not in audit_text
+
+
+def test_resolve_data_root_avoids_split_brain_on_writable_drive(tmp_path, monkeypatch):
+    app_root = tmp_path / "D_Drive" / "PrathamOneEduOS"
+    local_app = tmp_path / "LocalAppData"
+    app_root.mkdir(parents=True)
+    (app_root / "data").mkdir(parents=True)  # e.g. empty/backups dir without PG_VERSION
+    monkeypatch.setenv("LOCALAPPDATA", str(local_app))
+    monkeypatch.delenv("PRATHAM_DATA_ROOT", raising=False)
+    monkeypatch.setattr(run_server.sys, "argv", ["prathamone_backend.exe", "--migrate-only"])
+
+    assert run_server._resolve_data_root(app_root) == local_app / "PrathamOneEduOS"
+
+    # Once a portable PG_VERSION exists inside app_root\data, preserve it
+    (app_root / "data" / "PG_VERSION").write_text("16\n", encoding="utf-8")
+    assert run_server._resolve_data_root(app_root) == app_root
+
+    # Explicit --data-root flag overrides both
+    explicit = tmp_path / "ExplicitRoot"
+    monkeypatch.setattr(run_server.sys, "argv", ["prathamone_backend.exe", "--migrate-only", "--data-root", str(explicit)])
+    assert run_server._resolve_data_root(app_root) == explicit
+
+
+def test_migrate_only_aborts_without_initdb_when_pg_cluster_missing(tmp_path):
+    app_root = tmp_path / "app"
+    (app_root / "pgsql" / "bin").mkdir(parents=True)
+    (app_root / "pgsql" / "bin" / "postgres.exe").write_bytes(b"stub")
+    data_root = tmp_path / "data_root"
+    data_root.mkdir(parents=True)
+    backend_dir = Path(__file__).resolve().parents[1]
+
+    code, result = run_server.run_migrate_only(
+        app_root,
+        backend_dir,
+        data_root,
+        backup_path="C:/backups/pre_upgrade.dump",
+        actor="installer",
+        start_pg=True,
+    )
+
+    assert code == 1
+    assert result["outcome"] == "failed"
+    assert "aborting migration without initdb" in result["reason"].lower()
+    assert (data_root / "logs" / "upgrade_audit.jsonl").is_file()

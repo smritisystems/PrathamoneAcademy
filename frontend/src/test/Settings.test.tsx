@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-19
+ * @updated     2026-11-27
  *
  * @description Vitest test suite for Institute Settings workspace, live branding preview, sub-tabs, lookups CRUD, and category persistence.
  */
@@ -36,9 +36,9 @@ vi.mock('../store/authStore', () => ({
 
 const mockProfile = {
   id: 1,
-  name: 'PrathamOne Academy',
-  code: 'PA001',
-  short_name: 'PA',
+  name: 'Sankalp Coaching Institute',
+  code: 'SC001',
+  short_name: 'SC',
   tagline: 'Learn • Practice • Achieve',
   institute_type: 'Coaching Institute',
   establishment_year: 2018,
@@ -194,8 +194,8 @@ describe('Institute Settings & Configuration Workspace', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('PrathamOne Academy')).toBeDefined()
-      expect(screen.getByDisplayValue('PA')).toBeDefined()
+      expect(screen.getByDisplayValue('Sankalp Coaching Institute')).toBeDefined()
+      expect(screen.getByDisplayValue('SC')).toBeDefined()
       expect(screen.getByText('Branding Preview')).toBeDefined()
     })
 
@@ -221,10 +221,10 @@ describe('Institute Settings & Configuration Workspace', () => {
     })
 
     fireEvent.click(screen.getByText('Address & Contact'))
-    expect(screen.getByText('Campus Address & Public Contact Information')).toBeDefined()
+    expect(screen.getByText('Campus Address & Contact Information')).toBeDefined()
 
     fireEvent.click(screen.getByText('Branches'))
-    expect(screen.getByText('Campus Centers & Branches')).toBeDefined()
+    expect(screen.getByText(/Campus Centers & Branches/i)).toBeDefined()
   })
 
   it('switches categories and renders General Lookups table with add lookup modal', async () => {
@@ -265,7 +265,7 @@ describe('Institute Settings & Configuration Workspace', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('PrathamOne Academy')).toBeDefined()
+      expect(screen.getByDisplayValue('Sankalp Coaching Institute')).toBeDefined()
     })
 
     // Enable Edit Mode explicitly

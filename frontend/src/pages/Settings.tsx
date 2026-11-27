@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-26
+ * @updated     2026-11-27
  *
  * @description Comprehensive Institute Settings & Configuration Workspace for branding, defaults, lookups, and governance.
  */
@@ -30,10 +30,16 @@ import {
 } from 'lucide-react'
 import NavigationSettingsPanel from '../components/settings/NavigationSettingsPanel'
 import DeviceBindingSettingsPanel from '../components/settings/DeviceBindingSettingsPanel'
-import { settingsApi } from '../api/endpoints'
+import { settingsApi, institutionsApi } from '../api/endpoints'
 import type {
-  InstituteProfile, LookupItem, LookupsResponse, SettingAuditLogItem, AllSettingsState
+  InstituteProfile, InstitutionBranch, LookupItem, LookupsResponse, SettingAuditLogItem, AllSettingsState
 } from '../types'
+import {
+  INDIAN_STATES_AND_UTS,
+  INSTITUTE_PLACEHOLDERS,
+  readAndValidateLogoFile,
+  validateProfileFields,
+} from '../utils/institutionValidation'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { downloadBlob } from '../utils/reportExport'
 import { extractApiErrorMessage, formatApiErrorDetail } from '../utils/errorTaxonomy'
@@ -112,35 +118,66 @@ export default function Settings() {
   const [saving, setSaving] = useState<boolean>(false)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
-  // Profile Form State
+  // Profile Form State (neutral initial values; populated dynamically from server)
   const [profile, setProfile] = useState<InstituteProfile>({
     id: 1,
-    name: 'PrathamOne Academy',
-    code: 'PA001',
-    short_name: 'PA',
-    tagline: 'Learn • Practice • Achieve',
+    name: '',
+    code: '',
+    short_name: '',
+    branch_name: '',
+    branches: [],
+    tagline: '',
     institute_type: 'Coaching Institute',
-    establishment_year: 2018,
-    registration_number: 'MH-COACH-2018-0157',
-    tax_id: 'AABCP1234K',
-    description: 'A comprehensive coaching academy for school & competitive examinations, focused on concept clarity and student success.',
+    establishment_year: null,
+    registration_number: '',
+    tax_id: '',
+    gstin: '',
+    pan: '',
+    description: '',
     is_active: true,
     default_language: 'en',
     timezone: 'Asia/Kolkata',
-    address: 'Vasai Road (W), Palghar - 401202',
-    city: 'Palghar',
-    state: 'Maharashtra',
-    pincode: '401202',
-    phone: '+91 98765 43210',
-    email: 'info@prathamoneacademy.in',
-    website: 'https://prathamone.com',
-    logo_url: '/logo.svg',
+    address: '',
+    address_line_1: '',
+    address_line_2: '',
+    area_locality: '',
+    city: '',
+    district: '',
+    state: '',
+    pincode: '',
+    country: 'India',
+    phone: '',
+    alternate_phone: '',
+    email: '',
+    website: '',
+    logo_url: '',
     favicon_url: BRANDING_CONFIG.assets.faviconUrl,
     primary_color: '#0B2D6B',
     secondary_color: '#071C44',
     accent_color: '#F16906',
   })
   const [originalProfile, setOriginalProfile] = useState<InstituteProfile | null>(null)
+  const [branches, setBranches] = useState<InstitutionBranch[]>([])
+  const [isBranchModalOpen, setIsBranchModalOpen] = useState(false)
+  const [editingBranch, setEditingBranch] = useState<InstitutionBranch | null>(null)
+  const [branchSaving, setBranchSaving] = useState(false)
+  const [branchForm, setBranchForm] = useState({
+    branch_name: '',
+    branch_code: '',
+    is_main_branch: false,
+    address_line_1: '',
+    address_line_2: '',
+    area_locality: '',
+    city: '',
+    district: '',
+    state: '',
+    pincode: '',
+    country: 'India',
+    phone: '',
+    alternate_phone: '',
+    email: '',
+    gstin: '',
+  })
 
   // Category Settings State (Academic, Admission, Staff, Fees, Attendance, Examination, Documents, System)
   const [allSettings, setAllSettings] = useState<AllSettingsState>({})
@@ -179,12 +216,37 @@ export default function Settings() {
         settingsApi.getLookups(),
       ])
 
-      const profileData = {
+      const profileData: InstituteProfile = {
         ...profRes.data,
+        name: profRes.data.name || '',
+        short_name: profRes.data.short_name || '',
+        branch_name: profRes.data.branch_name || '',
+        tagline: profRes.data.tagline || '',
+        institute_type: profRes.data.institute_type || 'Coaching Institute',
+        registration_number: profRes.data.registration_number || '',
+        tax_id: profRes.data.tax_id || '',
+        gstin: profRes.data.gstin || '',
+        pan: profRes.data.pan || '',
+        description: profRes.data.description || '',
+        address: profRes.data.address || '',
+        address_line_1: profRes.data.address_line_1 || profRes.data.address || '',
+        address_line_2: profRes.data.address_line_2 || '',
+        area_locality: profRes.data.area_locality || '',
+        city: profRes.data.city || '',
+        district: profRes.data.district || '',
+        state: profRes.data.state || '',
+        pincode: profRes.data.pincode || '',
+        country: profRes.data.country || 'India',
+        phone: profRes.data.phone || '',
+        alternate_phone: profRes.data.alternate_phone || '',
+        email: profRes.data.email || '',
+        website: profRes.data.website || '',
+        logo_url: profRes.data.logo_url || '',
         favicon_url: normalizeInstitutionFaviconUrl(profRes.data.favicon_url),
       }
       setProfile(profileData)
       setOriginalProfile(profileData)
+      setBranches(Array.isArray(profRes.data.branches) ? profRes.data.branches : [])
 
       setAllSettings(setRes.data)
       setOriginalSettings(setRes.data)
@@ -221,7 +283,7 @@ export default function Settings() {
           primary: originalProfileRef.current.primary_color || '#0B2D6B',
           secondary: originalProfileRef.current.secondary_color || '#071C44',
           accent: originalProfileRef.current.accent_color || '#F16906',
-        }, originalProfileRef.current.logo_url)
+        }, originalProfileRef.current.logo_url || undefined)
       }
     }
   }, [])
@@ -263,7 +325,7 @@ export default function Settings() {
           primary: next.primary_color || '#0B2D6B',
           secondary: next.secondary_color || '#071C44',
           accent: next.accent_color || '#F16906',
-        }, next.logo_url)
+        }, next.logo_url || undefined)
       }
       return next
     })
@@ -289,7 +351,7 @@ export default function Settings() {
           primary: originalProfile.primary_color || '#0B2D6B',
           secondary: originalProfile.secondary_color || '#071C44',
           accent: originalProfile.accent_color || '#F16906',
-        }, originalProfile.logo_url)
+        }, originalProfile.logo_url || undefined)
       }
     }
     if (originalSettings[activeCategory]) {
@@ -306,13 +368,50 @@ export default function Settings() {
     try {
       setSaving(true)
       if (activeCategory === 'profile' || activeCategory === 'branding') {
-        const res = await settingsApi.updateProfile(profile)
-        const profileData = {
+        const validationErr = validateProfileFields(profile, { requireNonPlaceholderName: true })
+        if (validationErr) {
+          showNotification('error', validationErr)
+          setSaving(false)
+          return
+        }
+        const payload = {
+          ...profile,
+          onboarding_completed: true,
+        }
+        const res = await settingsApi.updateProfile(payload)
+        const profileData: InstituteProfile = {
           ...res.data.profile,
+          name: res.data.profile.name || '',
+          short_name: res.data.profile.short_name || '',
+          branch_name: res.data.profile.branch_name || '',
+          tagline: res.data.profile.tagline || '',
+          institute_type: res.data.profile.institute_type || 'Coaching Institute',
+          registration_number: res.data.profile.registration_number || '',
+          tax_id: res.data.profile.tax_id || '',
+          gstin: res.data.profile.gstin || '',
+          pan: res.data.profile.pan || '',
+          description: res.data.profile.description || '',
+          address: res.data.profile.address || '',
+          address_line_1: res.data.profile.address_line_1 || res.data.profile.address || '',
+          address_line_2: res.data.profile.address_line_2 || '',
+          area_locality: res.data.profile.area_locality || '',
+          city: res.data.profile.city || '',
+          district: res.data.profile.district || '',
+          state: res.data.profile.state || '',
+          pincode: res.data.profile.pincode || '',
+          country: res.data.profile.country || 'India',
+          phone: res.data.profile.phone || '',
+          alternate_phone: res.data.profile.alternate_phone || '',
+          email: res.data.profile.email || '',
+          website: res.data.profile.website || '',
+          logo_url: res.data.profile.logo_url || '',
           favicon_url: normalizeInstitutionFaviconUrl(res.data.profile.favicon_url),
         }
         setProfile(profileData)
         setOriginalProfile(profileData)
+        if (Array.isArray(res.data.profile.branches)) {
+          setBranches(res.data.profile.branches)
+        }
         if (activeCategory === 'branding') {
           const categoryData = allSettings[activeCategory] || {}
           await settingsApi.updateBatch(
@@ -329,7 +428,7 @@ export default function Settings() {
           primary: res.data.profile.primary_color || '#0B2D6B',
           secondary: res.data.profile.secondary_color || '#071C44',
           accent: res.data.profile.accent_color || '#F16906',
-        }, res.data.profile.logo_url)
+        }, res.data.profile.logo_url || undefined)
         try {
           const cached = JSON.parse(localStorage.getItem(BRANDING_STORAGE_KEY) || '{}')
           const bgData = allSettings.branding || {}
@@ -394,25 +493,116 @@ export default function Settings() {
     }
   }
 
-  // Handle Logo Upload with Validation
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle Logo Upload with Validation + SVG Sanitization
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const validTypes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp']
-    if (!validTypes.includes(file.type)) {
-      showNotification('error', 'Unsupported file type. Please upload a PNG, JPEG, WEBP, or SVG image.')
-      return
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      showNotification('error', 'Logo image exceeds 2MB limit. Please upload an optimized image.')
-      return
-    }
-    const reader = new FileReader()
-    reader.onload = () => {
-      handleProfileChange('logo_url', reader.result as string)
+    try {
+      const dataUrl = await readAndValidateLogoFile(file)
+      handleProfileChange('logo_url', dataUrl)
       showNotification('success', `Logo "${file.name}" uploaded for preview. Click Save Changes to commit.`)
+    } catch (err: any) {
+      showNotification('error', err?.message || 'Unsupported or unsafe logo file.')
     }
-    reader.readAsDataURL(file)
+  }
+
+  const refreshBranches = async (instId: number) => {
+    try {
+      const bRes = await institutionsApi.listBranches(instId)
+      setBranches(bRes.data || [])
+    } catch { }
+  }
+
+  const openBranchModal = (branch: InstitutionBranch | null = null) => {
+    setEditingBranch(branch)
+    if (branch) {
+      setBranchForm({
+        branch_name: branch.branch_name || '',
+        branch_code: branch.branch_code || '',
+        is_main_branch: Boolean(branch.is_main_branch),
+        address_line_1: branch.address_line_1 || '',
+        address_line_2: branch.address_line_2 || '',
+        area_locality: branch.area_locality || '',
+        city: branch.city || '',
+        district: branch.district || '',
+        state: branch.state || '',
+        pincode: branch.pincode || '',
+        country: branch.country || 'India',
+        phone: branch.phone || '',
+        alternate_phone: branch.alternate_phone || '',
+        email: branch.email || '',
+        gstin: branch.gstin || '',
+      })
+    } else {
+      setBranchForm({
+        branch_name: '',
+        branch_code: '',
+        is_main_branch: branches.length === 0,
+        address_line_1: '',
+        address_line_2: '',
+        area_locality: '',
+        city: '',
+        district: '',
+        state: '',
+        pincode: '',
+        country: 'India',
+        phone: '',
+        alternate_phone: '',
+        email: '',
+        gstin: '',
+      })
+    }
+    setIsBranchModalOpen(true)
+  }
+
+  const handleSaveBranch = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!branchForm.branch_name.trim()) {
+      showNotification('error', 'Branch Name is required.')
+      return
+    }
+    try {
+      setBranchSaving(true)
+      const instId = profile.id || 1
+      if (editingBranch) {
+        await institutionsApi.updateBranch(instId, editingBranch.id, branchForm)
+        showNotification('success', `Branch "${branchForm.branch_name}" updated.`)
+      } else {
+        await institutionsApi.createBranch(instId, branchForm)
+        showNotification('success', `Branch "${branchForm.branch_name}" created.`)
+      }
+      setIsBranchModalOpen(false)
+      await refreshBranches(instId)
+      await queryClient.invalidateQueries({ queryKey: ['institutions'] })
+      await queryClient.invalidateQueries({ queryKey: ['public_branding'] })
+    } catch (err: any) {
+      showNotification('error', extractApiErrorMessage(err, 'Failed to save branch.'))
+    } finally {
+      setBranchSaving(false)
+    }
+  }
+
+  const handleSetMainBranch = async (branch: InstitutionBranch) => {
+    try {
+      const instId = profile.id || 1
+      await institutionsApi.updateBranch(instId, branch.id, { is_main_branch: true })
+      await refreshBranches(instId)
+      await queryClient.invalidateQueries({ queryKey: ['public_branding'] })
+      showNotification('success', `"${branch.branch_name}" is now the Main Branch.`)
+    } catch (err: any) {
+      showNotification('error', extractApiErrorMessage(err, 'Failed to switch Main Branch.'))
+    }
+  }
+
+  const handleDeactivateBranch = async (branch: InstitutionBranch) => {
+    try {
+      const instId = profile.id || 1
+      await institutionsApi.deactivateBranch(instId, branch.id)
+      await refreshBranches(instId)
+      showNotification('success', `Branch "${branch.branch_name}" deactivated.`)
+    } catch (err: any) {
+      showNotification('error', extractApiErrorMessage(err, 'Unable to deactivate branch.'))
+    }
   }
 
   const handleFaviconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -623,8 +813,8 @@ export default function Settings() {
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
                   className={`w-full text-left p-2.5 rounded-lg flex items-start gap-3 transition-all ${isActive
-                      ? 'bg-primary-50 text-primary-900 shadow-xs border-l-4 border-primary-600 rounded-l-none'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-primary-50 text-primary-900 shadow-xs border-l-4 border-primary-600 rounded-l-none'
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                 >
                   <div
@@ -694,8 +884,8 @@ export default function Settings() {
           {feedback && (
             <div
               className={`mx-6 mt-4 p-3 rounded-lg flex items-center gap-2.5 text-xs font-medium ${feedback.type === 'success'
-                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                  : 'bg-rose-50 text-rose-800 border border-rose-200'
+                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                : 'bg-rose-50 text-rose-800 border border-rose-200'
                 }`}
             >
               {feedback.type === 'success' ? (
@@ -738,14 +928,34 @@ export default function Settings() {
                   {/* ─────────────────────────────────────────────────────────── */}
                   {activeCategory === 'profile' && (
                     <div className="space-y-6">
+                      {/* Optional Profile Completion Notice for Upgraded Installations */}
+                      {Array.isArray(profile.missing_recommended_fields) && profile.missing_recommended_fields.length > 0 && (
+                        <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/70 flex flex-wrap items-center justify-between gap-2 text-xs text-amber-900">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                            <span>
+                              Profile completeness: <strong>{profile.completeness_pct ?? 50}%</strong> — Optional details missing:{' '}
+                              {profile.missing_recommended_fields.join(', ')}. Existing records remain preserved.
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setProfileSubTab('address')}
+                            className="text-[11px] font-semibold text-amber-900 underline hover:text-amber-700"
+                          >
+                            Complete Address &amp; Contact
+                          </button>
+                        </div>
+                      )}
+
                       {/* Sub-tab pills matching Screenshot */}
                       <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3">
                         <button
                           type="button"
                           onClick={() => setProfileSubTab('basic')}
                           className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${profileSubTab === 'basic'
-                              ? 'bg-primary-600 text-white shadow-xs'
-                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                            ? 'bg-primary-600 text-white shadow-xs'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                             }`}
                         >
                           <Info className="w-3.5 h-3.5" />
@@ -755,8 +965,8 @@ export default function Settings() {
                           type="button"
                           onClick={() => setProfileSubTab('address')}
                           className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${profileSubTab === 'address'
-                              ? 'bg-primary-600 text-white shadow-xs'
-                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                            ? 'bg-primary-600 text-white shadow-xs'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                             }`}
                         >
                           <MapPin className="w-3.5 h-3.5" />
@@ -766,8 +976,8 @@ export default function Settings() {
                           type="button"
                           onClick={() => setProfileSubTab('branches')}
                           className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${profileSubTab === 'branches'
-                              ? 'bg-primary-600 text-white shadow-xs'
-                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                            ? 'bg-primary-600 text-white shadow-xs'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                             }`}
                         >
                           <GitFork className="w-3.5 h-3.5" />
@@ -777,8 +987,8 @@ export default function Settings() {
                           type="button"
                           onClick={() => setProfileSubTab('affiliations')}
                           className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${profileSubTab === 'affiliations'
-                              ? 'bg-primary-600 text-white shadow-xs'
-                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                            ? 'bg-primary-600 text-white shadow-xs'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                             }`}
                         >
                           <ShieldCheck className="w-3.5 h-3.5" />
@@ -788,8 +998,8 @@ export default function Settings() {
                           type="button"
                           onClick={() => setProfileSubTab('compliance')}
                           className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${profileSubTab === 'compliance'
-                              ? 'bg-primary-600 text-white shadow-xs'
-                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                            ? 'bg-primary-600 text-white shadow-xs'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                             }`}
                         >
                           <FileText className="w-3.5 h-3.5" />
@@ -822,19 +1032,21 @@ export default function Settings() {
                                   </label>
                                   <input
                                     type="text"
-                                    value={profile.name}
+                                    value={profile.name || ''}
                                     onChange={(e) => handleProfileChange('name', e.target.value)}
+                                    placeholder={INSTITUTE_PLACEHOLDERS.name}
                                     className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                                   />
                                 </div>
                                 <div>
                                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                                    Short Name / Abbreviation <span className="text-rose-500">*</span>
+                                    Short Name / Abbreviation
                                   </label>
                                   <input
                                     type="text"
-                                    value={profile.short_name}
+                                    value={profile.short_name || ''}
                                     onChange={(e) => handleProfileChange('short_name', e.target.value)}
+                                    placeholder={INSTITUTE_PLACEHOLDERS.short_name}
                                     className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 uppercase"
                                   />
                                 </div>
@@ -843,10 +1055,10 @@ export default function Settings() {
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                                    Institute Type <span className="text-rose-500">*</span>
+                                    Institute Type
                                   </label>
                                   <select
-                                    value={profile.institute_type}
+                                    value={profile.institute_type || 'Coaching Institute'}
                                     onChange={(e) => handleProfileChange('institute_type', e.target.value)}
                                     className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white"
                                   >
@@ -861,72 +1073,73 @@ export default function Settings() {
                                     Establishment Year
                                   </label>
                                   <div className="relative">
+                                      <input
+                                        type="number"
+                                        value={profile.establishment_year ?? ''}
+                                        onChange={(e) =>
+                                          handleProfileChange('establishment_year', e.target.value ? parseInt(e.target.value, 10) : null)
+                                        }
+                                        placeholder="e.g., 2018"
+                                        className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                      Registration / License No.
+                                    </label>
                                     <input
-                                      type="number"
-                                      value={profile.establishment_year}
-                                      onChange={(e) =>
-                                        handleProfileChange('establishment_year', parseInt(e.target.value) || 2018)
-                                      }
-                                      className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                      type="text"
+                                      value={profile.registration_number ?? ''}
+                                      onChange={(e) => handleProfileChange('registration_number', e.target.value)}
+                                      className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 uppercase"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                      PAN / Tax ID (Optional)
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={profile.tax_id ?? ''}
+                                      onChange={(e) => handleProfileChange('tax_id', e.target.value)}
+                                      className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 uppercase"
                                     />
                                   </div>
                                 </div>
-                              </div>
 
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                                    Registration / License No.
+                                    Tagline
                                   </label>
                                   <input
                                     type="text"
-                                    value={profile.registration_number}
-                                    onChange={(e) => handleProfileChange('registration_number', e.target.value)}
-                                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 uppercase"
+                                    value={profile.tagline ?? ''}
+                                    onChange={(e) => handleProfileChange('tagline', e.target.value)}
+                                    placeholder="Learn • Practice • Achieve"
+                                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                                   />
                                 </div>
+
                                 <div>
-                                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                                    PAN / Tax ID (Optional)
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={profile.tax_id}
-                                    onChange={(e) => handleProfileChange('tax_id', e.target.value)}
-                                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 uppercase"
+                                  <div className="flex items-center justify-between mb-1">
+                                    <label className="block text-xs font-medium text-gray-700">
+                                      Description (for documents &amp; communication)
+                                    </label>
+                                    <span className="text-[10px] text-gray-400">
+                                      {profile.description?.length || 0} / 250
+                                    </span>
+                                  </div>
+                                  <textarea
+                                    rows={3}
+                                    maxLength={250}
+                                    value={profile.description ?? ''}
+                                    onChange={(e) => handleProfileChange('description', e.target.value)}
+                                    className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none text-gray-800"
                                   />
-                                </div>
-                              </div>
-
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Tagline
-                                </label>
-                                <input
-                                  type="text"
-                                  value={profile.tagline}
-                                  onChange={(e) => handleProfileChange('tagline', e.target.value)}
-                                  placeholder="Learn • Practice • Achieve"
-                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                />
-                              </div>
-
-                              <div>
-                                <div className="flex items-center justify-between mb-1">
-                                  <label className="block text-xs font-medium text-gray-700">
-                                    Description (for documents & communication)
-                                  </label>
-                                  <span className="text-[10px] text-gray-400">
-                                    {profile.description?.length || 0} / 250
-                                  </span>
-                                </div>
-                                <textarea
-                                  rows={3}
-                                  maxLength={250}
-                                  value={profile.description}
-                                  onChange={(e) => handleProfileChange('description', e.target.value)}
-                                  className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none text-gray-800"
-                                />
                               </div>
                             </div>
 
@@ -1196,17 +1409,43 @@ export default function Settings() {
                         <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4 max-w-3xl">
                           <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
                             <MapPin className="w-4 h-4 text-primary-600" />
-                            <span>Campus Address & Public Contact Information</span>
+                            <span>Campus Address &amp; Contact Information</span>
                           </h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="sm:col-span-2">
                               <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Street / Campus Address
+                                Address Line 1
                               </label>
                               <input
                                 type="text"
-                                value={profile.address}
-                                onChange={(e) => handleProfileChange('address', e.target.value)}
+                                value={profile.address || ''}
+                                onChange={(e) => {
+                                  handleProfileChange('address', e.target.value)
+                                  handleProfileChange('address_line_1', e.target.value)
+                                }}
+                                placeholder={INSTITUTE_PLACEHOLDERS.address_line_1}
+                                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </div>
+                            <div className="sm:col-span-2">
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Address Line 2
+                              </label>
+                              <input
+                                type="text"
+                                value={profile.address_line_2 || ''}
+                                onChange={(e) => handleProfileChange('address_line_2', e.target.value)}
+                                placeholder={INSTITUTE_PLACEHOLDERS.address_line_2}
+                                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Area / Locality</label>
+                              <input
+                                type="text"
+                                value={profile.area_locality || ''}
+                                onChange={(e) => handleProfileChange('area_locality', e.target.value)}
+                                placeholder={INSTITUTE_PLACEHOLDERS.area_locality}
                                 className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                               />
                             </div>
@@ -1214,53 +1453,102 @@ export default function Settings() {
                               <label className="block text-xs font-medium text-gray-700 mb-1">City</label>
                               <input
                                 type="text"
-                                value={profile.city}
+                                value={profile.city || ''}
                                 onChange={(e) => handleProfileChange('city', e.target.value)}
+                                placeholder={INSTITUTE_PLACEHOLDERS.city}
                                 className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">State</label>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">District</label>
                               <input
                                 type="text"
-                                value={profile.state}
-                                onChange={(e) => handleProfileChange('state', e.target.value)}
+                                value={profile.district || ''}
+                                onChange={(e) => handleProfileChange('district', e.target.value)}
+                                placeholder={INSTITUTE_PLACEHOLDERS.district}
                                 className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">Pincode</label>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Country</label>
                               <input
                                 type="text"
-                                value={profile.pincode}
+                                value={profile.country || 'India'}
+                                onChange={(e) => handleProfileChange('country', e.target.value)}
+                                placeholder={INSTITUTE_PLACEHOLDERS.country}
+                                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">State / UT</label>
+                              {(profile.country || 'India').trim().toLowerCase() === 'india' ? (
+                                <select
+                                  value={profile.state || ''}
+                                  onChange={(e) => handleProfileChange('state', e.target.value)}
+                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                >
+                                  <option value="">{INSTITUTE_PLACEHOLDERS.state}</option>
+                                  {INDIAN_STATES_AND_UTS.map((s) => (
+                                    <option key={s} value={s}>{s}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={profile.state || ''}
+                                  onChange={(e) => handleProfileChange('state', e.target.value)}
+                                  placeholder="State / Province"
+                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                />
+                              )}
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">PIN Code</label>
+                              <input
+                                type="text"
+                                value={profile.pincode || ''}
                                 onChange={(e) => handleProfileChange('pincode', e.target.value)}
-                                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                placeholder={INSTITUTE_PLACEHOLDERS.pincode}
+                                className="w-full px-3 py-1.5 text-xs font-mono border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">Contact Phone</label>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Mobile Number</label>
                               <input
-                                type="text"
-                                value={profile.phone}
+                                type="tel"
+                                value={profile.phone || ''}
                                 onChange={(e) => handleProfileChange('phone', e.target.value)}
+                                placeholder={INSTITUTE_PLACEHOLDERS.phone}
                                 className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">Official Email</label>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Alternate Mobile Number</label>
+                              <input
+                                type="tel"
+                                value={profile.alternate_phone || ''}
+                                onChange={(e) => handleProfileChange('alternate_phone', e.target.value)}
+                                placeholder={INSTITUTE_PLACEHOLDERS.alternate_phone}
+                                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Official Email Address</label>
                               <input
                                 type="email"
-                                value={profile.email}
+                                value={profile.email || ''}
                                 onChange={(e) => handleProfileChange('email', e.target.value)}
+                                placeholder={INSTITUTE_PLACEHOLDERS.email}
                                 className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">Website URL</label>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Website URL (Optional)</label>
                               <input
                                 type="text"
-                                value={profile.website}
+                                value={profile.website || ''}
                                 onChange={(e) => handleProfileChange('website', e.target.value)}
+                                placeholder={INSTITUTE_PLACEHOLDERS.website}
                                 className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                               />
                             </div>
@@ -1274,22 +1562,82 @@ export default function Settings() {
                           <div className="flex items-center justify-between border-b border-gray-100 pb-2">
                             <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
                               <GitFork className="w-4 h-4 text-primary-600" />
-                              <span>Campus Centers & Branches</span>
+                              <span>Campus Centers &amp; Branches ({branches.length})</span>
                             </h3>
+                            <LockedButton
+                              isEditMode={isEditMode}
+                              onClick={() => openBranchModal(null)}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Add Branch</span>
+                            </LockedButton>
                           </div>
-                          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 flex items-center justify-between">
-                            <div>
-                              <div className="text-xs font-bold text-gray-900">
-                                {profile.name} - Main Campus
-                              </div>
-                              <div className="text-[11px] text-gray-500">
-                                Code: <span className="font-mono">{profile.short_name}-MAIN</span> • {profile.address}
-                              </div>
+
+                          {branches.length === 0 ? (
+                            <div className="border border-dashed border-gray-200 rounded-lg p-6 text-center text-xs text-gray-500">
+                              No branches registered yet. Click <strong>Add Branch</strong> in Edit Mode to configure your Main Branch and additional centers.
                             </div>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
-                              Primary Headquarters
-                            </span>
-                          </div>
+                          ) : (
+                            <div className="space-y-2.5">
+                              {branches.map((br) => (
+                                <div
+                                  key={br.id}
+                                  className="border border-gray-200 rounded-lg p-4 bg-gray-50 flex flex-wrap items-center justify-between gap-3"
+                                >
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs font-bold text-gray-900">
+                                        {br.branch_name}
+                                      </span>
+                                      <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
+                                        {br.branch_code}
+                                      </span>
+                                      {br.is_main_branch && (
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
+                                          Main Branch
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-[11px] text-gray-500 mt-1">
+                                      {[br.address_line_1, br.city, br.state, br.pincode].filter(Boolean).join(', ') || 'No address added'}
+                                      {br.phone ? ` • ${br.phone}` : ''}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5">
+                                    {!br.is_main_branch && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSetMainBranch(br)}
+                                        className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                                      >
+                                        Set as Main
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => openBranchModal(br)}
+                                      className="p-1.5 rounded-md border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                                      title="Edit branch"
+                                    >
+                                      <Edit className="w-3.5 h-3.5" />
+                                    </button>
+                                    {!br.is_main_branch && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeactivateBranch(br)}
+                                        className="p-1.5 rounded-md border border-rose-200 bg-white text-rose-600 hover:bg-rose-50"
+                                        title="Deactivate branch"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -1298,10 +1646,10 @@ export default function Settings() {
                         <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4 max-w-3xl">
                           <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
                             <ShieldCheck className="w-4 h-4 text-primary-600" />
-                            <span>Educational Boards & Accreditations</span>
+                            <span>Educational Boards &amp; Accreditations</span>
                           </h3>
                           <p className="text-xs text-gray-600">
-                            PrathamOne Academy supports multi-board coaching curriculums:
+                            {BRANDING_CONFIG.appName} supports multi-board coaching curriculums:
                           </p>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div className="p-3 border border-blue-200 bg-primary-50 rounded-lg">
@@ -1313,8 +1661,8 @@ export default function Settings() {
                               <div className="text-[11px] text-primary-700">Council for the Indian School Certificate</div>
                             </div>
                             <div className="p-3 border border-emerald-200 bg-emerald-50 rounded-lg">
-                              <div className="text-xs font-bold text-emerald-900">State Board (MH)</div>
-                              <div className="text-[11px] text-emerald-700">Maharashtra State Secondary Board</div>
+                              <div className="text-xs font-bold text-emerald-900">State Boards</div>
+                              <div className="text-[11px] text-emerald-700">State Secondary &amp; Higher Secondary Curricula</div>
                             </div>
                           </div>
                         </div>
@@ -1325,21 +1673,48 @@ export default function Settings() {
                         <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4 max-w-3xl">
                           <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
                             <FileText className="w-4 h-4 text-primary-600" />
-                            <span>Legal, DPDP & Regulatory Compliance</span>
+                            <span>Legal, Tax &amp; Regulatory Information</span>
                           </h3>
-                          <div className="space-y-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                               <label className="block text-xs font-medium text-gray-700 mb-1">
-                                GST Registration Number (GSTIN)
+                                GST Registration Number (GSTIN — Optional)
                               </label>
                               <input
                                 type="text"
-                                value="27AABCP1234K1Z5"
-                                readOnly
-                                className="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-300 rounded-lg text-gray-700 font-mono"
+                                value={profile.gstin || ''}
+                                onChange={(e) => handleProfileChange('gstin', e.target.value.toUpperCase())}
+                                placeholder={INSTITUTE_PLACEHOLDERS.gstin}
+                                maxLength={15}
+                                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg text-gray-800 font-mono uppercase focus:outline-none focus:ring-1 focus:ring-primary-500"
                               />
                             </div>
                             <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Permanent Account Number (PAN — Optional)
+                              </label>
+                              <input
+                                type="text"
+                                value={profile.pan || ''}
+                                onChange={(e) => handleProfileChange('pan', e.target.value.toUpperCase())}
+                                placeholder={INSTITUTE_PLACEHOLDERS.pan}
+                                maxLength={10}
+                                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg text-gray-800 font-mono uppercase focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </div>
+                            <div className="sm:col-span-2">
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Registration / Trust Number (Optional)
+                              </label>
+                              <input
+                                type="text"
+                                value={profile.registration_number || ''}
+                                onChange={(e) => handleProfileChange('registration_number', e.target.value)}
+                                placeholder="Institute or Trust registration number (optional)"
+                                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </div>
+                            <div className="sm:col-span-2">
                               <label className="block text-xs font-medium text-gray-700 mb-1">
                                 Digital Personal Data Protection (DPDP) Act Compliance Notice
                               </label>
@@ -1397,15 +1772,15 @@ export default function Settings() {
                                 className="w-full h-full object-contain rounded-lg [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.12))]"
                               />
                             ) : (
-                              profile.short_name || 'PA'
+                              profile.short_name || 'EI'
                             )}
                           </div>
                           <div className="min-w-0 flex-1 relative z-10">
                             <h4 className="font-bold text-sm tracking-tight truncate">
-                              {profile.name || 'Prashant Academy'}
+                              {profile.name || INSTITUTE_PLACEHOLDERS.name}
                             </h4>
                             <p className="text-xs text-blue-100 font-medium truncate mt-0.5">
-                              {profile.tagline || 'Learn • Practice • Achieve'}
+                              {profile.tagline || 'COACHING MANAGEMENT. SIMPLIFIED.'}
                             </p>
                           </div>
                         </div>
@@ -1469,11 +1844,11 @@ export default function Settings() {
                                 }}
                                 className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-serif font-black text-white shrink-0"
                               >
-                                {profile.short_name || 'PA'}
+                                {profile.short_name || 'EI'}
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="text-[10px] font-bold text-slate-900 truncate">
-                                  {profile.name || 'Prashant Academy'}
+                                  {profile.name || INSTITUTE_PLACEHOLDERS.name}
                                 </div>
                                 <div className="text-[8.5px] text-slate-500 font-mono">
                                   REF: RCP-2026-001
@@ -1525,14 +1900,14 @@ export default function Settings() {
                                         primary: preset.primary,
                                         secondary: preset.secondary,
                                         accent: preset.accent,
-                                      }, next.logo_url)
+                                      }, next.logo_url || undefined)
                                       return next
                                     })
                                     showNotification('success', `Preset "${preset.name}" applied to live preview. Click Save Changes to commit globally.`)
                                   }}
                                   className={`p-3 border rounded-xl text-left transition-all relative ${isCurrent
-                                      ? 'border-primary-600 ring-2 ring-blue-500 bg-primary-50/20 shadow-xs'
-                                      : 'border-gray-200 hover:border-gray-300 hover:shadow-xs'
+                                    ? 'border-primary-600 ring-2 ring-blue-500 bg-primary-50/20 shadow-xs'
+                                    : 'border-gray-200 hover:border-gray-300 hover:shadow-xs'
                                     }`}
                                 >
                                   {isCurrent && (
@@ -1584,8 +1959,8 @@ export default function Settings() {
                                   type="button"
                                   onClick={() => handleSettingChange('branding', 'login_bg_mode', m.id)}
                                   className={`p-3 rounded-xl border text-left transition-all ${isSelected
-                                      ? 'border-primary-600 ring-2 ring-primary-500 bg-primary-50/20 shadow-xs'
-                                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
+                                    ? 'border-primary-600 ring-2 ring-primary-500 bg-primary-50/20 shadow-xs'
+                                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
                                     }`}
                                 >
                                   <div className="text-xl mb-1">{m.icon}</div>
@@ -1707,8 +2082,8 @@ export default function Settings() {
                                     type="button"
                                     onClick={() => handleSettingChange('branding', 'login_bg_pattern', pat.id)}
                                     className={`p-2.5 text-xs font-semibold rounded-lg border text-center transition ${(allSettings.branding?.login_bg_pattern || 'geometric') === pat.id
-                                        ? 'border-primary-600 bg-primary-50 text-primary-700 font-bold'
-                                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                      ? 'border-primary-600 bg-primary-50 text-primary-700 font-bold'
+                                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
                                       }`}
                                   >
                                     {pat.label}
@@ -2208,8 +2583,8 @@ export default function Settings() {
                             <span>Payment Workflow & ERP Approval Governance</span>
                           </h3>
                           <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${(allSettings.fees?.workflow_mode || 'simple') === 'erp'
-                              ? 'bg-purple-100 text-purple-800'
-                              : 'bg-primary-100 text-primary-800'
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-primary-100 text-primary-800'
                             }`}>
                             {(allSettings.fees?.workflow_mode || 'simple') === 'erp' ? 'Standard ERP Mode' : 'Simple Mode'}
                           </span>
@@ -2226,8 +2601,8 @@ export default function Settings() {
                             </label>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <label className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${(allSettings.fees?.workflow_mode || 'simple') === 'simple'
-                                  ? 'border-primary-500 bg-primary-50/40 ring-1 ring-primary-500'
-                                  : 'border-gray-200 hover:border-gray-300 bg-white'
+                                ? 'border-primary-500 bg-primary-50/40 ring-1 ring-primary-500'
+                                : 'border-gray-200 hover:border-gray-300 bg-white'
                                 }`}>
                                 <input
                                   type="radio"
@@ -2251,8 +2626,8 @@ export default function Settings() {
                               </label>
 
                               <label className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${(allSettings.fees?.workflow_mode || 'simple') === 'erp'
-                                  ? 'border-purple-500 bg-purple-50/40 ring-1 ring-purple-500'
-                                  : 'border-gray-200 hover:border-gray-300 bg-white'
+                                ? 'border-purple-500 bg-purple-50/40 ring-1 ring-purple-500'
+                                : 'border-gray-200 hover:border-gray-300 bg-white'
                                 }`}>
                                 <input
                                   type="radio"
@@ -2654,8 +3029,8 @@ export default function Settings() {
                                   <td className="px-4 py-2.5 text-center">
                                     <span
                                       className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${item.is_active
-                                          ? 'bg-emerald-100 text-emerald-800'
-                                          : 'bg-gray-100 text-gray-500'
+                                        ? 'bg-emerald-100 text-emerald-800'
+                                        : 'bg-gray-100 text-gray-500'
                                         }`}
                                     >
                                       {item.is_active ? 'Active' : 'Inactive'}
@@ -2758,11 +3133,10 @@ export default function Settings() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                           <label
                             onClick={() => isEditMode && handleSettingChange('system', 'desktop_launch_mode', 'browser')}
-                            className={`p-3.5 border rounded-xl transition-all ${
-                              (allSettings.system?.desktop_launch_mode || 'browser') === 'browser'
+                            className={`p-3.5 border rounded-xl transition-all ${(allSettings.system?.desktop_launch_mode || 'browser') === 'browser'
                                 ? 'border-primary-600 bg-primary-50/50 shadow-2xs'
                                 : 'border-gray-200 hover:border-gray-300'
-                            } ${isEditMode ? 'cursor-pointer' : 'cursor-default opacity-85'}`}
+                              } ${isEditMode ? 'cursor-pointer' : 'cursor-default opacity-85'}`}
                           >
                             <div className="flex items-center justify-between mb-1.5">
                               <span className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
@@ -2786,11 +3160,10 @@ export default function Settings() {
 
                           <label
                             onClick={() => isEditMode && handleSettingChange('system', 'desktop_launch_mode', 'app')}
-                            className={`p-3.5 border rounded-xl transition-all ${
-                              allSettings.system?.desktop_launch_mode === 'app'
+                            className={`p-3.5 border rounded-xl transition-all ${allSettings.system?.desktop_launch_mode === 'app'
                                 ? 'border-primary-600 bg-primary-50/50 shadow-2xs'
                                 : 'border-gray-200 hover:border-gray-300'
-                            } ${isEditMode ? 'cursor-pointer' : 'cursor-default opacity-85'}`}
+                              } ${isEditMode ? 'cursor-pointer' : 'cursor-default opacity-85'}`}
                           >
                             <div className="flex items-center justify-between mb-1.5">
                               <span className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
@@ -3258,6 +3631,135 @@ export default function Settings() {
                   className="px-4 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-2xs transition-colors"
                 >
                   {editingLookup ? 'Update Lookup' : 'Create Lookup'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Branch Add/Edit Modal */}
+      {isBranchModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-2xl w-full max-w-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-2">
+                <GitFork className="w-4 h-4 text-primary-600" />
+                <h3 className="text-sm font-bold text-gray-900">
+                  {editingBranch ? `Edit Branch — ${editingBranch.branch_name}` : 'Add New Campus / Branch'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBranchModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveBranch} className="p-5 space-y-3.5 max-h-[80vh] overflow-y-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Branch Name <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={branchForm.branch_name}
+                    onChange={(e) => setBranchForm({ ...branchForm, branch_name: e.target.value })}
+                    placeholder={INSTITUTE_PLACEHOLDERS.branch_name}
+                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Branch Code</label>
+                  <input
+                    type="text"
+                    value={branchForm.branch_code}
+                    onChange={(e) => setBranchForm({ ...branchForm, branch_code: e.target.value.toUpperCase() })}
+                    placeholder={INSTITUTE_PLACEHOLDERS.branch_code}
+                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg font-mono uppercase"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Address Line 1</label>
+                  <input
+                    type="text"
+                    value={branchForm.address_line_1}
+                    onChange={(e) => setBranchForm({ ...branchForm, address_line_1: e.target.value })}
+                    placeholder={INSTITUTE_PLACEHOLDERS.address_line_1}
+                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">City</label>
+                  <input
+                    type="text"
+                    value={branchForm.city}
+                    onChange={(e) => setBranchForm({ ...branchForm, city: e.target.value })}
+                    placeholder={INSTITUTE_PLACEHOLDERS.city}
+                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">PIN Code</label>
+                  <input
+                    type="text"
+                    value={branchForm.pincode}
+                    onChange={(e) => setBranchForm({ ...branchForm, pincode: e.target.value })}
+                    placeholder={INSTITUTE_PLACEHOLDERS.pincode}
+                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Mobile / Helpline</label>
+                  <input
+                    type="tel"
+                    value={branchForm.phone}
+                    onChange={(e) => setBranchForm({ ...branchForm, phone: e.target.value })}
+                    placeholder={INSTITUTE_PLACEHOLDERS.phone}
+                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Branch Email</label>
+                  <input
+                    type="email"
+                    value={branchForm.email}
+                    onChange={(e) => setBranchForm({ ...branchForm, email: e.target.value })}
+                    placeholder={INSTITUTE_PLACEHOLDERS.email}
+                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="is_main_branch_chk"
+                  checked={branchForm.is_main_branch}
+                  onChange={(e) => setBranchForm({ ...branchForm, is_main_branch: e.target.checked })}
+                  disabled={Boolean(editingBranch?.is_main_branch)}
+                  className="rounded text-primary-600 focus:ring-primary-500"
+                />
+                <label htmlFor="is_main_branch_chk" className="text-xs font-medium text-gray-700">
+                  Designate as Primary / Main Branch
+                </label>
+              </div>
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsBranchModalOpen(false)}
+                  className="px-3.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={branchSaving}
+                  className="px-4 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg disabled:opacity-50"
+                >
+                  {branchSaving ? 'Saving…' : editingBranch ? 'Update Branch' : 'Create Branch'}
                 </button>
               </div>
             </form>

@@ -34,7 +34,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.hardware import get_machine_hardware_fingerprint, verify_hardware_fingerprint
+from app.core.hardware import (
+    get_machine_hardware_fingerprint,
+    is_hardware_probe_complete,
+    verify_hardware_fingerprint,
+)
 from app.core.deps import (
     enforce_institution_access,
     get_current_active_user,
@@ -344,7 +348,12 @@ async def _prepare_installation_identity(
     activation_setting = await _get_setting(db, institution_id, _SETTING_ACTIVATION_ID)
     refresh_key_setting = await _get_setting(db, institution_id, _SETTING_REFRESH_PRIVATE_KEY)
     
-    # Cryptographic Physical Hardware Node-Locking
+    # Cryptographic Physical Hardware Node-Locking (fail closed if WMI probe is incomplete)
+    if not is_hardware_probe_complete():
+        raise HTTPException(
+            status_code=503,
+            detail="Host hardware identification probe is temporarily incomplete; please retry in a moment.",
+        )
     installation_id = get_machine_hardware_fingerprint()
     activation_identifier = (
         activation_setting.value.strip()

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-21
- * @updated     2026-11-21
+ * @updated     2026-11-27
  *
  * @description Isolated institutional timetable docket printing utility guaranteeing single-sheet A4 landscape fit.
  */
@@ -513,7 +513,7 @@ export function getTimetableDocketPrintStyles(): string {
  */
 export function printTimetableDocketElement(
   elementIdOrOptions: string | PrintTimetableDocketOptions = 'printable-timetable-docket',
-  defaultTitle: string = 'Official Academic Timetable Docket — Prashant Academy'
+  defaultTitle: string = 'Official Academic Timetable Docket'
 ): boolean {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return false

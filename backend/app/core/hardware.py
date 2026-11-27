@@ -21,15 +21,27 @@ import json
 import logging
 import os
 import subprocess
+import time
 from typing import Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 _HARDWARE_SALT = b"PRATHAMONE-EDUOS-HARDWARE-NODE-LOCK-V1-2026"
 _WMI_TIMEOUT_SECONDS = 8.0
-_WMI_MAX_ATTEMPTS = 2
+_WMI_MAX_ATTEMPTS = 3
 _INVALID_VALUES = ("", "UNKNOWN", "UNKNOWN_GUID", None)
 _CACHED_HW_COMPONENTS: Optional[Dict[str, str]] = None
+
+
+def is_hardware_probe_complete(comps: Optional[Dict[str, str]] = None) -> bool:
+    """Return True when all immutable hardware components resolved cleanly on this platform."""
+    target = comps if comps is not None else get_hardware_components()
+    if os.name != "nt":
+        return True
+    return all(
+        target.get(k) not in _INVALID_VALUES
+        for k in ("motherboard_uuid", "cpu_id", "disk_serial", "machine_guid")
+    )
 
 
 def _reset_hardware_cache() -> None:
@@ -123,6 +135,8 @@ def get_hardware_components() -> Dict[str, str]:
     for _attempt in range(1, _WMI_MAX_ATTEMPTS):
         if motherboard_uuid != "UNKNOWN" and cpu_id != "UNKNOWN" and disk_serial != "UNKNOWN":
             break
+        if _attempt > 1:
+            time.sleep(0.25)
         if motherboard_uuid == "UNKNOWN":
             motherboard_uuid = _query_wmi_property("[string](Get-CimInstance Win32_ComputerSystemProduct).UUID")
         if cpu_id == "UNKNOWN":
@@ -140,7 +154,7 @@ def get_hardware_components() -> Dict[str, str]:
     }
 
     # Cache in memory ONLY when all 4 physical components resolved cleanly
-    if all(comps.get(k) not in _INVALID_VALUES for k in ("motherboard_uuid", "cpu_id", "disk_serial", "machine_guid")):
+    if is_hardware_probe_complete(comps):
         _CACHED_HW_COMPONENTS = comps
     else:
         logger.warning(
@@ -173,26 +187,22 @@ def verify_hardware_fingerprint(target_hardware_id: str) -> Tuple[bool, str]:
     if not target_hardware_id or not isinstance(target_hardware_id, str):
         return False, "Target hardware identifier is missing or invalid."
 
-    comps = get_hardware_components()
-    unknown_count = sum(
-        1 for k in ("motherboard_uuid", "cpu_id", "disk_serial", "machine_guid")
-        if comps.get(k) in _INVALID_VALUES
-    )
-    if os.name == "nt" and unknown_count >= 3:
-        return False, "Insufficient immutable hardware identifiers detected on host."
-
-    current_hw_id = get_machine_hardware_fingerprint()
-
     target_clean = target_hardware_id.strip().upper()
-    current_clean = current_hw_id.strip().upper()
-
-    if target_clean == current_clean:
-        return True, "Hardware identity verified and matched."
 
     # Enterprise signed wildcard OR explicit opt-in developer override
     if target_clean == "PRATHAM-WILDCARD-UNRESTRICTED":
         return True, "Wildcard enterprise developer license verified."
     if target_clean == "PRATHAM-DEV-MASTER-ALL" and os.getenv("PRATHAM_ALLOW_DEV_MASTER_LICENSE") == "1":
         return True, "Developer master license verified."
+
+    comps = get_hardware_components()
+    if os.name == "nt" and not is_hardware_probe_complete(comps):
+        return False, "Insufficient immutable hardware identifiers detected on host (transient WMI probe timeout)."
+
+    current_hw_id = get_machine_hardware_fingerprint()
+    current_clean = current_hw_id.strip().upper()
+
+    if target_clean == current_clean:
+        return True, "Hardware identity verified and matched."
 
     return False, f"Hardware mismatch detected! Machine '{current_clean}' does not match registered license target '{target_clean}'."

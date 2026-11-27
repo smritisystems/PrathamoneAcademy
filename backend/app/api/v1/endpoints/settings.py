@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-21
+#  * @updated     2026-11-27
 #  *
 #  * @description API endpoints for institute settings workspace, profile branding, general lookups, and audit history.
 #  */
@@ -29,32 +29,44 @@ import json
 from app.core.database import get_db
 from app.core.config import PRODUCT_APP_ICON_URL
 from app.core.deps import get_current_active_user, require_role, check_institution_access, is_sysadmin
-from app.models.institution import Institution
+from app.models.institution import Institution, InstitutionBranch
 from app.models.settings import InstitutionSetting, LookupItem, SettingAuditLog
 from app.models.user import User
+from app.services.institution_profile_service import (
+    apply_validated_profile_updates,
+    serialize_institution_profile,
+)
 
 router = APIRouter()
 
 # Authoritative baseline defaults across all 15 configuration categories
+# Note: Profile fields remain neutral/None unless configured by the institution (no dummy tenant data).
 DEFAULT_SETTINGS: Dict[str, Dict[str, Any]] = {
     "profile": {
-        "name": "PrathamOne Academy",
-        "short_name": "PA",
+        "name": "",
+        "short_name": None,
         "institute_type": "Coaching Institute",
-        "establishment_year": 2018,
-        "registration_number": "MH-COACH-2018-0157",
-        "tax_id": "AABCP1234K",
-        "tagline": "Learn • Practice • Achieve",
-        "description": "A comprehensive coaching academy for school & competitive examinations, focused on concept clarity and student success.",
+        "establishment_year": None,
+        "registration_number": None,
+        "tax_id": None,
+        "gstin": None,
+        "pan": None,
+        "tagline": None,
+        "description": None,
         "default_language": "en",
         "timezone": "Asia/Kolkata",
-        "address": "Vasai Road (W), Palghar - 401202",
-        "city": "Palghar",
-        "state": "Maharashtra",
-        "pincode": "401202",
-        "phone": "+91 8779 123 007",
-        "email": "info@prathamoneacademy.in",
-        "website": "https://prathamone.com",
+        "address": None,
+        "address_line_2": None,
+        "area_locality": None,
+        "city": None,
+        "district": None,
+        "state": None,
+        "pincode": None,
+        "country": "India",
+        "phone": None,
+        "alternate_phone": None,
+        "email": None,
+        "website": None,
     },
     "branding": {
         "primary_color": "#0B2D6B",
@@ -227,20 +239,29 @@ DEFAULT_LOOKUPS = [
 class InstituteProfileUpdate(BaseModel):
     name: Optional[str] = None
     short_name: Optional[str] = None
+    branch_name: Optional[str] = None
     institute_type: Optional[str] = None
     establishment_year: Optional[int] = None
     registration_number: Optional[str] = None
     tax_id: Optional[str] = None
+    gstin: Optional[str] = None
+    pan: Optional[str] = None
     tagline: Optional[str] = None
     description: Optional[str] = None
     is_active: Optional[bool] = None
     default_language: Optional[str] = None
     timezone: Optional[str] = None
     address: Optional[str] = None
+    address_line_1: Optional[str] = None
+    address_line_2: Optional[str] = None
+    area_locality: Optional[str] = None
     city: Optional[str] = None
+    district: Optional[str] = None
     state: Optional[str] = None
     pincode: Optional[str] = None
+    country: Optional[str] = None
     phone: Optional[str] = None
+    alternate_phone: Optional[str] = None
     email: Optional[str] = None
     website: Optional[str] = None
     logo_url: Optional[str] = None
@@ -248,6 +269,8 @@ class InstituteProfileUpdate(BaseModel):
     primary_color: Optional[str] = None
     secondary_color: Optional[str] = None
     accent_color: Optional[str] = None
+    onboarding_completed: Optional[bool] = None
+    reason: Optional[str] = None
 
 
 class BatchSettingsUpdate(BaseModel):
@@ -290,33 +313,13 @@ async def get_institute_profile(
     if not inst:
         raise HTTPException(status_code=404, detail="Institution not found")
 
-    return {
-        "id": inst.id,
-        "name": inst.name,
-        "code": inst.code,
-        "short_name": inst.short_name or "PA",
-        "tagline": inst.tagline or "Learn • Practice • Achieve",
-        "institute_type": inst.institute_type or "Coaching Institute",
-        "establishment_year": inst.establishment_year or 2018,
-        "registration_number": inst.registration_number or "MH-COACH-2018-0157",
-        "tax_id": inst.tax_id or "AABCP1234K",
-        "description": inst.description or "A comprehensive coaching academy for school & competitive examinations, focused on concept clarity and student success.",
-        "is_active": inst.is_active,
-        "default_language": inst.default_language or "en",
-        "timezone": inst.timezone or "Asia/Kolkata",
-        "address": inst.address or "Vasai Road (W), Palghar - 401202",
-        "city": inst.city or "Palghar",
-        "state": inst.state or "Maharashtra",
-        "pincode": inst.pincode or "401202",
-        "phone": inst.phone or "+91 8779 123 007",
-        "email": inst.email or "info@prathamoneacademy.in",
-        "website": inst.website or "https://prathamone.com",
-        "logo_url": inst.logo_url or "/logo.svg",
-        "favicon_url": inst.favicon_url or PRODUCT_APP_ICON_URL,
-        "primary_color": inst.primary_color or "#0B2D6B",
-        "secondary_color": inst.secondary_color or "#071C44",
-        "accent_color": inst.accent_color or "#F57C00",
-    }
+    branch_res = await db.execute(
+        select(InstitutionBranch)
+        .where(InstitutionBranch.institution_id == inst.id, InstitutionBranch.is_active == True)
+        .order_by(InstitutionBranch.is_main_branch.desc(), InstitutionBranch.id.asc())
+    )
+    branches = branch_res.scalars().all()
+    return serialize_institution_profile(inst, branches)
 
 
 @router.put("/profile")
@@ -334,54 +337,29 @@ async def update_institute_profile(
         raise HTTPException(status_code=404, detail="Institution not found")
 
     updates = data.model_dump(exclude_unset=True)
-    for field, val in updates.items():
-        old_val = getattr(inst, field, None)
-        setattr(inst, field, val)
-        if str(old_val) != str(val):
-            log = SettingAuditLog(
-                institution_id=inst.id,
-                setting_key=f"profile.{field}",
-                category="profile",
-                previous_value=str(old_val) if old_val is not None else None,
-                new_value=str(val) if val is not None else None,
-                changed_by_id=current_user.id,
-                changed_by_name=f"{current_user.first_name} {current_user.last_name}".strip(),
-                reason="Updated from Institute Settings Profile workspace",
-            )
-            db.add(log)
+    mark_complete = updates.pop("onboarding_completed", None)
+    reason = str(updates.pop("reason", None) or "Updated from Institute Settings Profile workspace")
+    await apply_validated_profile_updates(
+        db,
+        inst,
+        updates,
+        actor=current_user,
+        reason=reason,
+        mark_onboarding_complete=mark_complete,
+    )
 
     await db.commit()
     await db.refresh(inst)
+    branch_res = await db.execute(
+        select(InstitutionBranch)
+        .where(InstitutionBranch.institution_id == inst.id, InstitutionBranch.is_active == True)
+        .order_by(InstitutionBranch.is_main_branch.desc(), InstitutionBranch.id.asc())
+    )
+    branches = branch_res.scalars().all()
     return {
         "status": "success",
         "message": "Institute profile updated successfully",
-        "profile": {
-            "id": inst.id,
-            "name": inst.name,
-            "code": inst.code,
-            "short_name": inst.short_name,
-            "tagline": inst.tagline,
-            "institute_type": inst.institute_type,
-            "establishment_year": inst.establishment_year,
-            "registration_number": inst.registration_number,
-            "tax_id": inst.tax_id,
-            "description": inst.description,
-            "is_active": inst.is_active,
-            "default_language": inst.default_language,
-            "timezone": inst.timezone,
-            "address": inst.address,
-            "city": inst.city,
-            "state": inst.state,
-            "pincode": inst.pincode,
-            "phone": inst.phone,
-            "email": inst.email,
-            "website": inst.website,
-            "logo_url": inst.logo_url,
-            "favicon_url": inst.favicon_url,
-            "primary_color": inst.primary_color,
-            "secondary_color": inst.secondary_color,
-            "accent_color": inst.accent_color,
-        },
+        "profile": serialize_institution_profile(inst, branches),
     }
 
 

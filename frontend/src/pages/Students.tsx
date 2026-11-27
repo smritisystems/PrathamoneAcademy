@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-26
+ * @updated     2026-11-27
  *
  * @description Dedicated multi-workspace hub for Students & Admissions Centre comprising Overview, Master Register, KYC Admissions, Batch Allocations, ID Cards, Activity History, Reactivation, and Admission Policies.
  */
@@ -471,11 +471,10 @@ function StudentsContent() {
                       }
                       setExitTargetStudent(s)
                     }}
-                    className={`p-1.5 rounded-lg transition ${
-                      isEditMode
+                    className={`p-1.5 rounded-lg transition ${isEditMode
                         ? 'hover:bg-rose-50 text-rose-600'
                         : 'text-slate-300 cursor-not-allowed'
-                    }`}
+                      }`}
                     title={isEditMode ? 'Exit / Withdraw Student' : 'Locked in View Mode: Enable Edit Mode'}
                   >
                     <UserMinus className="w-4 h-4" />
@@ -490,11 +489,10 @@ function StudentsContent() {
                       }
                       setReactivateTargetStudent(s)
                     }}
-                    className={`p-1.5 rounded-lg transition ${
-                      isEditMode
+                    className={`p-1.5 rounded-lg transition ${isEditMode
                         ? 'hover:bg-emerald-50 text-emerald-600'
                         : 'text-slate-300 cursor-not-allowed'
-                    }`}
+                      }`}
                     title={isEditMode ? 'Reactivate Student' : 'Locked in View Mode: Enable Edit Mode'}
                   >
                     <UserCheck className="w-4 h-4" />
@@ -652,9 +650,9 @@ function StudentsContent() {
       const detail = err?.response?.data?.detail
       const msg = Array.isArray(detail)
         ? detail
-            .map((item: any) => (item && typeof item === 'object' ? item.msg || item.message : String(item || '')))
-            .filter(Boolean)
-            .join('; ')
+          .map((item: any) => (item && typeof item === 'object' ? item.msg || item.message : String(item || '')))
+          .filter(Boolean)
+          .join('; ')
         : typeof detail === 'string' && detail.trim()
           ? detail
           : err?.userFriendlyMessage || 'Failed to register student.'
@@ -683,10 +681,10 @@ function StudentsContent() {
       admission_date: admissionForm.admission_date || new Date().toISOString().split('T')[0],
       guardian: guardian_name.trim()
         ? {
-            full_name: guardian_name.trim(),
-            relationship: guardian_relationship || 'Father',
-            phone: guardian_phone || undefined,
-          }
+          full_name: guardian_name.trim(),
+          relationship: guardian_relationship || 'Father',
+          phone: guardian_phone || undefined,
+        }
         : undefined,
       standard_id: admissionForm.standard_id ? Number(admissionForm.standard_id) : undefined,
       division_id: admissionForm.division_id ? Number(admissionForm.division_id) : undefined,
@@ -892,10 +890,9 @@ function StudentsContent() {
                 onClick={() => handleTabChange(tab.id)}
                 className={`
                   flex items-center gap-2 py-2.5 px-3.5 font-medium text-xs rounded-t-xl whitespace-nowrap transition-all border-b-2
-                  ${
-                    isActive
-                      ? 'border-primary-600 text-primary-600 bg-primary-50/50 font-semibold'
-                      : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 hover:border-slate-300'
+                  ${isActive
+                    ? 'border-primary-600 text-primary-600 bg-primary-50/50 font-semibold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 hover:border-slate-300'
                   }
                 `}
               >
@@ -1296,9 +1293,8 @@ function StudentsContent() {
                   {sortedStudents.map((s) => (
                     <tr
                       key={s.id}
-                      className={`hover:bg-slate-50/80 transition-colors ${
-                        !s.is_active ? 'bg-slate-50/60 opacity-90' : ''
-                      }`}
+                      className={`hover:bg-slate-50/80 transition-colors ${!s.is_active ? 'bg-slate-50/60 opacity-90' : ''
+                        }`}
                     >
                       <td className="py-3 px-4 font-mono text-primary-700 font-semibold">{s.admission_number}</td>
                       <td className="py-3 px-4 font-semibold text-slate-900">
@@ -1366,9 +1362,8 @@ function StudentsContent() {
                                     }
                                     setExitTargetStudent(s)
                                   }}
-                                  className={`p-1.5 rounded-lg transition ${
-                                    isEditMode ? 'hover:bg-rose-50 text-rose-600' : 'text-slate-300 cursor-not-allowed'
-                                  }`}
+                                  className={`p-1.5 rounded-lg transition ${isEditMode ? 'hover:bg-rose-50 text-rose-600' : 'text-slate-300 cursor-not-allowed'
+                                    }`}
                                   title={isEditMode ? 'Exit / Withdraw Student' : 'Locked in View Mode: Enable Edit Mode'}
                                 >
                                   <UserMinus className="w-4 h-4" />
@@ -1383,9 +1378,8 @@ function StudentsContent() {
                                     }
                                     setReactivateTargetStudent(s)
                                   }}
-                                  className={`p-1.5 rounded-lg transition ${
-                                    isEditMode ? 'hover:bg-emerald-50 text-emerald-600' : 'text-slate-300 cursor-not-allowed'
-                                  }`}
+                                  className={`p-1.5 rounded-lg transition ${isEditMode ? 'hover:bg-emerald-50 text-emerald-600' : 'text-slate-300 cursor-not-allowed'
+                                    }`}
                                   title={isEditMode ? 'Reactivate Student' : 'Locked in View Mode: Enable Edit Mode'}
                                 >
                                   <UserCheck className="w-4 h-4" />
@@ -1416,9 +1410,8 @@ function StudentsContent() {
               {sortedStudents.map((s) => (
                 <div
                   key={`mobile-${s.id}`}
-                  className={`p-3.5 space-y-2.5 transition-colors ${
-                    !s.is_active ? 'bg-slate-50/70' : 'hover:bg-slate-50/40'
-                  }`}
+                  className={`p-3.5 space-y-2.5 transition-colors ${!s.is_active ? 'bg-slate-50/70' : 'hover:bg-slate-50/40'
+                    }`}
                 >
                   {/* Top Line: Admission No, Gender, Status */}
                   <div className="flex items-start justify-between gap-2">
@@ -1529,11 +1522,10 @@ function StudentsContent() {
                               }
                               setExitTargetStudent(s)
                             }}
-                            className={`p-1.5 rounded-lg border transition ${
-                              isEditMode
+                            className={`p-1.5 rounded-lg border transition ${isEditMode
                                 ? 'border-rose-200 bg-rose-50/50 hover:bg-rose-100 text-rose-600'
                                 : 'border-slate-100 text-slate-300 cursor-not-allowed'
-                            }`}
+                              }`}
                             title={isEditMode ? 'Exit / Withdraw Student' : 'Locked in View Mode: Enable Edit Mode'}
                             aria-label="Withdraw Student"
                           >
@@ -1549,11 +1541,10 @@ function StudentsContent() {
                               }
                               setReactivateTargetStudent(s)
                             }}
-                            className={`p-1.5 rounded-lg border transition ${
-                              isEditMode
+                            className={`p-1.5 rounded-lg border transition ${isEditMode
                                 ? 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100 text-emerald-600'
                                 : 'border-slate-100 text-slate-300 cursor-not-allowed'
-                            }`}
+                              }`}
                             title={isEditMode ? 'Reactivate Student' : 'Locked in View Mode: Enable Edit Mode'}
                             aria-label="Reactivate Student"
                           >
@@ -1960,9 +1951,9 @@ function StudentsContent() {
                   <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-md bg-primary-600 flex items-center justify-center font-bold text-white text-[10px]">
-                        PA
+                        EI
                       </div>
-                      <span className="text-xs font-bold text-slate-800">Prashant Academy</span>
+                      <span className="text-xs font-bold text-slate-800">Institute Identity Card</span>
                     </div>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold">
                       CR80 PVC

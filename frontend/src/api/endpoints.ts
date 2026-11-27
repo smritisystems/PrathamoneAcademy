@@ -22,7 +22,7 @@ import type {
   ChatRoomItem, ChatMessageItem, SendChatMessagePayload, CreateChatRoomPayload, MentionableEntityItem,
   DirectChatUserItem,
   PaymentPermissions,
-  Institution, AcademicYear, Board, Standard, Division,
+  Institution, InstitutionBranch, AcademicYear, Board, Standard, Division,
   Student, FeeCategory, FeeStructure, FeeAssignment, FeeInvoice, FeeInvoiceCreatePayload,
   FeeInstallment, Payment, Receipt, DashboardStats, OutstandingDrilldownResponse, DashboardAnalyticsData,
   DashboardCollectionTrendsResponse,
@@ -183,11 +183,24 @@ export const dashboardApi = {
 
 export const institutionsApi = {
   list: () => apiClient.get<Institution[]>('/institutions/'),
-  getPublicBranding: () => apiClient.get<Institution>('/institutions/public/branding'),
+  getPublicBranding: (params?: { institution_id?: number; branch_id?: number }) =>
+    apiClient.get<Institution>('/institutions/public/branding', { params }),
   get: (id: number | string) => apiClient.get<Institution>(`/institutions/${id}`),
   create: (data: Partial<Institution>) => apiClient.post<Institution>('/institutions/', data),
   update: (id: number | string, data: Partial<Institution>) =>
     apiClient.put<Institution>(`/institutions/${id}`, data),
+  listBranches: (institutionId: number | string, includeInactive = false) =>
+    apiClient.get<InstitutionBranch[]>(`/institutions/${institutionId}/branches`, {
+      params: includeInactive ? { include_inactive: true } : undefined,
+    }),
+  createBranch: (institutionId: number | string, data: Partial<InstitutionBranch>) =>
+    apiClient.post<InstitutionBranch>(`/institutions/${institutionId}/branches`, data),
+  updateBranch: (institutionId: number | string, branchId: number | string, data: Partial<InstitutionBranch>) =>
+    apiClient.put<InstitutionBranch>(`/institutions/${institutionId}/branches/${branchId}`, data),
+  deactivateBranch: (institutionId: number | string, branchId: number | string) =>
+    apiClient.delete<{ status: string; id: number; is_active: boolean }>(
+      `/institutions/${institutionId}/branches/${branchId}`
+    ),
 }
 
 // ─── Academic Years ───────────────────────────────────────────────────────────

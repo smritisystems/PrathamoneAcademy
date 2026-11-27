@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-26
+#  * @updated     2026-11-27
 #  *
 #  * @description REST API router for Lead Management & CRM: Enquiries, Kanban Pipeline, Follow-ups, Demo Classes, and Lead-to-Admission Conversion.
 #  */
@@ -375,7 +375,7 @@ async def resolve_effective_institution(db: AsyncSession, effective_inst_id: Opt
     any_id = any_res.scalar_one_or_none()
     if any_id:
         return any_id
-    inst = Institution(name="Prashant Academy", code="PA01", is_active=True)
+    inst = Institution(name="Your Coaching Institute", code="EDU001", is_active=True, onboarding_completed=False)
     db.add(inst)
     await db.flush()
     return inst.id

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-26
+ * @updated     2026-11-27
  *
  * @description Comprehensive student profile workspace with multi-tab master record editing for administrators.
  */
@@ -1211,11 +1211,10 @@ export default function StudentDetailPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Assigned Fee Plan</span>
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          fees.assignment.has_invoice
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${fees.assignment.has_invoice
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             : 'bg-amber-50 text-amber-800 border border-amber-200'
-                        }`}
+                          }`}
                       >
                         {fees.assignment.has_invoice ? 'Invoice Issued' : 'Pending Invoice Issuance'}
                       </span>
@@ -2462,7 +2461,7 @@ export default function StudentDetailPage() {
           recipientName={overview.full_name}
           recipientPhone={overview.phone || (overview.guardians && overview.guardians[0]?.phone) || ''}
           recipientEmail={overview.email || (overview.guardians && overview.guardians[0]?.email) || ''}
-          defaultMessage={`Dear Parent/Student,\n\nPlease find the student academic profile and enrollment summary for ${overview.full_name} (${overview.admission_number}) at Prashant Academy (PrathamOne EduOS).`}
+          defaultMessage={`Dear Parent/Student,\n\nPlease find the student academic profile and enrollment summary for ${overview.full_name} (${overview.admission_number}) (PrathamOne EduOS).`}
         />
       )}
       {/* Student Exit Modal */}

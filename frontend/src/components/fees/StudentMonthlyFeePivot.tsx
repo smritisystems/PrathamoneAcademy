@@ -11,7 +11,7 @@
  *
  * @version     1.2.0
  * @created     2026-11-24
- * @updated     2026-11-26
+ * @updated     2026-11-27
  *
  * @description Production-grade Dynamic Student-wise Fee Collection Pivot with Print/Download Receipt Actions, Priority Remarks & Follow-up, Quick Receive Payment, Advanced Dependent Filters, 12-Month Matrix, and Transaction Popovers.
  */
@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { feesApi, paymentsApi, communicationApi } from '../../api/endpoints'
+import { useBranding } from '../../config/branding'
 import { extractApiErrorMessage } from '../../utils/errorTaxonomy'
 import { formatINR } from '../../utils/formatters'
 import { exportToExcel, downloadCsvRows, downloadBlob } from '../../utils/reportExport'
@@ -62,6 +63,7 @@ export const StudentMonthlyFeePivot: React.FC<StudentMonthlyFeePivotProps> = ({
   const queryClient = useQueryClient()
 
   // ─── Filter States ───────────────────────────────────────────────────────────
+  const branding = useBranding()
   const [academicYearId, setAcademicYearId] = useState<number | undefined>(initialAcademicYearId)
   const [boardId, setBoardId] = useState<string>('all')
   const [standardId, setStandardId] = useState<string>('all')
@@ -377,9 +379,10 @@ export const StudentMonthlyFeePivot: React.FC<StudentMonthlyFeePivotProps> = ({
       toast.error(`No valid phone number recorded for ${student.student_name}`)
       return
     }
+    const instTitle = branding.academyName || 'Coaching Institute'
     const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone
     const message = `Dear Parent / Student,
-This is a gentle fee reminder from Prashant Academy for *${student.student_name}* (Adm No: *${student.admission_number}*).
+This is a gentle fee reminder from ${instTitle} for *${student.student_name}* (Adm No: *${student.admission_number}*).
 
 📋 Course: ${student.board_name} - ${student.standard_name} (${student.batch_name})
 💰 Agreed Package: ₹${student.package_fee.toLocaleString('en-IN')}
@@ -389,7 +392,7 @@ This is a gentle fee reminder from Prashant Academy for *${student.student_name}
 Kindly arrange payment at your earliest convenience to maintain continuous academic access.
 For online fee payment coordinates or receipt assistance, please contact our administrative desk.
 Thank you,
-Prashant Academy Coaching Institute`
+${instTitle}`
 
     const url = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`
     window.open(url, '_blank', 'noopener,noreferrer')
@@ -406,7 +409,8 @@ Prashant Academy Coaching Institute`
     const toastId = `sms-reminder-${student.student_id}`
     try {
       toast.loading(`Dispatching SMS reminder to ${student.phone}...`, { id: toastId })
-      const message = `Fee Reminder from Prashant Academy: Dear Parent, balance due for ${student.student_name} (Adm: ${student.admission_number}) is Rs. ${student.balance.toLocaleString('en-IN')}. Please settle dues promptly.`
+      const instTitle = branding.academyName || 'Coaching Institute'
+      const message = `Fee Reminder from ${instTitle}: Dear Parent, balance due for ${student.student_name} (Adm: ${student.admission_number}) is Rs. ${student.balance.toLocaleString('en-IN')}. Please settle dues promptly.`
       await communicationApi.sendMessage({
         channel: 'sms',
         message,

@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-04
- * @updated     2026-11-19
+ * @updated     2026-11-27
  *
  * @description Comprehensive unit and specification tests verifying footer sections, dynamic page title resolution, connection status, user roles, versioning, and AITDL parent branding.
  */
@@ -67,10 +67,10 @@ describe('Application Footer Specifications', () => {
   it('renders Left section with institute name, tenant code, and branch details', () => {
     renderFooter()
 
-    expect(screen.getByText('Prashant Academy')).toBeDefined()
-    expect(screen.getByText('[PA001]')).toBeDefined()
-    expect(screen.getByText('Branch: Jankalyan Nagar, Malad West')).toBeDefined()
-    expect(screen.getByText('(MALAD-W)')).toBeDefined()
+    expect(screen.getByText('Your Coaching Institute')).toBeDefined()
+    expect(screen.getByText('[EDU001]')).toBeDefined()
+    expect(screen.getByText('Branch: Main Branch')).toBeDefined()
+    expect(screen.getByText('(MAIN)')).toBeDefined()
   })
 
   it('renders Center section with dynamically resolved page/menu title', () => {

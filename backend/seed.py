@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.2.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-26
+#  * @updated     2026-11-27
 #  *
 #  * @description Comprehensive master database seeder initializing administrator security credentials, all Indian educational boards (CBSE, ICSE, MSBSHSE, GSEB, State Boards, Competitive Streams), instruction mediums, canonical subjects catalogue (SSOT), curriculum applicability mappings, standards 1-12, and batches.
 #  */
@@ -200,20 +200,24 @@ async def seed(bootstrap_only: bool = False):
             if admin_email_hash == "0a214f8866d0ef46948221abb4f4c17a68d2184147ea45dc5cd8dadbcb53de76":
                 existing_admin.email = default_admin_email
 
-        # 2. Institution Master Record
+        # 2. Institution Master Record (Neutral onboarding state unless explicit env vars provided)
         existing_inst = await session.execute(
             select(Institution).where(Institution.id == 1)
         )
         institution = existing_inst.scalar_one_or_none()
-        institute_name = os.getenv("INSTITUTE_NAME", "Your Academy Name").strip()
-        institute_branch = os.getenv("INSTITUTE_BRANCH", "Main Campus").strip()
-        institute_address = os.getenv("INSTITUTE_ADDRESS", "Campus Address, Education Hub").strip()
-        institute_phone = os.getenv("INSTITUTE_PHONE", "+91 8779 123 007").strip()
-        institute_logo_url = os.getenv("INSTITUTE_LOGO_URL", "/media/logo/prathamone-symbol-icon.svg").strip()
-        
-        # Derive monogram / short name
-        words = institute_name.split()
-        short_name = (words[0][0] + words[1][0]).upper() if len(words) >= 2 else (words[0][:2].upper() if words else "YA")
+        env_inst_name = os.getenv("INSTITUTE_NAME", "").strip()
+        institute_name = env_inst_name or "Your Coaching Institute"
+        institute_branch = os.getenv("INSTITUTE_BRANCH", "").strip() or "Main Branch"
+        institute_address = os.getenv("INSTITUTE_ADDRESS", "").strip() or None
+        institute_phone = os.getenv("INSTITUTE_PHONE", "").strip() or None
+        institute_logo_url = os.getenv("INSTITUTE_LOGO_URL", "").strip() or None
+
+        words = institute_name.split() if env_inst_name else []
+        short_name = (
+            (words[0][0] + words[1][0]).upper()
+            if len(words) >= 2
+            else (words[0][:2].upper() if words else None)
+        )
 
         if not institution:
             institution = Institution(
@@ -222,16 +226,27 @@ async def seed(bootstrap_only: bool = False):
                 code="EDU001",
                 short_name=short_name,
                 address=institute_address,
-                city="Education City",
-                state="Maharashtra",
-                pincode="400001",
+                country="India",
                 phone=institute_phone,
-                email="admin@academy.edu",
-                website="https://academy.edu",
                 logo_url=institute_logo_url,
-                tagline="Empowering Minds • Inspiring Excellence • Shaping Futures",
+                onboarding_completed=bool(env_inst_name),
             )
             session.add(institution)
+            await session.flush()
+
+            from app.models.institution import InstitutionBranch
+            session.add(
+                InstitutionBranch(
+                    institution_id=institution.id,
+                    branch_name=institute_branch,
+                    branch_code="MAIN",
+                    is_main_branch=True,
+                    address_line_1=institute_address,
+                    country="India",
+                    phone=institute_phone,
+                    is_active=True,
+                )
+            )
             await session.flush()
         else:
             if force_inst_reset:
@@ -239,9 +254,8 @@ async def seed(bootstrap_only: bool = False):
                 institution.short_name = short_name
                 institution.address = institute_address
                 institution.phone = institute_phone
-                if institute_logo_url:
-                    institution.logo_url = institute_logo_url
-                institution.tagline = "Empowering Minds • Inspiring Excellence • Shaping Futures"
+                institution.logo_url = institute_logo_url
+                institution.onboarding_completed = bool(env_inst_name)
                 await session.flush()
 
         # 3. Roles Master

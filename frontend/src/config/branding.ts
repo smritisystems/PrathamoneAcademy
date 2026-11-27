@@ -64,35 +64,35 @@ export const PRINT_FOOTER_BRANDING_TEXT = 'Powered by' as const
 export const PRINT_POWERED_BY_TEXT = 'Powered by' as const
 export const PRINT_POWERED_AND_MANAGED_BY_TEXT = ' · Powered and managed by' as const
 
-const PRODUCT_BRAND_ASSET_ROOT = '/artwork/18112026/03'
+const PRODUCT_BRAND_ASSET_ROOT = '/artwork/25112026'
 const PRODUCT_BRAND_SHARED_ROOT = '/artwork/18112026'
 
-// Canonical Full Horizontal Lockup (With Tagline — Master)
-const PRODUCT_LOGO_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g2.png`
-const PRODUCT_LOGO_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g2.svg`
-const PRODUCT_LOGO_RETINA_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path2-2-1.png`
+// Canonical Full Horizontal Lockup (With Tagline — Master, Light & Dark Themes)
+const PRODUCT_LOGO_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g44.svg`
+const PRODUCT_LOGO_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g44.svg`
+const PRODUCT_LOGO_RETINA_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g44.svg`
 
 // Compact Horizontal Lockup (Without Tagline — High Legibility for 32px-48px App Navbars)
-const PRODUCT_LOGO_COMPACT_URL = `${PRODUCT_BRAND_SHARED_ROOT}/batch_path3-8-7.png`
+const PRODUCT_LOGO_COMPACT_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g44.svg`
 
 // Standalone Vector Icon Mark (Emblem Only — No Typography)
 const PRODUCT_APP_ICON_URL = '/icons/icon-512x512.png'
-const PRODUCT_APP_ICON_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path1-9.svg`
-const PRODUCT_APP_ICON_WHITE_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path1-8.svg`
+const PRODUCT_APP_ICON_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g47.svg`
+const PRODUCT_APP_ICON_WHITE_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g48.svg`
 const PRODUCT_APP_ICON_192_URL = '/icons/icon-192x192.png'
 const PRODUCT_APP_ICON_32_URL = '/icons/icon-32x32.png'
 
 // Stacked / Vertical Lockup Suite
-const PRODUCT_LOGO_STACKED_NAVY_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path1-1-6.png`
-const PRODUCT_LOGO_STACKED_NAVY_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path1-1-6.svg`
-const PRODUCT_LOGO_STACKED_WHITE_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path1-1-84.png`
-const PRODUCT_LOGO_STACKED_WHITE_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path1-1-84.svg`
+const PRODUCT_LOGO_STACKED_NAVY_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g44.svg`
+const PRODUCT_LOGO_STACKED_NAVY_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g44.svg`
+const PRODUCT_LOGO_STACKED_WHITE_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g45.svg`
+const PRODUCT_LOGO_STACKED_WHITE_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g45.svg`
 
-// Monochrome Horizontal Variants
-const PRODUCT_LOGO_MONO_BLACK_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path3-8-8.svg`
-const PRODUCT_LOGO_MONO_WHITE_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path3-8-8-1.svg`
-const PRODUCT_LOGO_MONO_AMBER_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path3-8-8-2.svg`
-const PRODUCT_LOGO_MONO_NAVY_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path3-8-8-6.svg`
+// Monochrome / Dark Horizontal Variants
+const PRODUCT_LOGO_MONO_BLACK_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g44.svg`
+const PRODUCT_LOGO_MONO_WHITE_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g45.svg`
+const PRODUCT_LOGO_MONO_AMBER_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g44.svg`
+const PRODUCT_LOGO_MONO_NAVY_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g44.svg`
 
 // Integrated Badges & Tiles
 const PRODUCT_LOGO_BADGE_NAVY_URL = `${PRODUCT_BRAND_SHARED_ROOT}/LOGO.PNG`
@@ -115,16 +115,16 @@ export const BRANDING_CONFIG = {
   suiteName: 'PrathamOne EduOS',
   edition: 'Coaching Institute Edition',
   editionFull: 'PrathamOne EduOS — Coaching Institute Edition',
-  defaultAcademyName: 'Prashant Academy',
-  defaultAcademyCode: 'PA001',
-  defaultBranchName: 'Jankalyan Nagar, Malad West',
-  defaultBranchCode: 'MALAD-W',
+  defaultAcademyName: 'Your Coaching Institute',
+  defaultAcademyCode: 'EDU001',
+  defaultBranchName: 'Main Branch',
+  defaultBranchCode: 'MAIN',
   tagline: 'COACHING MANAGEMENT. SIMPLIFIED.',
   motto: 'COACHING MANAGEMENT. SIMPLIFIED.',
-  monogram: 'PA' as string,
+  monogram: 'YC' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.27-REV-333-v1.186.0-8E58258D',
+  buildNumber: '2026.11.27-REV-334-v1.186.1-D7810F9A',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-27',
@@ -132,7 +132,7 @@ export const BRANDING_CONFIG = {
   environment: (typeof import.meta !== 'undefined' && (import.meta as any).env?.MODE) || 'production',
   copyright: 'Copyright © 2026 SmritiSys. All rights reserved.',
   organization: 'SmritiSys',
-  clientOrganization: 'Prashant Academy Coaching Institute',
+  clientOrganization: 'Educational Coaching Institute',
   parentOrganization: {
     name: 'SmritiSys',
     shortName: 'SMRITISYS',
@@ -258,13 +258,13 @@ export const BRANDING_CONFIG = {
   support: {
     email: 'support@prathamone.com' as string,
     alternateEmail: 'prathamone@outlook.com' as string,
-    academyEmail: 'info@prathamone.com' as string,
-    phone: '+91-22-12345678' as string,
+    academyEmail: '' as string,
+    phone: '' as string,
     website: 'https://prathamone.com' as string,
     websiteDisplay: 'prathamone.com' as string,
     academyWebsite: 'https://prathamone.com' as string,
     academyWebsiteDisplay: 'www.prathamone.com' as string,
-    address: '123 Education Lane, School District, Dadar West, Mumbai, Maharashtra 400028' as string,
+    address: '' as string,
   },
 }
 

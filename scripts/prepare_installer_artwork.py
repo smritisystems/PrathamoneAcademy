@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-15
-#  * @updated     2026-11-26
+#  * @updated     2026-11-27
 #  *
 #  * @description Generates multi-resolution .ico, wizard banner, and small logo bitmaps from canonical vector SVG artwork
 #  */
@@ -210,8 +210,8 @@ def generate_installer_assets():
   }}
   img {{
     width: 148px;
-    height: 54px;
-    object-fit: cover;
+    height: 46px;
+    object-fit: contain;
     object-position: center;
     display: block;
   }}

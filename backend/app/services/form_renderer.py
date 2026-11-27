@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-18
+#  * @updated     2026-11-27
 #  *
 #  * @description Service engine resolving real database records, masking Aadhaar, generating blank/prefilled schemas, and logging DPDP audit trails.
 #  */
@@ -96,29 +96,35 @@ def calculate_age(dob: Optional[date]) -> Optional[int]:
 
 
 async def get_institution_header(db: AsyncSession) -> Dict[str, Any]:
-    """Retrieve official institute header and branding metadata."""
+    """Retrieve official institute header and branding metadata without hardcoded customer defaults."""
     res = await db.execute(select(Institution).order_by(Institution.id))
     inst = res.scalars().first()
     if not inst:
         return {
-            "name": "Prashant Academy",
-            "tagline": "Coaching Institute for ICSE, CBSE & State Board Excellence",
-            "code": "PA001",
-            "address": "Dadar West, Near Shivaji Park, Mumbai, Maharashtra 400028",
-            "phone": "+91-22-12345678",
-            "email": "info@prathamone.com",
-            "website": "www.prathamone.com",
-            "logo_url": "/logo.svg",
+            "name": "Your Coaching Institute",
+            "tagline": None,
+            "code": None,
+            "address": None,
+            "phone": None,
+            "email": None,
+            "website": None,
+            "logo_url": None,
         }
+    addr_parts = [p for p in (inst.address, inst.address_line_2, inst.area_locality, inst.city, inst.district, inst.state) if p]
+    formatted_addr = ", ".join(addr_parts)
+    if inst.pincode:
+        formatted_addr = f"{formatted_addr} - {inst.pincode}" if formatted_addr else inst.pincode
     return {
         "name": inst.name,
-        "tagline": "Coaching Institute for ICSE, CBSE & State Board Excellence",
+        "tagline": inst.tagline,
         "code": inst.code,
-        "address": f"{inst.address or 'Dadar West'}, {inst.city or 'Mumbai'}, {inst.state or 'Maharashtra'} - {inst.pincode or '400028'}",
-        "phone": inst.phone or "+91-22-12345678",
-        "email": inst.email or "info@prathamone.com",
-        "website": inst.website or "www.prathamone.com",
-        "logo_url": inst.logo_url or "/logo.svg",
+        "address": formatted_addr or None,
+        "phone": inst.phone,
+        "email": inst.email,
+        "website": inst.website,
+        "logo_url": inst.logo_url,
+        "gstin": inst.gstin,
+        "pan": inst.pan,
     }
 
 

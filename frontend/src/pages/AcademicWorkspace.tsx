@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-26
+ * @updated     2026-11-27
  *
  * @description Flagship Academic Structure & Batch Management workspace featuring 9 tabs, tree view, and batch cards.
  */
@@ -1568,7 +1568,7 @@ export default function AcademicWorkspace() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Official Academic Timetable Docket — Prashant Academy Coaching Institute</title>
+  <title>Official Academic Timetable Docket — ${timetableDocketData?.institution?.name || 'Coaching Institute'}</title>
   <style>
     ${getTimetableDocketPrintStyles()}
     body { background: #f1f5f9; padding: 12px; }
@@ -1598,7 +1598,7 @@ export default function AcademicWorkspace() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `PrashantAcademy_Timetable_Docket_AY2026-27_${new Date().toISOString().split('T')[0]}.html`
+    link.download = `Institute_Timetable_Docket_${new Date().toISOString().split('T')[0]}.html`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -1647,14 +1647,14 @@ export default function AcademicWorkspace() {
     })
 
     downloadCsvRows(
-      `PrashantAcademy_Timetable_Schedule_${new Date().toISOString().split('T')[0]}.csv`,
+      `Institute_Timetable_Schedule_${new Date().toISOString().split('T')[0]}.csv`,
       [headers, ...rows]
     )
     toast.success('Timetable schedule exported to CSV for Excel!')
   }
 
   const handlePrintIsolatedDocket = () => {
-    printTimetableDocketElement('printable-timetable-docket', 'Official Academic Timetable Docket — Prashant Academy')
+    printTimetableDocketElement('printable-timetable-docket', `Official Academic Timetable Docket — ${timetableDocketData?.institution?.name || 'Coaching Institute'}`)
   }
 
   const handleOpenTransfer = (enr: EnrollmentRecord) => {
@@ -5509,16 +5509,22 @@ export default function AcademicWorkspace() {
                   </div>
                   <div className="tt-brand-info">
                     <h2 className="tt-inst-title">
-                      {timetableDocketData.institution.name || 'Prashant Academy Coaching Institute'}
+                      {timetableDocketData.institution.name || 'Coaching Institute'}
                     </h2>
-                    <p className="tt-inst-tagline">
-                      {timetableDocketData.institution.tagline || 'Learn • Practice • Achieve'}
-                    </p>
+                    {timetableDocketData.institution.tagline && (
+                      <p className="tt-inst-tagline">
+                        {timetableDocketData.institution.tagline}
+                      </p>
+                    )}
                     <p className="tt-inst-contact">
-                      📍 {timetableDocketData.institution.address || 'Ghatkopar East, Mumbai 400077'} • 📞 {timetableDocketData.institution.phone || '+91 98200 00000'} • ✉️ {timetableDocketData.institution.email || 'contact@prashantacademy.in'}
+                      {[
+                        timetableDocketData.institution.address ? `📍 ${timetableDocketData.institution.address}` : '',
+                        timetableDocketData.institution.phone ? `📞 ${timetableDocketData.institution.phone}` : '',
+                        timetableDocketData.institution.email ? `✉️ ${timetableDocketData.institution.email}` : '',
+                      ].filter(Boolean).join(' • ') || 'Official Academic Timetable'}
                     </p>
                     <p className="tt-inst-reg">
-                      Autonomous Senior Secondary &amp; Competitive Coaching Wing • Reg. No: MAH/MUM/EDU/2026/0491
+                      Academic Operations &amp; Schedule Docket
                     </p>
                   </div>
                 </div>

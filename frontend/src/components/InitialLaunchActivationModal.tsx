@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-20
- * @updated     2026-11-26
+ * @updated     2026-11-27
  *
  * @description First-launch interactive license activation prompt dialog. Allows entering
  */
@@ -72,7 +72,7 @@ export default function InitialLaunchActivationModal({
             institution_name: 'Coaching Institute',
             contact_name: user ? `${user.first_name} ${user.last_name}`.trim() || user.username : 'Administrator',
             contact_email: user?.email || 'admin@prathamone.local',
-            phone: '8779123007',
+            phone: null,
             address: null,
             city: null,
             state: null,

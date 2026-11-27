@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-27
  *
  * @description Unit and UI component tests for Progressive Web App installation portal, hooks, and platform guides.
  */
@@ -106,7 +106,7 @@ describe('InstallApp Page Interface Specifications', () => {
     expect(screen.getByText('PrathamOne EduOS')).toBeDefined();
     expect(screen.getByText('Progressive Web App')).toBeDefined();
     expect(
-      screen.getByText(/Official Desktop & Mobile App for Prashant Academy/i)
+      screen.getByText(/Official Desktop & Mobile App for/i)
     ).toBeDefined();
   });
 

@@ -20,10 +20,10 @@
 #define MyAppName "PrathamOne EduOS"
 #define MyAppDirName "PrathamOneEduOS"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.186.0"
+  #define MyAppVersion "1.186.1"
 #endif
 #ifndef MyAppFileVersion
-  #define MyAppFileVersion "1.186.0.0"
+  #define MyAppFileVersion "1.186.1.0"
 #endif
 #ifndef MyOutputBaseFilename
   #ifdef UseReleasePayload
@@ -717,14 +717,14 @@ begin
     'Personalize PrathamOne EduOS for your coaching institute, academy, or school',
     'Please enter your institution details. These details will appear on student admission forms, receipts, and marksheets:');
 
-  ConfigPage.Add('Coaching Institute / Academy / School Name:', False);
-  ConfigPage.Add('Primary Branch / Campus Name:', False);
-  ConfigPage.Add('Campus Address && City:', False);
-  ConfigPage.Add('Helpline / Contact Phone:', False);
+  ConfigPage.Add('Coaching Institute / Academy / School Name (optional - can be configured on first launch):', False);
+  ConfigPage.Add('Primary Branch Name (optional):', False);
+  ConfigPage.Add('Campus Address & City (optional):', False);
+  ConfigPage.Add('Helpline / Contact Phone (optional):', False);
 
-  ConfigPage.Values[0] := 'Your Academy Name';
-  ConfigPage.Values[1] := 'Main Campus';
-  ConfigPage.Values[2] := '123 Education Hub, MG Road';
+  ConfigPage.Values[0] := '';
+  ConfigPage.Values[1] := '';
+  ConfigPage.Values[2] := '';
   ConfigPage.Values[3] := '';
 
   // Dedicated Administrator Password Page (keeps both password + confirmation clearly visible)
@@ -1074,7 +1074,7 @@ begin
       );
       Exec(
         ExpandConstant('{app}\backend\prathamone_backend.exe'),
-        '--migrate-only --actor installer --backup-path "' + VerifiedBackupDumpFile + '"',
+        '--migrate-only --actor installer --data-root "' + GetWritableDataRoot('') + '" --backup-path "' + VerifiedBackupDumpFile + '"',
         ExpandConstant('{app}\backend'),
         SW_HIDE,
         ewWaitUntilTerminated,

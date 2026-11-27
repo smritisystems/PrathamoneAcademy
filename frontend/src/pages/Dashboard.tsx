@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-24
+ * @updated     2026-11-27
  *
  * @description Executive management & financial analytics dashboard featuring collection trends and 8 multi-tab workspaces: Overview, Fee Collection, Outstanding Analysis, Student Analysis, Admissions & CRM, Academic Analysis, Transactions & Reconciliation, and Operations.
  */
@@ -3197,7 +3197,7 @@ export default function DashboardPage() {
 
             {/* Modal Footer */}
             <div className="p-3 border-t border-gray-200 bg-slate-50 flex items-center justify-between text-xs text-gray-500">
-              <span>Financial Ledger Snapshot • Prashant Academy</span>
+              <span>Financial Ledger Snapshot • {branding?.academyName || 'Coaching Institute'}</span>
               <button
                 type="button"
                 onClick={() => setIsDrilldownOpen(false)}

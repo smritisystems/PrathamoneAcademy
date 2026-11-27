@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-16
+#  * @updated     2026-11-27
 #  *
 #  * @description REST API router for fee concessions, merit scholarships, eligibility evaluation, and multi-stage approval workflow.
 #  */
@@ -1243,6 +1243,9 @@ async def get_award_letter_data(
     _authorize_concession_student_or_staff(app.student_id, app.institution_id, current_user)
 
     student = app.student
+    from app.models.institution import Institution
+    inst = await db.get(Institution, app.institution_id) if getattr(app, "institution_id", None) else None
+    inst_name = inst.name if inst and inst.name else "Coaching Institute"
     return {
         "letter_reference": f"SANCTION-{app.application_number}",
         "issue_date": (app.approved_at or app.created_at).strftime("%d %b %Y"),
@@ -1250,7 +1253,7 @@ async def get_award_letter_data(
             "id": student.id,
             "name": f"{student.first_name} {student.last_name}",
             "admission_number": student.admission_number,
-            "address": student.address or "Malad West, Mumbai",
+            "address": student.address or "—",
             "phone": student.phone or "—",
         },
         "scholarship": {
@@ -1258,7 +1261,7 @@ async def get_award_letter_data(
             "scheme_name": app.concession_type.name if app.concession_type else "Concession",
             "category": app.concession_type.category if app.concession_type else "general",
             "funding_source": app.funding_source,
-            "sponsor_name": app.sponsor_name or "Prashant Academy Educational Trust",
+            "sponsor_name": app.sponsor_name or f"{inst_name} Trust",
             "sanctioned_amount": float(app.approved_amount or app.requested_amount),
             "status": app.status.upper(),
             "approval_remarks": app.approval_remarks or "Granted under meritorious academic achievement guidelines",
@@ -1272,7 +1275,7 @@ async def get_award_letter_data(
         },
         "signatory": {
             "title": "Director / Academic Board",
-            "designation": "Prashant Academy Coaching Institute",
+            "designation": inst_name,
         },
     }
 

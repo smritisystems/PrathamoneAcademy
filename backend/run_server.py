@@ -68,13 +68,32 @@ def _is_dir_writable(path: Path) -> bool:
         return False
 
 
+def _extract_cli_data_root() -> Optional[Path]:
+    """Read optional --data-root <path> or --data-root=<path> CLI flag prior to full argparse."""
+    argv = sys.argv[1:]
+    for idx, arg in enumerate(argv):
+        if arg.startswith("--data-root="):
+            val = arg.split("=", 1)[1].strip().strip('"')
+            if val:
+                return Path(val)
+        elif arg == "--data-root" and idx + 1 < len(argv):
+            val = argv[idx + 1].strip().strip('"')
+            if val:
+                return Path(val)
+    return None
+
+
 def _resolve_data_root(app_root: Path) -> Path:
-    """Resolve user-writable storage root for data/, logs/, backups/, and .env (avoiding Program Files)."""
+    """Resolve user-writable storage root for data/, logs/, backups/, and .env (aligned with PrathamOneLauncher.cs)."""
+    cli_override = _extract_cli_data_root()
+    if cli_override is not None:
+        return cli_override
+
     override = os.getenv("PRATHAM_DATA_ROOT", "").strip()
     if override:
         return Path(override)
 
-    # Preserve existing non-Program-Files installations (e.g., D:\PrathamOneEduOS\data)
+    # Preserve existing portable non-Program-Files clusters (e.g., D:\PrathamOneEduOS\data\PG_VERSION)
     existing_local_data = app_root / "data"
     prog_files = {
         p.lower()
@@ -90,17 +109,17 @@ def _resolve_data_root(app_root: Path) -> Path:
         return app_root
 
     local_app_data = os.environ.get("LOCALAPPDATA")
-    if not local_app_data:
-        try:
-            local_app_data = str(Path.home() / "AppData" / "Local")
-        except Exception:
-            import tempfile
-            local_app_data = tempfile.gettempdir()
-
-    if in_program_files or not _is_dir_writable(app_root):
+    if local_app_data:
         return Path(local_app_data) / "PrathamOneEduOS"
 
-    return app_root
+    if not in_program_files and _is_dir_writable(app_root):
+        return app_root
+
+    try:
+        return Path.home() / "AppData" / "Local" / "PrathamOneEduOS"
+    except Exception:
+        import tempfile
+        return Path(tempfile.gettempdir()) / "PrathamOneEduOS"
 
 
 BACKEND_DIR, APP_ROOT = _resolve_dirs()
@@ -1521,34 +1540,25 @@ def run_migrate_only(
             os.environ.setdefault(k, v)
 
     started_pg_proc = None
-    db_url = (db_url_override or os.environ.get("DATABASE_URL") or env_vars.get("DATABASE_URL") or "").strip()
-    if start_pg and not db_url_override and (app_root / "pgsql" / "bin" / "postgres.exe").is_file():
-        started_pg_proc, pg_port = _start_embedded_postgres(app_root, backend_dir, data_root=data_root)
-        db_pw = env_vars.get("POSTGRES_PASSWORD") or os.environ.get("POSTGRES_PASSWORD") or "postgres"
-        db_url = f"postgresql+asyncpg://postgres:{db_pw}@127.0.0.1:{pg_port}/prashant_academy"
-        os.environ["POSTGRES_PORT"] = str(pg_port)
-
-    if not db_url:
-        reason = "No DATABASE_URL or embedded PostgreSQL configuration found for migration."
-        _append_upgrade_audit_event(
-            data_root,
-            {
-                "actor": actor,
-                "operation": "migrate_only",
-                "app_version": app_version,
-                "build_number": build_number,
-                "backup_path": backup_path,
-                "outcome": "failed",
-                "reason": reason,
-            },
-        )
-        return 1, {"outcome": "failed", "reason": reason}
-
-    os.environ["DATABASE_URL"] = db_url
     schema_before: list[str] = []
     schema_after: list[str] = []
     pending_revs: list[str] = []
     try:
+        db_url = (db_url_override or os.environ.get("DATABASE_URL") or env_vars.get("DATABASE_URL") or "").strip()
+        if start_pg and not db_url_override and (app_root / "pgsql" / "bin" / "postgres.exe").is_file():
+            if not (data_root / "data" / "PG_VERSION").is_file():
+                raise RuntimeError(
+                    f"Existing PostgreSQL cluster PG_VERSION not found at {data_root / 'data'}; aborting migration without initdb."
+                )
+            started_pg_proc, pg_port = _start_embedded_postgres(app_root, backend_dir, data_root=data_root)
+            db_pw = env_vars.get("POSTGRES_PASSWORD") or os.environ.get("POSTGRES_PASSWORD") or "postgres"
+            db_url = f"postgresql+asyncpg://postgres:{db_pw}@127.0.0.1:{pg_port}/prashant_academy"
+            os.environ["POSTGRES_PORT"] = str(pg_port)
+
+        if not db_url:
+            raise RuntimeError("No DATABASE_URL or embedded PostgreSQL configuration found for migration.")
+
+        os.environ["DATABASE_URL"] = db_url
         before_state = asyncio.run(_inspect_database_state(db_url, all_known_revs))
         schema_before = before_state.get("current_revisions", [])
         pending_revs = _compute_pending_revisions(schema_before, heads, ordered_asc)
@@ -1671,6 +1681,7 @@ def main():
     parser.add_argument("--healthcheck-smoke", action="store_true", help="Verify app import, .pyd extensions, and OpenAPI schema")
     parser.add_argument("--preflight-check", action="store_true", help="Inspect installation, DB schema, disk space, and license parity cleanly")
     parser.add_argument("--migrate-only", action="store_true", help="Execute forward Alembic migrations to head with schema verification and exit")
+    parser.add_argument("--data-root", default="", help="Explicit user-writable data root override for data/, logs/, backups/, and .env")
     parser.add_argument("--json-out", default="", help="Optional JSON output file path for --preflight-check / --migrate-only")
     parser.add_argument("--backup-path", default="", help="Verified pre-upgrade backup path recorded in upgrade_audit.jsonl")
     parser.add_argument("--actor", default="cli", help="Actor label for upgrade_audit.jsonl")

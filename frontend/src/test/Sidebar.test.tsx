@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-25
+ * @updated     2026-11-27
  *
  * @description Vitest test suite verifying sidebar collapse/expand states, keyboard shortcuts, and active links.
  */
@@ -79,7 +79,7 @@ describe('Collapsible & Responsive Sidebar Component', () => {
     renderWithProviders(<Sidebar />)
 
     // Institute branding
-    expect(screen.getByText('Prashant Academy')).toBeDefined()
+    expect(screen.getByText('Your Coaching Institute')).toBeDefined()
     expect(screen.getByText('COACHING MANAGEMENT. SIMPLIFIED.')).toBeDefined()
 
     // Main navigation items
@@ -371,8 +371,8 @@ describe('Layout Integration & Mobile Drawer', () => {
     expect(footer.className).toContain('print:hidden')
 
     // Left section: Institute name, tenant code, and branch details
-    expect(within(footer).getByText('Prashant Academy')).toBeDefined()
-    expect(screen.getByText('Branch: Jankalyan Nagar, Malad West')).toBeDefined()
+    expect(within(footer).getByText('Your Coaching Institute')).toBeDefined()
+    expect(screen.getByText('Branch: Main Branch')).toBeDefined()
 
     // Product and right sections: Product, edition, system, version, and website
     expect(screen.getByText('Coaching Institute Edition')).toBeDefined()
@@ -400,7 +400,7 @@ describe('Layout Integration & Mobile Drawer', () => {
       useSidebarStore.setState({ desktopState: 'collapsed' })
     })
 
-    expect(screen.getByText('Branch: Jankalyan Nagar, Malad West')).toBeDefined()
+    expect(screen.getByText('Branch: Main Branch')).toBeDefined()
     expect(screen.getByText('Coaching Institute Edition')).toBeDefined()
     expect(screen.getAllByText(APP_CONFIG.versionDisplay).length).toBeGreaterThanOrEqual(1)
 
@@ -409,7 +409,7 @@ describe('Layout Integration & Mobile Drawer', () => {
       useSidebarStore.setState({ desktopState: 'expanded' })
     })
 
-    expect(screen.getByText('Branch: Jankalyan Nagar, Malad West')).toBeDefined()
+    expect(screen.getByText('Branch: Main Branch')).toBeDefined()
     expect(screen.getByText('Coaching Institute Edition')).toBeDefined()
     expect(screen.getAllByText(APP_CONFIG.versionDisplay).length).toBeGreaterThanOrEqual(1)
   })
