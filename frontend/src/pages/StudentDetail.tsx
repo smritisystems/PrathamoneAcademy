@@ -1229,7 +1229,7 @@ export default function StudentDetailPage() {
                   {!fees.assignment.has_invoice && (
                     <Link
                       to={`/fees/invoicing?${new URLSearchParams({
-                        ...(profile?.admission_number ? { search: profile.admission_number } : {}),
+                        ...(profile?.overview?.admission_number ? { search: profile.overview.admission_number } : {}),
                         status: 'unbilled',
                       }).toString()}`}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold shrink-0"
