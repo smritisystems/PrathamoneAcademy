@@ -54,4 +54,27 @@ describe('CoachingLoginBackground pan-India boards and states rendering', () => 
     const stateNodes = container.querySelectorAll('.clb-state')
     expect(stateNodes.length).toBeGreaterThanOrEqual(20)
   })
+
+  it('renders thin-line academic formulas, subjects, and vector diagrams inside layout="panel"', () => {
+    const { container } = render(
+      <CoachingLoginBackground layout="panel" instituteState="Maharashtra" parallax={false} />,
+    )
+
+    const text = container.textContent || ''
+    expect(text).toContain('sin²α + cos²α = 1')
+    expect(text).toContain('(a − b)² = a² − 2ab + b²')
+    expect(text).toContain('E = mc²')
+    expect(text).toContain('F = m·a')
+    expect(text).toContain('PHYSICS')
+    expect(text).toContain('CHEMISTRY')
+    expect(text).toContain('MATHS')
+    expect(text).toContain('BIOLOGY')
+    expect(text).toContain('ENGLISH')
+    expect(text).toContain('ECONOMICS')
+
+    const diagrams = container.querySelectorAll('svg.clb-icon')
+    expect(diagrams.length).toBeGreaterThanOrEqual(15)
+    expect(diagrams[0].getAttribute('stroke-width')).toBe('1.4')
+    expect(diagrams[0].getAttribute('fill')).toBe('none')
+  })
 })

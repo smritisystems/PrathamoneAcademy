@@ -212,15 +212,15 @@ interface AmbientItem {
 }
 
 const BASE_ITEMS: Omit<AmbientItem, 'a'>[] = [
-  { id: 'f1', x: 22.1, y: 84.5, k: 0.7, dur: 32, o: 0.18, pulse: 1, c: <>sin²α + cos²α = 1</> },
-  { id: 'f2', x: 89.8, y: 11.1, k: 0.9, dur: 27, o: 0.17, c: <>(a − b)² = a² − 2ab + b²</> },
+  { id: 'f1', x: 22.0, y: 69.5, k: 0.7, dur: 32, o: 0.19, pulse: 1, c: <>sin²α + cos²α = 1</> },
+  { id: 'f2', x: 60.0, y: 19.2, k: 0.9, dur: 27, o: 0.18, c: <>(a − b)² = a² − 2ab + b²</> },
   {
     id: 'f3',
-    x: 14.5,
-    y: 22.5,
+    x: 13.5,
+    y: 24.5,
     k: 0.8,
     dur: 36,
-    o: 0.18,
+    o: 0.19,
     pulse: 1,
     c: (
       <>
@@ -230,11 +230,11 @@ const BASE_ITEMS: Omit<AmbientItem, 'a'>[] = [
   },
   {
     id: 'f4',
-    x: 91.5,
-    y: 90.2,
+    x: 42.5,
+    y: 64.5,
     k: 0.6,
     dur: 29,
-    o: 0.17,
+    o: 0.18,
     c: (
       <>
         ∫<sub>0</sub>
@@ -242,42 +242,50 @@ const BASE_ITEMS: Omit<AmbientItem, 'a'>[] = [
       </>
     ),
   },
-  { id: 'i1', x: 58.2, y: 86.7, k: 1, dur: 30, o: 0.19, icon: 'dna' },
-  { id: 'i2', x: 44.7, y: 82.9, k: 0.8, dur: 26, o: 0.18, icon: 'atom' },
-  { id: 'i3', x: 95, y: 28, k: 0.9, dur: 35, o: 0.18, icon: 'flask' },
-  { id: 'i4', x: 44.1, y: 17.1, k: 0.7, dur: 24, o: 0.17, icon: 'compass' },
-  { id: 'i5', x: 6, y: 74, k: 0.9, dur: 33, o: 0.19, icon: 'globe' },
-  { id: 'i6', x: 72.8, y: 70.3, k: 0.8, dur: 28, o: 0.18, icon: 'books' },
-  { id: 'i7', x: 94, y: 70, k: 1, dur: 31, o: 0.18, icon: 'nib' },
-  { id: 'i8', x: 57.5, y: 9.2, k: 0.7, dur: 37, o: 0.17, icon: 'music' },
-  { id: 'b0', x: 16.5, y: 18.5, k: 0.75, dur: 29, o: 0.24, pulse: 1, board: 'MSBSHSE · SSC & HSC' },
-  { id: 'b1', x: 69.5, y: 69.0, k: 0.7, dur: 30, o: 0.21, board: 'CBSE' },
-  { id: 'b2', x: 35.5, y: 12.8, k: 0.65, dur: 25, o: 0.2, board: 'ICSE · ISC' },
-  { id: 'b3', x: 75.5, y: 13.5, k: 0.7, dur: 31, o: 0.19, board: 'IB · IGCSE' },
-  { id: 'b4', x: 10.5, y: 45.5, k: 0.7, dur: 28, o: 0.19, board: 'NIOS' },
-  { id: 'b5', x: 79.5, y: 48.5, k: 0.7, dur: 27, o: 0.19, board: 'UPMSP' },
-  { id: 'b6', x: 77.5, y: 31.5, k: 0.65, dur: 32, o: 0.19, board: 'GSEB · RBSE' },
-  { id: 'b7', x: 38.5, y: 71.2, k: 0.65, dur: 29, o: 0.19, board: 'WBBSE · BSEB' },
-  { id: 'b9', x: 56.5, y: 71.0, k: 0.65, dur: 34, o: 0.19, board: 'KSEEB · TNSB' },
-  { id: 'b8', x: 18.5, y: 60.5, k: 0.8, dur: 32, o: 0.21, board: 'STATE BOARDS' },
-  { id: 's1', x: 73.8, y: 55.2, k: 0.7, dur: 28, o: 0.15, subject: 'PHYSICS' },
-  { id: 's2', x: 64.0, y: 15.0, k: 0.7, dur: 33, o: 0.15, subject: 'CHEMISTRY' },
-  { id: 's3', x: 80.5, y: 39.0, k: 0.7, dur: 26, o: 0.15, subject: 'MATHS' },
-  { id: 't2', x: 50.5, y: 92.9, k: 0.6, dur: 29, o: 0.15, icon: 'trophy', small: 1 },
+  { id: 'f5', x: 9.5, y: 49.0, k: 0.75, dur: 31, o: 0.18, c: <>E = mc²</> },
+  { id: 'f6', x: 81.5, y: 56.5, k: 0.65, dur: 28, o: 0.17, c: <>F = m·a</> },
+  { id: 'i1', x: 19.5, y: 44.5, k: 1, dur: 30, o: 0.2, icon: 'dna' },
+  { id: 'i2', x: 7.5, y: 31.5, k: 0.8, dur: 26, o: 0.19, icon: 'atom' },
+  { id: 'i3', x: 73.0, y: 20.0, k: 0.9, dur: 35, o: 0.19, icon: 'flask' },
+  { id: 'i4', x: 45.5, y: 17.5, k: 0.7, dur: 24, o: 0.18, icon: 'compass' },
+  { id: 'i5', x: 7.5, y: 58.5, k: 0.9, dur: 33, o: 0.19, icon: 'globe' },
+  { id: 'i6', x: 70.5, y: 63.5, k: 0.8, dur: 28, o: 0.19, icon: 'books' },
+  { id: 'i7', x: 14.5, y: 11.2, k: 1, dur: 31, o: 0.18, icon: 'nib', md: 1 },
+  { id: 'i8', x: 57.5, y: 10.8, k: 0.7, dur: 37, o: 0.17, icon: 'music', md: 1 },
+  { id: 'i9', x: 71.0, y: 30.5, k: 0.75, dur: 32, o: 0.19, icon: 'benzene', md: 1 },
+  { id: 'i10', x: 71.0, y: 46.5, k: 0.7, dur: 29, o: 0.19, icon: 'triangle', md: 1 },
+  { id: 'i11', x: 30.5, y: 71.0, k: 0.65, dur: 34, o: 0.18, icon: 'bell', md: 1 },
+  { id: 'b0', x: 13.0, y: 16.5, k: 0.75, dur: 29, o: 0.24, pulse: 1, board: 'MSBSHSE · SSC & HSC' },
+  { id: 'b1', x: 78.0, y: 70.0, k: 0.7, dur: 30, o: 0.21, board: 'CBSE' },
+  { id: 'b2', x: 36.5, y: 11.8, k: 0.65, dur: 25, o: 0.2, board: 'ICSE · ISC' },
+  { id: 'b3', x: 78.5, y: 12.5, k: 0.7, dur: 31, o: 0.19, board: 'IB · IGCSE' },
+  { id: 'b4', x: 9.5, y: 40.5, k: 0.7, dur: 28, o: 0.19, board: 'NIOS' },
+  { id: 'b5', x: 80.5, y: 49.0, k: 0.7, dur: 27, o: 0.19, board: 'UPMSP' },
+  { id: 'b6', x: 79.0, y: 33.5, k: 0.65, dur: 32, o: 0.19, board: 'GSEB · RBSE' },
+  { id: 'b7', x: 37.5, y: 69.5, k: 0.65, dur: 29, o: 0.19, board: 'WBBSE · BSEB' },
+  { id: 'b9', x: 59.5, y: 70.0, k: 0.65, dur: 34, o: 0.19, board: 'KSEEB · TNSB' },
+  { id: 'b8', x: 18.0, y: 61.5, k: 0.8, dur: 32, o: 0.21, board: 'STATE BOARDS' },
+  { id: 's1', x: 73.5, y: 55.5, k: 0.7, dur: 28, o: 0.16, subject: 'PHYSICS' },
+  { id: 's2', x: 64.5, y: 12.2, k: 0.7, dur: 33, o: 0.16, subject: 'CHEMISTRY' },
+  { id: 's3', x: 80.5, y: 41.0, k: 0.7, dur: 26, o: 0.16, subject: 'MATHS' },
+  { id: 's4', x: 18.5, y: 53.5, k: 0.65, dur: 30, o: 0.16, subject: 'BIOLOGY' },
+  { id: 's5', x: 49.0, y: 71.5, k: 0.65, dur: 31, o: 0.16, subject: 'ENGLISH' },
+  { id: 's6', x: 31.5, y: 18.2, k: 0.6, dur: 35, o: 0.15, subject: 'ECONOMICS' },
+  { id: 't2', x: 46.5, y: 10.8, k: 0.6, dur: 29, o: 0.16, icon: 'trophy', small: 1 },
   { id: 'n1', x: 24.5, y: 11.2, k: 0.7, dur: 33, o: 0.2, pulse: 1, board: 'NEP 2020' },
-  { id: 't4', x: 81.3, y: 23.8, k: 0.6, dur: 27, o: 0.15, subject: 'PRINCIPAL' },
-  { id: 't5', x: 81.3, y: 61.8, k: 0.7, dur: 36, o: 0.15, subject: 'TEACHERS' },
-  { id: 't6', x: 13.5, y: 70.9, k: 0.6, dur: 30, o: 0.15, subject: 'ANNUAL DAY' },
-  { id: 'c1', x: 50.2, y: 7.7, k: 0.7, dur: 31, o: 0.17, icon: 'bar', md: 1 },
-  { id: 'c2', x: 64.9, y: 82.3, k: 0.7, dur: 27, o: 0.17, icon: 'pie', md: 1 },
-  { id: 'c3', x: 15.7, y: 36.1, k: 0.7, dur: 35, o: 0.17, icon: 'parabola', md: 1 },
-  { id: 'c4', x: 51.4, y: 83.8, k: 0.7, dur: 29, o: 0.17, icon: 'venn', md: 1 },
-  { id: 'c9', x: 27.9, y: 72.4, k: 0.7, dur: 28, o: 0.17, icon: 'flow', md: 1 },
-  { id: 'm-hi', x: 94.1, y: 79.6, k: 0.6, dur: 28, o: 0.16, script: 'शिक्षा', lang: 'hi' },
-  { id: 'm-mr', x: 73.4, y: 81.6, k: 0.6, dur: 34, o: 0.16, script: 'ज्ञान', lang: 'mr' },
-  { id: 'm-gu', x: 75.8, y: 9, k: 0.6, dur: 31, o: 0.16, script: 'शिक्षण', lang: 'gu' },
-  { id: 'm-bn', x: 45.1, y: 92.2, k: 0.6, dur: 37, o: 0.16, script: 'শিক্ষা', lang: 'bn' },
-  { id: 'm-ta', x: 82.3, y: 40, k: 0.6, dur: 29, o: 0.16, script: 'கல்வி', lang: 'ta' },
+  { id: 't4', x: 80.5, y: 26.5, k: 0.6, dur: 27, o: 0.15, subject: 'PRINCIPAL' },
+  { id: 't5', x: 79.5, y: 63.0, k: 0.7, dur: 36, o: 0.15, subject: 'TEACHERS' },
+  { id: 't6', x: 10.0, y: 68.5, k: 0.6, dur: 30, o: 0.15, subject: 'ANNUAL DAY' },
+  { id: 'c1', x: 51.5, y: 11.5, k: 0.7, dur: 31, o: 0.18, icon: 'bar', md: 1 },
+  { id: 'c2', x: 52.0, y: 65.5, k: 0.7, dur: 27, o: 0.18, icon: 'pie', md: 1 },
+  { id: 'c3', x: 18.5, y: 33.5, k: 0.7, dur: 35, o: 0.18, icon: 'parabola', md: 1 },
+  { id: 'c4', x: 60.5, y: 64.0, k: 0.7, dur: 29, o: 0.18, icon: 'venn', md: 1 },
+  { id: 'c9', x: 28.5, y: 65.0, k: 0.7, dur: 28, o: 0.18, icon: 'flow', md: 1 },
+  { id: 'm-hi', x: 66.5, y: 65.0, k: 0.6, dur: 28, o: 0.16, script: 'शिक्षा', lang: 'hi' },
+  { id: 'm-mr', x: 69.5, y: 71.5, k: 0.6, dur: 34, o: 0.16, script: 'ज्ञान', lang: 'mr' },
+  { id: 'm-gu', x: 82.0, y: 19.5, k: 0.6, dur: 31, o: 0.16, script: 'शिक्षण', lang: 'gu' },
+  { id: 'm-bn', x: 22.0, y: 19.5, k: 0.6, dur: 37, o: 0.16, script: 'শিক্ষা', lang: 'bn' },
+  { id: 'm-ta', x: 71.5, y: 38.5, k: 0.6, dur: 29, o: 0.16, script: 'கல்வி', lang: 'ta' },
 ]
 
 const STATES = [
@@ -781,7 +789,7 @@ export default function CoachingLoginBackground({
                           className="clb-icon"
                           fill="none"
                           stroke="currentColor"
-                          strokeWidth="1.7"
+                          strokeWidth="1.4"
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         >
