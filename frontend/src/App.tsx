@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-24
+ * @updated     2026-11-27
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -38,6 +38,7 @@ const ExaminationsPage = lazyWithRetry(() => import('./pages/Examinations'), 'Ex
 const FeesPage = lazyWithRetry(() => import('./pages/Fees'), 'Fees')
 const FeeCollectionPage = lazyWithRetry(() => import('./pages/FeeCollection'), 'FeeCollection')
 const FinanceExpenseWorkspacePage = lazyWithRetry(() => import('./pages/FinanceExpenseWorkspace'), 'FinanceExpenseWorkspace')
+const BudgetingForecastingWorkspacePage = lazyWithRetry(() => import('./pages/BudgetingForecastingWorkspace'), 'BudgetingForecastingWorkspace')
 const PaymentsPage = lazyWithRetry(() => import('./pages/Payments'), 'Payments')
 const ReceiptPage = lazyWithRetry(() => import('./pages/Receipt'), 'Receipt')
 const ReportsPage = lazyWithRetry(() => import('./pages/Reports'), 'Reports')
@@ -277,6 +278,13 @@ export default function App() {
             <Route path="finance/cash-register" element={<Suspense fallback={<PageLoader />}><FinanceExpenseWorkspacePage /></Suspense>} />
             <Route path="cash-register" element={<Suspense fallback={<PageLoader />}><FinanceExpenseWorkspacePage /></Suspense>} />
             <Route path="cashbook" element={<Suspense fallback={<PageLoader />}><FinanceExpenseWorkspacePage /></Suspense>} />
+          </Route>
+
+          {/* Budgeting & Forecasting Routes (Admin, Principal, Accountant) */}
+          <Route element={<RoleOutlet roles={['admin', 'principal', 'accountant']} />}>
+            <Route path="finance/budgets" element={<Suspense fallback={<PageLoader />}><BudgetingForecastingWorkspacePage /></Suspense>} />
+            <Route path="finance/variance" element={<Suspense fallback={<PageLoader />}><BudgetingForecastingWorkspacePage /></Suspense>} />
+            <Route path="finance/forecasts" element={<Suspense fallback={<PageLoader />}><BudgetingForecastingWorkspacePage /></Suspense>} />
           </Route>
 
           {/* Teacher Payroll Routes */}

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-16
+#  * @updated     2026-11-27
 #  *
 #  * @description Domain service for user-defined menus, role-based navigation defaults, usage telemetry, and intelligent recommendations.
 #  */
@@ -164,6 +164,20 @@ CANONICAL_MODULES: List[Dict[str, Any]] = [
         "required_permission": None,
         "sysadmin_only": False,
         "sub_items": [],
+    },
+    {
+        "id": "budgeting",
+        "label": "Budgeting & Forecasting",
+        "category": "finance",
+        "default_path": "/finance/budgets",
+        "icon": "TrendingUp",
+        "required_permission": None,
+        "sysadmin_only": False,
+        "sub_items": [
+            {"id": "budgeting_plans", "label": "Budgets & Allocations", "to": "/finance/budgets"},
+            {"id": "budgeting_variance", "label": "Variance Matrix", "to": "/finance/variance"},
+            {"id": "budgeting_forecasts", "label": "Cashflow Forecast", "to": "/finance/forecasts"},
+        ],
     },
     {
         "id": "attendance",

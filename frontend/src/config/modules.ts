@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-24
+ * @updated     2026-11-27
  *
  * @description Canonical Module Registry (SSOT) defining all application workspaces, icons, routes, and permissions.
  */
@@ -46,6 +46,7 @@ import {
   CalendarDays,
   Film,
   Wallet,
+  TrendingUp,
   LucideIcon,
 } from 'lucide-react'
 import type { User, NavigationModule, NavigationSubItem } from '../types'
@@ -184,6 +185,20 @@ export const CANONICAL_MODULE_REGISTRY: ModuleDefinition[] = [
       { id: 'expenses_register', label: 'Expense Register', to: '/expenses' },
       { id: 'expenses_cash_closing', label: 'Cash Register & Closing', to: '/cash-register' },
       { id: 'expenses_cashbook', label: 'Daily Cash Book', to: '/cashbook' },
+    ],
+  },
+  {
+    id: 'budgeting',
+    label: 'Budgeting & Forecasting',
+    category: 'finance',
+    defaultPath: '/finance/budgets',
+    icon: TrendingUp,
+    iconName: 'TrendingUp',
+    description: 'Annual financial plans, live Budget-vs-Actual variance matrix, expense guardrails, and 3-driver cashflow forecasting.',
+    subItems: [
+      { id: 'budgeting_plans', label: 'Budgets & Allocations', to: '/finance/budgets' },
+      { id: 'budgeting_variance', label: 'Variance Matrix', to: '/finance/variance' },
+      { id: 'budgeting_forecasts', label: 'Cashflow Forecast', to: '/finance/forecasts' },
     ],
   },
   {

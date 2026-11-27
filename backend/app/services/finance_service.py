@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-24
-#  * @updated     2026-11-24
+#  * @updated     2026-11-27
 #  *
 #  * @description Domain service implementing Daily Expense Management, Live Cash Movements, Denomination Counting, and Daily Cash Opening and Closing.
 #  */
@@ -43,15 +43,25 @@ class FinanceService:
     # --------------------------------------------------------------------------
     @staticmethod
     async def generate_expense_number(db: AsyncSession, institution_id: int) -> str:
+        """Generate a globally unique expense number (uq_expense_number is global across tenants)."""
         current_year = date.today().year
-        stmt = select(func.count(Expense.id)).where(
-            and_(
-                Expense.institution_id == institution_id,
-                func.extract("year", Expense.expense_date) == current_year,
-            )
+        prefix = f"EXP-{current_year}-"
+        stmt = select(Expense.expense_number).where(
+            Expense.expense_number.like(f"{prefix}%")
         )
-        count = (await db.execute(stmt)).scalar() or 0
-        return f"EXP-{current_year}-{(count + 1):04d}"
+        existing = (await db.execute(stmt)).scalars().all()
+        max_seq = 0
+        existing_set = set(existing)
+        for code in existing_set:
+            tail = code[len(prefix):]
+            if tail.isdigit():
+                max_seq = max(max_seq, int(tail))
+        next_seq = max_seq + 1
+        candidate = f"{prefix}{next_seq:04d}"
+        while candidate in existing_set:
+            next_seq += 1
+            candidate = f"{prefix}{next_seq:04d}"
+        return candidate
 
     @staticmethod
     async def create_expense(
@@ -95,6 +105,36 @@ class FinanceService:
         await db.commit()
         await db.refresh(expense)
         return expense
+
+    @staticmethod
+    async def create_expense_with_budget_check(
+        db: AsyncSession,
+        institution_id: int,
+        data: Dict[str, Any],
+        recorded_by_id: int,
+    ) -> Tuple[Expense, Dict[str, Any]]:
+        """Create expense after evaluating active approved budget guardrails."""
+        from app.services.budget_forecast_service import BudgetForecastService
+
+        exp_date = data.get("expense_date") or date.today()
+        guardrail = await BudgetForecastService.check_expense_budget_guardrail(
+            db=db,
+            institution_id=institution_id,
+            category_id=int(data["category_id"]),
+            expense_date=exp_date,
+            new_amount=Decimal(str(data["amount"])),
+        )
+        if (
+            guardrail.get("has_budget")
+            and guardrail.get("enforcement_mode") == "hard_limit"
+            and guardrail.get("alert_level") == "overrun"
+            and not (data.get("budget_override_reason") or "").strip()
+        ):
+            raise ValueError(
+                f"Budget hard limit exceeded: {guardrail.get('message')} Provide budget_override_reason to override."
+            )
+        expense = await FinanceService.create_expense(db, institution_id, data, recorded_by_id)
+        return expense, guardrail
 
     @staticmethod
     async def update_expense(

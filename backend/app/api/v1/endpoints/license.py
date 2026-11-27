@@ -128,6 +128,8 @@ _ROUTE_MODULES = (
     ("/fees/former-students-recovery", "reports"),
     ("/fees", "billing"),
     ("/payments", "accounting"),
+    ("/finance/budgets/overview", "dashboard"),
+    ("/finance/forecasts/overview", "reports"),
     ("/finance", "accounting"),
     ("/teacher-payroll", "payroll"),
     ("/examinations", "examinations"),
@@ -784,6 +786,8 @@ _FEE_ANALYTICS_REPORT_PATHS = (
     "/api/v1/fees/dimension-analytics",
     "/api/v1/fees/student-monthly-pivot",
     "/api/v1/fees/former-students-recovery",
+    "/api/v1/finance/budgets/overview",
+    "/api/v1/finance/forecasts/overview",
 )
 
 
@@ -795,6 +799,7 @@ def _is_evaluation_read_allowed(request: Request, policy: dict) -> bool:
     is_report = (
         path == "/api/v1/reports"
         or path.startswith("/api/v1/reports/")
+        or (path.startswith("/api/v1/finance/budgets/") and path.endswith("/variance"))
         or any(path == p or path.startswith(f"{p}/") for p in _FEE_ANALYTICS_REPORT_PATHS)
     )
     is_export = path == "/api/v1/import-export/export" or path.endswith("/export")

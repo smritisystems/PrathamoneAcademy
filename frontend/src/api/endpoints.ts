@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-26
+ * @updated     2026-11-27
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -3692,6 +3692,150 @@ export interface DailyCashBookData {
   entries: DailyCashBookEntry[]
 }
 
+export interface BudgetPlanItem {
+  id: number
+  institution_id: number
+  branch_id?: number | null
+  academic_year_id?: number | null
+  fiscal_year_label: string
+  name: string
+  plan_type: string
+  granularity: string
+  start_date: string
+  end_date: string
+  version_number: number
+  parent_plan_id?: number | null
+  status: 'draft' | 'submitted' | 'approved' | 'locked' | 'superseded'
+  enforcement_mode: 'advisory' | 'soft_warn' | 'hard_limit'
+  notes?: string | null
+  planned_inflow: number
+  planned_outflow: number
+  planned_net_surplus: number
+  line_count: number
+  approved_at?: string | null
+  locked_at?: string | null
+  created_at?: string | null
+}
+
+export interface BudgetLineVariance {
+  id: number
+  period_start: string
+  period_end: string
+  period_label: string
+  line_direction: 'inflow_target' | 'outflow_cap'
+  source_domain: string
+  expense_category_id?: number | null
+  fee_category_id?: number | null
+  line_label: string
+  planned_amount: number
+  actual_amount: number
+  pending_amount: number
+  variance_amount: number
+  utilization_pct: number
+  warning_threshold_pct: number
+  status: string
+  notes?: string | null
+}
+
+export interface BudgetVarianceResponse {
+  plan: {
+    id: number
+    name: string
+    fiscal_year_label: string
+    plan_type: string
+    granularity: string
+    version_number: number
+    status: string
+    enforcement_mode: string
+    start_date: string
+    end_date: string
+  }
+  summary: {
+    revenue_budget: number
+    revenue_actual: number
+    revenue_realization_pct: number
+    cost_budget: number
+    cost_actual: number
+    cost_pending: number
+    cost_utilization_pct: number
+    net_margin_budget: number
+    net_margin_actual: number
+  }
+  period_summary: Array<{
+    period_start: string
+    period_label: string
+    revenue_budget: number
+    revenue_actual: number
+    cost_budget: number
+    cost_actual: number
+    cost_pending: number
+    net_budget: number
+    net_actual: number
+  }>
+  lines: BudgetLineVariance[]
+}
+
+export interface ForecastScenarioItem {
+  id: number
+  institution_id: number
+  academic_year_id?: number | null
+  linked_budget_plan_id?: number | null
+  name: string
+  scenario_type: 'baseline' | 'conservative' | 'optimistic' | 'what_if'
+  horizon_months: number
+  opening_bank_balance: number
+  opening_cash_override?: number | null
+  assumptions: Record<string, number>
+  is_default: boolean
+  created_at?: string | null
+}
+
+export interface ForecastProjectionRow {
+  period_start: string
+  period_end: string
+  period_label: string
+  projected_fee_collections: number
+  projected_pipeline_admissions: number
+  projected_concessions: number
+  projected_refunds: number
+  projected_total_inflows: number
+  projected_faculty_payroll: number
+  projected_staff_payroll: number
+  projected_recurring_opex: number
+  projected_variable_opex: number
+  projected_total_outflows: number
+  projected_net_cashflow: number
+  projected_ending_liquidity: number
+  confidence_low: number
+  confidence_high: number
+}
+
+export interface ForecastResponse {
+  scenario: {
+    id?: number | null
+    name: string
+    scenario_type: string
+    horizon_months: number
+    assumptions: Record<string, number>
+  }
+  run_batch_id: string
+  summary: {
+    starting_cash_register: number
+    opening_bank_balance: number
+    starting_liquidity: number
+    total_projected_inflows: number
+    total_projected_outflows: number
+    net_projected_surplus: number
+    ending_liquidity: number
+    trough_month?: string | null
+    trough_liquidity: number
+    runway_months?: number | null
+    runway_status: string
+  }
+  drivers_context: Record<string, number>
+  projections: ForecastProjectionRow[]
+}
+
 export const financeApi = {
   getExpenses: (params?: {
     search?: string
@@ -3798,6 +3942,134 @@ export const financeApi = {
     institution_id = 1,
   ) =>
     apiClient.post<{ message: string; id: number }>('/finance/cash-transactions', payload, {
+      params: { institution_id },
+    }),
+
+  // Budgeting & Forecasting (FP&A)
+  getBudgetOverview: (institution_id = 1) =>
+    apiClient.get<{
+      active_plan: BudgetVarianceResponse['plan'] | null
+      budget_summary: BudgetVarianceResponse['summary'] | null
+      forecast_summary: ForecastResponse['summary']
+      plan_count: number
+    }>('/finance/budgets/overview', { params: { institution_id } }),
+
+  listBudgets: (institution_id = 1) =>
+    apiClient.get<BudgetPlanItem[]>('/finance/budgets', { params: { institution_id } }),
+
+  createBudget: (
+    payload: {
+      name: string
+      fiscal_year_label?: string
+      academic_year_id?: number
+      plan_type?: string
+      granularity?: string
+      start_date?: string
+      end_date?: string
+      enforcement_mode?: string
+      seed_default_lines?: boolean
+      notes?: string
+    },
+    institution_id = 1,
+  ) =>
+    apiClient.post<{ message: string; id: number; name: string; status: string; version_number: number }>(
+      '/finance/budgets',
+      payload,
+      { params: { institution_id } },
+    ),
+
+  getBudgetVariance: (planId: number, institution_id = 1) =>
+    apiClient.get<BudgetVarianceResponse>(`/finance/budgets/${planId}/variance`, {
+      params: { institution_id },
+    }),
+
+  upsertBudgetLines: (
+    planId: number,
+    lines: Array<{
+      id?: number
+      period_start?: string
+      period_end?: string
+      period_label?: string
+      line_direction: string
+      source_domain: string
+      expense_category_id?: number | null
+      fee_category_id?: number | null
+      line_label?: string
+      planned_amount: number
+      warning_threshold_pct?: number
+      notes?: string | null
+    }>,
+    institution_id = 1,
+  ) =>
+    apiClient.put<{ message: string; id: number; status: string }>(
+      `/finance/budgets/${planId}/lines`,
+      { lines },
+      { params: { institution_id } },
+    ),
+
+  transitionBudget: (
+    planId: number,
+    action: 'submit' | 'approve' | 'lock' | 'revise',
+    notes?: string,
+    institution_id = 1,
+  ) =>
+    apiClient.post<{ message: string; id: number; status: string; version_number: number }>(
+      `/finance/budgets/${planId}/${action}`,
+      notes ? { notes } : {},
+      { params: { institution_id } },
+    ),
+
+  getForecastOverview: (params?: { institution_id?: number; horizon_months?: number; opening_bank_balance?: number }) =>
+    apiClient.get<ForecastResponse>('/finance/forecasts/overview', { params }),
+
+  listForecastScenarios: (institution_id = 1) =>
+    apiClient.get<ForecastScenarioItem[]>('/finance/forecasts/scenarios', { params: { institution_id } }),
+
+  createForecastScenario: (
+    payload: {
+      name: string
+      scenario_type?: string
+      academic_year_id?: number
+      linked_budget_plan_id?: number
+      horizon_months?: number
+      opening_bank_balance?: number
+      opening_cash_override?: number
+      assumptions?: Record<string, number>
+      is_default?: boolean
+    },
+    institution_id = 1,
+  ) =>
+    apiClient.post<{ message: string; id: number; name: string; scenario_type: string }>(
+      '/finance/forecasts/scenarios',
+      payload,
+      { params: { institution_id } },
+    ),
+
+  computeForecastScenario: (
+    scenarioId: number,
+    payload?: {
+      horizon_months?: number
+      opening_bank_balance?: number
+      overrides?: Record<string, number>
+      persist_snapshot?: boolean
+    },
+    institution_id = 1,
+  ) =>
+    apiClient.post<ForecastResponse>(
+      `/finance/forecasts/scenarios/${scenarioId}/compute`,
+      payload || { persist_snapshot: true },
+      { params: { institution_id } },
+    ),
+
+  simulateForecast: (
+    payload: {
+      horizon_months?: number
+      opening_bank_balance?: number
+      overrides?: Record<string, number>
+    },
+    institution_id = 1,
+  ) =>
+    apiClient.post<ForecastResponse>('/finance/forecasts/simulate', payload, {
       params: { institution_id },
     }),
 }

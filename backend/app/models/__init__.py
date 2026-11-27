@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-24
+#  * @updated     2026-11-27
 #  *
 #  * @description SQLAlchemy ORM models package exporting all database entity definitions.
 #  */
@@ -96,6 +96,9 @@ from app.models.planning import (
 )
 from app.models.finance import (
     ExpenseCategory, Expense, CashRegister, DailyCashRegister, CashTransaction
+)
+from app.models.budgeting import (
+    BudgetPlan, BudgetLineItem, ForecastScenario, ForecastPeriodProjection
 )
 
 
@@ -208,5 +211,9 @@ __all__ = [
     "CashRegister",
     "DailyCashRegister",
     "CashTransaction",
+    "BudgetPlan",
+    "BudgetLineItem",
+    "ForecastScenario",
+    "ForecastPeriodProjection",
 ]
 

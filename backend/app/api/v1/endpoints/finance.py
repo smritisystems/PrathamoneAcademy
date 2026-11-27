@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-24
-#  * @updated     2026-11-26
+#  * @updated     2026-11-27
 #  *
 #  * @description REST API router for Institute Daily Expense Management, Cash Registers, Cash Closing, and Daily Cash Book.
 #  */
@@ -25,10 +25,11 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, enforce_institution_access
+from app.core.deps import get_current_active_user, enforce_institution_access, require_role, get_data_environment
 from app.models.user import User
 from app.models.finance import Expense, ExpenseCategory, CashRegister, DailyCashRegister, CashTransaction
 from app.services.finance_service import FinanceService
+from app.services.budget_forecast_service import BudgetForecastService
 
 router = APIRouter()
 
@@ -52,6 +53,7 @@ class ExpenseCreate(BaseModel):
     is_recurring: bool = False
     recurring_frequency: Optional[str] = None
     notes: Optional[str] = None
+    budget_override_reason: Optional[str] = None
 
 
 class ExpenseUpdate(BaseModel):
@@ -240,14 +242,22 @@ async def create_expense(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Record a new institutional expense."""
-    expense = await FinanceService.create_expense(
-        db=db,
-        institution_id=effective_inst_id or 1,
-        data=payload.model_dump(),
-        recorded_by_id=current_user.id,
-    )
-    return {"message": "Expense recorded successfully", "id": expense.id, "expense_number": expense.expense_number}
+    """Record a new institutional expense with active budget guardrail check."""
+    try:
+        expense, budget_alert = await FinanceService.create_expense_with_budget_check(
+            db=db,
+            institution_id=effective_inst_id or 1,
+            data=payload.model_dump(),
+            recorded_by_id=current_user.id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "message": "Expense recorded successfully",
+        "id": expense.id,
+        "expense_number": expense.expense_number,
+        "budget_alert": budget_alert,
+    }
 
 
 @router.get("/expenses/{id}")
@@ -592,3 +602,303 @@ async def create_cash_transaction(
     )
 
     return {"message": "Cash movement recorded successfully", "id": txn.id}
+
+
+# ------------------------------------------------------------------------------
+# Budgeting & Forecasting Endpoints (FP&A)
+# ------------------------------------------------------------------------------
+class BudgetPlanCreate(BaseModel):
+    name: str = Field(..., min_length=2, max_length=160)
+    fiscal_year_label: Optional[str] = Field(None, max_length=40)
+    academic_year_id: Optional[int] = None
+    branch_id: Optional[int] = 1
+    plan_type: str = Field("operating", description="operating | cashflow | capex")
+    granularity: str = Field("monthly", description="monthly | quarterly | annual")
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    enforcement_mode: str = Field("soft_warn", description="advisory | soft_warn | hard_limit")
+    seed_default_lines: bool = True
+    notes: Optional[str] = None
+
+
+class BudgetLineUpsertItem(BaseModel):
+    id: Optional[int] = None
+    period_start: Optional[date] = None
+    period_end: Optional[date] = None
+    period_label: Optional[str] = None
+    line_direction: str = Field("outflow_cap", description="inflow_target | outflow_cap")
+    source_domain: str = Field("expense_category", description="fee_category | expense_category | faculty_payroll | staff_payroll | concession | custom")
+    expense_category_id: Optional[int] = None
+    fee_category_id: Optional[int] = None
+    standard_id: Optional[int] = None
+    division_id: Optional[int] = None
+    line_label: Optional[str] = None
+    planned_amount: float = Field(..., ge=0)
+    warning_threshold_pct: float = Field(85.0, ge=0, le=100)
+    notes: Optional[str] = None
+
+
+class BudgetLinesBatchUpdate(BaseModel):
+    lines: List[BudgetLineUpsertItem]
+
+
+class BudgetTransitionRequest(BaseModel):
+    notes: Optional[str] = None
+
+
+class ForecastScenarioCreate(BaseModel):
+    name: str = Field(..., min_length=2, max_length=140)
+    scenario_type: str = Field("baseline", description="baseline | conservative | optimistic | what_if")
+    academic_year_id: Optional[int] = None
+    linked_budget_plan_id: Optional[int] = None
+    horizon_months: int = Field(6, ge=1, le=24)
+    opening_bank_balance: float = Field(0.0, ge=0)
+    opening_cash_override: Optional[float] = None
+    assumptions: Optional[Dict[str, Any]] = None
+    is_default: bool = False
+
+
+class ForecastComputeRequest(BaseModel):
+    horizon_months: Optional[int] = Field(None, ge=1, le=24)
+    opening_bank_balance: Optional[float] = Field(None, ge=0)
+    overrides: Optional[Dict[str, Any]] = None
+    persist_snapshot: bool = True
+
+
+_BUDGET_VIEW_ROLES = ("superadmin", "admin", "principal", "accountant")
+_BUDGET_ADMIN_ROLES = ("superadmin", "admin", "accountant")
+
+
+@router.get("/budgets/overview")
+async def get_budget_overview(
+    effective_inst_id: int = Depends(enforce_institution_access),
+    data_environment: str = Depends(get_data_environment),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*_BUDGET_VIEW_ROLES)),
+):
+    """Summary KPIs across active budgets and a quick 6-month baseline forecast pulse."""
+    inst_id = effective_inst_id or 1
+    plans = await BudgetForecastService.list_budget_plans(db, inst_id)
+    active_plan = next((p for p in plans if p["status"] in {"approved", "locked"}), plans[0] if plans else None)
+    variance_data = None
+    if active_plan:
+        variance_data = await BudgetForecastService.compute_plan_variance(
+            db, inst_id, active_plan["id"], data_environment=data_environment
+        )
+    quick_forecast = await BudgetForecastService.compute_forecast(
+        db=db,
+        institution_id=inst_id,
+        horizon_months=6,
+        persist_snapshot=False,
+        data_environment=data_environment,
+    )
+    return {
+        "active_plan": variance_data["plan"] if variance_data else None,
+        "budget_summary": variance_data["summary"] if variance_data else None,
+        "forecast_summary": quick_forecast["summary"],
+        "plan_count": len(plans),
+    }
+
+
+@router.get("/budgets")
+async def list_budgets(
+    effective_inst_id: int = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*_BUDGET_VIEW_ROLES)),
+):
+    """List all budget plans for the active institution."""
+    return await BudgetForecastService.list_budget_plans(db, effective_inst_id or 1)
+
+
+@router.post("/budgets", status_code=status.HTTP_201_CREATED)
+async def create_budget(
+    payload: BudgetPlanCreate,
+    effective_inst_id: int = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*_BUDGET_ADMIN_ROLES)),
+):
+    """Create a new draft budget plan with optional canonical SSOT line seeding."""
+    try:
+        plan = await BudgetForecastService.create_budget_plan(
+            db=db,
+            institution_id=effective_inst_id or 1,
+            data=payload.model_dump(),
+            user_id=current_user.id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "message": "Budget plan created successfully",
+        "id": plan.id,
+        "name": plan.name,
+        "status": plan.status,
+        "version_number": plan.version_number,
+    }
+
+
+@router.get("/budgets/{plan_id}/variance")
+async def get_budget_variance(
+    plan_id: int,
+    effective_inst_id: int = Depends(enforce_institution_access),
+    data_environment: str = Depends(get_data_environment),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*_BUDGET_VIEW_ROLES)),
+):
+    """Return live Budget vs. Actuals variance computed directly from SSOT subledgers."""
+    try:
+        return await BudgetForecastService.compute_plan_variance(
+            db=db,
+            institution_id=effective_inst_id or 1,
+            plan_id=plan_id,
+            data_environment=data_environment,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.put("/budgets/{plan_id}/lines")
+async def upsert_budget_lines(
+    plan_id: int,
+    payload: BudgetLinesBatchUpdate,
+    effective_inst_id: int = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*_BUDGET_VIEW_ROLES)),
+):
+    """Batch upsert line allocations for a draft budget plan."""
+    try:
+        plan = await BudgetForecastService.upsert_budget_lines(
+            db=db,
+            institution_id=effective_inst_id or 1,
+            plan_id=plan_id,
+            lines_data=[item.model_dump() for item in payload.lines],
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"message": "Budget allocations updated", "id": plan.id, "status": plan.status}
+
+
+@router.post("/budgets/{plan_id}/{action}")
+async def transition_budget(
+    plan_id: int,
+    action: str,
+    payload: Optional[BudgetTransitionRequest] = None,
+    effective_inst_id: int = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*_BUDGET_ADMIN_ROLES)),
+):
+    """Execute governed budget lifecycle transitions: submit | approve | lock | revise."""
+    if action not in {"submit", "approve", "lock", "revise"}:
+        raise HTTPException(status_code=400, detail="Unsupported budget lifecycle action.")
+    try:
+        plan = await BudgetForecastService.transition_budget_plan(
+            db=db,
+            institution_id=effective_inst_id or 1,
+            plan_id=plan_id,
+            action=action,
+            user_id=current_user.id,
+            notes=payload.notes if payload else None,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "message": f"Budget plan action '{action}' completed",
+        "id": plan.id,
+        "status": plan.status,
+        "version_number": plan.version_number,
+    }
+
+
+@router.get("/forecasts/overview")
+async def get_forecast_overview(
+    horizon_months: int = Query(6, ge=1, le=24),
+    opening_bank_balance: float = Query(0.0, ge=0),
+    effective_inst_id: int = Depends(enforce_institution_access),
+    data_environment: str = Depends(get_data_environment),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*_BUDGET_VIEW_ROLES)),
+):
+    """Run an immediate read-only 3-driver cashflow & runway projection without modifying snapshots."""
+    return await BudgetForecastService.compute_forecast(
+        db=db,
+        institution_id=effective_inst_id or 1,
+        horizon_months=horizon_months,
+        opening_bank_balance=opening_bank_balance,
+        persist_snapshot=False,
+        data_environment=data_environment,
+    )
+
+
+@router.get("/forecasts/scenarios")
+async def list_forecast_scenarios(
+    effective_inst_id: int = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*_BUDGET_VIEW_ROLES)),
+):
+    """List saved forecast scenarios."""
+    return await BudgetForecastService.list_scenarios(db, effective_inst_id or 1)
+
+
+@router.post("/forecasts/scenarios", status_code=status.HTTP_201_CREATED)
+async def create_forecast_scenario(
+    payload: ForecastScenarioCreate,
+    effective_inst_id: int = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*_BUDGET_ADMIN_ROLES)),
+):
+    """Save a reusable forecast scenario with custom assumptions."""
+    sc = await BudgetForecastService.create_scenario(
+        db=db,
+        institution_id=effective_inst_id or 1,
+        data=payload.model_dump(),
+        user_id=current_user.id,
+    )
+    return {"message": "Forecast scenario created", "id": sc.id, "name": sc.name, "scenario_type": sc.scenario_type}
+
+
+@router.post("/forecasts/scenarios/{scenario_id}/compute")
+async def compute_forecast_scenario(
+    scenario_id: int,
+    payload: Optional[ForecastComputeRequest] = None,
+    effective_inst_id: int = Depends(enforce_institution_access),
+    data_environment: str = Depends(get_data_environment),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*_BUDGET_VIEW_ROLES)),
+):
+    """Compute (and optionally snapshot) a saved scenario with optional What-If overrides."""
+    try:
+        return await BudgetForecastService.compute_forecast(
+            db=db,
+            institution_id=effective_inst_id or 1,
+            scenario_id=scenario_id,
+            overrides=payload.overrides if payload else None,
+            horizon_months=payload.horizon_months if payload else None,
+            opening_bank_balance=payload.opening_bank_balance if payload else None,
+            persist_snapshot=payload.persist_snapshot if payload else True,
+            data_environment=data_environment,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/forecasts/simulate")
+async def simulate_what_if_forecast(
+    payload: ForecastComputeRequest,
+    effective_inst_id: int = Depends(enforce_institution_access),
+    data_environment: str = Depends(get_data_environment),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*_BUDGET_VIEW_ROLES)),
+):
+    """Non-destructive server-side What-If cashflow simulator (Rule 006)."""
+    return await BudgetForecastService.compute_forecast(
+        db=db,
+        institution_id=effective_inst_id or 1,
+        overrides=payload.overrides,
+        horizon_months=payload.horizon_months or 6,
+        opening_bank_balance=payload.opening_bank_balance,
+        persist_snapshot=False,
+        data_environment=data_environment,
+    )

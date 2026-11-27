@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-24
- * @updated     2026-11-24
+ * @updated     2026-11-27
  *
  * @description Generates and shares a customer-facing PrathamOne software license certificate.
  */
@@ -19,7 +19,9 @@
 import 'regenerator-runtime/runtime'
 import fontkit from '@pdf-lib/fontkit'
 import latinFontUrl from '@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-latin-400-normal.woff?url'
+import latinBoldFontUrl from '@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-latin-700-normal.woff?url'
 import devanagariFontUrl from '@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-400-normal.woff?url'
+import devanagariBoldFontUrl from '@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-700-normal.woff?url'
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from 'pdf-lib'
 import QRCode from 'qrcode'
 
@@ -85,12 +87,20 @@ type PdfColor = ReturnType<typeof rgb>
 
 const PAGE_WIDTH = 595.28
 const PAGE_HEIGHT = 841.89
-const NAVY = rgb(0.04, 0.13, 0.29)
+const NAVY = rgb(0, 0.1333, 0.3333) // #002255
+const NAVY_TEXT = rgb(0, 0.1294, 0.3294) // #002154
+const VALUE_INK = rgb(0.0667, 0.1294, 0.2471) // #11213F
 const BLUE = rgb(0.05, 0.23, 0.48)
-const ORANGE = rgb(0.95, 0.31, 0.02)
-const GOLD = rgb(0.98, 0.65, 0.14)
+const ORANGE = rgb(0.8824, 0.4196, 0.1176) // #E16B1D
+const GOLD = rgb(0.9608, 0.6510, 0.1373) // #F5A623
 const TEXT = rgb(0.10, 0.15, 0.23)
-const MUTED = rgb(0.38, 0.43, 0.50)
+const MUTED = rgb(0.3922, 0.4549, 0.5412) // #64748A
+const SUBTLE_MUTED = rgb(0.5765, 0.6392, 0.7216) // #93A3B8
+const HEADER_SUBTEXT = rgb(0.6196, 0.6863, 0.8275) // #9EAFD3
+const FOOTER_TEXT = rgb(0.7922, 0.8314, 0.8824) // #CAD4E1
+const PILL_BORDER = rgb(0.2902, 0.3882, 0.5882) // #4A6396
+const BORDER = rgb(0.8588, 0.8902, 0.9373) // #DBE3EF
+const CARD_BG = rgb(0.9529, 0.9647, 0.9843) // #F3F6FB
 const PALE = rgb(0.96, 0.97, 0.99)
 const WHITE = rgb(1, 1, 1)
 const LEFT = 40
@@ -98,7 +108,7 @@ const RIGHT = PAGE_WIDTH - LEFT
 const CONTENT_WIDTH = RIGHT - LEFT
 const DEVANAGARI = /[\u0900-\u097f\u20b9]/
 const DOCUMENT_NOTE =
-  'This branded summary is provided for customer reference and is not a replacement for the signed license artifact. License validity is determined by the verified signed snapshot and licensing authority.'
+  'This branded summary is for customer reference and does not replace the signed license artifact. License validity is determined by the verified signed snapshot and the licensing authority.'
 
 const splitText = (text: string) =>
   (text.match(/[\u0900-\u097f\u20b9]+|[^\u0900-\u097f\u20b9]+/gu) || [])
@@ -127,6 +137,81 @@ const drawText = (
     page.drawText(segment.value, { x: cursor, y, size, font, color })
     cursor += font.widthOfTextAtSize(segment.value, size)
   }
+}
+
+const drawSpacedText = (
+  page: PDFPage,
+  text: string,
+  x: number,
+  y: number,
+  size: number,
+  color: PdfColor,
+  latin: PDFFont,
+  indic: PDFFont,
+  letterSpacing = 1.1,
+) => {
+  let cursor = x
+  for (const ch of Array.from(text)) {
+    const font = DEVANAGARI.test(ch) ? indic : latin
+    page.drawText(ch, { x: cursor, y, size, font, color })
+    cursor += font.widthOfTextAtSize(ch, size) + letterSpacing
+  }
+  return cursor - x
+}
+
+const spacedTextWidth = (
+  text: string,
+  size: number,
+  latin: PDFFont,
+  indic: PDFFont,
+  letterSpacing = 1.1,
+) => {
+  const chars = Array.from(text)
+  if (!chars.length) return 0
+  return (
+    chars.reduce(
+      (sum, ch) => sum + (DEVANAGARI.test(ch) ? indic : latin).widthOfTextAtSize(ch, size),
+      0,
+    ) +
+    (chars.length - 1) * letterSpacing
+  )
+}
+
+const drawRoundedRect = (
+  page: PDFPage,
+  options: {
+    x: number
+    y: number
+    width: number
+    height: number
+    radius: number
+    color?: PdfColor
+    borderColor?: PdfColor
+    borderWidth?: number
+  },
+) => {
+  const { x, y, width: w, height: h, radius, color, borderColor, borderWidth } = options
+  const r = Math.min(radius, w / 2, h / 2)
+  // drawSvgPath interprets SVG coordinates relative to (x, y) top-left, downward +Y
+  const path = [
+    `M ${r} 0`,
+    `L ${w - r} 0`,
+    `Q ${w} 0 ${w} ${r}`,
+    `L ${w} ${h - r}`,
+    `Q ${w} ${h} ${w - r} ${h}`,
+    `L ${r} ${h}`,
+    `Q 0 ${h} 0 ${h - r}`,
+    `L 0 ${r}`,
+    `Q 0 0 ${r} 0`,
+    'Z',
+  ].join(' ')
+  page.drawSvgPath(path, {
+    x,
+    y: y + h,
+    color,
+    borderColor,
+    borderWidth,
+  })
 }
 
 const wrapText = (text: string, maxWidth: number, size: number, latin: PDFFont, indic: PDFFont) => {
@@ -315,10 +400,25 @@ async function fetchFont(url: string) {
   return new Uint8Array(await response.arrayBuffer())
 }
 
-async function fetchSvgAsPng(url: string, label: string) {
-  const response = await fetch(url)
-  if (!response.ok) throw new Error(`Unable to load ${label} (${response.status}).`)
-  const imageUrl = URL.createObjectURL(new Blob([await response.arrayBuffer()], { type: 'image/svg+xml' }))
+function stripBackdropAndCropSvg(
+  svgText: string,
+  backdropFillHex: string,
+  viewBox: string,
+  width: number,
+  height: number,
+) {
+  const withoutBackdrop = svgText.replace(
+    new RegExp(`<path[^>]*fill:${backdropFillHex}[^>]*/>`, 'gi'),
+    '',
+  )
+  return withoutBackdrop
+    .replace(/\s+width="[^"]*"/, ` width="${width}"`)
+    .replace(/\s+height="[^"]*"/, ` height="${height}"`)
+    .replace(/\s+viewBox="[^"]*"/, ` viewBox="${viewBox}"`)
+}
+
+async function rasterizeSvgContent(svgContent: ArrayBuffer | string, label: string) {
+  const imageUrl = URL.createObjectURL(new Blob([svgContent], { type: 'image/svg+xml' }))
   try {
     const image = new Image()
     image.src = imageUrl
@@ -341,25 +441,72 @@ async function fetchSvgAsPng(url: string, label: string) {
   }
 }
 
+async function fetchSvgAsPng(
+  url: string,
+  label: string,
+  transformSvg?: (svgText: string) => string,
+) {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`Unable to load ${label} (${response.status}).`)
+  const rawBuffer = await response.arrayBuffer()
+  const svgContent = transformSvg
+    ? transformSvg(new TextDecoder().decode(rawBuffer))
+    : rawBuffer
+  return rasterizeSvgContent(svgContent, label)
+}
+
 async function fetchProductLogo() {
-  return fetchSvgAsPng('/artwork/18112026/03/license-certificate-logo.svg', 'the PrathamOne logo')
+  return fetchSvgAsPng('/artwork/25112026/batch_g45.svg', 'the PrathamOne logo', (svgText) =>
+    stripBackdropAndCropSvg(svgText, '#002255', '9.35 19.64 82.73 17.66', 827, 177),
+  )
 }
 
 async function fetchCertificateWatermark() {
-  return fetchSvgAsPng('/artwork/18112026/03/license-certificate-watermark.svg', 'the certificate watermark')
+  const response = await fetch('/artwork/25112026/batch_g47.svg')
+  if (!response.ok) throw new Error(`Unable to load the certificate watermark (${response.status}).`)
+  const rawSvg = new TextDecoder().decode(await response.arrayBuffer())
+  const colorSvg = stripBackdropAndCropSvg(
+    rawSvg,
+    '#ffffff',
+    '10.60 16.55 36.45 24.05',
+    546,
+    360,
+  )
+  // Flat solid black 2D monochrome variant with zero transparency
+  const monoSvg = colorSvg.replace(/fill:#[0-9a-fA-F]{3,8}/gi, 'fill:#000000')
+  const [colorBytes, monoBytes] = await Promise.all([
+    rasterizeSvgContent(colorSvg, 'the center watermark'),
+    rasterizeSvgContent(monoSvg, 'the mono seal watermark'),
+  ])
+  return { colorBytes, monoBytes }
 }
 
-function drawWatermark(
+function drawCenterWatermark(
   page: PDFPage,
   watermark: Awaited<ReturnType<PDFDocument['embedPng']>>,
 ) {
-  const size = watermark.scaleToFit(440, 220)
+  const size = watermark.scaleToFit(330, 219.45)
   page.drawImage(watermark, {
     x: (PAGE_WIDTH - size.width) / 2,
-    y: (PAGE_HEIGHT - size.height) / 2,
+    y: 281.22,
     width: size.width,
     height: size.height,
-    opacity: 0.3,
+    opacity: 0.055,
+  })
+}
+
+function drawBottomMonoSeal(
+  page: PDFPage,
+  monoWatermark: Awaited<ReturnType<PDFDocument['embedPng']>>,
+  centerY: number,
+) {
+  const size = monoWatermark.scaleToFit(44, 29)
+  page.drawImage(monoWatermark, {
+    x: 266 - size.width / 2,
+    y: Math.max(50, centerY - size.height / 2),
+    width: size.width,
+    height: size.height,
+    opacity: 1,
   })
 }
 
@@ -369,151 +516,142 @@ async function fetchIssuerSignature() {
   return new Uint8Array(await response.arrayBuffer())
 }
 
+function formatStatusTimestamp(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return new Intl.DateTimeFormat('en-IN', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZone: 'Asia/Kolkata',
+    timeZoneName: 'short',
+  }).format(date)
+}
+
 function drawHeader(
   page: PDFPage,
-  model: string | null,
   edition: string | null,
   logo: Awaited<ReturnType<PDFDocument['embedPng']>>,
   latin: PDFFont,
+  latinBold: PDFFont,
   indic: PDFFont,
+  indicBold: PDFFont,
   continuation: boolean,
 ) {
-  page.drawRectangle({ x: 0, y: 694, width: PAGE_WIDTH, height: 148, color: NAVY })
-  page.drawRectangle({ x: 0, y: 689, width: PAGE_WIDTH, height: 5, color: ORANGE })
-  const logoSize = logo.scaleToFit(154, 64)
+  page.drawRectangle({ x: 0, y: 745.89, width: PAGE_WIDTH, height: 96, color: NAVY })
+  page.drawRectangle({ x: 0, y: 742.89, width: PAGE_WIDTH, height: 3, color: ORANGE })
+
+  const logoSize = logo.scaleToFit(202, 43)
   page.drawImage(logo, {
-    x: LEFT,
-    y: 768 + (64 - logoSize.height) / 2,
+    x: 41.5,
+    y: 745.89 + (96 - logoSize.height) / 2,
     width: logoSize.width,
     height: logoSize.height,
   })
-  page.drawRectangle({
-    x: 218,
-    y: 783,
-    width: 184,
-    height: 28,
-    color: rgb(0.07, 0.18, 0.36),
-    borderColor: rgb(0.27, 0.38, 0.56),
-    borderWidth: 0.7,
+
+  const editionText = (edition || 'EDITION NOT RECORDED').toUpperCase()
+  const editionTextWidth = textWidth(editionText, 8, latinBold, indicBold)
+  const pillWidth = Math.min(220, Math.max(166.58, editionTextWidth + 24))
+  const pillX = RIGHT - pillWidth
+  const pillY = 791.89
+  const pillH = 22
+  drawRoundedRect(page, {
+    x: pillX,
+    y: pillY,
+    width: pillWidth,
+    height: pillH,
+    radius: 11,
+    borderColor: PILL_BORDER,
+    borderWidth: 0.8,
   })
-  page.drawRectangle({ x: 218, y: 783, width: 2, height: 28, color: GOLD })
-  drawText(page, 'PRODUCT EDITION', 229, 800, 5.4, rgb(0.74, 0.81, 0.9), latin, indic)
-  const editionLines = wrapText((edition || 'EDITION NOT RECORDED').toUpperCase(), 160, 7.2, latin, indic).slice(0, 2)
-  editionLines.forEach((line, index) =>
-    drawText(page, line, 229, 790 - index * 8, 7.2, rgb(0.95, 0.96, 0.99), latin, indic),
+  const clampedEdition = wrapText(editionText, pillWidth - 16, 8, latinBold, indicBold)[0] || editionText
+  const clampedWidth = textWidth(clampedEdition, 8, latinBold, indicBold)
+  drawText(
+    page,
+    clampedEdition,
+    pillX + (pillWidth - clampedWidth) / 2,
+    pillY + 8,
+    8,
+    WHITE,
+    latinBold,
+    indicBold,
   )
 
-  const sealX = RIGHT - 29
-  const sealY = 799
-  page.drawCircle({ x: sealX, y: sealY, size: 35, color: GOLD, borderColor: rgb(1, 0.82, 0.35), borderWidth: 1.6 })
-  page.drawCircle({ x: sealX, y: sealY, size: 29, color: rgb(1, 0.79, 0.25), borderColor: rgb(0.61, 0.35, 0.02), borderWidth: 0.7 })
-  for (let dot = 0; dot < 16; dot += 1) {
-    const angle = (Math.PI * 2 * dot) / 16
-    page.drawCircle({
-      x: sealX + Math.cos(angle) * 32,
-      y: sealY + Math.sin(angle) * 32,
-      size: 0.9,
-      color: rgb(0.61, 0.35, 0.02),
-    })
-  }
-  page.drawLine({
-    start: { x: sealX - 8, y: sealY + 22 },
-    end: { x: sealX - 5, y: sealY + 19 },
-    thickness: 1.1,
-    color: NAVY,
-  })
-  page.drawLine({
-    start: { x: sealX - 5, y: sealY + 19 },
-    end: { x: sealX - 3, y: sealY + 25 },
-    thickness: 1.1,
-    color: NAVY,
-  })
-  page.drawLine({
-    start: { x: sealX - 3, y: sealY + 25 },
-    end: { x: sealX, y: sealY + 19 },
-    thickness: 1.1,
-    color: NAVY,
-  })
-  page.drawLine({
-    start: { x: sealX, y: sealY + 19 },
-    end: { x: sealX + 3, y: sealY + 25 },
-    thickness: 1.1,
-    color: NAVY,
-  })
-  page.drawLine({
-    start: { x: sealX + 3, y: sealY + 25 },
-    end: { x: sealX + 5, y: sealY + 19 },
-    thickness: 1.1,
-    color: NAVY,
-  })
-  page.drawLine({
-    start: { x: sealX + 5, y: sealY + 19 },
-    end: { x: sealX + 8, y: sealY + 22 },
-    thickness: 1.1,
-    color: NAVY,
-  })
-  page.drawLine({
-    start: { x: sealX - 5, y: sealY + 19 },
-    end: { x: sealX + 5, y: sealY + 19 },
-    thickness: 1.1,
-    color: NAVY,
-  })
-  page.drawLine({
-    start: { x: LEFT, y: 756 },
-    end: { x: RIGHT, y: 756 },
-    thickness: 0.6,
-    color: rgb(0.2, 0.3, 0.47),
-  })
-  page.drawRectangle({ x: LEFT, y: 743, width: 19, height: 1.5, color: ORANGE })
-  drawText(page, 'SOFTWARE LICENSE', LEFT + 27, 740, 7.8, GOLD, latin, indic)
-  drawText(page, continuation ? 'License Certificate · Continued' : 'License Certificate', LEFT, 716, 20, WHITE, latin, indic)
-  const customerCopy = 'Customer Copy · Issued by PrathamOne EduOS'
-  drawText(page, customerCopy, RIGHT - textWidth(customerCopy, 7.2, latin, indic), 700, 7.2, rgb(0.88, 0.91, 0.96), latin, indic)
-
-  const badgeLabel = model?.toLowerCase().includes('perpetual')
-    ? 'PERPETUAL LICENSE'
-    : formatModel(model).toUpperCase()
-  const modelLines = wrapText(badgeLabel, 50, 5.8, latin, indic).slice(0, 2)
-  modelLines.forEach((line, index) => {
-    const x = sealX - textWidth(line, 5.8, latin, indic) / 2
-    drawText(page, line, x, 783 - index * 7, 5.8, NAVY, latin, indic)
-  })
+  const customerCopy = continuation
+    ? 'Customer copy · Issued by PrathamOne EduOS (Continued)'
+    : 'Customer copy · Issued by PrathamOne EduOS'
+  drawText(
+    page,
+    customerCopy,
+    RIGHT - textWidth(customerCopy, 7.5, latin, indic),
+    774.3,
+    7.5,
+    HEADER_SUBTEXT,
+    latin,
+    indic,
+  )
 }
 
 function statusColors(status: string) {
-  if (status.startsWith('ACTIVE')) return { foreground: rgb(0.08, 0.45, 0.31), background: rgb(0.91, 0.96, 0.94) }
+  if (status.startsWith('ACTIVE')) {
+    return {
+      foreground: rgb(0.102, 0.4941, 0.2941), // #1A7E4B
+      circle: rgb(0.1059, 0.4980, 0.2941), // #1B7F4B
+      background: rgb(0.9059, 0.9608, 0.9255), // #E7F5EC
+      border: rgb(0.7255, 0.8784, 0.7843), // #B9E0C8
+    }
+  }
   if (status.includes('GRACE') || status === 'PENDING RENEWAL') {
-    return { foreground: rgb(0.59, 0.34, 0.02), background: rgb(1, 0.96, 0.88) }
+    return {
+      foreground: rgb(0.59, 0.34, 0.02),
+      circle: rgb(0.68, 0.40, 0.04),
+      background: rgb(1, 0.96, 0.88),
+      border: rgb(0.93, 0.80, 0.56),
+    }
   }
   if (['EXPIRED', 'SUSPENDED', 'CANCELLED', 'REVOKED'].includes(status)) {
-    return { foreground: rgb(0.66, 0.12, 0.17), background: rgb(1, 0.93, 0.93) }
+    return {
+      foreground: rgb(0.66, 0.12, 0.17),
+      circle: rgb(0.72, 0.16, 0.21),
+      background: rgb(1, 0.93, 0.93),
+      border: rgb(0.93, 0.72, 0.74),
+    }
   }
-  return { foreground: MUTED, background: PALE }
+  return {
+    foreground: MUTED,
+    circle: MUTED,
+    background: PALE,
+    border: BORDER,
+  }
 }
 
-function drawStatusMark(page: PDFPage, x: number, y: number, isActive: boolean) {
+function drawStatusMark(page: PDFPage, x: number, y: number, isActive: boolean, thickness = 1.6) {
   if (isActive) {
+    const scale = thickness / 1.8
     page.drawLine({
-      start: { x: x - 4, y },
-      end: { x: x - 1, y: y - 3 },
-      thickness: 1.2,
+      start: { x: x - 4.7 * scale, y },
+      end: { x: x - 1.2 * scale, y: y - 3.4 * scale },
+      thickness,
       color: WHITE,
     })
     page.drawLine({
-      start: { x: x - 1, y: y - 3 },
-      end: { x: x + 4, y: y + 3 },
-      thickness: 1.2,
+      start: { x: x - 1.2 * scale, y: y - 3.4 * scale },
+      end: { x: x + 4.8 * scale, y: y + 3.4 * scale },
+      thickness,
       color: WHITE,
     })
     return
   }
   page.drawLine({
     start: { x, y: y - 3 },
-    end: { x, y: y + 2 },
-    thickness: 1.1,
+    end: { x, y: y + 2.5 },
+    thickness: 1.3,
     color: WHITE,
   })
-  page.drawCircle({ x, y: y - 5, size: 0.7, color: WHITE })
+  page.drawCircle({ x, y: y - 5.2, size: 0.8, color: WHITE })
 }
 
 function verificationHost(verificationUrl: string | null): string {
@@ -528,39 +666,48 @@ function verificationHost(verificationUrl: string | null): string {
 export async function createLicenseCertificatePdf(data: LicenseCertificateData): Promise<Blob> {
   const pdf = await PDFDocument.create()
   pdf.registerFontkit(fontkit)
-  const [latinBytes, indicBytes, logoBytes, signatureBytes, watermarkBytes] = await Promise.all([
-    fetchFont(latinFontUrl),
-    fetchFont(devanagariFontUrl),
-    fetchProductLogo(),
-    fetchIssuerSignature(),
-    fetchCertificateWatermark(),
-  ])
-  const [latin, indic, logo, issuerSignature, watermark] = await Promise.all([
-    pdf.embedFont(latinBytes, { subset: true }),
-    pdf.embedFont(indicBytes, { subset: true }),
-    pdf.embedPng(logoBytes),
-    pdf.embedPng(signatureBytes),
-    pdf.embedPng(watermarkBytes),
-  ])
+  const [latinBytes, latinBoldBytes, indicBytes, indicBoldBytes, logoBytes, signatureBytes, watermarkAssets] =
+    await Promise.all([
+      fetchFont(latinFontUrl),
+      fetchFont(latinBoldFontUrl),
+      fetchFont(devanagariFontUrl),
+      fetchFont(devanagariBoldFontUrl),
+      fetchProductLogo(),
+      fetchIssuerSignature(),
+      fetchCertificateWatermark(),
+    ])
+  const [latin, latinBold, indic, indicBold, logo, issuerSignature, centerWatermark, monoSealWatermark] =
+    await Promise.all([
+      pdf.embedFont(latinBytes, { subset: true }),
+      pdf.embedFont(latinBoldBytes, { subset: true }),
+      pdf.embedFont(indicBytes, { subset: true }),
+      pdf.embedFont(indicBoldBytes, { subset: true }),
+      pdf.embedPng(logoBytes),
+      pdf.embedPng(signatureBytes),
+      pdf.embedPng(watermarkAssets.colorBytes),
+      pdf.embedPng(watermarkAssets.monoBytes),
+    ])
   const qrDataUrl = data.verificationUrl
     ? await createLicenseVerificationQrDataUrl(data.verificationUrl)
     : null
   const qrImage = qrDataUrl ? await pdf.embedPng(qrDataUrlBytes(qrDataUrl)) : null
   const status = getLicenseCertificateStatus(data.licenseStatus, data.mode, data.expiresAt)
   const statusColor = statusColors(status)
+  const statusIsActive = status.startsWith('ACTIVE') || status.includes('GRACE')
   const generatedAt = data.generatedAt || new Date().toISOString()
   const entitlementSummary = groupLicenseCertificateEntitlements(data.entitlements)
+
   let page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT])
-  let cursor = 670
-  drawHeader(page, data.licenseModel, data.edition, logo, latin, indic, false)
+  let cursor = 711.9
+  drawHeader(page, data.edition, logo, latin, latinBold, indic, indicBold, false)
 
   const addPage = () => {
     page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT])
-    drawHeader(page, data.licenseModel, data.edition, logo, latin, indic, true)
-    cursor = 670
+    drawHeader(page, data.edition, logo, latin, latinBold, indic, indicBold, true)
+    cursor = 711.9
   }
-  const ensureSpace = (height: number, reserve = 45) => {
-    if (cursor - height < 42 + reserve) addPage()
+  const ensureSpace = (height: number, reserve = 44) => {
+    if (cursor - height < 44 + reserve) addPage()
   }
   const drawParagraph = (
     text: string,
@@ -569,313 +716,485 @@ export async function createLicenseCertificatePdf(data: LicenseCertificateData):
     size: number,
     color: PdfColor,
     lineHeight: number,
-    reserve = 160,
+    useBold = false,
+    reserve = 140,
   ) => {
-    const lines = wrapText(text, width, size, latin, indic)
+    const fLatin = useBold ? latinBold : latin
+    const fIndic = useBold ? indicBold : indic
+    const lines = wrapText(text, width, size, fLatin, fIndic)
     lines.forEach((line) => {
       ensureSpace(lineHeight, reserve)
-      drawText(page, line, x, cursor, size, color, latin, indic)
+      drawText(page, line, x, cursor, size, color, fLatin, fIndic)
       cursor -= lineHeight
     })
   }
 
-  ensureSpace(68, 160)
-  drawText(page, 'LICENSED TO', LEFT, cursor, 7.5, BLUE, latin, indic)
-  const statusDescription = describeLicenseCertificateStatus(status)
-  const statusWidth = Math.min(
-    176,
-    Math.max(130, textWidth(status, 8, latin, indic) + 44, textWidth(statusDescription, 5.7, latin, indic) + 42),
+  // Hero label: orange rule + SOFTWARE LICENSE CERTIFICATE
+  ensureSpace(95, 120)
+  page.drawRectangle({ x: LEFT, y: cursor, width: 22, height: 2, color: ORANGE })
+  drawSpacedText(
+    page,
+    'SOFTWARE LICENSE CERTIFICATE',
+    LEFT + 30,
+    cursor - 2.3,
+    8,
+    ORANGE,
+    latinBold,
+    indicBold,
+    0.85,
   )
-  page.drawRectangle({
-    x: RIGHT - statusWidth,
-    y: cursor - 52,
-    width: statusWidth,
-    height: 44,
-    color: statusColor.background,
-    borderColor: rgb(0.76, 0.88, 0.82),
-    borderWidth: 0.7,
-  })
-  const statusCenterX = RIGHT - statusWidth + 18
-  const statusCenterY = cursor - 30
-  const statusIsActive = status.startsWith('ACTIVE') || status.includes('GRACE')
-  page.drawCircle({ x: statusCenterX, y: statusCenterY, size: 9, color: statusColor.foreground })
-  drawStatusMark(page, statusCenterX, statusCenterY, statusIsActive)
-  drawText(page, status, RIGHT - statusWidth + 32, cursor - 27, 8, statusColor.foreground, latin, indic)
-  drawText(page, statusDescription, RIGHT - statusWidth + 32, cursor - 39, 5.7, TEXT, latin, indic)
-  cursor -= 17
-  drawParagraph(data.institutionName || 'Organization name not recorded', LEFT, CONTENT_WIDTH - statusWidth - 25, 16, NAVY, 19)
-  if (data.institutionAddress?.trim()) {
-    drawParagraph(data.institutionAddress, LEFT, CONTENT_WIDTH - statusWidth - 25, 8.5, MUTED, 11)
-  }
-  cursor -= 23
+  cursor -= 26.5
 
-  const summary = [
-    ['LICENSE STATUS', status],
-    ['PRODUCT EDITION', data.edition || 'Not recorded'],
-    ['LICENSE MODEL', formatModel(data.licenseModel)],
-    ['VALID THROUGH', formatDate(data.expiresAt)],
+  // Status badge on top-right beside Licensee block
+  const statusSubtext = status.startsWith('ACTIVE')
+    ? `Status as of ${formatStatusTimestamp(generatedAt)}`
+    : describeLicenseCertificateStatus(status)
+  const statusBoxWidth = Math.min(
+    205,
+    Math.max(
+      170,
+      textWidth(status, 13, latinBold, indicBold) + 52,
+      textWidth(statusSubtext, 6.8, latin, indic) + 50,
+    ),
+  )
+  const statusBoxHeight = 58
+  const statusBoxTop = cursor + 2
+  const statusBoxX = RIGHT - statusBoxWidth
+  drawRoundedRect(page, {
+    x: statusBoxX,
+    y: statusBoxTop - statusBoxHeight,
+    width: statusBoxWidth,
+    height: statusBoxHeight,
+    radius: 6,
+    color: statusColor.background,
+    borderColor: statusColor.border,
+    borderWidth: 0.8,
+  })
+  const badgeCircleX = statusBoxX + 22
+  const badgeCircleY = statusBoxTop - 29
+  page.drawCircle({ x: badgeCircleX, y: badgeCircleY, size: 10, color: statusColor.circle })
+  drawStatusMark(page, badgeCircleX, badgeCircleY, statusIsActive, 1.8)
+  drawText(
+    page,
+    status,
+    statusBoxX + 40,
+    statusBoxTop - 25.5,
+    13,
+    statusColor.foreground,
+    latinBold,
+    indicBold,
+  )
+  drawText(
+    page,
+    statusSubtext,
+    statusBoxX + 40,
+    statusBoxTop - 39,
+    6.8,
+    MUTED,
+    latin,
+    indic,
+  )
+
+  // Left: LICENSED TO + Institution Name + Address
+  const heroTextWidth = CONTENT_WIDTH - statusBoxWidth - 20
+  drawText(page, 'LICENSED TO', LEFT, cursor, 7.5, MUTED, latin, indic)
+  const orgName = data.institutionName || 'Organization name not recorded'
+  const orgFontSize = textWidth(orgName, 27, latinBold, indicBold) <= heroTextWidth ? 27 : 20
+  const orgLineHeight = orgFontSize === 27 ? 31 : 24
+  cursor -= orgFontSize === 27 ? 27 : 22
+  drawParagraph(orgName, LEFT, heroTextWidth, orgFontSize, NAVY_TEXT, orgLineHeight, true, 120)
+  cursor += orgLineHeight - 17
+  if (data.institutionAddress?.trim()) {
+    drawParagraph(data.institutionAddress, LEFT, heroTextWidth, 9.5, MUTED, 12.5, false, 120)
+  }
+  cursor = Math.min(cursor, statusBoxTop - statusBoxHeight) - 24
+
+  // Three Summary Cards: PRODUCT EDITION | LICENSE MODEL | VALID THROUGH
+  const summaryCards = [
+    { label: 'PRODUCT EDITION', value: data.edition || 'Not recorded', width: 180, accent: NAVY },
+    { label: 'LICENSE MODEL', value: formatModel(data.licenseModel), width: 175, accent: NAVY },
+    { label: 'VALID THROUGH', value: formatDate(data.expiresAt), width: 140.28, accent: ORANGE },
   ]
-  const summaryGap = 9
-  const cardWidth = (CONTENT_WIDTH - summaryGap) / 2
-  for (let index = 0; index < summary.length; index += 2) {
-    const pair = summary.slice(index, index + 2)
-    const valueLines = pair.map(([, value]) => wrapText(value, cardWidth - 42, 9.5, latin, indic))
-    const cardHeight = Math.max(50, 25 + Math.max(...valueLines.map((lines) => lines.length)) * 11)
-    ensureSpace(cardHeight + 7, 160)
-    pair.forEach(([label], cardIndex) => {
-      const x = LEFT + cardIndex * (cardWidth + summaryGap)
-      const lines = valueLines[cardIndex]
-      const summaryIndex = index + cardIndex
-      page.drawRectangle({
-        x,
-        y: cursor - cardHeight,
-        width: cardWidth,
-        height: cardHeight,
-        color: rgb(0.94, 0.96, 1),
-        borderColor: rgb(0.79, 0.85, 0.96),
-        borderWidth: 0.8,
-      })
-      page.drawRectangle({
-        x,
-        y: cursor - cardHeight,
-        width: 2,
-        height: cardHeight,
-        color: summaryIndex === 0 ? ORANGE : BLUE,
-      })
-      const iconCenterX = x + 18
-      const iconCenterY = cursor - cardHeight / 2
-      page.drawCircle({ x: iconCenterX, y: iconCenterY, size: 11, color: BLUE })
-      if (summaryIndex === 0) {
-        drawStatusMark(page, iconCenterX, iconCenterY, statusIsActive)
-      } else if (summaryIndex === 1) {
-        for (const row of [0, 1]) {
-          for (const column of [0, 1]) {
-            page.drawRectangle({
-              x: iconCenterX - 4 + column * 5,
-              y: iconCenterY - 4 + row * 5,
-              width: 3,
-              height: 3,
-              color: WHITE,
-            })
-          }
-        }
-      } else if (summaryIndex === 2) {
-        page.drawCircle({ x: iconCenterX, y: iconCenterY, size: 6, borderColor: WHITE, borderWidth: 1.6 })
-        page.drawCircle({ x: iconCenterX, y: iconCenterY, size: 2, color: WHITE })
-      } else {
-        page.drawRectangle({
-          x: iconCenterX - 5,
-          y: iconCenterY - 5,
-          width: 10,
-          height: 10,
-          color: WHITE,
-        })
-        page.drawRectangle({
-          x: iconCenterX - 3.5,
-          y: iconCenterY - 3.5,
-          width: 7,
-          height: 7,
-          color: BLUE,
-        })
-        page.drawLine({
-          start: { x: iconCenterX - 4, y: iconCenterY + 2 },
-          end: { x: iconCenterX + 4, y: iconCenterY + 2 },
-          thickness: 1,
-          color: WHITE,
-        })
-      }
-      drawText(page, label, x + 36, cursor - 14, 7, BLUE, latin, indic)
-      lines.forEach((line, lineIndex) =>
-        drawText(page, line, x + 36, cursor - 28 - lineIndex * 10, 9.5, TEXT, latin, indic),
+  const cardGap = 10
+  const cardValueLines = summaryCards.map((card) =>
+    wrapText(card.value, card.width - 20, 11.5, latinBold, indicBold),
+  )
+  const maxCardLines = Math.max(...cardValueLines.map((lines) => lines.length))
+  const summaryCardHeight = Math.max(50, 32 + maxCardLines * 14)
+  ensureSpace(summaryCardHeight + 16, 120)
+
+  let cardX = LEFT
+  summaryCards.forEach((card, cardIndex) => {
+    const cardBottom = cursor - summaryCardHeight
+    page.drawRectangle({
+      x: cardX,
+      y: cardBottom,
+      width: card.width,
+      height: summaryCardHeight,
+      color: CARD_BG,
+      borderColor: BORDER,
+      borderWidth: 0.6,
+    })
+    page.drawRectangle({
+      x: cardX,
+      y: cardBottom,
+      width: 3,
+      height: summaryCardHeight,
+      color: card.accent,
+    })
+    drawText(page, card.label, cardX + 14, cursor - 16, 7, MUTED, latin, indic)
+    cardValueLines[cardIndex].forEach((line, lineIndex) => {
+      drawText(
+        page,
+        line,
+        cardX + 14,
+        cursor - 36 - lineIndex * 14,
+        11.5,
+        NAVY_TEXT,
+        latinBold,
+        indicBold,
       )
     })
-    cursor -= cardHeight + 10
-  }
+    cardX += card.width + cardGap
+  })
+  cursor -= summaryCardHeight + 32
 
-  const entitlementHeaderHeight = 19
-  const entitlementColumnWidth = CONTENT_WIDTH / entitlementSummary.groups.length
-  const entitlementValueLines = entitlementSummary.groups.map(({ value }) =>
-    wrapText(value, entitlementColumnWidth - 15, 7.4, latin, indic),
+  // ENTITLEMENTS Section
+  const entitlementCols = entitlementSummary.groups.map((group) => ({
+    label: group.label.toUpperCase(),
+    value: group.value === 'Not recorded in signed snapshot' ? 'Not recorded' : group.value,
+    isFallback: group.value === 'Not recorded in signed snapshot',
+  }))
+  const entitlementColWidth = CONTENT_WIDTH / entitlementCols.length
+  const entitlementValueLines = entitlementCols.map(({ value }) =>
+    wrapText(value, entitlementColWidth - 22, 10, latin, indic),
   )
-  const entitlementHeight = Math.max(67, 24 + Math.max(...entitlementValueLines.map((lines) => lines.length)) * 10)
-  ensureSpace(entitlementHeaderHeight + entitlementHeight, 155)
-  page.drawRectangle({
-    x: LEFT,
-    y: cursor - entitlementHeaderHeight,
-    width: CONTENT_WIDTH,
-    height: entitlementHeaderHeight,
-    color: NAVY,
+  const entitlementBoxHeight = Math.max(
+    50,
+    30 + Math.max(...entitlementValueLines.map((lines) => lines.length)) * 12,
+  )
+  ensureSpace(22 + entitlementBoxHeight + 18, 120)
+
+  const entTitleWidth = drawSpacedText(
+    page,
+    'ENTITLEMENTS',
+    LEFT,
+    cursor,
+    8,
+    NAVY_TEXT,
+    latinBold,
+    indicBold,
+    1.1,
+  )
+  page.drawLine({
+    start: { x: LEFT + entTitleWidth + 6, y: cursor + 2.5 },
+    end: { x: RIGHT, y: cursor + 2.5 },
+    thickness: 0.6,
+    color: BORDER,
   })
+  cursor -= 15
+
+  const entBoxBottom = cursor - entitlementBoxHeight
   page.drawRectangle({
     x: LEFT,
-    y: cursor - entitlementHeaderHeight,
-    width: 4,
-    height: entitlementHeaderHeight,
-    color: ORANGE,
-  })
-  drawText(page, 'LICENSE ENTITLEMENT DETAILS', LEFT + 10, cursor - 13, 7.2, WHITE, latin, indic)
-  cursor -= entitlementHeaderHeight
-  page.drawRectangle({
-    x: LEFT,
-    y: cursor - entitlementHeight,
+    y: entBoxBottom,
     width: CONTENT_WIDTH,
-    height: entitlementHeight,
+    height: entitlementBoxHeight,
     color: WHITE,
-    borderColor: rgb(0.82, 0.87, 0.94),
-    borderWidth: 0.7,
+    borderColor: BORDER,
+    borderWidth: 0.6,
   })
-  entitlementSummary.groups.forEach(({ label }, index) => {
-    const x = LEFT + index * entitlementColumnWidth
+  entitlementCols.forEach((col, index) => {
+    const colX = LEFT + index * entitlementColWidth
     if (index > 0) {
       page.drawLine({
-        start: { x, y: cursor },
-        end: { x, y: cursor - entitlementHeight },
+        start: { x: colX, y: cursor },
+        end: { x: colX, y: entBoxBottom },
         thickness: 0.6,
-        color: rgb(0.75, 0.81, 0.9),
+        color: BORDER,
       })
     }
-    drawText(page, label.toUpperCase(), x + 7, cursor - 14, 6.1, BLUE, latin, indic)
-    entitlementValueLines[index].forEach((line, lineIndex) =>
-      drawText(page, line, x + 7, cursor - 29 - lineIndex * 10, 7.7, TEXT, latin, indic),
-    )
+    drawText(page, col.label, colX + 12, cursor - 17, 7, MUTED, latin, indic)
+    const valColor = col.isFallback ? SUBTLE_MUTED : NAVY_TEXT
+    entitlementValueLines[index].forEach((line, lineIndex) => {
+      drawText(page, line, colX + 12, cursor - 35 - lineIndex * 12, 10, valColor, latin, indic)
+    })
   })
-  cursor -= entitlementHeight + 12
+  cursor = entBoxBottom - 13
+
+  if (entitlementCols.some((col) => col.isFallback)) {
+    drawText(
+      page,
+      'Entitlement scope is not stated in the signed snapshot. Refer to the signed license artifact for the authoritative terms.',
+      LEFT,
+      cursor,
+      7.5,
+      MUTED,
+      latin,
+      indic,
+    )
+    cursor -= 12
+  }
   if (entitlementSummary.other.length) {
     const otherText = entitlementSummary.other.map(({ key, value }) => `${key}: ${value}`).join(' · ')
-    drawText(page, 'OTHER SIGNED ENTITLEMENTS', LEFT, cursor, 6.4, BLUE, latin, indic)
+    drawText(page, 'OTHER SIGNED ENTITLEMENTS', LEFT, cursor, 6.5, NAVY_TEXT, latinBold, indicBold)
     cursor -= 11
-    drawParagraph(otherText, LEFT, CONTENT_WIDTH, 7.1, TEXT, 9, 155)
-    cursor -= 5
+    drawParagraph(otherText, LEFT, CONTENT_WIDTH, 7.5, MUTED, 10, false, 120)
   }
+  cursor -= 22
 
+  // LICENSE RECORD & VERIFICATION Section
   const identification = [
     ['LICENSE SERIAL', data.serialNumber || 'Not recorded'],
     ['LICENSE ID', data.licenseId || 'Not recorded'],
-    ['SIGNED DOCUMENT REFERENCE', data.documentId],
-    ['CERTIFICATE GENERATED ON', formatLicenseCertificateDateTime(generatedAt)],
-    ...(data.issuedAt ? [['LICENSE ISSUED ON', formatDate(data.issuedAt, 'Not recorded')]] : []),
+    ['SIGNED DOCUMENT REF.', data.documentId],
+    ['CERTIFICATE GENERATED', formatLicenseCertificateDateTime(generatedAt)],
+    ...(data.issuedAt ? [['LICENSE ISSUED', formatDate(data.issuedAt, 'Not recorded')]] : []),
   ]
-  const qrCardHeight = 130
-  ensureSpace(qrCardHeight, 145)
-  const idSectionTop = cursor
-  const qrX = RIGHT - 126
-  page.drawLine({
-    start: { x: qrX - 10, y: idSectionTop + 3 },
-    end: { x: qrX - 10, y: idSectionTop - qrCardHeight },
-    thickness: 0.8,
-    color: rgb(0.42, 0.61, 0.9),
-  })
-  page.drawRectangle({
-    x: qrX,
-    y: idSectionTop - qrCardHeight,
-    width: 126,
-    height: qrCardHeight,
-    color: WHITE,
-    borderColor: rgb(0.82, 0.87, 0.94),
-    borderWidth: 0.7,
-  })
-  drawText(page, 'VERIFY LICENSE', qrX + 12, idSectionTop - 14, 7, BLUE, latin, indic)
-  if (qrImage) {
-    page.drawImage(qrImage, { x: qrX + 23, y: idSectionTop - 105, width: 80, height: 80 })
-    drawText(page, 'Scan to verify this license', qrX + 16, idSectionTop - 115, 5.8, BLUE, latin, indic)
-    drawText(page, verificationHost(data.verificationUrl), qrX + 21, idSectionTop - 125, 5.3, MUTED, latin, indic)
-  } else {
-    drawText(page, 'Secure authority', qrX + 12, idSectionTop - 52, 6.4, MUTED, latin, indic)
-    drawText(page, 'verification QR', qrX + 12, idSectionTop - 64, 6.4, MUTED, latin, indic)
-    drawText(page, 'not configured', qrX + 12, idSectionTop - 76, 6.4, MUTED, latin, indic)
-  }
-  const idLabelWidth = 153
-  for (const [label, value] of identification) {
-    const lines = wrapText(value, qrX - LEFT - idLabelWidth - 16, 8, latin, indic)
-    const rowHeight = Math.max(14, lines.length * 9.5)
-    ensureSpace(rowHeight, 145)
-    page.drawCircle({ x: LEFT + 4, y: cursor - 2, size: 3.3, color: ORANGE })
-    drawText(page, label, LEFT + 13, cursor, 6.5, BLUE, latin, indic)
-    drawText(page, ':', LEFT + idLabelWidth, cursor, 7, MUTED, latin, indic)
-    lines.forEach((line, lineIndex) =>
-      drawText(page, line, LEFT + idLabelWidth + 9, cursor - lineIndex * 9.5, 8, TEXT, latin, indic),
-    )
-    cursor -= rowHeight + 2
-  }
-  cursor = Math.min(cursor, idSectionTop - qrCardHeight - 4)
+  const qrCardWidth = 152
+  const qrCardHeight = 136
+  const qrX = RIGHT - qrCardWidth
+  const recordRight = qrX - 16 // 387.28
+  const recordValueX = 178
+  const recordValueWidth = recordRight - recordValueX - 4
 
-  const noteLines = wrapText(DOCUMENT_NOTE, CONTENT_WIDTH - 48, 7.5, latin, indic)
-  const noteHeight = Math.max(58, 29 + noteLines.length * 11)
-  ensureSpace(noteHeight + 8, 77)
+  ensureSpace(22 + qrCardHeight, 110)
+  const recTitleWidth = drawSpacedText(
+    page,
+    'LICENSE RECORD & VERIFICATION',
+    LEFT,
+    cursor,
+    8,
+    NAVY_TEXT,
+    latinBold,
+    indicBold,
+    1.05,
+  )
+  page.drawLine({
+    start: { x: LEFT + recTitleWidth + 6, y: cursor + 2.5 },
+    end: { x: RIGHT, y: cursor + 2.5 },
+    thickness: 0.6,
+    color: BORDER,
+  })
+  cursor -= 15
+
+  const idSectionTop = cursor
+  let qrCardPage = page
+
+  // Record Table Rows: one consistent font style across all values
+  for (const [label, value] of identification) {
+    const valueLines = wrapText(value, recordValueWidth, 9, latin, indic)
+    const rowHeight = Math.max(26, 15 + valueLines.length * 11)
+    ensureSpace(rowHeight, 110)
+    const rowBottom = cursor - rowHeight
+    page.drawCircle({ x: LEFT + 3, y: cursor - 14, size: 2.2, color: ORANGE })
+    drawText(page, label, LEFT + 12, cursor - 17, 7, MUTED, latin, indic)
+    valueLines.forEach((line, lineIndex) => {
+      drawText(
+        page,
+        line,
+        recordValueX,
+        cursor - 17.5 - lineIndex * 11,
+        9,
+        VALUE_INK,
+        latin,
+        indic,
+      )
+    })
+    page.drawLine({
+      start: { x: LEFT, y: rowBottom },
+      end: { x: recordRight, y: rowBottom },
+      thickness: 0.5,
+      color: BORDER,
+    })
+    cursor = rowBottom
+  }
+  cursor = Math.min(cursor, idSectionTop - qrCardHeight) - 10
+
+  // DOCUMENT NOTE Box
+  const noteLines = wrapText(DOCUMENT_NOTE, CONTENT_WIDTH - 28, 7.8, latin, indic)
+  const noteHeight = Math.max(44, 24 + noteLines.length * 10)
+  ensureSpace(noteHeight + 16, 70)
+  const noteBottom = cursor - noteHeight
   page.drawRectangle({
     x: LEFT,
-    y: cursor - noteHeight,
+    y: noteBottom,
     width: CONTENT_WIDTH,
     height: noteHeight,
-    color: rgb(0.94, 0.96, 1),
-    borderColor: rgb(0.85, 0.89, 0.96),
-    borderWidth: 0.6,
+    color: CARD_BG,
+    borderColor: BORDER,
+    borderWidth: 0.5,
   })
   page.drawRectangle({
     x: LEFT,
-    y: cursor - noteHeight,
+    y: noteBottom,
     width: 3,
     height: noteHeight,
     color: GOLD,
   })
-  page.drawCircle({ x: LEFT + 15, y: cursor - 15, size: 7, color: BLUE })
-  drawText(page, 'i', LEFT + 13.2, cursor - 18, 8, WHITE, latin, indic)
-  drawText(page, 'DOCUMENT NOTE', LEFT + 28, cursor - 13, 6.8, BLUE, latin, indic)
-  noteLines.forEach((line, index) =>
-    drawText(page, line, LEFT + 28, cursor - 26 - index * 10, 7.5, TEXT, latin, indic),
-  )
-  cursor -= noteHeight + 9
-  ensureSpace(82, 0)
+  drawText(page, 'DOCUMENT NOTE', LEFT + 14, cursor - 15, 7, NAVY_TEXT, latinBold, indicBold)
+  noteLines.forEach((line, index) => {
+    drawText(page, line, LEFT + 14, cursor - 26.5 - index * 10, 7.8, MUTED, latin, indic)
+  })
+  cursor = noteBottom - 46
+
+  // Signatory Section (and place subtle watermark safely in the open seal gap)
+  ensureSpace(70, 0)
   page.drawLine({
     start: { x: LEFT, y: cursor },
     end: { x: RIGHT, y: cursor },
-    thickness: 0.7,
-    color: rgb(0.72, 0.8, 0.92),
+    thickness: 0.5,
+    color: BORDER,
   })
-  const signerTop = cursor - 9
-  const issuerBadgeX = LEFT
-  page.drawRectangle({
-    x: issuerBadgeX,
-    y: signerTop - 28,
-    width: 158,
-    height: 22,
-    color: rgb(0.91, 0.97, 0.93),
-    borderColor: rgb(0.62, 0.82, 0.7),
-    borderWidth: 0.7,
+  const signerTop = cursor - 18
+  const badgeColor = statusColors('ACTIVE')
+  drawRoundedRect(page, {
+    x: LEFT,
+    y: signerTop - 26,
+    width: 176,
+    height: 26,
+    radius: 4,
+    color: badgeColor.background,
+    borderColor: badgeColor.border,
+    borderWidth: 0.5,
   })
-  const issuerBadgeCenterY = signerTop - 17
-  page.drawCircle({ x: issuerBadgeX + 11, y: issuerBadgeCenterY, size: 6, color: rgb(0.08, 0.47, 0.31) })
-  drawStatusMark(page, issuerBadgeX + 11, issuerBadgeCenterY, true)
-  drawText(page, 'Authorized License Issuer', issuerBadgeX + 23, signerTop - 19.5, 6.5, rgb(0.08, 0.38, 0.27), latin, indic)
-  drawText(page, 'For PrathamOne EduOS · Powered by SmritiSys', issuerBadgeX, signerTop - 42, 6.3, MUTED, latin, indic)
+  const issuerCircleY = signerTop - 13
+  page.drawCircle({ x: LEFT + 15, y: issuerCircleY, size: 6.5, color: badgeColor.circle })
+  drawStatusMark(page, LEFT + 15, issuerCircleY, true, 1.4)
+  drawText(
+    page,
+    'Authorized License Issuer',
+    LEFT + 28,
+    signerTop - 16,
+    8.5,
+    badgeColor.foreground,
+    latin,
+    indic,
+  )
+  drawText(
+    page,
+    'For PrathamOne EduOS · Powered by SmritiSys',
+    LEFT,
+    signerTop - 40,
+    7,
+    MUTED,
+    latin,
+    indic,
+  )
 
-  const signatureSize = issuerSignature.scaleToFit(100, 38)
-  const signerNameWidth = textWidth('Jawahar R. Mallah', 13, latin, indic)
-  const signerX = RIGHT - signerNameWidth - 12 - signatureSize.width
-  drawText(page, 'AUTHORIZED SIGNATORY', signerX, signerTop, 6.8, BLUE, latin, indic)
-  drawText(page, 'Jawahar R. Mallah', signerX, signerTop - 20, 13, NAVY, latin, indic)
-  drawText(page, 'Authorized issuer attribution', signerX, signerTop - 34, 7, MUTED, latin, indic)
+  const signatureSize = issuerSignature.scaleToFit(112, 52.5)
+  const sigImgX = RIGHT - signatureSize.width
+  const sigTextRight = sigImgX - 8
+  const authLabel = 'AUTHORIZED SIGNATORY'
+  const authLabelW = spacedTextWidth(authLabel, 7, latin, indic, 0.8)
+  drawSpacedText(
+    page,
+    authLabel,
+    sigTextRight - authLabelW,
+    signerTop + 2,
+    7,
+    MUTED,
+    latin,
+    indic,
+    0.8,
+  )
+  const signerName = 'Jawahar R. Mallah'
+  const signerNameW = textWidth(signerName, 13, latinBold, indicBold)
+  drawText(
+    page,
+    signerName,
+    sigTextRight - signerNameW,
+    signerTop - 19,
+    13,
+    NAVY_TEXT,
+    latinBold,
+    indicBold,
+  )
+  const attrib = 'Authorized issuer attribution'
+  const attribW = textWidth(attrib, 7.5, latin, indic)
+  drawText(page, attrib, sigTextRight - attribW, signerTop - 32, 7.5, MUTED, latin, indic)
   page.drawImage(issuerSignature, {
-    x: signerX + signerNameWidth + 12,
-    y: signerTop - 41,
+    x: sigImgX,
+    y: signerTop - 45,
     width: signatureSize.width,
     height: signatureSize.height,
   })
-  cursor -= 62
 
+  // Bottom center seal in opaque 2D monochrome (zero transparency)
+  drawBottomMonoSeal(page, monoSealWatermark, signerTop - 18)
+
+  // Center watermark on each page matching the uploaded reference format, with QR card drawn cleanly once on top
   const pages = pdf.getPages()
-  pages.forEach((currentPage, index) => {
-    currentPage.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: 55, color: NAVY })
-    currentPage.drawRectangle({ x: 0, y: 55, width: PAGE_WIDTH, height: 4, color: ORANGE })
-    drawText(currentPage, 'www.prathamone.com', LEFT, 22, 7.2, WHITE, latin, indic)
-    const footerLabel = pages.length > 1
-      ? `PrathamOne EduOS · SmritiSys · ${index + 1} / ${pages.length}`
-      : 'PrathamOne EduOS · SmritiSys'
-    drawText(currentPage, footerLabel, PAGE_WIDTH / 2 - textWidth(footerLabel, 7.2, latin, indic) / 2, 22, 7.2, WHITE, latin, indic)
-    drawText(currentPage, 'Powered by SmritiSys', RIGHT - 106, 22, 7.2, WHITE, latin, indic)
-  })
+  pages.forEach((currentPage) => drawCenterWatermark(currentPage, centerWatermark))
 
-  pages.forEach((currentPage) => drawWatermark(currentPage, watermark))
+  drawRoundedRect(qrCardPage, {
+    x: qrX,
+    y: idSectionTop - qrCardHeight,
+    width: qrCardWidth,
+    height: qrCardHeight,
+    radius: 5,
+    color: WHITE,
+    borderColor: BORDER,
+    borderWidth: 0.6,
+  })
+  if (qrImage) {
+    qrCardPage.drawImage(qrImage, {
+      x: qrX + (qrCardWidth - 84) / 2,
+      y: idSectionTop - 14 - 84,
+      width: 84,
+      height: 84,
+    })
+    const caption = 'Scan to verify this license'
+    const captionW = textWidth(caption, 8, latinBold, indicBold)
+    drawText(
+      qrCardPage,
+      caption,
+      qrX + (qrCardWidth - captionW) / 2,
+      idSectionTop - 112,
+      8,
+      NAVY_TEXT,
+      latinBold,
+      indicBold,
+    )
+    const hostLabel = verificationHost(data.verificationUrl)
+    const hostW = textWidth(hostLabel, 7.5, latin, indic)
+    drawText(
+      qrCardPage,
+      hostLabel,
+      qrX + (qrCardWidth - hostW) / 2,
+      idSectionTop - 123,
+      7.5,
+      MUTED,
+      latin,
+      indic,
+    )
+  } else {
+    const lines = ['Secure authority', 'verification QR', 'not configured']
+    lines.forEach((line, idx) => {
+      const lw = textWidth(line, 7.5, latin, indic)
+      drawText(qrCardPage, line, qrX + (qrCardWidth - lw) / 2, idSectionTop - 54 - idx * 12, 7.5, MUTED, latin, indic)
+    })
+  }
+
+  pages.forEach((currentPage, index) => {
+    currentPage.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: 34, color: NAVY })
+    currentPage.drawRectangle({ x: 0, y: 34, width: PAGE_WIDTH, height: 2, color: ORANGE })
+    drawText(currentPage, 'www.prathamone.com', LEFT, 13, 7.5, FOOTER_TEXT, latin, indic)
+    const footerLabel =
+      pages.length > 1
+        ? `PrathamOne EduOS · Powered by SmritiSys · ${index + 1} / ${pages.length}`
+        : 'PrathamOne EduOS · Powered by SmritiSys'
+    drawText(
+      currentPage,
+      footerLabel,
+      RIGHT - textWidth(footerLabel, 7.5, latin, indic),
+      13,
+      7.5,
+      FOOTER_TEXT,
+      latin,
+      indic,
+    )
+  })
 
   pdf.setTitle('PrathamOne EduOS Software License Certificate')
   pdf.setAuthor('PrathamOne EduOS')

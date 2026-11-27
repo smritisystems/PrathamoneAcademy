@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-26 21:55:19<br>
-**Total Indexed Items:** 759<br>
+**Last Reindexed:** 2026-11-27 08:53:55<br>
+**Total Indexed Items:** 760<br>
 
 ---
 
@@ -24,7 +24,7 @@
 | `07` | [07_ATTENDANCE](#07_attendance) | **6** | Attendance Register & Tracking |
 | `08` | [08_EXAMINATION](#08_examination) | **8** | Examinations, Tests & Grading |
 | `09` | [09_FEES_PAYMENTS](#09_fees_payments) | **58** | Fee Structures, Payments & Receipts |
-| `10` | [10_FINANCE_ACCOUNTING](#10_finance_accounting) | **5** | Finance, Accounting & Ledgers |
+| `10` | [10_FINANCE_ACCOUNTING](#10_finance_accounting) | **6** | Finance, Accounting & Ledgers |
 | `11` | [11_REPORTS_EXPORTS](#11_reports_exports) | **19** | Reports, Analytics & Data Grids |
 | `12` | [12_RBAC_SECURITY](#12_rbac_security) | **17** | RBAC, Security & Permissions |
 | `13` | [13_SYSADMIN_SETTINGS](#13_sysadmin_settings) | **20** | Sysadmin Center & System Settings |
@@ -312,6 +312,7 @@
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
 | **Accounting Engine Capability Assessment for Institutional Books** | `ASSESSMENT` | `1.0` | 2026-11-14 | `Pending Review` | [2026-11-14_FINANCE-ACCOUNTING_CAPABILITY-ASSESSMENT_DOUBLE-ENTRY-AND-STATEMENTS_V1.md](10_FINANCE_ACCOUNTING/2026-11-14_FINANCE-ACCOUNTING_CAPABILITY-ASSESSMENT_DOUBLE-ENTRY-AND-STATEMENTS_V1.md) | 06_TEACHER_PAYROLL, 09_FEES_PAYMENTS, 11_REPORTS_EXPORTS, 12_RBAC_SECURITY, 16_DATABASE_API |
+| **Budgeting & Forecasting Module — Deep Architecture Research, SSOT Integration & Implementation Blueprint** | `RESEARCH-REPORT` | `1.0` | 2026-11-27 | `Pending Review` | [2026-11-27_FINANCE-ACCOUNTING_ARCHITECTURE-REVIEW_BUDGETING-AND-FORECASTING_V1.md](10_FINANCE_ACCOUNTING/2026-11-27_FINANCE-ACCOUNTING_ARCHITECTURE-REVIEW_BUDGETING-AND-FORECASTING_V1.md) | 06_TEACHER_PAYROLL, 09_FEES_PAYMENTS, 10_FINANCE_ACCOUNTING, 11_REPORTS_EXPORTS, 12_RBAC_SECURITY, 17_UI_UX_DESIGN |
 | **Daily Expense Management & Cash Register Acceptance Test Validation Report** | `REPORT` | `1.0` | 2026-11-24 | `Approved` | [2026-11-24_FINANCE-ACCOUNTING_VALIDATION-REPORT_EXPENSE-AND-CASH-REGISTER-ACCEPTANCE-TEST_V1.md](10_FINANCE_ACCOUNTING/2026-11-24_FINANCE-ACCOUNTING_VALIDATION-REPORT_EXPENSE-AND-CASH-REGISTER-ACCEPTANCE-TEST_V1.md) | 09_FEES_PAYMENTS, 01_ARCHITECTURE, 17_UI_UX_DESIGN, 25_BUSINESS_REQUIREMENTS |
 | **Institute Daily Expense Management & Automated Cash Register Architecture** | `SPECIFICATION` | `1.0` | 2026-11-24 | `Approved` | [2026-11-24_FINANCE-ACCOUNTING_SPECIFICATION_EXPENSE-AND-CASH-REGISTER-ARCHITECTURE_V1.md](10_FINANCE_ACCOUNTING/2026-11-24_FINANCE-ACCOUNTING_SPECIFICATION_EXPENSE-AND-CASH-REGISTER-ARCHITECTURE_V1.md) | 09_FEES_PAYMENTS, 01_ARCHITECTURE, 17_UI_UX_DESIGN, 25_BUSINESS_REQUIREMENTS |
 | **Institutional Books & Reports Existing-Functionality Audit** | `REPORT` | `1.0` | 2026-11-14 | `Pending Review` | [2026-11-14_FINANCE-ACCOUNTING_AUDIT-REPORT_INSTITUTIONAL-BOOKS-EXISTING-FUNCTIONALITY_V1.md](10_FINANCE_ACCOUNTING/2026-11-14_FINANCE-ACCOUNTING_AUDIT-REPORT_INSTITUTIONAL-BOOKS-EXISTING-FUNCTIONALITY_V1.md) | 04_STUDENT_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 08_EXAMINATION, 09_FEES_PAYMENTS, 11_REPORTS_EXPORTS, 12_RBAC_SECURITY, 14_PRINTING_DOCUMENTS |

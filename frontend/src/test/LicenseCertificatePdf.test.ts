@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-24
- * @updated     2026-11-24
+ * @updated     2026-11-27
  *
  * @description Verifies generated license certificate PDFs and customer sharing behavior.
  */
@@ -32,13 +32,17 @@ import {
 
 async function mockCertificateAssets() {
   const fontDirectory = `${process.cwd()}/node_modules/@fontsource/noto-sans-devanagari/files`
-  const [latinFont, indicFont, logoPng, signature, svg] = await Promise.all([
-    readFile(`${fontDirectory}/noto-sans-devanagari-latin-400-normal.woff`),
-    readFile(`${fontDirectory}/noto-sans-devanagari-devanagari-400-normal.woff`),
-    readFile(`${process.cwd()}/public/logo/logoone256.png`),
-    readFile(`${process.cwd()}/public/logo/license-issuer-signature.png`),
-    readFile(`${process.cwd()}/public/artwork/18112026/03/license-certificate-watermark.svg`),
-  ])
+  const [latinFont, latinBoldFont, indicFont, indicBoldFont, logoPng, signature, headerSvg, watermarkSvg] =
+    await Promise.all([
+      readFile(`${fontDirectory}/noto-sans-devanagari-latin-400-normal.woff`),
+      readFile(`${fontDirectory}/noto-sans-devanagari-latin-700-normal.woff`),
+      readFile(`${fontDirectory}/noto-sans-devanagari-devanagari-400-normal.woff`),
+      readFile(`${fontDirectory}/noto-sans-devanagari-devanagari-700-normal.woff`),
+      readFile(`${process.cwd()}/public/logo/logoone256.png`),
+      readFile(`${process.cwd()}/public/logo/license-issuer-signature.png`),
+      readFile(`${process.cwd()}/public/artwork/25112026/batch_g45.svg`),
+      readFile(`${process.cwd()}/public/artwork/25112026/batch_g47.svg`),
+    ])
   const png = new Uint8Array(logoPng)
   const MockUrl = class extends URL {}
   Object.assign(MockUrl, {
@@ -61,13 +65,19 @@ async function mockCertificateAssets() {
 
   const fetchMock = vi.fn(async (url: string | URL | Request) => {
     const source = String(url)
-    const bytes = source.includes('devanagari-400')
-      ? indicFont
-      : source.includes('license-issuer-signature')
-        ? signature
-        : source.endsWith('.svg')
-          ? svg
-          : latinFont
+    const bytes = source.includes('devanagari-700')
+      ? indicBoldFont
+      : source.includes('devanagari-400')
+        ? indicFont
+        : source.includes('latin-700')
+          ? latinBoldFont
+          : source.includes('license-issuer-signature')
+            ? signature
+            : source.includes('batch_g45.svg')
+              ? headerSvg
+              : source.endsWith('.svg')
+                ? watermarkSvg
+                : latinFont
     const buffer = new ArrayBuffer(bytes.byteLength)
     new Uint8Array(buffer).set(bytes)
     return new Response(buffer)
@@ -89,7 +99,7 @@ describe('License certificate PDF', () => {
   })
 
   it(
-    'creates an A4 portrait summary with the product logo, signed entitlement, QR, and PDF metadata',
+    'creates an A4 portrait summary with the redesigned PrathamOne branding, signed entitlement, single QR, and PDF metadata',
     async () => {
       const fetchMock = await mockCertificateAssets()
 
@@ -115,10 +125,9 @@ describe('License certificate PDF', () => {
     expect(pdf.getPages()[0].getSize().width).toBeCloseTo(595.28, 1)
     expect(pdf.getPages()[0].getSize().height).toBeCloseTo(841.89, 1)
     expect(pdf.getTitle()).toBe('PrathamOne EduOS Software License Certificate')
-    expect(fetchMock).toHaveBeenCalledTimes(5)
-    expect(fetchMock).toHaveBeenCalledWith('/artwork/18112026/03/license-certificate-logo.svg')
-    expect(fetchMock).toHaveBeenCalledWith('/artwork/18112026/03/license-certificate-watermark.svg')
-    expect(fetchMock).toHaveBeenCalledWith('/artwork/18112026/03/license-certificate-watermark.svg')
+    expect(fetchMock).toHaveBeenCalledTimes(7)
+    expect(fetchMock).toHaveBeenCalledWith('/artwork/25112026/batch_g45.svg')
+    expect(fetchMock).toHaveBeenCalledWith('/artwork/25112026/batch_g47.svg')
     expect(fetchMock).toHaveBeenCalledWith('/logo/license-issuer-signature.png')
   }, 15000)
 
