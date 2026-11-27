@@ -11,11 +11,12 @@
  *
  * @version     1.0.0
  * @created     2026-11-17
- * @updated     2026-11-17
+ * @updated     2026-11-28
  *
  * @description Stores the browser-local appearance preference and applies the resolved theme to the document root.
  */
 
+import { useEffect, useState } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -94,4 +95,27 @@ export function initializeAppearance(): void {
   }
 
   applyAppearance(useAppearanceStore.getState().preference, mediaQuery?.matches)
+}
+
+export function useResolvedAppearance(): 'light' | 'dark' {
+  const preference = useAppearanceStore((state) => state.preference)
+  const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return false
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return
+    }
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    setSystemPrefersDark(mediaQuery.matches)
+    const onChange = (event: MediaQueryListEvent) => setSystemPrefersDark(event.matches)
+    mediaQuery.addEventListener('change', onChange)
+    return () => mediaQuery.removeEventListener('change', onChange)
+  }, [])
+
+  return resolveAppearance(preference, systemPrefersDark)
 }

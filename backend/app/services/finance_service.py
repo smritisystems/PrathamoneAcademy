@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-24
-#  * @updated     2026-11-27
+#  * @updated     2026-11-28
 #  *
 #  * @description Domain service implementing Daily Expense Management, Live Cash Movements, Denomination Counting, and Daily Cash Opening and Closing.
 #  */
@@ -32,7 +32,7 @@ from app.models.finance import (
 )
 from app.models.payment import Payment, Refund
 from app.models.student import Student
-from app.models.user import User
+from app.models.user import AuditLog, User
 
 
 class FinanceService:
@@ -107,6 +107,75 @@ class FinanceService:
         return expense
 
     @staticmethod
+    async def _evaluate_expense_budget_guardrail(
+        db: AsyncSession,
+        institution_id: int,
+        category_id: int,
+        expense_date: date,
+        new_amount: Decimal,
+        override_reason: Optional[str] = None,
+        branch_id: Optional[int] = None,
+        exclude_expense_id: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Evaluate active approved/locked budget caps and block hard_limit overruns without an override reason."""
+        from app.services.budget_forecast_service import BudgetForecastService
+
+        guardrail = await BudgetForecastService.check_expense_budget_guardrail(
+            db=db,
+            institution_id=institution_id,
+            category_id=int(category_id),
+            expense_date=expense_date,
+            new_amount=Decimal(str(new_amount)),
+            branch_id=branch_id,
+            exclude_expense_id=exclude_expense_id,
+        )
+        if (
+            guardrail.get("has_budget")
+            and guardrail.get("enforcement_mode") == "hard_limit"
+            and guardrail.get("alert_level") == "overrun"
+            and not (override_reason or "").strip()
+        ):
+            raise ValueError(
+                f"Budget hard limit exceeded: {guardrail.get('message')} Provide budget_override_reason to override."
+            )
+        return guardrail
+
+    @staticmethod
+    async def _record_budget_override_audit(
+        db: AsyncSession,
+        institution_id: int,
+        expense: Expense,
+        user_id: int,
+        guardrail: Dict[str, Any],
+        override_reason: Optional[str],
+    ) -> None:
+        reason = (override_reason or "").strip()
+        if (
+            reason
+            and guardrail.get("has_budget")
+            and guardrail.get("alert_level") == "overrun"
+        ):
+            tag = f"[Budget Override: {reason}]"
+            if tag not in (expense.notes or ""):
+                expense.notes = f"{expense.notes}\n{tag}".strip() if expense.notes else tag
+            db.add(
+                AuditLog(
+                    user_id=user_id,
+                    institution_id=institution_id,
+                    action="BUDGET_HARD_LIMIT_OVERRIDE",
+                    resource_type="expense",
+                    resource_id=expense.id,
+                    severity="WARNING",
+                    details=(
+                        f"Expense {expense.expense_number} (₹{expense.amount}) overrode "
+                        f"'{guardrail.get('plan_name')}' budget cap. Reason: {reason}"
+                    ),
+                )
+            )
+            await db.commit()
+            await db.refresh(expense)
+
+    @staticmethod
     async def create_expense_with_budget_check(
         db: AsyncSession,
         institution_id: int,
@@ -114,26 +183,23 @@ class FinanceService:
         recorded_by_id: int,
     ) -> Tuple[Expense, Dict[str, Any]]:
         """Create expense after evaluating active approved budget guardrails."""
-        from app.services.budget_forecast_service import BudgetForecastService
-
+        target_status = (data.get("status") or "submitted").lower()
         exp_date = data.get("expense_date") or date.today()
-        guardrail = await BudgetForecastService.check_expense_budget_guardrail(
-            db=db,
-            institution_id=institution_id,
-            category_id=int(data["category_id"]),
-            expense_date=exp_date,
-            new_amount=Decimal(str(data["amount"])),
-        )
-        if (
-            guardrail.get("has_budget")
-            and guardrail.get("enforcement_mode") == "hard_limit"
-            and guardrail.get("alert_level") == "overrun"
-            and not (data.get("budget_override_reason") or "").strip()
-        ):
-            raise ValueError(
-                f"Budget hard limit exceeded: {guardrail.get('message')} Provide budget_override_reason to override."
+        guardrail: Dict[str, Any] = {"has_budget": False, "alert_level": "none"}
+        if target_status in {"submitted", "approved", "paid"}:
+            guardrail = await FinanceService._evaluate_expense_budget_guardrail(
+                db=db,
+                institution_id=institution_id,
+                category_id=int(data["category_id"]),
+                expense_date=exp_date,
+                new_amount=Decimal(str(data["amount"])),
+                override_reason=data.get("budget_override_reason"),
+                branch_id=data.get("branch_id", 1),
             )
         expense = await FinanceService.create_expense(db, institution_id, data, recorded_by_id)
+        await FinanceService._record_budget_override_audit(
+            db, institution_id, expense, recorded_by_id, guardrail, data.get("budget_override_reason")
+        )
         return expense, guardrail
 
     @staticmethod
@@ -173,6 +239,47 @@ class FinanceService:
         return expense
 
     @staticmethod
+    async def update_expense_with_budget_check(
+        db: AsyncSession,
+        institution_id: int,
+        expense_id: int,
+        data: Dict[str, Any],
+        user_id: int,
+    ) -> Tuple[Optional[Expense], Dict[str, Any]]:
+        """Update expense after re-evaluating active approved budget guardrails."""
+        stmt = select(Expense).where(
+            Expense.id == expense_id, Expense.institution_id == institution_id
+        )
+        existing = (await db.execute(stmt)).scalar_one_or_none()
+        if not existing:
+            return None, {"has_budget": False, "alert_level": "none"}
+
+        eff_status = (data.get("status") or existing.status or "submitted").lower()
+        eff_cat = int(data.get("category_id") if data.get("category_id") is not None else existing.category_id)
+        eff_date = data.get("expense_date") or existing.expense_date
+        eff_amt = Decimal(str(data.get("amount") if data.get("amount") is not None else existing.amount))
+
+        guardrail: Dict[str, Any] = {"has_budget": False, "alert_level": "none"}
+        if eff_status in {"submitted", "approved", "paid"}:
+            guardrail = await FinanceService._evaluate_expense_budget_guardrail(
+                db=db,
+                institution_id=institution_id,
+                category_id=eff_cat,
+                expense_date=eff_date,
+                new_amount=eff_amt,
+                override_reason=data.get("budget_override_reason"),
+                branch_id=existing.branch_id,
+                exclude_expense_id=existing.id,
+            )
+
+        updated = await FinanceService.update_expense(db, expense_id, data, user_id)
+        if updated:
+            await FinanceService._record_budget_override_audit(
+                db, institution_id, updated, user_id, guardrail, data.get("budget_override_reason")
+            )
+        return updated, guardrail
+
+    @staticmethod
     async def approve_expense(
         db: AsyncSession, expense_id: int, approved_by_id: int
     ) -> Optional[Expense]:
@@ -187,6 +294,39 @@ class FinanceService:
         await db.commit()
         await db.refresh(expense)
         return expense
+
+    @staticmethod
+    async def approve_expense_with_budget_check(
+        db: AsyncSession,
+        institution_id: int,
+        expense_id: int,
+        approved_by_id: int,
+        override_reason: Optional[str] = None,
+    ) -> Tuple[Optional[Expense], Dict[str, Any]]:
+        """Approve expense after validating active budget caps (closes draft->approve bypass)."""
+        stmt = select(Expense).where(
+            Expense.id == expense_id, Expense.institution_id == institution_id
+        )
+        existing = (await db.execute(stmt)).scalar_one_or_none()
+        if not existing:
+            return None, {"has_budget": False, "alert_level": "none"}
+
+        guardrail = await FinanceService._evaluate_expense_budget_guardrail(
+            db=db,
+            institution_id=institution_id,
+            category_id=existing.category_id,
+            expense_date=existing.expense_date,
+            new_amount=Decimal(str(existing.amount)),
+            override_reason=override_reason,
+            branch_id=existing.branch_id,
+            exclude_expense_id=existing.id,
+        )
+        approved = await FinanceService.approve_expense(db, expense_id, approved_by_id)
+        if approved:
+            await FinanceService._record_budget_override_audit(
+                db, institution_id, approved, approved_by_id, guardrail, override_reason
+            )
+        return approved, guardrail
 
     @staticmethod
     async def pay_expense(

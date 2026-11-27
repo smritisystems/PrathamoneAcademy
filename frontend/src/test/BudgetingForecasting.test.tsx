@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-27
- * @updated     2026-11-27
+ * @updated     2026-11-28
  *
  * @description Vitest suite verifying View-First Edit Mode governance, budget variance rendering, and What-If forecasting simulation.
  */
@@ -233,13 +233,13 @@ describe('BudgetingForecastingWorkspace', () => {
     await waitFor(() => {
       expect(upsertBudgetLinesMock).toHaveBeenCalledWith(
         11,
-        [expect.objectContaining({ id: 101, planned_amount: 55000 })],
+        [expect.objectContaining({ id: 101, planned_amount: 55000, warning_threshold_pct: 85 })],
         1,
       )
     })
   })
 
-  it('switches to Forecasts tab and triggers server-side What-If simulation', async () => {
+  it('switches to Forecasts tab, displays Conc. / Refunds ledger column, and triggers What-If simulation', async () => {
     render(
       <MemoryRouter initialEntries={['/finance/forecasts']}>
         <BudgetingForecastingWorkspace />
@@ -247,11 +247,38 @@ describe('BudgetingForecastingWorkspace', () => {
     )
 
     expect(await screen.findByText('What-If Simulator')).toBeTruthy()
+    expect(screen.getByText('Conc. / Refunds')).toBeTruthy()
     expect(screen.getByText('Nov 2026')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: /Run What-If Projection/i }))
     await waitFor(() => {
       expect(simulateForecastMock).toHaveBeenCalled()
     })
+  })
+
+  it('hides mutation controls from principal role in Budgeting & Forecasting workspace', async () => {
+    useAuthStore.setState({
+      token: 'jwt-principal-token',
+      user: {
+        id: 2,
+        username: 'principal',
+        email: 'principal@prashant.test',
+        first_name: 'Principal',
+        last_name: 'User',
+        role: 'principal',
+      } as any,
+      selectedInstitutionId: 1,
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/finance/budgets']}>
+        <BudgetingForecastingWorkspace />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('Marketing & Ads')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /New Budget/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Enable Edit Mode/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Submit/i })).toBeNull()
   })
 })

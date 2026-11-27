@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-27
- * @updated     2026-11-27
+ * @updated     2026-11-28
  *
  * @description Financial Planning & Analysis (FP&A) workspace for Institutional Budgeting, Live Budget-vs-Actuals Variance, and 3-Driver Cashflow Forecasting.
  */
@@ -80,8 +80,9 @@ const HEALTH_BADGE: Record<string, string> = {
 export default function BudgetingForecastingWorkspace() {
   const branding = useBranding()
   const location = useLocation()
-  const { selectedInstitutionId } = useAuthStore()
+  const { user, selectedInstitutionId } = useAuthStore()
   const instId = selectedInstitutionId || 1
+  const canMutateBudget = ['superadmin', 'admin', 'accountant'].includes((user?.role || '').toLowerCase())
   const budgetEditScope = 'finance:budgets'
   const isEditMode = useEditModeStore((s) => !!s.scopes[budgetEditScope])
   const disableEditMode = useEditModeStore((s) => s.disableEditMode)
@@ -123,6 +124,8 @@ export default function BudgetingForecastingWorkspace() {
     plan_type: 'operating',
     granularity: 'monthly',
     enforcement_mode: 'soft_warn',
+    start_date: '',
+    end_date: '',
   })
 
   const [showNewScenarioModal, setShowNewScenarioModal] = useState(false)
@@ -138,6 +141,12 @@ export default function BudgetingForecastingWorkspace() {
     else if (location.pathname.includes('/forecasts')) setActiveTab('forecasts')
     else setActiveTab('budgets')
   }, [location.pathname])
+
+  const handleTabChange = (tab: WorkspaceTab) => {
+    setActiveTab(tab)
+    setEditedAmounts({})
+    disableEditMode(budgetEditScope)
+  }
 
   const loadWorkspace = async () => {
     setLoading(true)
@@ -193,7 +202,13 @@ export default function BudgetingForecastingWorkspace() {
     if (!newBudgetForm.name.trim()) return
     setSaving(true)
     try {
-      const res = await financeApi.createBudget({ ...newBudgetForm, seed_default_lines: true }, instId)
+      const payload = {
+        ...newBudgetForm,
+        start_date: newBudgetForm.start_date || undefined,
+        end_date: newBudgetForm.end_date || undefined,
+        seed_default_lines: true,
+      }
+      const res = await financeApi.createBudget(payload, instId)
       setShowNewBudgetModal(false)
       setNotice({ text: `Created draft budget "${res.data.name}".`, type: 'success' })
       await loadWorkspace()
@@ -223,6 +238,8 @@ export default function BudgetingForecastingWorkspace() {
           line_direction: ln.line_direction,
           source_domain: ln.source_domain,
           planned_amount: Math.max(0, Number(editedAmounts[ln.id] || 0)),
+          warning_threshold_pct: ln.warning_threshold_pct,
+          notes: ln.notes,
         })),
         instId,
       )
@@ -391,7 +408,7 @@ export default function BudgetingForecastingWorkspace() {
               <button
                 key={tab}
                 type="button"
-                onClick={() => setActiveTab(tab)}
+                onClick={() => handleTabChange(tab)}
                 className={`px-3 py-1 rounded-md capitalize transition ${
                   activeTab === tab
                     ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs'
@@ -403,13 +420,15 @@ export default function BudgetingForecastingWorkspace() {
             ))}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowNewBudgetModal(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold transition"
-          >
-            <Plus className="w-3.5 h-3.5" /> New Budget
-          </button>
+          {canMutateBudget && (
+            <button
+              type="button"
+              onClick={() => setShowNewBudgetModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold transition"
+            >
+              <Plus className="w-3.5 h-3.5" /> New Budget
+            </button>
+          )}
         </div>
       </header>
 
@@ -507,7 +526,7 @@ export default function BudgetingForecastingWorkspace() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    {activePlan?.status === 'draft' && (
+                    {canMutateBudget && activePlan?.status === 'draft' && (
                       <EditModeBar
                         scope={budgetEditScope}
                         title={activePlan.name}
@@ -518,7 +537,7 @@ export default function BudgetingForecastingWorkspace() {
                         saveLoading={saving}
                       />
                     )}
-                    {activePlan?.status === 'draft' && (
+                    {canMutateBudget && activePlan?.status === 'draft' && (
                       <button
                         type="button"
                         onClick={() => handleTransition('submit')}
@@ -528,7 +547,7 @@ export default function BudgetingForecastingWorkspace() {
                         <Send className="w-3.5 h-3.5" /> Submit
                       </button>
                     )}
-                    {(activePlan?.status === 'draft' || activePlan?.status === 'submitted') && (
+                    {canMutateBudget && (activePlan?.status === 'draft' || activePlan?.status === 'submitted') && (
                       <button
                         type="button"
                         onClick={() => handleTransition('approve')}
@@ -538,7 +557,7 @@ export default function BudgetingForecastingWorkspace() {
                         <CheckCircle2 className="w-3.5 h-3.5" /> Approve
                       </button>
                     )}
-                    {activePlan?.status === 'approved' && (
+                    {canMutateBudget && activePlan?.status === 'approved' && (
                       <button
                         type="button"
                         onClick={() => handleTransition('lock')}
@@ -548,7 +567,7 @@ export default function BudgetingForecastingWorkspace() {
                         <Lock className="w-3.5 h-3.5" /> Lock Baseline
                       </button>
                     )}
-                    {(activePlan?.status === 'approved' || activePlan?.status === 'locked') && (
+                    {canMutateBudget && (activePlan?.status === 'approved' || activePlan?.status === 'locked') && (
                       <button
                         type="button"
                         onClick={() => handleTransition('revise')}
@@ -576,13 +595,15 @@ export default function BudgetingForecastingWorkspace() {
                     <p className="text-xs text-slate-500">
                       Create an Annual or Academic-Year Operating Budget seeded automatically from your canonical Fee &amp; Expense categories.
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => setShowNewBudgetModal(true)}
-                      className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-600 text-white text-xs font-bold"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Create First Budget Plan
-                    </button>
+                    {canMutateBudget && (
+                      <button
+                        type="button"
+                        onClick={() => setShowNewBudgetModal(true)}
+                        className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-600 text-white text-xs font-bold"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Create First Budget Plan
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <>
@@ -597,7 +618,7 @@ export default function BudgetingForecastingWorkspace() {
                               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                               <XAxis dataKey="period_label" tick={{ fontSize: 11 }} />
                               <YAxis tick={{ fontSize: 11 }} />
-                              <Tooltip />
+                              <Tooltip formatter={(value: any) => formatINR(Number(value))} />
                               <Legend wrapperStyle={{ fontSize: 11 }} />
                               <Bar dataKey="revenue_budget" name="Revenue Target" fill="#cbd5e1" radius={[3, 3, 0, 0]} />
                               <Bar dataKey="revenue_actual" name="Collected Revenue" fill="#10b981" radius={[3, 3, 0, 0]} />
@@ -702,9 +723,33 @@ export default function BudgetingForecastingWorkspace() {
                           if (sc) {
                             setHorizonMonths(sc.horizon_months)
                             setOpeningBank(String(sc.opening_bank_balance))
+                            setWhatIf((prev) => ({
+                              fee_realization_pct: sc.assumptions?.fee_realization_pct ?? prev.fee_realization_pct,
+                              lead_conversion_pct: sc.assumptions?.lead_conversion_pct ?? prev.lead_conversion_pct,
+                              expense_inflation_pct: sc.assumptions?.expense_inflation_pct ?? prev.expense_inflation_pct,
+                              extra_monthly_payroll: sc.assumptions?.extra_monthly_payroll ?? 0,
+                              extra_concession_pct: sc.assumptions?.extra_concession_pct ?? 0,
+                            }))
                           }
                           const res = await financeApi.computeForecastScenario(sid, { persist_snapshot: false }, instId)
                           setForecast(res.data)
+                        } else {
+                          const ov = await financeApi.getForecastOverview({
+                            institution_id: instId,
+                            horizon_months: horizonMonths,
+                            opening_bank_balance: Number(openingBank || 0),
+                          })
+                          setForecast(ov.data)
+                          if (ov.data?.scenario?.assumptions) {
+                            const a = ov.data.scenario.assumptions
+                            setWhatIf({
+                              fee_realization_pct: a.fee_realization_pct ?? 90,
+                              lead_conversion_pct: a.lead_conversion_pct ?? 25,
+                              expense_inflation_pct: a.expense_inflation_pct ?? 3,
+                              extra_monthly_payroll: a.extra_monthly_payroll ?? 0,
+                              extra_concession_pct: a.extra_concession_pct ?? 0,
+                            })
+                          }
                         }
                       }}
                       className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
@@ -743,13 +788,22 @@ export default function BudgetingForecastingWorkspace() {
                     >
                       <RefreshCw className="w-3.5 h-3.5" /> Recalculate
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowNewScenarioModal(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Save Scenario
-                    </button>
+                    {canMutateBudget && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewScenarioForm((prev) => ({
+                            ...prev,
+                            horizon_months: horizonMonths,
+                            opening_bank_balance: openingBank,
+                          }))
+                          setShowNewScenarioModal(true)
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Save Scenario
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -838,7 +892,7 @@ export default function BudgetingForecastingWorkspace() {
                           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                           <XAxis dataKey="period_label" tick={{ fontSize: 11 }} />
                           <YAxis tick={{ fontSize: 11 }} />
-                          <Tooltip />
+                          <Tooltip formatter={(value: any) => formatINR(Number(value))} />
                           <Legend wrapperStyle={{ fontSize: 11 }} />
                           <Bar dataKey="projected_total_inflows" name="Projected Inflows" fill="#10b981" radius={[3, 3, 0, 0]} />
                           <Bar dataKey="projected_total_outflows" name="Projected Outflows" fill="#f43f5e" radius={[3, 3, 0, 0]} />
@@ -853,6 +907,34 @@ export default function BudgetingForecastingWorkspace() {
                 {/* Month-by-month cashflow projection ledger */}
                 {forecast && (
                   <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                    {forecast.drivers_context && (
+                      <div className="px-4 py-2 bg-slate-50/70 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-4 text-[11px] text-slate-500">
+                        <span>
+                          Overdue Basis: <strong className="font-mono text-slate-700 dark:text-slate-200">
+                            {formatINR(
+                              (forecast.drivers_context.overdue_receivables_1_30d || 0) +
+                              (forecast.drivers_context.overdue_receivables_31_60d || 0) +
+                              (forecast.drivers_context.overdue_receivables_60d_plus || 0)
+                            )}
+                          </strong>
+                        </span>
+                        <span>
+                          Pipeline: <strong className="font-mono text-slate-700 dark:text-slate-200">
+                            {forecast.drivers_context.open_qualified_leads} leads / {forecast.drivers_context.open_batch_seats} open seats
+                          </strong>
+                        </span>
+                        <span>
+                          Faculty Basis: <strong className="font-mono text-slate-700 dark:text-slate-200">
+                            {formatINR(forecast.drivers_context.monthly_faculty_retainer_and_schedule)}/mo
+                          </strong>
+                        </span>
+                        <span>
+                          Staff Basis: <strong className="font-mono text-slate-700 dark:text-slate-200">
+                            {formatINR(forecast.drivers_context.monthly_staff_payroll_basis)}/mo
+                          </strong>
+                        </span>
+                      </div>
+                    )}
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs text-left">
                         <thead className="bg-slate-50 dark:bg-slate-800/70 text-[11px] uppercase text-slate-500 border-b border-slate-200 dark:border-slate-800">
@@ -860,6 +942,7 @@ export default function BudgetingForecastingWorkspace() {
                             <th className="px-3 py-2.5">Month</th>
                             <th className="px-3 py-2.5 text-right">Fee Installments</th>
                             <th className="px-3 py-2.5 text-right">CRM Pipeline</th>
+                            <th className="px-3 py-2.5 text-right">Conc. / Refunds</th>
                             <th className="px-3 py-2.5 text-right">Faculty Payroll</th>
                             <th className="px-3 py-2.5 text-right">Staff + OpEx</th>
                             <th className="px-3 py-2.5 text-right">Net Cashflow</th>
@@ -872,6 +955,9 @@ export default function BudgetingForecastingWorkspace() {
                               <td className="px-3 py-2 font-sans font-semibold">{row.period_label}</td>
                               <td className="px-3 py-2 text-right text-emerald-700">{formatINR(row.projected_fee_collections)}</td>
                               <td className="px-3 py-2 text-right text-teal-600">{formatINR(row.projected_pipeline_admissions)}</td>
+                              <td className="px-3 py-2 text-right text-amber-600">
+                                {formatINR((row.projected_concessions || 0) + (row.projected_refunds || 0))}
+                              </td>
                               <td className="px-3 py-2 text-right text-rose-600">{formatINR(row.projected_faculty_payroll)}</td>
                               <td className="px-3 py-2 text-right text-rose-600">
                                 {formatINR(row.projected_staff_payroll + row.projected_recurring_opex + row.projected_variable_opex)}
@@ -911,7 +997,19 @@ export default function BudgetingForecastingWorkspace() {
                   className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                 />
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
+                <label className="block">
+                  <span className="font-semibold text-slate-600">Plan Type</span>
+                  <select
+                    value={newBudgetForm.plan_type}
+                    onChange={(e) => setNewBudgetForm((p) => ({ ...p, plan_type: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <option value="operating">Operating</option>
+                    <option value="cashflow">Cashflow</option>
+                    <option value="capex">Capex</option>
+                  </select>
+                </label>
                 <label className="block">
                   <span className="font-semibold text-slate-600">Fiscal Year Label</span>
                   <input
@@ -931,6 +1029,26 @@ export default function BudgetingForecastingWorkspace() {
                     <option value="quarterly">Quarterly</option>
                     <option value="annual">Annual</option>
                   </select>
+                </label>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block">
+                  <span className="font-semibold text-slate-600">Start Date (Optional)</span>
+                  <input
+                    type="date"
+                    value={newBudgetForm.start_date}
+                    onChange={(e) => setNewBudgetForm((p) => ({ ...p, start_date: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
+                </label>
+                <label className="block">
+                  <span className="font-semibold text-slate-600">End Date (Optional)</span>
+                  <input
+                    type="date"
+                    value={newBudgetForm.end_date}
+                    onChange={(e) => setNewBudgetForm((p) => ({ ...p, end_date: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
                 </label>
               </div>
               <label className="block">
@@ -1011,6 +1129,17 @@ export default function BudgetingForecastingWorkspace() {
                   </select>
                 </label>
               </div>
+              <label className="block">
+                <span className="font-semibold text-slate-600">Opening Bank Balance (₹)</span>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={newScenarioForm.opening_bank_balance}
+                  onChange={(e) => setNewScenarioForm((p) => ({ ...p, opening_bank_balance: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono"
+                />
+              </label>
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button

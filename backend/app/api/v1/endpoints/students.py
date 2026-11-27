@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-26
+#  * @updated     2026-11-28
 #  *
 #  * @description API endpoints for student CRUD, profile editing, guardian details, and identity documents.
 #  */
@@ -1173,8 +1173,14 @@ async def get_student_admin_profile(
     active_ay_id = enrollment_list[0]["academic_year_id"] if enrollment_list else await resolve_institution_academic_year_id(db, student.institution_id)
     assign_stmt = (
         select(StudentFeeAssignment)
+        .join(AcademicYear, StudentFeeAssignment.academic_year_id == AcademicYear.id)
+        .join(FeeStructure, StudentFeeAssignment.fee_structure_id == FeeStructure.id)
         .options(selectinload(StudentFeeAssignment.fee_structure))
-        .where(StudentFeeAssignment.student_id == student_id)
+        .where(
+            StudentFeeAssignment.student_id == student_id,
+            AcademicYear.institution_id == student.institution_id,
+            FeeStructure.institution_id == student.institution_id,
+        )
         .order_by(
             case((StudentFeeAssignment.academic_year_id == active_ay_id, 0), else_=1),
             desc(StudentFeeAssignment.id),

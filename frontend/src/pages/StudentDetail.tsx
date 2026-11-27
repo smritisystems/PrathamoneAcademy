@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-27
+ * @updated     2026-11-28
  *
  * @description Comprehensive student profile workspace with multi-tab master record editing for administrators.
  */
@@ -1228,7 +1228,10 @@ export default function StudentDetailPage() {
                   </div>
                   {!fees.assignment.has_invoice && (
                     <Link
-                      to="/fees/invoicing"
+                      to={`/fees/invoicing?${new URLSearchParams({
+                        ...(profile?.admission_number ? { search: profile.admission_number } : {}),
+                        status: 'unbilled',
+                      }).toString()}`}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold shrink-0"
                     >
                       Go to Fee Invoicing

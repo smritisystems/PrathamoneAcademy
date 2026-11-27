@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-27
+ * @updated     2026-11-28
  *
  * @description Flagship Fees & Payments workspace featuring overview analytics, fee register, payments, and receipts.
  */
@@ -1258,11 +1258,18 @@ function FeesContent() {
   // ─────────────────────────────────────────────────────────────────────────────
   // TAB 2: FEE REGISTER
   // ─────────────────────────────────────────────────────────────────────────────
-  const [registerStatusFilter, setRegisterStatusFilter] = useState('')
+  const [registerStatusFilter, setRegisterStatusFilter] = useState(() => searchParams.get('status') || '')
   const [registerStudentStatusFilter, setRegisterStudentStatusFilter] = useState('')
-  const [registerSearchText, setRegisterSearchText] = useState('')
+  const [registerSearchText, setRegisterSearchText] = useState(() => searchParams.get('search') || '')
   const [selectedInstallments, setSelectedInstallments] = useState<FeeRegisterInstallment[] | null>(null)
   const [selectedStudentName, setSelectedStudentName] = useState<string>('')
+
+  useEffect(() => {
+    const urlSearch = searchParams.get('search')
+    const urlStatus = searchParams.get('status')
+    if (urlSearch !== null) setRegisterSearchText(urlSearch)
+    if (urlStatus !== null) setRegisterStatusFilter(urlStatus)
+  }, [searchParams])
 
   const { data: registerEntries = [], isLoading: loadingRegister } = useQuery({
     queryKey: ['fee-register', appliedFilters, registerStatusFilter, registerStudentStatusFilter, registerSearchText],
@@ -1288,6 +1295,7 @@ function FeesContent() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
   const [invoiceStudentId, setInvoiceStudentId] = useState<number | null>(null)
   const [invoiceStudentName, setInvoiceStudentName] = useState('')
+  const [invoiceAcademicYearId, setInvoiceAcademicYearId] = useState<number | null>(null)
   const [invoiceAssignmentId, setInvoiceAssignmentId] = useState<number | null>(null)
   const [invoiceScheduleAssignmentId, setInvoiceScheduleAssignmentId] = useState<number | null>(null)
   const [invoiceIssueDate, setInvoiceIssueDate] = useState(localDateValue(new Date()))
@@ -1297,12 +1305,12 @@ function FeesContent() {
     isLoading: loadingInvoiceAssignments,
     isError: invoiceAssignmentsFailed,
   } = useQuery({
-    queryKey: ['invoice-assignments', invoiceStudentId, appliedFilters.academicYearId],
+    queryKey: ['invoice-assignments', invoiceStudentId, invoiceAcademicYearId ?? appliedFilters.academicYearId],
     queryFn: () =>
       feeAssignmentsApi
         .list({
           student_id: invoiceStudentId ?? undefined,
-          academic_year_id: appliedFilters.academicYearId ?? undefined,
+          academic_year_id: (invoiceAcademicYearId ?? appliedFilters.academicYearId) ?? undefined,
         })
         .then((response) => response.data),
     enabled: isInvoiceModalOpen && invoiceStudentId !== null,
@@ -1382,6 +1390,7 @@ function FeesContent() {
       toast.success(`Invoice ${response.data.invoice_number} issued successfully`)
       setIsInvoiceModalOpen(false)
       setInvoiceStudentId(null)
+      setInvoiceAcademicYearId(null)
       setInvoiceAssignmentId(null)
       setInvoiceScheduleAssignmentId(null)
       setInvoiceSchedule([])
@@ -1402,13 +1411,14 @@ function FeesContent() {
     },
   })
 
-  const openInvoiceModal = (studentId: number, studentName: string) => {
+  const openInvoiceModal = (studentId: number, studentName: string, academicYearId?: number | null) => {
     if (!isEditMode) {
       toast.error('Activate Edit Mode to issue a fee invoice.')
       return
     }
     setInvoiceStudentId(studentId)
     setInvoiceStudentName(studentName)
+    setInvoiceAcademicYearId(academicYearId ?? null)
     setInvoiceAssignmentId(null)
     setInvoiceScheduleAssignmentId(null)
     setInvoiceIssueDate(localDateValue(new Date()))
@@ -1568,7 +1578,7 @@ function FeesContent() {
             <button
               type="button"
               disabled={!isEditMode}
-              onClick={() => openInvoiceModal(row.student_id, row.student_name)}
+              onClick={() => openInvoiceModal(row.student_id, row.student_name, row.academic_year_id)}
               title={isEditMode ? 'Issue invoice for this student' : 'Activate Edit Mode to issue an invoice'}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
                 isEditMode
@@ -4631,6 +4641,7 @@ function FeesContent() {
                 className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
               >
                 <option value="">All Invoices</option>
+                <option value="unbilled">Unbilled (Pending Invoice)</option>
                 <option value="paid">Paid in Full</option>
                 <option value="partial">Partial Due</option>
                 <option value="unpaid">Unpaid / Overdue</option>

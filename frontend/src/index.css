@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-23
+ * @updated     2026-11-28
  *
  * @description Global application stylesheet defining Tailwind directives, typography, and print vouchers.
  */
@@ -246,7 +246,7 @@
   background-color: var(--app-page) !important;
 }
 
-:root.dark .bg-white:not(.brand-logo-plate):not(#receipt-print-area *):not(#student-id-card-printable *) {
+:root.dark .bg-white:not(.brand-logo-plate):not(#receipt-print-area):not(#receipt-print-area *):not(#fee-invoice-print-area):not(#fee-invoice-print-area *):not(#student-id-card-printable):not(#student-id-card-printable *):not(#license-certificate-print-content):not(#license-certificate-print-content *):not(#report-book-print-area):not(#report-book-print-area *) {
   background-color: var(--app-surface) !important;
 }
 

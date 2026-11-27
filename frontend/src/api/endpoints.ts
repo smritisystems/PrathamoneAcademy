@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-27
+ * @updated     2026-11-28
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -3888,20 +3888,41 @@ export const financeApi = {
       is_recurring?: boolean
       recurring_frequency?: string
       notes?: string
+      budget_override_reason?: string
     },
     institution_id = 1,
   ) =>
-    apiClient.post<{ message: string; id: number; expense_number: string }>('/finance/expenses', payload, {
+    apiClient.post<{
+      message: string
+      id: number
+      expense_number: string
+      budget_alert?: {
+        has_budget: boolean
+        alert_level: string
+        enforcement_mode?: string
+        message?: string | null
+        utilization_pct?: number
+      }
+    }>('/finance/expenses', payload, {
       params: { institution_id },
     }),
 
-  updateExpense: (id: number, payload: Partial<ExpenseItem>) =>
-    apiClient.put<{ message: string; id: number }>(`/finance/expenses/${id}`, payload),
+  updateExpense: (id: number, payload: Partial<ExpenseItem> & { budget_override_reason?: string }) =>
+    apiClient.put<{
+      message: string
+      id: number
+      budget_alert?: { has_budget: boolean; alert_level: string; message?: string | null }
+    }>(`/finance/expenses/${id}`, payload),
 
   deleteExpense: (id: number) => apiClient.delete<{ message: string }>(`/finance/expenses/${id}`),
 
-  approveExpense: (id: number) =>
-    apiClient.post<{ message: string; id: number; status: string }>(`/finance/expenses/${id}/approve`),
+  approveExpense: (id: number, budget_override_reason?: string) =>
+    apiClient.post<{
+      message: string
+      id: number
+      status: string
+      budget_alert?: { has_budget: boolean; alert_level: string; message?: string | null }
+    }>(`/finance/expenses/${id}/approve`, budget_override_reason ? { budget_override_reason } : undefined),
 
   payExpense: (id: number) =>
     apiClient.post<{ message: string; id: number; status: string }>(`/finance/expenses/${id}/pay`),

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-27
+ * @updated     2026-11-28
  *
  * @description Vitest test suite verifying sidebar collapse/expand states, keyboard shortcuts, and active links.
  */
@@ -499,6 +499,32 @@ describe('Layout Integration & Mobile Drawer', () => {
       expect(mod?.defaultPath).toBeTruthy()
       expect(mod?.icon).toBeDefined()
     }
+  })
+
+  it('switches Sidebar platform logo between navy-ink in Light Mode and white-ink in Dark Mode', async () => {
+    const { useAppearanceStore } = await import('../store/appearanceStore')
+    const { BRANDING_CONFIG } = await import('../config/branding')
+
+    act(() => {
+      useAppearanceStore.setState({ preference: 'light' })
+      useSidebarStore.setState({ desktopState: 'expanded' })
+    })
+    const { unmount } = renderWithProviders(<Sidebar />)
+    const lightLogo = screen.getByRole('img', { name: 'PrathamOne EduOS' })
+    expect(lightLogo.getAttribute('src')).toBe(BRANDING_CONFIG.assets.softwareLogoSvgUrl)
+    unmount()
+
+    act(() => {
+      useAppearanceStore.setState({ preference: 'dark' })
+      useSidebarStore.setState({ desktopState: 'expanded' })
+    })
+    renderWithProviders(<Sidebar />)
+    const darkLogo = screen.getByRole('img', { name: 'PrathamOne EduOS' })
+    expect(darkLogo.getAttribute('src')).toBe(BRANDING_CONFIG.assets.horizontalLogoDarkUrl)
+
+    act(() => {
+      useAppearanceStore.setState({ preference: 'light' })
+    })
   })
 })
 

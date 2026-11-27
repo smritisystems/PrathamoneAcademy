@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-27
-#  * @updated     2026-11-27
+#  * @updated     2026-11-28
 #  *
 #  * @description Domain service for Institutional Budgeting, Live Budget-vs-Actuals Variance, Expense Guardrails, and Deterministic 3-Driver Cashflow Forecasting (Rule 006).
 #  */
@@ -23,7 +23,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy import and_, desc, func, select
+from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.academic_year import AcademicYear
@@ -40,11 +40,12 @@ from app.models.fee import (
     FeeCategory,
     FeeInvoice,
     FeeInvoiceInstallment,
+    FeeInvoiceItem,
     FeeStructure,
     StudentFeeAssignment,
 )
 from app.models.finance import DailyCashRegister, Expense, ExpenseCategory
-from app.models.payment import FinancialPeriod, Payment, Refund
+from app.models.payment import FinancialPeriod, Payment, PaymentAllocation, Refund, RefundAllocation
 from app.models.portal import TimetableEntry
 from app.models.staff import StaffProfile
 from app.models.standard import Standard
@@ -635,18 +636,16 @@ class BudgetForecastService:
             )
         )).all()
 
-        # B. Payments net of Refunds (joined via Student to isolate institution & data_environment cleanly)
-        pay_rows = (await db.execute(
-            select(Payment.payment_date, Payment.amount, FeeStructure.category_id)
-            .join(Student, Payment.student_id == Student.id)
-            .outerjoin(
-                StudentFeeAssignment,
-                and_(
-                    StudentFeeAssignment.student_id == Payment.student_id,
-                    StudentFeeAssignment.academic_year_id == Payment.academic_year_id,
-                ),
+        # B. Payments net of Refunds (attribute proportionally via PaymentAllocation -> FeeInvoice -> FeeInvoiceItem -> FeeStructure, falling back to StudentFeeAssignment)
+        base_pays = (await db.execute(
+            select(
+                Payment.id,
+                Payment.student_id,
+                Payment.academic_year_id,
+                Payment.payment_date,
+                Payment.amount,
             )
-            .outerjoin(FeeStructure, StudentFeeAssignment.fee_structure_id == FeeStructure.id)
+            .join(Student, Payment.student_id == Student.id)
             .where(
                 and_(
                     Student.institution_id == institution_id,
@@ -658,8 +657,103 @@ class BudgetForecastService:
             )
         )).all()
 
-        refund_rows = (await db.execute(
-            select(Refund.refund_date, Refund.amount)
+        pay_ids = [r[0] for r in base_pays]
+        alloc_by_pay: Dict[int, List[Tuple[int, Decimal]]] = {}
+        inv_ids: set[int] = set()
+        if pay_ids:
+            alloc_rows = (await db.execute(
+                select(
+                    PaymentAllocation.payment_id,
+                    PaymentAllocation.invoice_id,
+                    PaymentAllocation.allocated_amount,
+                ).where(PaymentAllocation.payment_id.in_(pay_ids))
+            )).all()
+            for pid_val, iid_val, a_amt in alloc_rows:
+                alloc_by_pay.setdefault(pid_val, []).append((iid_val, _q2(a_amt)))
+                inv_ids.add(iid_val)
+
+        inv_item_weights: Dict[int, List[Tuple[Optional[int], Decimal]]] = {}
+        if inv_ids:
+            item_rows = (await db.execute(
+                select(
+                    FeeInvoiceItem.invoice_id,
+                    FeeStructure.category_id,
+                    FeeInvoiceItem.net_amount,
+                )
+                .join(FeeStructure, FeeInvoiceItem.fee_structure_id == FeeStructure.id)
+                .where(FeeInvoiceItem.invoice_id.in_(list(inv_ids)))
+            )).all()
+            grouped_items: Dict[int, Dict[Optional[int], Decimal]] = {}
+            for iid_val, cat_id_val, net_amt in item_rows:
+                bucket = grouped_items.setdefault(iid_val, {})
+                bucket[cat_id_val] = bucket.get(cat_id_val, Decimal("0.00")) + _q2(net_amt)
+            for iid_val, cat_map in grouped_items.items():
+                total_net = sum(cat_map.values(), Decimal("0.00"))
+                if total_net > Decimal("0.00"):
+                    inv_item_weights[iid_val] = [
+                        (cid_v, amt_v / total_net) for cid_v, amt_v in cat_map.items()
+                    ]
+                elif cat_map:
+                    first_cid = next(iter(cat_map.keys()))
+                    inv_item_weights[iid_val] = [(first_cid, Decimal("1.0"))]
+
+        # Assignment fallback for payments lacking invoice allocations
+        assign_cat_map: Dict[Tuple[int, int], Optional[int]] = {}
+        unallocated_pairs = {
+            (sid_v, ay_v)
+            for pid_v, sid_v, ay_v, _, _ in base_pays
+            if pid_v not in alloc_by_pay
+        }
+        if unallocated_pairs:
+            assign_rows = (await db.execute(
+                select(
+                    StudentFeeAssignment.student_id,
+                    StudentFeeAssignment.academic_year_id,
+                    FeeStructure.category_id,
+                )
+                .join(FeeStructure, StudentFeeAssignment.fee_structure_id == FeeStructure.id)
+                .where(
+                    StudentFeeAssignment.student_id.in_([s for s, _ in unallocated_pairs])
+                )
+            )).all()
+            for sid_v, ay_v, cat_id_v in assign_rows:
+                assign_cat_map[(sid_v, ay_v)] = cat_id_v
+
+        pay_rows: List[Tuple[date, Decimal, Optional[int]]] = []
+        pay_primary_cat: Dict[int, Optional[int]] = {}
+        for pid_v, sid_v, ay_v, pdate, pamt in base_pays:
+            amt_dec = _q2(pamt)
+            allocs = alloc_by_pay.get(pid_v)
+            if allocs:
+                remaining = amt_dec
+                for iid_val, a_amt in allocs:
+                    weights = inv_item_weights.get(iid_val)
+                    if weights:
+                        for cat_id_v, ratio in weights:
+                            part = _q2(a_amt * ratio)
+                            pay_rows.append((pdate, part, cat_id_v))
+                            pay_primary_cat.setdefault(pid_v, cat_id_v)
+                            remaining -= part
+                    else:
+                        fallback_cat = assign_cat_map.get((sid_v, ay_v))
+                        pay_rows.append((pdate, a_amt, fallback_cat))
+                        pay_primary_cat.setdefault(pid_v, fallback_cat)
+                        remaining -= a_amt
+                if remaining > Decimal("0.01"):
+                    pay_rows.append((pdate, _q2(remaining), pay_primary_cat.get(pid_v)))
+            else:
+                fallback_cat = assign_cat_map.get((sid_v, ay_v))
+                pay_rows.append((pdate, amt_dec, fallback_cat))
+                pay_primary_cat[pid_v] = fallback_cat
+
+        raw_refunds = (await db.execute(
+            select(
+                Refund.id,
+                Refund.refund_date,
+                Refund.amount,
+                Refund.invoice_id,
+                Refund.payment_id,
+            )
             .join(Student, Refund.student_id == Student.id)
             .where(
                 and_(
@@ -671,6 +765,25 @@ class BudgetForecastService:
                 )
             )
         )).all()
+
+        ref_inv_ids = {r[3] for r in raw_refunds if r[3] is not None and r[3] not in inv_item_weights}
+        if ref_inv_ids:
+            extra_item_rows = (await db.execute(
+                select(FeeInvoiceItem.invoice_id, FeeStructure.category_id)
+                .join(FeeStructure, FeeInvoiceItem.fee_structure_id == FeeStructure.id)
+                .where(FeeInvoiceItem.invoice_id.in_(list(ref_inv_ids)))
+            )).all()
+            for iid_val, cid_val in extra_item_rows:
+                inv_item_weights.setdefault(iid_val, [(cid_val, Decimal("1.0"))])
+
+        refund_rows: List[Tuple[int, date, Decimal, Optional[int]]] = []
+        for rid, rdate, ramt, r_inv_id, r_pay_id in raw_refunds:
+            r_cat: Optional[int] = None
+            if r_inv_id and r_inv_id in inv_item_weights and inv_item_weights[r_inv_id]:
+                r_cat = inv_item_weights[r_inv_id][0][0]
+            elif r_pay_id and r_pay_id in pay_primary_cat:
+                r_cat = pay_primary_cat[r_pay_id]
+            refund_rows.append((rid, rdate, _q2(ramt), r_cat))
 
         # C. Faculty Payroll (authoritative TeacherPayroll; excludes cancelled/rejected)
         tp_rows = (await db.execute(
@@ -699,6 +812,8 @@ class BudgetForecastService:
             )
         )).all()
 
+        deducted_refund_ids: set[int] = set()
+
         def _sum_line_actuals(ln: BudgetLineItem) -> Tuple[Decimal, Decimal]:
             actual = Decimal("0.00")
             pending = Decimal("0.00")
@@ -713,17 +828,19 @@ class BudgetForecastService:
                             actual += amt
             elif ln.source_domain == "faculty_payroll":
                 for yr, mo, net_amt in tp_rows:
-                    m_start = date(yr, mo, 1)
-                    if p0 <= m_start <= p1:
+                    m_start, m_end = _month_bounds(yr, mo)
+                    if m_start <= p1 and m_end >= p0:
                         actual += net_amt or Decimal("0.00")
             elif ln.source_domain == "fee_category":
                 for pdate, amt, fcat_id in pay_rows:
                     if p0 <= pdate <= p1 and (ln.fee_category_id is None or fcat_id == ln.fee_category_id):
                         actual += amt or Decimal("0.00")
-                if ln.fee_category_id is None:
-                    for rdate, ramt in refund_rows:
-                        if p0 <= rdate <= p1:
-                            actual -= ramt or Decimal("0.00")
+                for rid, rdate, ramt, rcat_id in refund_rows:
+                    if not (p0 <= rdate <= p1) or rid in deducted_refund_ids:
+                        continue
+                    if ln.fee_category_id is None or rcat_id == ln.fee_category_id or rcat_id is None:
+                        actual -= ramt or Decimal("0.00")
+                        deducted_refund_ids.add(rid)
             elif ln.source_domain == "concession":
                 for idate, damt in conc_rows:
                     if p0 <= idate <= p1:
@@ -868,75 +985,97 @@ class BudgetForecastService:
         category_id: int,
         expense_date: date,
         new_amount: Decimal,
+        branch_id: Optional[int] = None,
         exclude_expense_id: Optional[int] = None,
     ) -> Dict[str, Any]:
-        """Evaluate an expense against active approved/locked budgets covering expense_date."""
+        """Evaluate an expense against all active approved/locked budgets covering expense_date (strictest policy wins)."""
+        conds = [
+            BudgetPlan.institution_id == institution_id,
+            BudgetPlan.status.in_(["approved", "locked"]),
+            BudgetLineItem.expense_category_id == category_id,
+            BudgetLineItem.period_start <= expense_date,
+            BudgetLineItem.period_end >= expense_date,
+            BudgetLineItem.planned_amount > 0,
+        ]
+        if branch_id is not None:
+            conds.append(or_(BudgetPlan.branch_id.is_(None), BudgetPlan.branch_id == branch_id))
+
         line_stmt = (
             select(BudgetLineItem, BudgetPlan)
             .join(BudgetPlan, BudgetLineItem.budget_plan_id == BudgetPlan.id)
-            .where(
-                and_(
-                    BudgetPlan.institution_id == institution_id,
-                    BudgetPlan.status.in_(["approved", "locked"]),
-                    BudgetLineItem.expense_category_id == category_id,
-                    BudgetLineItem.period_start <= expense_date,
-                    BudgetLineItem.period_end >= expense_date,
-                    BudgetLineItem.planned_amount > 0,
-                )
-            )
+            .where(and_(*conds))
             .order_by(desc(BudgetPlan.version_number), desc(BudgetPlan.id))
-            .limit(1)
         )
-        hit = (await db.execute(line_stmt)).first()
-        if not hit:
+        hits = (await db.execute(line_stmt)).all()
+        if not hits:
             return {"has_budget": False, "alert_level": "none"}
 
-        line, plan = hit
-        spent_stmt = select(func.coalesce(func.sum(Expense.amount), Decimal("0.00"))).where(
-            and_(
-                Expense.institution_id == institution_id,
-                Expense.category_id == category_id,
-                Expense.expense_date >= line.period_start,
-                Expense.expense_date <= line.period_end,
-                Expense.status.in_(["approved", "paid", "submitted"]),
-            )
-        )
-        if exclude_expense_id:
-            spent_stmt = spent_stmt.where(Expense.id != exclude_expense_id)
-        spent_before = _q2((await db.execute(spent_stmt)).scalar() or Decimal("0.00"))
-        projected = _q2(spent_before + _q2(new_amount))
-        planned = _q2(line.planned_amount)
-        util_pct = SafeMath.divide(float(projected), float(planned), multiplier=100.0, precision=1)
+        mode_rank = {"hard_limit": 3, "soft_warn": 2, "advisory": 1}
+        alert_rank = {"overrun": 3, "warning": 2, "ok": 1}
+        best_result: Optional[Dict[str, Any]] = None
+        best_score: Tuple[int, int, float] = (-1, -1, -1.0)
+        spent_cache: Dict[Tuple[date, date], Decimal] = {}
 
-        alert_level = "ok"
-        message = None
-        if projected > planned:
-            alert_level = "overrun"
-            message = (
-                f"{line.line_label} ({line.period_label}) projected spend "
-                f"{projected} exceeds budget cap {planned} ({util_pct}%)."
-            )
-        elif Decimal(str(util_pct)) >= (line.warning_threshold_pct or Decimal("85.00")):
-            alert_level = "warning"
-            message = (
-                f"{line.line_label} ({line.period_label}) reaches {util_pct}% "
-                f"of budget cap {planned}."
-            )
+        for line, plan in hits:
+            span = (line.period_start, line.period_end)
+            if span not in spent_cache:
+                spent_stmt = select(func.coalesce(func.sum(Expense.amount), Decimal("0.00"))).where(
+                    and_(
+                        Expense.institution_id == institution_id,
+                        Expense.category_id == category_id,
+                        Expense.expense_date >= line.period_start,
+                        Expense.expense_date <= line.period_end,
+                        Expense.status.in_(["approved", "paid", "submitted"]),
+                    )
+                )
+                if exclude_expense_id:
+                    spent_stmt = spent_stmt.where(Expense.id != exclude_expense_id)
+                spent_cache[span] = _q2((await db.execute(spent_stmt)).scalar() or Decimal("0.00"))
 
-        return {
-            "has_budget": True,
-            "plan_id": plan.id,
-            "plan_name": plan.name,
-            "enforcement_mode": plan.enforcement_mode,
-            "period_label": line.period_label,
-            "line_label": line.line_label,
-            "budgeted": float(planned),
-            "spent_before": float(spent_before),
-            "projected_total": float(projected),
-            "utilization_pct": util_pct,
-            "alert_level": alert_level,
-            "message": message,
-        }
+            spent_before = spent_cache[span]
+            projected = _q2(spent_before + _q2(new_amount))
+            planned = _q2(line.planned_amount)
+            util_pct = SafeMath.divide(float(projected), float(planned), multiplier=100.0, precision=1)
+
+            alert_level = "ok"
+            message = None
+            if projected > planned:
+                alert_level = "overrun"
+                message = (
+                    f"{line.line_label} ({line.period_label}) projected spend "
+                    f"{projected} exceeds budget cap {planned} ({util_pct}%)."
+                )
+            elif Decimal(str(util_pct)) >= (line.warning_threshold_pct or Decimal("85.00")):
+                alert_level = "warning"
+                message = (
+                    f"{line.line_label} ({line.period_label}) reaches {util_pct}% "
+                    f"of budget cap {planned}."
+                )
+
+            candidate = {
+                "has_budget": True,
+                "plan_id": plan.id,
+                "plan_name": plan.name,
+                "enforcement_mode": plan.enforcement_mode,
+                "period_label": line.period_label,
+                "line_label": line.line_label,
+                "budgeted": float(planned),
+                "spent_before": float(spent_before),
+                "projected_total": float(projected),
+                "utilization_pct": util_pct,
+                "alert_level": alert_level,
+                "message": message,
+            }
+            score = (
+                alert_rank.get(alert_level, 0),
+                mode_rank.get(plan.enforcement_mode, 0),
+                util_pct,
+            )
+            if score > best_score:
+                best_score = score
+                best_result = candidate
+
+        return best_result or {"has_budget": False, "alert_level": "none"}
 
     # --------------------------------------------------------------------------
     # 4. DETERMINISTIC 3-DRIVER CASHFLOW & MARGIN FORECAST ENGINE
@@ -1165,13 +1304,23 @@ class BudgetForecastService:
             Decimal(str(open_seats)),
         )
 
+        current_ay_id = (await db.execute(
+            select(AcademicYear.id)
+            .where(AcademicYear.institution_id == institution_id, AcademicYear.is_active == True)
+            .order_by(desc(AcademicYear.is_current), desc(AcademicYear.id))
+            .limit(1)
+        )).scalar_one_or_none()
+
         avg_fee = Decimal(str(assumptions["avg_annual_fee_per_student"]))
         if avg_fee <= Decimal("0.00"):
-            avg_fee_row = (await db.execute(
-                select(func.avg(FeeStructure.amount)).where(
-                    and_(FeeStructure.institution_id == institution_id, FeeStructure.is_active == True)
-                )
-            )).scalar()
+            fs_stmt = select(func.avg(FeeStructure.amount)).where(
+                and_(FeeStructure.institution_id == institution_id, FeeStructure.is_active == True)
+            )
+            avg_fee_row = None
+            if current_ay_id:
+                avg_fee_row = (await db.execute(fs_stmt.where(FeeStructure.academic_year_id == current_ay_id))).scalar()
+            if not avg_fee_row:
+                avg_fee_row = (await db.execute(fs_stmt)).scalar()
             avg_fee = _q2(avg_fee_row) if avg_fee_row else Decimal("0.00")
 
         total_pipeline_value = _q2(expected_admissions * avg_fee)
@@ -1217,7 +1366,7 @@ class BudgetForecastService:
         base_monthly_faculty = Decimal("0.00")
         for tid, prof in profile_by_teacher.items():
             method = (prof.payment_method or "hourly").lower()
-            if method in {"monthly_fixed", "mixed"}:
+            if method in {"monthly_fixed", "fixed_contract", "mixed"}:
                 base_monthly_faculty += prof.monthly_fixed_amount or Decimal("0.00")
             if method in {"hourly", "mixed"}:
                 hrs_month = weekly_hours_by_teacher.get(tid, Decimal("0.00")) * Decimal("4.33")
@@ -1268,7 +1417,7 @@ class BudgetForecastService:
             )).all()
         }
 
-        lookback_start = _add_months(anchor_start, -3)
+        lookback_start = today - timedelta(days=90)
         recent_expenses = (await db.execute(
             select(Expense.expense_date, Expense.category_id, Expense.amount, Expense.is_recurring, Expense.recurring_frequency)
             .where(
@@ -1279,12 +1428,11 @@ class BudgetForecastService:
                     Expense.status.in_(["approved", "paid", "submitted"]),
                 )
             )
+            .order_by(Expense.expense_date.asc(), Expense.id.asc())
         )).all()
 
-        # Deduplicate recurring titles/categories by latest recurring entry & variable average over 3 months
-        monthly_recurring_opex = Decimal("0.00")
-        quarterly_recurring_opex = Decimal("0.00")
-        yearly_recurring_opex = Decimal("0.00")
+        # Deduplicate recurring streams by (category_id, frequency) using latest entry; normalize 90-day variable spend / 3.0
+        latest_recurring: Dict[Tuple[int, str], Decimal] = {}
         var_total = Decimal("0.00")
         sal_expense_sum = Decimal("0.00")
 
@@ -1294,21 +1442,28 @@ class BudgetForecastService:
                 continue
             if is_rec:
                 f = (freq or "monthly").lower()
-                if f == "quarterly":
-                    quarterly_recurring_opex += amt
-                elif f == "yearly":
-                    yearly_recurring_opex += amt
-                else:
-                    monthly_recurring_opex += amt
+                latest_recurring[(cat_id, f)] = _q2(amt)
             else:
                 var_total += amt
 
-        if staff_sal_sum == Decimal("0.00") and sal_expense_sum > Decimal("0.00"):
-            staff_sal_sum = _q2(sal_expense_sum / Decimal("3"))
+        monthly_recurring_opex = sum(
+            (amt for (_, f), amt in latest_recurring.items() if f not in {"quarterly", "yearly"}),
+            Decimal("0.00"),
+        )
+        quarterly_recurring_opex = sum(
+            (amt for (_, f), amt in latest_recurring.items() if f == "quarterly"),
+            Decimal("0.00"),
+        )
+        yearly_recurring_opex = sum(
+            (amt for (_, f), amt in latest_recurring.items() if f == "yearly"),
+            Decimal("0.00"),
+        )
 
-        # Normalize recurring monthly to most recent month if multiple past recurrences exist (divide by 3 if >1 month)
-        monthly_recurring_opex = _q2(monthly_recurring_opex / Decimal("3")) if monthly_recurring_opex > 0 else Decimal("0.00")
-        base_variable_opex = _q2(var_total / Decimal("3")) if var_total > 0 else Decimal("0.00")
+        if staff_sal_sum == Decimal("0.00") and sal_expense_sum > Decimal("0.00"):
+            staff_sal_sum = _q2(sal_expense_sum / Decimal("3.0"))
+
+        monthly_recurring_opex = _q2(monthly_recurring_opex)
+        base_variable_opex = _q2(var_total / Decimal("3.0")) if var_total > 0 else Decimal("0.00")
         inflation_factor = Decimal("1.00") + (Decimal(str(assumptions["expense_inflation_pct"])) / Decimal("100"))
 
         refund_rate = Decimal(str(assumptions["expected_refund_rate_pct"])) / Decimal("100")
@@ -1321,7 +1476,8 @@ class BudgetForecastService:
         total_inflows = Decimal("0.00")
         total_outflows = Decimal("0.00")
         trough_period: Optional[Dict[str, Any]] = None
-        burn_months_net: List[Decimal] = []
+        low_liquidity = running_liquidity
+        high_liquidity = running_liquidity
 
         for idx in range(months):
             p_start = _add_months(anchor_start, idx)
@@ -1350,21 +1506,22 @@ class BudgetForecastService:
             if (idx % 12) == 0 and yearly_recurring_opex > 0:
                 rec_opex += _q2(yearly_recurring_opex)
             rec_opex = _q2(rec_opex)
-            var_opex = _q2((base_variable_opex * inflation_factor) + extra_opex)
+            compounded_inf = inflation_factor ** (idx + 1) if inflation_factor != Decimal("1.00") else Decimal("1.00")
+            var_opex = _q2((base_variable_opex * compounded_inf) + extra_opex)
 
             net_in = gross_inflow - proj_concessions - proj_refunds
             net_out = proj_faculty + proj_staff + rec_opex + var_opex
             net_cf = _q2(net_in - net_out)
             running_liquidity = _q2(running_liquidity + net_cf)
 
-            # Confidence band: low = -12% inflow / +5% outflow; high = +8% inflow / -3% outflow
+            # Cumulative Confidence band: low = -12% inflow / +5% outflow; high = +8% inflow / -3% outflow
             low_cf = _q2((net_in * Decimal("0.88")) - (net_out * Decimal("1.05")))
             high_cf = _q2((net_in * Decimal("1.08")) - (net_out * Decimal("0.97")))
+            low_liquidity = _q2(low_liquidity + low_cf)
+            high_liquidity = _q2(high_liquidity + high_cf)
 
             total_inflows += net_in
             total_outflows += net_out
-            if net_cf < Decimal("0.00"):
-                burn_months_net.append(-net_cf)
 
             row_dict = {
                 "period_start": p_start.isoformat(),
@@ -1382,8 +1539,8 @@ class BudgetForecastService:
                 "projected_total_outflows": float(_q2(net_out)),
                 "projected_net_cashflow": float(net_cf),
                 "projected_ending_liquidity": float(running_liquidity),
-                "confidence_low": float(_q2(running_liquidity - (net_cf - low_cf))),
-                "confidence_high": float(_q2(running_liquidity + (high_cf - net_cf))),
+                "confidence_low": float(low_liquidity),
+                "confidence_high": float(high_liquidity),
             }
             projections.append(row_dict)
 
@@ -1421,17 +1578,19 @@ class BudgetForecastService:
         if persist_snapshot and scenario is not None:
             await db.commit()
 
-        avg_burn = (
-            sum(burn_months_net, Decimal("0.00")) / Decimal(str(len(burn_months_net)))
-            if burn_months_net
-            else Decimal("0.00")
-        )
-        if avg_burn > Decimal("0.00") and starting_liquidity > Decimal("0.00"):
-            runway_months: Optional[float] = round(float(starting_liquidity / avg_burn), 1)
-        elif starting_liquidity <= Decimal("0.00") and total_inflows < total_outflows:
+        runway_months: Optional[float] = None
+        if starting_liquidity <= Decimal("0.00") and projections and projections[0]["projected_ending_liquidity"] <= 0:
             runway_months = 0.0
         else:
-            runway_months = None  # Self-sustaining cash generation
+            prev_liq = float(starting_liquidity)
+            for idx, p_row in enumerate(projections):
+                cur_liq = float(p_row["projected_ending_liquidity"])
+                if cur_liq <= 0:
+                    denom = prev_liq - cur_liq
+                    frac = (prev_liq / denom) if denom > 0 and prev_liq > 0 else 0.0
+                    runway_months = round(idx + frac, 1)
+                    break
+                prev_liq = cur_liq
 
         return {
             "scenario": {

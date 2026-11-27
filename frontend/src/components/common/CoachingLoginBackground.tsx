@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-23
- * @updated     2026-11-27
+ * @updated     2026-11-28
  *
  * @description Interactive academic parallax background for the coaching institute authentication portal. Features translucent sheen-swept PrathamOne emblem, cursor-tracking spotlight gradient, dynamic SVG institute typography crown, twinkling stardust, mathematical formulas, scientific vector icons, pan-India state markers, and regional Indian scripts cleanly framed inside panel safe-zones.
  */
@@ -250,16 +250,21 @@ const BASE_ITEMS: Omit<AmbientItem, 'a'>[] = [
   { id: 'i6', x: 72.8, y: 70.3, k: 0.8, dur: 28, o: 0.18, icon: 'books' },
   { id: 'i7', x: 94, y: 70, k: 1, dur: 31, o: 0.18, icon: 'nib' },
   { id: 'i8', x: 57.5, y: 9.2, k: 0.7, dur: 37, o: 0.17, icon: 'music' },
-  { id: 'b1', x: 70.8, y: 89.5, k: 0.7, dur: 30, o: 0.18, board: 'CBSE' },
-  { id: 'b2', x: 33.6, y: 7.4, k: 0.6, dur: 25, o: 0.16, board: 'ICSE' },
-  { id: 'b5', x: 91, y: 59, k: 0.7, dur: 27, o: 0.17, board: 'UPMSP' },
-  { id: 'b7', x: 36, y: 90, k: 0.6, dur: 29, o: 0.16, board: 'WBBSE' },
-  { id: 'b8', x: 22.7, y: 59.7, k: 0.8, dur: 32, o: 0.17, board: 'STATE BOARDS' },
+  { id: 'b0', x: 16.5, y: 18.5, k: 0.75, dur: 29, o: 0.24, pulse: 1, board: 'MSBSHSE · SSC & HSC' },
+  { id: 'b1', x: 69.5, y: 69.0, k: 0.7, dur: 30, o: 0.21, board: 'CBSE' },
+  { id: 'b2', x: 35.5, y: 12.8, k: 0.65, dur: 25, o: 0.2, board: 'ICSE · ISC' },
+  { id: 'b3', x: 75.5, y: 13.5, k: 0.7, dur: 31, o: 0.19, board: 'IB · IGCSE' },
+  { id: 'b4', x: 10.5, y: 45.5, k: 0.7, dur: 28, o: 0.19, board: 'NIOS' },
+  { id: 'b5', x: 79.5, y: 48.5, k: 0.7, dur: 27, o: 0.19, board: 'UPMSP' },
+  { id: 'b6', x: 77.5, y: 31.5, k: 0.65, dur: 32, o: 0.19, board: 'GSEB · RBSE' },
+  { id: 'b7', x: 38.5, y: 71.2, k: 0.65, dur: 29, o: 0.19, board: 'WBBSE · BSEB' },
+  { id: 'b9', x: 56.5, y: 71.0, k: 0.65, dur: 34, o: 0.19, board: 'KSEEB · TNSB' },
+  { id: 'b8', x: 18.5, y: 60.5, k: 0.8, dur: 32, o: 0.21, board: 'STATE BOARDS' },
   { id: 's1', x: 73.8, y: 55.2, k: 0.7, dur: 28, o: 0.15, subject: 'PHYSICS' },
-  { id: 's2', x: 68, y: 15, k: 0.7, dur: 33, o: 0.15, subject: 'CHEMISTRY' },
-  { id: 's3', x: 90, y: 38, k: 0.7, dur: 26, o: 0.15, subject: 'MATHS' },
+  { id: 's2', x: 64.0, y: 15.0, k: 0.7, dur: 33, o: 0.15, subject: 'CHEMISTRY' },
+  { id: 's3', x: 80.5, y: 39.0, k: 0.7, dur: 26, o: 0.15, subject: 'MATHS' },
   { id: 't2', x: 50.5, y: 92.9, k: 0.6, dur: 29, o: 0.15, icon: 'trophy', small: 1 },
-  { id: 'n1', x: 23.8, y: 9.9, k: 0.7, dur: 33, o: 0.17, pulse: 1, board: 'NEP 2020' },
+  { id: 'n1', x: 24.5, y: 11.2, k: 0.7, dur: 33, o: 0.2, pulse: 1, board: 'NEP 2020' },
   { id: 't4', x: 81.3, y: 23.8, k: 0.6, dur: 27, o: 0.15, subject: 'PRINCIPAL' },
   { id: 't5', x: 81.3, y: 61.8, k: 0.7, dur: 36, o: 0.15, subject: 'TEACHERS' },
   { id: 't6', x: 13.5, y: 70.9, k: 0.6, dur: 30, o: 0.15, subject: 'ANNUAL DAY' },
@@ -328,25 +333,33 @@ function buildAmbientItems(isPanel: boolean, priorityState?: string): AmbientIte
             : { w: 6, h: 7 }
 
   const boxes = items.map((it) => ({ x: it.x, y: it.y, ...box(it) }))
-  boxes.push({ x: 50, y: 50, w: 56, h: 58 })
+  boxes.push({ x: 46, y: 44, w: 42, h: 36 })
 
-  const heroState = (priorityState || 'UTTAR PRADESH').trim().toUpperCase()
+  const heroState = (priorityState || 'MAHARASHTRA').trim().toUpperCase()
   const sortedStates = [...STATES].sort(
     (p, q) => Number(q === heroState) - Number(p === heroState) || q.length - p.length,
   )
 
+  const xMin = isPanel ? 5 : 4
+  const xMax = isPanel ? 82 : 96
+  const yMin = isPanel ? 10 : 5
+  const yMax = isPanel ? 73 : 95
+
   sortedStates.forEach((name, idx) => {
     const isHero = name === heroState
     const r = rnd()
-    let sz = isHero ? 1.45 : (r < 0.08 ? 1.35 : r < 0.4 ? 1 : 0.7) * (0.9 + rnd() * 0.2)
-    for (let tries = 0; tries < 2000; tries++) {
-      if (tries && tries % 300 === 0) sz *= 0.88
-      const w = name.length * 0.96 * sz * 1.2
-      const h = 2.1 * sz + 2
-      const x = 4 + w / 2 + rnd() * (92 - w)
-      const y = 5 + h / 2 + rnd() * (90 - h)
-      if (x - w / 2 < 1 || x + w / 2 > 99) continue
-      if (boxes.some((b) => Math.abs(b.x - x) < (b.w + w) / 2 + 1.6 && Math.abs(b.y - y) < (b.h + h) / 2 + 1.6)) {
+    let sz = isHero ? 1.32 : (r < 0.15 ? 1.05 : r < 0.5 ? 0.85 : 0.72) * (0.9 + rnd() * 0.16)
+    let placed = false
+    for (let tries = 0; tries < 2400; tries++) {
+      if (tries && tries % 250 === 0) sz *= 0.9
+      const w = name.length * 0.82 * sz
+      const h = 1.9 * sz + 1.2
+      const spanX = Math.max(4, xMax - xMin - w)
+      const spanY = Math.max(4, yMax - yMin - h)
+      const x = xMin + w / 2 + rnd() * spanX
+      const y = yMin + h / 2 + rnd() * spanY
+      if (x - w / 2 < 2 || x + w / 2 > (isPanel ? 85 : 98)) continue
+      if (boxes.some((b) => Math.abs(b.x - x) < (b.w + w) / 2 + 0.9 && Math.abs(b.y - y) < (b.h + h) / 2 + 0.9)) {
         continue
       }
       boxes.push({ x, y, w, h })
@@ -356,20 +369,39 @@ function buildAmbientItems(isPanel: boolean, priorityState?: string): AmbientIte
         y: +y.toFixed(1),
         k: [0.5, 0.7, 0.9][idx % 3],
         dur: 24 + Math.floor(rnd() * 16),
-        o: isHero ? 0.2 : 0.15 + rnd() * 0.04,
+        o: isHero ? 0.25 : 0.15 + rnd() * 0.05,
         pulse: isHero ? 1 : 0,
         board: name,
         state: 1,
         cyc: isHero ? 0 : 1,
         cd: idx,
         sz: +sz.toFixed(2),
-        hm: sz < 0.95 || idx % 2,
+        hm: isHero ? false : sz < 0.78 && idx % 3 === 0,
       })
+      placed = true
       break
+    }
+    if (!placed && isHero) {
+      // Guarantee active institute state (default: MAHARASHTRA) never fails placement
+      items.push({
+        id: `st-hero`,
+        x: 15.5,
+        y: 28.0,
+        k: 0.7,
+        dur: 28,
+        o: 0.26,
+        pulse: 1,
+        board: name,
+        state: 1,
+        cyc: 0,
+        cd: 0,
+        sz: 1.25,
+        hm: false,
+      })
     }
   })
 
-  const filtered = isPanel ? items.filter((it) => it.y >= 14 && it.y <= 72 && it.x <= 83) : items
+  const filtered = isPanel ? items.filter((it) => it.y >= 9 && it.y <= 74 && it.x <= 86) : items
   const opacities = [0.55, 1.35, 0.85, 1.7, 0.65, 1.05]
   const angles = [-24, -16, -8, 4, -20, 12, -12, -4]
   return filtered.map((it, i) => ({
@@ -786,8 +818,8 @@ const CSS = `
 .clb-logo{width:var(--lw,min(58vw,820px));height:auto;display:block;color:#e2e8f0;opacity:var(--lo,.28)}
 .clb-logo-float{position:relative;animation:clb-breathe 38s ease-in-out infinite}
 .clb-bolt{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.clb-cycle{opacity:0;animation:clb-cyc 30s linear infinite}
-@keyframes clb-cyc{0%{opacity:0}8%{opacity:1}45%{opacity:1}55%{opacity:0}100%{opacity:0}}
+.clb-cycle{opacity:0;animation:clb-cyc 28s linear infinite}
+@keyframes clb-cyc{0%{opacity:.12}10%{opacity:1}72%{opacity:1}85%{opacity:.12}100%{opacity:.12}}
 .clb-spot{opacity:0;transition:opacity .7s ease}
 .clb-float{animation:clb-drift 30s ease-in-out infinite}
 .clb-body{opacity:min(.48,calc(var(--o)*var(--i,1.5)))}

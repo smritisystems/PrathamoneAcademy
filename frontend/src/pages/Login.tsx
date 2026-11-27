@@ -11,7 +11,7 @@
  *
  * @version     1.7.0
  * @created     2026-11-03
- * @updated     2026-11-27
+ * @updated     2026-11-28
  *
  * @description Premium enterprise authentication portal featuring organic curved wave architecture, original PrathamOne navy/saffron theme colors, single unified Zero-Tab authentication, server-enforced role routing, and comprehensive academic curriculum spectrum overlays.
  */
@@ -51,7 +51,7 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import Modal from '../components/Modal'
-import { NepRoadmapModal, CoachingLoginBackground, CampusNoticeboardDrawer } from '../components/common'
+import { NepRoadmapModal, CoachingLoginBackground, CampusNoticeboardDrawer, SoftwareBrandLogo } from '../components/common'
 import { authApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useBranding } from '../config/branding'
@@ -520,11 +520,11 @@ export default function LoginPage() {
           </button>
 
           <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
-            <img
-              src={branding.assets.softwareIconSvgUrl}
+            <SoftwareBrandLogo
+              variant="icon"
               alt=""
-              aria-hidden="true"
-              className="w-3.5 h-3.5 object-contain opacity-75"
+              ariaHidden
+              className="w-3.5 h-3.5 object-contain opacity-85"
             />
             <span>PrathamOne EduOS</span>
           </div>
@@ -738,8 +738,8 @@ export default function LoginPage() {
             <span className="text-[9.5px] sm:uppercase sm:tracking-wider text-slate-400 font-medium">
               Powered by
             </span>
-            <img
-              src={branding.assets.softwareLogoSvgUrl}
+            <SoftwareBrandLogo
+              variant="full"
               alt={branding.suiteName}
               className="h-7 w-auto object-contain"
             />

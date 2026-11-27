@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-26
+ * @updated     2026-11-28
  *
  * @description Central export index for shared common components including View-First Edit Mode governance tools.
  */
@@ -80,4 +80,7 @@ export { CampusNoticeboardDrawer } from './CampusNoticeboardDrawer'
 export type { CampusNotice, TimetableSlot } from './CampusNoticeboardDrawer'
 
 export { default as SafeToaster, sanitizeToastMessage } from './SafeToaster'
+
+export { default as SoftwareBrandLogo } from './SoftwareBrandLogo'
+export type { SoftwareBrandLogoProps } from './SoftwareBrandLogo'
 

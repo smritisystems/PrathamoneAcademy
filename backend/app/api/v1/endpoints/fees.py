@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-26
+#  * @updated     2026-11-28
 #  *
 #  * @description API endpoints for fee obligations, payment collections, receipts, trends, and ledger reconciliation.
 #  */
@@ -601,11 +601,12 @@ async def get_student_fee_details(
     )
     invoice = inv_res.scalar_one_or_none()
 
-    # Active fee structures scoped to the student's institution
+    # Active fee structures scoped to the student's institution and resolved academic year
     structures_res = await db.execute(
         select(FeeStructure).where(
             FeeStructure.is_active == True,
             FeeStructure.institution_id == student.institution_id,
+            FeeStructure.academic_year_id == ay_id,
         )
     )
     structures = structures_res.scalars().all()
@@ -731,17 +732,28 @@ async def adjust_student_fees(
                 select(FeeStructure).where(
                     FeeStructure.is_active == True,
                     FeeStructure.institution_id == student.institution_id,
+                    FeeStructure.academic_year_id == ay_id,
                 )
             )
         ).scalars().first()
         if not default_fs:
-            raise HTTPException(status_code=400, detail="No active fee structure available to assign.")
+            raise HTTPException(status_code=400, detail="No active fee structure available to assign for this academic year.")
         target_structure_id = default_fs.id
 
     fs_res = await db.execute(select(FeeStructure).where(FeeStructure.id == target_structure_id))
     fs_obj = fs_res.scalar_one_or_none()
     if not fs_obj:
         raise HTTPException(status_code=404, detail="Selected fee structure not found")
+    if fs_obj.institution_id != student.institution_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Fee structure and student must belong to the same institution.",
+        )
+    if fs_obj.academic_year_id != ay_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Fee structure must belong to the same academic year as the student assignment.",
+        )
 
     old_custom = assignment.custom_amount if assignment else None
     package_amt = (
@@ -2024,7 +2036,8 @@ async def get_fee_register(
             ],
         })
 
-    if not status:
+    status_norm = (status or "").strip().lower()
+    if not status_norm or status_norm == "unbilled":
         invoiced_pairs = {(inv.student_id, inv.academic_year_id) for inv, *_ in rows}
         assign_q = (
             select(StudentFeeAssignment, FeeStructure, Student, AcademicYear, Standard, Division, Board)

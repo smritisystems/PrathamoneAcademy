@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-04
- * @updated     2026-11-27
+ * @updated     2026-11-28
  *
  * @description Comprehensive unit and specification tests verifying footer sections, dynamic page title resolution, connection status, user roles, versioning, and AITDL parent branding.
  */
@@ -220,6 +220,33 @@ describe('Application Footer Specifications', () => {
 
     const phone2 = within(orgSection).getByRole('link', { name: '9324 117 007' })
     expect(phone2.getAttribute('href')).toBe('tel:9324117007')
+  })
+
+  it('switches Footer software logos between light and dark mode for legible contrast', async () => {
+    const { useAppearanceStore } = await import('../store/appearanceStore')
+    act(() => {
+      useAppearanceStore.setState({ preference: 'dark' })
+    })
+
+    const { unmount } = renderFooter()
+    const expandedFooter = screen.getByRole('contentinfo', { name: 'Application Footer' })
+    const expandedLogo = within(within(expandedFooter).getByTestId('footer-product-system-group')).getByRole('img', {
+      name: 'PrathamOne EduOS',
+    })
+    expect(expandedLogo.getAttribute('src')).toBe(BRANDING_CONFIG.assets.horizontalLogoDarkUrl)
+    unmount()
+
+    localStorage.setItem(FOOTER_COLLAPSED_KEY, 'true')
+    renderFooter()
+    const collapsedFooter = screen.getByRole('contentinfo', { name: 'Application Footer' })
+    const collapsedIcon = within(within(collapsedFooter).getByTestId('footer-product-system-group')).getByRole('img', {
+      name: 'PrathamOne EduOS',
+    })
+    expect(collapsedIcon.getAttribute('src')).toBe(BRANDING_CONFIG.assets.softwareIconWhiteSvgUrl)
+
+    act(() => {
+      useAppearanceStore.setState({ preference: 'light' })
+    })
   })
 
   it('opens and closes the SmritiSys Ecosystem modal dialog on user interaction', () => {

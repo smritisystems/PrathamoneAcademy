@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-24
- * @updated     2026-11-24
+ * @updated     2026-11-28
  *
  * @description Workspace for Daily Expense Management, Live Cash Movements, Automated Cash Opening & Closing, Denomination Reconciliation, and Daily Cash Book.
  */
@@ -104,6 +104,7 @@ export default function FinanceExpenseWorkspace() {
     status: 'approved',
     is_recurring: false,
     recurring_frequency: 'monthly',
+    budget_override_reason: '',
   })
 
   // Denominations form
@@ -196,12 +197,18 @@ export default function FinanceExpenseWorkspace() {
       return
     }
     try {
-      await financeApi.createExpense({
+      const res = await financeApi.createExpense({
         ...expenseForm,
         amount: Number(expenseForm.amount),
         category_id: Number(expenseForm.category_id),
+        budget_override_reason: expenseForm.budget_override_reason.trim() || undefined,
       })
-      setStatusMessage({ text: 'Expense recorded successfully!', type: 'success' })
+      const alertInfo = res.data?.budget_alert
+      if (alertInfo?.has_budget && alertInfo.alert_level && alertInfo.alert_level !== 'ok' && alertInfo.message) {
+        setStatusMessage({ text: `Expense recorded — Budget Alert: ${alertInfo.message}`, type: 'info' })
+      } else {
+        setStatusMessage({ text: 'Expense recorded successfully!', type: 'success' })
+      }
       setIsNewExpenseModalOpen(false)
       setExpenseForm({
         title: '',
@@ -216,6 +223,7 @@ export default function FinanceExpenseWorkspace() {
         status: 'approved',
         is_recurring: false,
         recurring_frequency: 'monthly',
+        budget_override_reason: '',
       })
       await loadData()
     } catch (err: any) {
@@ -1261,6 +1269,19 @@ export default function FinanceExpenseWorkspace() {
                 <label htmlFor="recurringCheck" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Recurring expense (e.g. Monthly rent, internet subscription)
                 </label>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                  Budget Override Reason (Required if exceeding a Hard Limit budget)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Optional unless overriding an active hard-limit budget cap"
+                  value={expenseForm.budget_override_reason}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, budget_override_reason: e.target.value })}
+                  className="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-medium"
+                />
               </div>
 
               <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2">

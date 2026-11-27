@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-23
+ * @updated     2026-11-28
  *
  * @description Vitest test suite validating all 8 Fees & Payments dedicated workspace routes, view-first locks, and training isolation.
  */
@@ -377,5 +377,17 @@ describe('Fees & Payments Dedicated Workspace Submenu Suite', () => {
     renderWithRouter('/fees/overview')
 
     expect(screen.getByText('TRAINING MODE')).toBeDefined()
+  })
+
+  it('13. /fees/invoicing honors search & status=unbilled URL params for Pending Invoice Issuance deep-links', async () => {
+    renderWithRouter('/fees/invoicing?search=PA-2026-2431&status=unbilled')
+
+    expect(endpoints.feesApi.getRegister).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'unbilled',
+        search: 'PA-2026-2431',
+      }),
+    )
+    expect(screen.getByRole('option', { name: /Unbilled \(Pending Invoice\)/i })).toBeDefined()
   })
 })

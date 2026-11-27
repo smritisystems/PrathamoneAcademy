@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-27
+#  * @updated     2026-11-28
 #  *
 #  * @description License activation, signed snapshot storage, status, and API enforcement.
 #  */
@@ -133,7 +133,8 @@ _ROUTE_MODULES = (
     ("/fees", "billing"),
     ("/payments", "accounting"),
     ("/finance/budgets/overview", "dashboard"),
-    ("/finance/forecasts/overview", "reports"),
+    ("/finance/budgets", "reports"),
+    ("/finance/forecasts", "reports"),
     ("/finance", "accounting"),
     ("/teacher-payroll", "payroll"),
     ("/examinations", "examinations"),

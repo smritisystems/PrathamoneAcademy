@@ -11,12 +11,12 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-24
-#  * @updated     2026-11-27
+#  * @updated     2026-11-28
 #  *
 #  * @description REST API router for Institute Daily Expense Management, Cash Registers, Cash Closing, and Daily Cash Book.
 #  */
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_, desc
 from datetime import date, datetime
@@ -72,6 +72,11 @@ class ExpenseUpdate(BaseModel):
     is_recurring: Optional[bool] = None
     recurring_frequency: Optional[str] = None
     notes: Optional[str] = None
+    budget_override_reason: Optional[str] = None
+
+
+class ExpenseApproveRequest(BaseModel):
+    budget_override_reason: Optional[str] = None
 
 
 class CashClosingSubmit(BaseModel):
@@ -302,16 +307,24 @@ async def get_expense(
 async def update_expense(
     id: int,
     payload: ExpenseUpdate,
+    effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Update an existing expense."""
-    expense = await FinanceService.update_expense(
-        db=db, expense_id=id, data=payload.model_dump(exclude_unset=True), user_id=current_user.id
-    )
+    """Update an existing expense with active budget guardrail enforcement."""
+    try:
+        expense, budget_alert = await FinanceService.update_expense_with_budget_check(
+            db=db,
+            institution_id=effective_inst_id or 1,
+            expense_id=id,
+            data=payload.model_dump(exclude_unset=True),
+            user_id=current_user.id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     if not expense:
         raise HTTPException(status_code=404, detail="Expense not found")
-    return {"message": "Expense updated successfully", "id": expense.id}
+    return {"message": "Expense updated successfully", "id": expense.id, "budget_alert": budget_alert}
 
 
 @router.delete("/expenses/{id}")
@@ -336,14 +349,25 @@ async def delete_expense(
 @router.post("/expenses/{id}/approve")
 async def approve_expense(
     id: int,
+    payload: Optional[ExpenseApproveRequest] = Body(default=None),
+    effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Approve a submitted expense."""
-    exp = await FinanceService.approve_expense(db, id, current_user.id)
+    """Approve a submitted/draft expense after evaluating active budget guardrails."""
+    try:
+        exp, budget_alert = await FinanceService.approve_expense_with_budget_check(
+            db=db,
+            institution_id=effective_inst_id or 1,
+            expense_id=id,
+            approved_by_id=current_user.id,
+            override_reason=payload.budget_override_reason if payload else None,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     if not exp:
         raise HTTPException(status_code=404, detail="Expense not found")
-    return {"message": "Expense approved successfully", "id": exp.id, "status": exp.status}
+    return {"message": "Expense approved successfully", "id": exp.id, "status": exp.status, "budget_alert": budget_alert}
 
 
 @router.post("/expenses/{id}/pay")
@@ -762,7 +786,7 @@ async def upsert_budget_lines(
     payload: BudgetLinesBatchUpdate,
     effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role(*_BUDGET_VIEW_ROLES)),
+    current_user: User = Depends(require_role(*_BUDGET_ADMIN_ROLES)),
 ):
     """Batch upsert line allocations for a draft budget plan."""
     try:

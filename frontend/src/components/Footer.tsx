@@ -11,7 +11,7 @@
  *
  * @version     1.2.0
  * @created     2026-11-04
- * @updated     2026-11-19
+ * @updated     2026-11-28
  *
  * @description Collapsible full-width application footer displaying tenant branch, current route, product edition, live system metrics, and parent organization branding.
  */
@@ -27,6 +27,7 @@ import { findModuleByPath } from '../config/modules'
 import OrganizationBranding from './OrganizationBranding'
 import LicenseDetailsModal from './LicenseDetailsModal'
 import { useBottomBarDrawerStore } from '../store/bottomBarDrawerStore'
+import SoftwareBrandLogo from './common/SoftwareBrandLogo'
 
 export const FOOTER_COLLAPSED_KEY = 'pratham_footer_collapsed'
 
@@ -538,8 +539,8 @@ export default function Footer() {
               <FooterBreadcrumbs breadcrumbs={breadcrumbs} isCollapsed />
               <span className="hidden md:inline text-slate-300 select-none">·</span>
               <div className="hidden md:flex items-center gap-1 shrink-0">
-                <img
-                  src={BRANDING_CONFIG.assets.softwareIconSvgUrl || BRANDING_CONFIG.assets.softwareIconUrl}
+                <SoftwareBrandLogo
+                  variant="icon"
                   alt="PrathamOne EduOS"
                   className="w-4 h-4 object-contain"
                 />
@@ -631,10 +632,10 @@ export default function Footer() {
               >
                 <FooterBreadcrumbs breadcrumbs={breadcrumbs} />
                 <span className="text-blue-200 select-none">·</span>
-                <img
-                  src={BRANDING_CONFIG.assets.softwareLogoSvgUrl}
+                <SoftwareBrandLogo
+                  variant="full"
                   alt="PrathamOne EduOS"
-                  className="h-4 w-auto max-w-[88px] object-contain shrink-0"
+                  className="h-5 w-auto max-w-[116px] object-contain shrink-0"
                 />
                 <span className="text-slate-700 font-semibold">{APP_CONFIG.edition}</span>
                 <span className="text-blue-200 select-none">·</span>
