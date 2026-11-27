@@ -11,25 +11,19 @@
  *
  * @version     1.3.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-28
  *
  * @description Production service worker with strategic caching, network-only API security, robust offline fallback, and guaranteed Response resolution.
  */
 
-const CACHE_VERSION = 'prathamone-cache-v1.3.2';
+const CACHE_VERSION = 'prathamone-cache-v1.3.3';
 const STATIC_CACHE_NAME = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE_NAME = `dynamic-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
-  '/',
-  '/index.html',
   '/offline.html',
   '/manifest.json',
   '/manifest.webmanifest',
-  '/artwork/14112026/batch_g1-4_1080.svg',
-  '/artwork/14112026/batch_g1-4_1080.png',
-  '/artwork/14112026/batch_rect1-1-8-6_10802.svg',
-  '/artwork/14112026/batch_rect1-1-8-6_10802.png'
 ];
 
 // Install: precache app shell & immediate activation
@@ -88,48 +82,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Navigation requests (HTML pages): Network-first with cached index.html or offline fallback
+  // 2. Navigation requests (HTML pages): Strict network-first with /offline.html fallback.
+  // Never serve stale index.html across upgrades (whose old hashed JS/CSS assets would 404).
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(DYNAMIC_CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(async () => {
-          const cachedResponse = await caches.match(request);
-          if (cachedResponse) return cachedResponse;
-          const shellResponse = await caches.match('/index.html');
-          if (shellResponse) return shellResponse;
-          const offlineResponse = await caches.match('/offline.html');
-          if (offlineResponse) return offlineResponse;
+      fetch(request).catch(async () => {
+        const offlineResponse = await caches.match('/offline.html');
+        if (offlineResponse) return offlineResponse;
 
-          // Ultimate guaranteed HTML fallback
-          try {
-            const networkIndex = await fetch('/index.html');
-            if (networkIndex && networkIndex.status === 200) return networkIndex;
-          } catch (e) {
-            // Network completely down
+        return new Response(
+          '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PrathamOne EduOS Offline</title><style>body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#f8fafc;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;padding:1rem;box-sizing:border-box;text-align:center}.card{background:#1e293b;border:1px solid #334155;border-radius:1rem;padding:2rem;max-width:400px;width:100%;box-shadow:0 10px 25px rgba(0,0,0,0.5)}h1{font-size:1.25rem;margin:0 0 0.5rem;color:#f97316}p{font-size:0.875rem;color:#94a3b8;margin:0 0 1.5rem}button{background:#ea580c;color:white;border:none;padding:0.75rem 1.5rem;font-weight:600;font-size:0.875rem;border-radius:0.5rem;cursor:pointer;transition:background 0.2s}button:hover{background:#c2410c}</style></head><body><div class="card"><h1>PrathamOne EduOS</h1><p>You appear to be offline or the connection was interrupted. Please check your network and reload.</p><button onclick="window.location.reload()">Reload Application</button></div></body></html>',
+          {
+            status: 200,
+            headers: { 'Content-Type': 'text/html; charset=utf-8' }
           }
-
-          return new Response(
-            '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PrathamOne EduOS Offline</title><style>body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#f8fafc;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;padding:1rem;box-sizing:border-box;text-align:center}.card{background:#1e293b;border:1px solid #334155;border-radius:1rem;padding:2rem;max-width:400px;width:100%;box-shadow:0 10px 25px rgba(0,0,0,0.5)}h1{font-size:1.25rem;margin:0 0 0.5rem;color:#f97316}p{font-size:0.875rem;color:#94a3b8;margin:0 0 1.5rem}button{background:#ea580c;color:white;border:none;padding:0.75rem 1.5rem;font-weight:600;font-size:0.875rem;border-radius:0.5rem;cursor:pointer;transition:background 0.2s}button:hover{background:#c2410c}</style></head><body><div class="card"><h1>PrathamOne EduOS</h1><p>You appear to be offline or the connection was interrupted. Please check your network and reload.</p><button onclick="window.location.reload()">Reload Application</button></div></body></html>',
-            {
-              status: 200,
-              headers: { 'Content-Type': 'text/html; charset=utf-8' }
-            }
-          );
-        })
+        );
+      })
     );
     return;
   }
 
-  // 3. Static assets (JS, CSS, images, fonts): Cache-first with background network revalidation
+  // 3. Static assets (JS, CSS, images, fonts, icons): Cache-first with clean network fallback
   const isStaticAsset =
     url.pathname.startsWith('/assets/') ||
     url.pathname.startsWith('/icons/') ||
@@ -137,6 +110,7 @@ self.addEventListener('fetch', (event) => {
     url.pathname.endsWith('.css') ||
     url.pathname.endsWith('.svg') ||
     url.pathname.endsWith('.png') ||
+    url.pathname.endsWith('.ico') ||
     url.pathname.endsWith('.woff2');
 
   if (isStaticAsset) {
