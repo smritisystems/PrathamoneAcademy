@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-03
- * @updated     2026-11-26
+ * @updated     2026-11-27
  *
  * @description Axios HTTP client instance configured with base URL, authentication headers, error classification, and response interceptors.
  */
@@ -55,6 +55,13 @@ apiClient.interceptors.request.use((config) => {
 
 let isRedirecting = false
 
+function isNonAppSession401(error: any): boolean {
+  const cfg = error?.config as { url?: string; skipAuthLogout?: boolean } | undefined
+  if (cfg?.skipAuthLogout === true) return true
+  const url = String(cfg?.url || '')
+  return url.includes('/license/customer/') || url.includes('/auth/login')
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -79,7 +86,7 @@ apiClient.interceptors.response.use(
       status: error?.response?.status,
     })
 
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !isNonAppSession401(error)) {
       const hadToken = typeof useAuthStore?.getState === 'function' ? !!useAuthStore.getState()?.token : false
       if (hadToken && typeof useAuthStore?.getState === 'function') {
         useAuthStore.getState()?.logout?.()

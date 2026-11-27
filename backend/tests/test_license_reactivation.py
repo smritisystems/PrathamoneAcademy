@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-23
-#  * @updated     2026-11-24
+#  * @updated     2026-11-27
 #  *
 #  * @description Focused test suite for customer-account license reactivation, session handling, polling, key retention, and artifact verification.
 #  */
@@ -220,6 +220,49 @@ async def test_customer_login_endpoint_stores_token_in_secure_storage(monkeypatc
     assert "SecureUserPass!2026" not in saved_settings.values()
     assert saved_settings["license.customer_session_token"] == "token_xyz987"
     assert saved_settings["license.registered_email"] == "admin@academy.org"
+
+
+@pytest.mark.asyncio
+async def test_customer_login_wrong_password_returns_400_not_401(monkeypatch):
+    """Wrong license-authority password must return 400 (never 401) so the app session is not logged out."""
+    class FakeDb:
+        async def get(self, model, key):
+            return SimpleNamespace(code="PA001", is_active=True)
+
+    async def fake_fail_login(url, email, password):
+        raise LicenseReactivationError("Invalid customer account email or password.")
+
+    monkeypatch.setattr(license_endpoint, "customer_account_login", fake_fail_login)
+    monkeypatch.setattr(license_endpoint.settings, "LICENSE_AUTHORITY_URL", "https://license.smritisys.com")
+
+    admin = SimpleNamespace(id=1, full_name="Admin User", role="admin", institution_id=1)
+    req = CustomerLoginRequest(email="admin@academy.org", password="WrongPassword!")
+
+    with pytest.raises(HTTPException) as exc_info:
+        await customer_login(
+            body=req,
+            current_user=admin,
+            db=FakeDb(),
+            institution_id=1,
+            data_environment="PRODUCTION",
+        )
+    assert exc_info.value.status_code == 400
+    assert "Invalid customer account email or password" in exc_info.value.detail
+
+    async def fake_missing_setting(db, inst_id, key):
+        return None
+
+    monkeypatch.setattr(license_endpoint, "_get_setting", fake_missing_setting)
+    empty_req = Request({"type": "http", "headers": []})
+    with pytest.raises(HTTPException) as missing_exc:
+        await customer_reactivations(
+            request=empty_req,
+            current_user=admin,
+            db=FakeDb(),
+            institution_id=1,
+            data_environment="PRODUCTION",
+        )
+    assert missing_exc.value.status_code == 400
 
 
 # ==============================================================================

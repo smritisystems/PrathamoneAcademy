@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-26
+#  * @updated     2026-11-27
 #  *
 #  * @description License activation, signed snapshot storage, status, and API enforcement.
 #  */
@@ -1251,7 +1251,7 @@ async def activate_license(
             )
             if not reactivation_session_token:
                 raise HTTPException(
-                    status_code=401,
+                    status_code=400,
                     detail="Customer sign-in is required to complete approved reactivation.",
                 )
             activation_headers = {"Authorization": f"Bearer {reactivation_session_token}"}
@@ -1688,7 +1688,8 @@ async def customer_login(
     try:
         login_res = await customer_account_login(authority_url, body.email, body.password)
     except LicenseReactivationError as exc:
-        raise HTTPException(status_code=401, detail=str(exc)) from exc
+        # Upstream license-authority credential failure must not return 401 and log out the PrathamOne session.
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     session_token = login_res["session_token"]
     # Store session token in secure credential storage (is_secret=True, redacted from audit logs)
@@ -1732,7 +1733,7 @@ async def customer_reactivations(
         session_token = token_setting.value if token_setting else None
 
     if not session_token:
-        raise HTTPException(status_code=401, detail="Sign in with your PrathamOne customer account first.")
+        raise HTTPException(status_code=400, detail="Sign in with your PrathamOne customer account first.")
 
     try:
         licenses = await customer_get_reactivations(authority_url, session_token)
@@ -1776,7 +1777,7 @@ async def customer_reactivation_request(
         session_token = token_setting.value if token_setting else None
 
     if not session_token:
-        raise HTTPException(status_code=401, detail="Sign in with your PrathamOne customer account first.")
+        raise HTTPException(status_code=400, detail="Sign in with your PrathamOne customer account first.")
 
     # Persistent installation identity - private key stays encrypted on installation, never sent to server
     installation_id, activation_identifier, refresh_public_key_b64 = await _prepare_installation_identity(
@@ -1832,7 +1833,7 @@ async def customer_reactivation_poll(
         session_token = token_setting.value if token_setting else None
 
     if not session_token:
-        raise HTTPException(status_code=401, detail="Sign in with your PrathamOne customer account first.")
+        raise HTTPException(status_code=400, detail="Sign in with your PrathamOne customer account first.")
 
     try:
         poll_res = await customer_poll_reactivation_status(

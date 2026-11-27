@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-26
+ * @updated     2026-11-27
  *
  * @description Vitest test suite validating authentication interceptors, 401 redirect loop prevention, and unauthenticated branding fallback.
  */
@@ -149,5 +149,48 @@ describe('Authentication Interceptor & Redirect Loop Prevention Specifications',
     // Restore window.location
     delete (window as any).location
     ;(window as any).location = originalLocation
+  })
+
+  it('does NOT log out or redirect when a license customer credential endpoint returns 401', async () => {
+    // @ts-ignore
+    const responseErrorInterceptor: any = apiClient.interceptors.response.handlers[0]?.rejected
+
+    useAuthStore.getState().login('valid-app-session-jwt', {
+      id: 1,
+      username: 'admin1',
+      email: 'admin@prashantacademy.in',
+      first_name: 'Admin',
+      last_name: 'One',
+      role: 'admin',
+    })
+
+    const originalLocation = window.location
+    let redirectedTo = ''
+    delete (window as any).location
+    ;(window as any).location = {
+      ...originalLocation,
+      pathname: '/license-activation',
+      get href() {
+        return redirectedTo
+      },
+      set href(val: string) {
+        redirectedTo = val
+      },
+    }
+
+    const customerLogin401 = {
+      config: { url: '/license/customer/login' },
+      response: { status: 401, data: { detail: 'Invalid customer account email or password.' } },
+    }
+
+    await expect(responseErrorInterceptor!(customerLogin401)).rejects.toEqual(customerLogin401)
+
+    expect(useAuthStore.getState().token).toBe('valid-app-session-jwt')
+    expect(useAuthStore.getState().user).not.toBeNull()
+    expect(redirectedTo).toBe('')
+
+    delete (window as any).location
+    ;(window as any).location = originalLocation
+    useAuthStore.getState().logout()
   })
 })
