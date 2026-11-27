@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-27
+ * @updated     2026-11-28
  *
  * @description Master branding configuration and dynamic identity resolver for PrathamOne Academy and tenant institutions.
  */
@@ -124,7 +124,7 @@ export const BRANDING_CONFIG = {
   monogram: 'YC' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.27-REV-335-v1.187.0-1B60B4C7',
+  buildNumber: '2026.11.27-REV-336-v1.188.0-8DD2CA6C',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-27',

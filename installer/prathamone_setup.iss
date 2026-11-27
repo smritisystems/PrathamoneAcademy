@@ -20,10 +20,10 @@
 #define MyAppName "PrathamOne EduOS"
 #define MyAppDirName "PrathamOneEduOS"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.187.0"
+  #define MyAppVersion "1.188.0"
 #endif
 #ifndef MyAppFileVersion
-  #define MyAppFileVersion "1.187.0.0"
+  #define MyAppFileVersion "1.188.0.0"
 #endif
 #ifndef MyOutputBaseFilename
   #ifdef UseReleasePayload
@@ -78,10 +78,10 @@ Name: "installrootca"; Description: "Install local SSL certificate for trusted H
 
 [Dirs]
 Name: "{app}"
-Name: "{localappdata}\{#MyAppDirName}"
-Name: "{localappdata}\{#MyAppDirName}\data"
-Name: "{localappdata}\{#MyAppDirName}\backups"
-Name: "{localappdata}\{#MyAppDirName}\logs"
+Name: "{code:GetWritableDataRoot}"
+Name: "{code:GetWritableDataRoot}\data"
+Name: "{code:GetWritableDataRoot}\backups"
+Name: "{code:GetWritableDataRoot}\logs"
 
 [Files]
 #ifdef UseReleasePayload
@@ -152,7 +152,7 @@ Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""& {{ [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object System.Net.WebClient).DownloadFile('https://go.microsoft.com/fwlink/p/?LinkId=2124703', '$env:TEMP\MicrosoftEdgeWebview2Setup.exe'); Start-Process -FilePath '$env:TEMP\MicrosoftEdgeWebview2Setup.exe' -ArgumentList '/silent /install' -Wait }}"""; Flags: runhidden; StatusMsg: "Verifying and configuring Microsoft Edge WebView2 Runtime..."; Check: not IsWebView2Installed
 
 ; 1. Initialize PostgreSQL cluster in user-writable data root if data folder doesn't exist
-Filename: "{app}\pgsql\bin\initdb.exe"; Parameters: "-D ""{code:GetWritableDataRoot}\data"" -U postgres -A trust --encoding=UTF8 --locale=C --no-instructions"; WorkingDir: "{app}\pgsql\bin"; Flags: runhidden skipifdoesntexist; StatusMsg: "Initializing local database cluster..."; Check: NeedsDbInit
+Filename: "{app}\pgsql\bin\pg_ctl.exe"; Parameters: "init -D ""{code:GetWritableDataRoot}\data"" -o ""-U postgres -A trust --encoding=UTF8 --locale=C --no-instructions"""; WorkingDir: "{app}\pgsql\bin"; Flags: runhidden skipifdoesntexist; StatusMsg: "Initializing local database cluster..."; Check: NeedsDbInit
 
 ; 2. Add Windows Firewall rule for ports 2026, HTTP 80, and HTTPS 443
 Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""PrathamOne EduOS Local Network"" dir=in action=allow protocol=TCP localport=2026,80,443"; Flags: runhidden; Tasks: firewallrule
@@ -370,7 +370,10 @@ function GetWritableDataRoot(Param: String): String;
 var
   InstallBase: String;
   ProgFiles: String;
+  SysDrive: String;
+  InstallDrive: String;
   InProgramFiles: Boolean;
+  OnSystemDrive: Boolean;
 begin
   InstallBase := '';
   if WizardForm <> nil then
@@ -388,6 +391,22 @@ begin
   InProgramFiles := (ProgFiles <> '') and (Pos(ProgFiles, Lowercase(InstallBase)) = 1);
 
   if (not InProgramFiles) and FileExists(AddBackslash(InstallBase) + 'data\PG_VERSION') then
+  begin
+    Result := RemoveBackslash(InstallBase);
+    Exit;
+  end;
+
+  if FileExists(ExpandConstant('{localappdata}\{#MyAppDirName}\data\PG_VERSION')) then
+  begin
+    Result := ExpandConstant('{localappdata}\{#MyAppDirName}');
+    Exit;
+  end;
+
+  SysDrive := Lowercase(Copy(ExpandConstant('{sd}'), 1, 2));
+  InstallDrive := Lowercase(Copy(InstallBase, 1, 2));
+  OnSystemDrive := (InstallDrive = '') or (SysDrive = '') or (InstallDrive = SysDrive);
+
+  if (not InProgramFiles) and (not OnSystemDrive) and (GetDriveType(AddBackslash(InstallDrive)) = 3) then
   begin
     Result := RemoveBackslash(InstallBase);
     Exit;
@@ -625,7 +644,7 @@ end;
 
 function NeedsDbInit: Boolean;
 begin
-  Result := FileExists(ExpandConstant('{app}\pgsql\bin\initdb.exe')) and (not FileExists(GetWritableDataRoot('') + '\data\PG_VERSION'));
+  Result := FileExists(ExpandConstant('{app}\pgsql\bin\initdb.exe')) and (not IsUpgradeMode) and (not FileExists(GetWritableDataRoot('') + '\data\PG_VERSION'));
 end;
 
 function GetAdminPassword(Param: String): String;
@@ -679,6 +698,7 @@ begin
   InstallCardTitle.Top := ScaleY(12);
   InstallCardTitle.Width := InstallInfoPanel.Width - ScaleX(24);
   InstallCardTitle.AutoSize := False;
+  InstallCardTitle.ShowAccelChar := False;
   InstallCardTitle.Font.Style := [fsBold];
   InstallCardTitle.Font.Size := 9;
   InstallCardTitle.Font.Color := $00542100;
@@ -691,16 +711,18 @@ begin
   InstallPhaseLabel.Width := InstallInfoPanel.Width - ScaleX(24);
   InstallPhaseLabel.Height := ScaleY(52);
   InstallPhaseLabel.AutoSize := False;
+  InstallPhaseLabel.ShowAccelChar := False;
   InstallPhaseLabel.WordWrap := True;
   InstallPhaseLabel.Font.Color := $003B291E;
 
   InstallSafetyLabel := TNewStaticText.Create(WizardForm);
   InstallSafetyLabel.Parent := InstallInfoPanel;
   InstallSafetyLabel.Left := ScaleX(14);
-  InstallSafetyLabel.Top := ScaleY(90);
+  InstallSafetyLabel.Top := ScaleY(88);
   InstallSafetyLabel.Width := InstallInfoPanel.Width - ScaleX(24);
-  InstallSafetyLabel.Height := ScaleY(22);
+  InstallSafetyLabel.Height := ScaleY(28);
   InstallSafetyLabel.AutoSize := False;
+  InstallSafetyLabel.ShowAccelChar := False;
   InstallSafetyLabel.WordWrap := True;
   InstallSafetyLabel.Font.Style := [fsBold];
   InstallSafetyLabel.Font.Color := $004B7E1A;
@@ -708,10 +730,11 @@ begin
   InstallPathsLabel := TNewStaticText.Create(WizardForm);
   InstallPathsLabel.Parent := InstallInfoPanel;
   InstallPathsLabel.Left := ScaleX(14);
-  InstallPathsLabel.Top := ScaleY(118);
+  InstallPathsLabel.Top := ScaleY(122);
   InstallPathsLabel.Width := InstallInfoPanel.Width - ScaleX(24);
   InstallPathsLabel.Height := ScaleY(32);
   InstallPathsLabel.AutoSize := False;
+  InstallPathsLabel.ShowAccelChar := False;
   InstallPathsLabel.WordWrap := True;
   InstallPathsLabel.Font.Size := 8;
   InstallPathsLabel.Font.Color := $00695547;

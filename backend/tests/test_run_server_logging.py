@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-26
-#  * @updated     2026-11-27
+#  * @updated     2026-11-28
 #  *
 #  * @description Unit tests validating standalone backend rotating logging (5 MB x 5), stdio redirection, Uvicorn dictConfig, and stray root log consolidation.
 #  */
@@ -337,3 +337,41 @@ def test_migrate_only_aborts_without_initdb_when_pg_cluster_missing(tmp_path):
     assert result["outcome"] == "failed"
     assert "aborting migration without initdb" in result["reason"].lower()
     assert (data_root / "logs" / "upgrade_audit.jsonl").is_file()
+
+
+def test_start_embedded_postgres_uses_pg_ctl_start_for_elevated_safety(tmp_path, monkeypatch):
+    app_root = tmp_path / "app"
+    data_root = tmp_path / "data_root"
+    (app_root / "pgsql" / "bin").mkdir(parents=True)
+    (app_root / "pgsql" / "bin" / "postgres.exe").write_bytes(b"stub")
+    (app_root / "pgsql" / "bin" / "pg_ctl.exe").write_bytes(b"stub")
+    (data_root / "data").mkdir(parents=True)
+    (data_root / "data" / "PG_VERSION").write_text("16\n", encoding="utf-8")
+    (data_root / "data" / "postmaster.pid").write_text("1234\n", encoding="utf-8")
+    (data_root / ".env").write_text("DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:5433/prashant_academy\n", encoding="utf-8")
+    (data_root / "data" / ".bootstrap_complete").write_text("unused", encoding="utf-8")
+
+    calls = []
+
+    class _FakeCompleted:
+        returncode = 0
+        stdout = "server started"
+        stderr = ""
+
+    def _fake_run(cmd, **_kwargs):
+        calls.append(cmd)
+        return _FakeCompleted()
+
+    monkeypatch.setattr(run_server.subprocess, "run", _fake_run)
+    monkeypatch.setattr(run_server, "_is_port_in_use", lambda _p: False)
+    monkeypatch.setattr(run_server, "_clean_stale_pid_file", lambda _d: None)
+    monkeypatch.setattr(run_server, "_run_inprocess_bootstrap", lambda *_a, **_k: None)
+
+    handle, port = run_server._start_embedded_postgres(app_root, tmp_path / "backend", data_root=data_root)
+    assert handle is not None
+    assert port == 5432
+    assert any("pg_ctl.exe" in cmd[0] and cmd[1] == "start" and "-w" in cmd for cmd in calls)
+    assert not any("postgres.exe" in cmd[0] for cmd in calls)
+    assert handle.poll() is None
+    handle.terminate()
+    assert any("pg_ctl.exe" in cmd[0] and cmd[1] == "stop" for cmd in calls)

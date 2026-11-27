@@ -12,7 +12,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-25
-#  * @updated     2026-11-27
+#  * @updated     2026-11-28
 #  *
 #  * @description Standalone Windows backend entrypoint compiled with Nuitka.
 #  */
@@ -40,7 +40,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 from urllib.parse import urlparse
 
 
@@ -772,11 +772,41 @@ def _clean_stale_pid_file(data_dir: Path):
             pass
 
 
-def _start_embedded_postgres(root_dir: Path, backend_dir: Path, data_root: Optional[Path] = None) -> tuple[Optional[subprocess.Popen], int]:
-    """Start embedded PostgreSQL if present in app_root/pgsql, returning (proc, pg_port)."""
+class _PgCtlProcessHandle:
+    """Process-like handle for pg_ctl-managed PostgreSQL so shutdown hooks stop cleanly."""
+
+    def __init__(self, data_dir: Path, pg_ctl: Path):
+        self._data_dir = data_dir
+        self._pg_ctl = pg_ctl
+        self._stopped = False
+
+    def poll(self) -> Optional[int]:
+        if self._stopped or not (self._data_dir / "postmaster.pid").is_file():
+            return 0
+        return None
+
+    def terminate(self) -> None:
+        if self._stopped:
+            return
+        flags = 0x08000000 if sys.platform == "win32" else 0
+        if self._pg_ctl.exists() and self._data_dir.exists():
+            subprocess.run(
+                [str(self._pg_ctl), "stop", "-w", "-t", "20", "-D", str(self._data_dir), "-m", "fast"],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=flags,
+                timeout=25,
+            )
+        self._stopped = True
+
+
+def _start_embedded_postgres(root_dir: Path, backend_dir: Path, data_root: Optional[Path] = None) -> tuple[Optional[Any], int]:
+    """Start embedded PostgreSQL if present in app_root/pgsql, returning (proc_handle, pg_port)."""
     effective_root = data_root or root_dir
     pgsql_dir = root_dir / "pgsql"
     data_dir = effective_root / "data"
+    logs_dir = effective_root / "logs"
     pg_ctl = pgsql_dir / "bin" / "pg_ctl.exe"
     postgres_exe = pgsql_dir / "bin" / "postgres.exe"
     pg_isready = pgsql_dir / "bin" / "pg_isready.exe"
@@ -787,13 +817,25 @@ def _start_embedded_postgres(root_dir: Path, backend_dir: Path, data_root: Optio
         return None, int(os.getenv("POSTGRES_PORT", "5432"))
 
     _clean_stale_pid_file(data_dir)
-    if not (data_dir / "PG_VERSION").exists() and initdb.exists():
+    if not (data_dir / "PG_VERSION").exists() and (pg_ctl.exists() or initdb.exists()):
         data_dir.mkdir(parents=True, exist_ok=True)
-        subprocess.run(
-            [str(initdb), "-D", str(data_dir), "-U", "postgres", "-A", "trust", "--encoding=UTF8", "--locale=C", "--no-instructions"],
-            check=True,
-            creationflags=flags,
-        )
+        if pg_ctl.exists():
+            # pg_ctl drops elevated Windows Admin tokens automatically before invoking initdb/postgres.
+            subprocess.run(
+                [str(pg_ctl), "init", "-D", str(data_dir), "-o", "-U postgres -A trust --encoding=UTF8 --locale=C --no-instructions"],
+                cwd=str(pg_ctl.parent),
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=True,
+                creationflags=flags,
+            )
+        else:
+            subprocess.run(
+                [str(initdb), "-D", str(data_dir), "-U", "postgres", "-A", "trust", "--encoding=UTF8", "--locale=C", "--no-instructions"],
+                check=True,
+                creationflags=flags,
+            )
 
     own_pid_file = data_dir / "postmaster.pid"
     own_running_port = None
@@ -817,28 +859,45 @@ def _start_embedded_postgres(root_dir: Path, backend_dir: Path, data_root: Optio
             with open(conf_file, "a", encoding="utf-8") as f:
                 f.write(f"\nport = {pg_port}\n")
 
-    pg_proc = None
+    pg_proc: Optional[Any] = None
     if not _is_port_in_use(pg_port):
         data_dir.mkdir(parents=True, exist_ok=True)
-        pg_log = open(str(data_dir / "pg_server.log"), "a", encoding="utf-8")
-        pg_proc = subprocess.Popen(
-            [str(postgres_exe), "-D", str(data_dir), "-p", str(pg_port)],
-            stdout=pg_log,
-            stderr=pg_log,
-            creationflags=flags,
-        )
-        for _ in range(90):
-            if pg_isready.exists():
-                chk = subprocess.run(
-                    [str(pg_isready), "-h", "127.0.0.1", "-p", str(pg_port), "-U", "postgres"],
-                    capture_output=True,
-                    creationflags=flags,
-                )
-                if chk.returncode == 0:
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        pg_log_path = logs_dir / "pg_server.log"
+        if pg_ctl.exists():
+            # Use pg_ctl start -w with DEVNULL stdio so postgres.exe never keeps PIPE handles open on Windows.
+            start_res = subprocess.run(
+                [str(pg_ctl), "start", "-w", "-t", "90", "-D", str(data_dir), "-o", f"-p {pg_port}", "-l", str(pg_log_path)],
+                cwd=str(pg_ctl.parent),
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=flags,
+            )
+            if start_res.returncode != 0:
+                detail = pg_log_path.read_text(encoding="utf-8", errors="ignore")[-800:].strip() if pg_log_path.is_file() else ""
+                raise RuntimeError(f"Embedded PostgreSQL pg_ctl start failed (exit {start_res.returncode}): {detail}")
+            pg_proc = _PgCtlProcessHandle(data_dir, pg_ctl)
+        else:
+            pg_log = open(str(data_dir / "pg_server.log"), "a", encoding="utf-8")
+            pg_proc = subprocess.Popen(
+                [str(postgres_exe), "-D", str(data_dir), "-p", str(pg_port)],
+                stdout=pg_log,
+                stderr=pg_log,
+                creationflags=flags,
+            )
+            for _ in range(90):
+                if pg_isready.exists():
+                    chk = subprocess.run(
+                        [str(pg_isready), "-h", "127.0.0.1", "-p", str(pg_port), "-U", "postgres"],
+                        capture_output=True,
+                        creationflags=flags,
+                    )
+                    if chk.returncode == 0:
+                        break
+                elif _is_port_in_use(pg_port):
                     break
-            elif _is_port_in_use(pg_port):
-                break
-            time.sleep(0.5)
+                time.sleep(0.5)
 
     # Check if bootstrap/alembic stamp needs execution
     bootstrap_marker = data_dir / ".bootstrap_complete"
@@ -861,14 +920,21 @@ def _start_embedded_postgres(root_dir: Path, backend_dir: Path, data_root: Optio
     return pg_proc, pg_port
 
 
-def _stop_postgres_graceful(root_dir: Path, pg_proc: Optional[subprocess.Popen], data_root: Optional[Path] = None):
+def _stop_postgres_graceful(root_dir: Path, pg_proc: Optional[Any], data_root: Optional[Path] = None):
     effective_root = data_root or root_dir
     pg_ctl = root_dir / "pgsql" / "bin" / "pg_ctl.exe"
     data_dir = effective_root / "data"
     flags = 0x08000000 if sys.platform == "win32" else 0
     if pg_proc and pg_proc.poll() is None and pg_ctl.exists() and data_dir.exists():
         try:
-            subprocess.run([str(pg_ctl), "stop", "-D", str(data_dir), "-m", "fast"], capture_output=True, creationflags=flags, timeout=8)
+            subprocess.run(
+                [str(pg_ctl), "stop", "-w", "-t", "20", "-D", str(data_dir), "-m", "fast"],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=flags,
+                timeout=25,
+            )
         except Exception:
             try:
                 pg_proc.terminate()
