@@ -11,13 +11,16 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-20
-#  * @updated     2026-11-21
+#  * @updated     2026-11-27
 #  *
 #  * @description Unit test suite for hardware node-locking, machine fingerprinting, and copy-prevention verification.
 #  */
 
+import os
 import pytest
+from app.core import hardware
 from app.core.hardware import (
+    _reset_hardware_cache,
     get_hardware_components,
     get_machine_hardware_fingerprint,
     verify_hardware_fingerprint,
@@ -71,3 +74,37 @@ def test_verify_hardware_fingerprint_mismatch():
 def test_verify_hardware_fingerprint_wildcard():
     is_valid, msg = verify_hardware_fingerprint("PRATHAM-WILDCARD-UNRESTRICTED")
     assert is_valid is True
+
+
+def test_transient_wmi_timeout_does_not_poison_cache(monkeypatch):
+    """A transient WMI timeout must never cache a degraded fingerprint or hash ProcessorNameString."""
+    _reset_hardware_cache()
+    monkeypatch.setattr(hardware.os, "name", "nt")
+    monkeypatch.setattr(hardware, "_get_registry_machine_guid", lambda: "080ca378-b70a-41d3-b533-89e9e56ef97a")
+
+    calls = {"count": 0}
+
+    def _mock_batch():
+        calls["count"] += 1
+        if calls["count"] == 1:
+            return ("D494AFEF-4878-E911-B5AD-00D8615DBA73", "UNKNOWN", "EVSI512G09202272217")
+        return ("D494AFEF-4878-E911-B5AD-00D8615DBA73", "BFEBFBFF000906EA", "EVSI512G09202272217")
+
+    wmi_prop_calls = {"n": 0}
+
+    def _mock_prop(_cmd: str) -> str:
+        wmi_prop_calls["n"] += 1
+        # Retry still fails once during initial degraded startup, recovers on next call
+        return "UNKNOWN" if wmi_prop_calls["n"] == 1 else "BFEBFBFF000906EA"
+
+    monkeypatch.setattr(hardware, "_query_wmi_batch", _mock_batch)
+    monkeypatch.setattr(hardware, "_query_wmi_property", _mock_prop)
+
+    degraded = get_hardware_components()
+    assert degraded["cpu_id"] == "UNKNOWN"
+    assert hardware._CACHED_HW_COMPONENTS is None
+
+    recovered = get_machine_hardware_fingerprint()
+    assert recovered == "PRATHAM-B347-9CFE-842B-E65C"
+    assert hardware._CACHED_HW_COMPONENTS is not None
+    _reset_hardware_cache()

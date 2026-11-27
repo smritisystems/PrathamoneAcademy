@@ -704,6 +704,24 @@ def _run_inprocess_bootstrap(root_dir: Path, backend_dir: Path, pg_port: int, da
     if not (assets_dir / "prathamone_ssl_cert.pem").exists() and _is_dir_writable(assets_dir):
         generate_local_pki(assets_dir, extra_slugs=[slug] if slug else None)
 
+    app_ver, build_num = _resolve_app_version_metadata()
+    bootstrap_marker = effective_root / ".bootstrap_complete"
+    try:
+        bootstrap_marker.parent.mkdir(parents=True, exist_ok=True)
+        bootstrap_marker.write_text(
+            json.dumps(
+                {
+                    "version": app_ver,
+                    "build_number": build_num,
+                    "updated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+
     for cand_cfg in {cfg_file, effective_root / "setup_config.json", root_dir / "setup_config.json"}:
         if cand_cfg.exists():
             try:
@@ -1158,6 +1176,460 @@ def _create_progressive_asgi_app(shutdown_callback=None):
 _EXPECTED_PYD_MANIFEST: Optional[dict[str, str]] = None
 
 
+def _resolve_app_version_metadata() -> tuple[str, str]:
+    """Return (VERSION, BUILD_NUMBER) without exposing secrets or requiring live DB config."""
+    had_db_url = "DATABASE_URL" in os.environ
+    if not had_db_url:
+        os.environ["DATABASE_URL"] = "postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/prashant_academy"
+    try:
+        from app.core.config import Settings
+
+        cfg = Settings()
+        return str(cfg.VERSION), str(cfg.BUILD_NUMBER)
+    except Exception:
+        return "1.185.2", "unknown"
+    finally:
+        if not had_db_url:
+            os.environ.pop("DATABASE_URL", None)
+
+
+def _append_upgrade_audit_event(data_root: Path, event: dict) -> Path:
+    """Append a structured, secret-free upgrade/migration audit record to <data_root>/logs/upgrade_audit.jsonl."""
+    audit_path = data_root / "logs" / "upgrade_audit.jsonl"
+    audit_path.parent.mkdir(parents=True, exist_ok=True)
+    record = {
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "actor": event.get("actor", "system"),
+        "operation": event.get("operation", "unknown"),
+        "app_version": event.get("app_version"),
+        "build_number": event.get("build_number"),
+        "data_root": str(data_root),
+        "schema_before": event.get("schema_before", []),
+        "schema_after": event.get("schema_after", []),
+        "pending_migrations": event.get("pending_migrations", []),
+        "backup_path": event.get("backup_path"),
+        "recommendation": event.get("recommendation"),
+        "outcome": event.get("outcome", "unknown"),
+        "reason": event.get("reason", ""),
+    }
+    with open(audit_path, "a", encoding="utf-8") as fp:
+        fp.write(json.dumps(record, ensure_ascii=False) + "\n")
+    return audit_path
+
+
+async def _inspect_database_state(db_url: str, all_known_revs: set[str]) -> dict:
+    """Inspect existing PostgreSQL database schema version, domain record counts, and license metadata safely."""
+    import asyncpg
+
+    clean_url = db_url.replace("postgresql+asyncpg://", "postgresql://")
+    conn = await asyncpg.connect(clean_url, timeout=8.0)
+    try:
+        pg_version = await conn.fetchval("SHOW server_version")
+        has_alembic = bool(await conn.fetchval("SELECT to_regclass('public.alembic_version') IS NOT NULL"))
+        current_revs: list[str] = []
+        if has_alembic:
+            rows = await conn.fetch("SELECT version_num FROM alembic_version")
+            current_revs = [str(r["version_num"]) for r in rows if r["version_num"]]
+
+        has_institutions = bool(await conn.fetchval("SELECT to_regclass('public.institutions') IS NOT NULL"))
+        has_students = bool(await conn.fetchval("SELECT to_regclass('public.students') IS NOT NULL"))
+        has_settings = bool(await conn.fetchval("SELECT to_regclass('public.institution_settings') IS NOT NULL"))
+
+        inst_count = int(await conn.fetchval("SELECT COUNT(*) FROM institutions") or 0) if has_institutions else 0
+        student_count = int(await conn.fetchval("SELECT COUNT(*) FROM students") or 0) if has_students else 0
+
+        license_meta = {
+            "has_artifact": False,
+            "serial_number": None,
+            "installation_id": None,
+            "tier": None,
+            "status": None,
+        }
+        if has_settings:
+            lic_rows = await conn.fetch(
+                """
+                SELECT key, value
+                FROM institution_settings
+                WHERE key IN (
+                    'license.artifact',
+                    'license.serial_number',
+                    'license.installation_id',
+                    'license.tier',
+                    'license.status'
+                )
+                ORDER BY institution_id ASC
+                """
+            )
+            for row in lic_rows:
+                k = str(row["key"])
+                v = row["value"]
+                if k == "license.artifact" and v:
+                    license_meta["has_artifact"] = True
+                elif k == "license.serial_number" and v and not license_meta["serial_number"]:
+                    license_meta["serial_number"] = str(v)
+                elif k == "license.installation_id" and v and not license_meta["installation_id"]:
+                    license_meta["installation_id"] = str(v)
+                elif k == "license.tier" and v and not license_meta["tier"]:
+                    license_meta["tier"] = str(v)
+                elif k == "license.status" and v and not license_meta["status"]:
+                    license_meta["status"] = str(v)
+
+        unknown_revs = [r for r in current_revs if r not in all_known_revs]
+        return {
+            "reachable": True,
+            "postgres_version": str(pg_version or ""),
+            "has_alembic_version": has_alembic,
+            "current_revisions": current_revs,
+            "unknown_revisions": unknown_revs,
+            "has_institutions_table": has_institutions,
+            "institutions_count": inst_count,
+            "students_count": student_count,
+            "license": license_meta,
+        }
+    finally:
+        await conn.close()
+
+
+def _get_alembic_script_info(backend_dir: Path) -> tuple[list[str], set[str], list[str]]:
+    """Return (heads, all_revision_ids, ordered_revisions_base_to_head) from local Alembic scripts."""
+    alembic_ini = backend_dir / "alembic.ini"
+    if not alembic_ini.exists():
+        return [], set(), []
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
+    alembic_cfg = Config(str(alembic_ini))
+    alembic_cfg.set_main_option("script_location", str(backend_dir / "alembic"))
+    script = ScriptDirectory.from_config(alembic_cfg)
+    heads = list(script.get_heads())
+    ordered_desc = [rev.revision for rev in script.walk_revisions()]
+    ordered_asc = list(reversed(ordered_desc))
+    return heads, set(ordered_asc), ordered_asc
+
+
+def _compute_pending_revisions(current_revs: list[str], heads: list[str], ordered_asc: list[str]) -> list[str]:
+    """Compute ordered revision IDs still needed to reach Alembic head(s)."""
+    if not heads:
+        return []
+    if set(current_revs) == set(heads):
+        return []
+    if not current_revs:
+        return list(ordered_asc)
+    try:
+        max_idx = max(ordered_asc.index(rev) for rev in current_revs if rev in ordered_asc)
+        return ordered_asc[max_idx + 1 :]
+    except ValueError:
+        return []
+
+
+def run_preflight_check(
+    app_root: Path,
+    backend_dir: Path,
+    data_root: Path,
+    json_out: Optional[Path] = None,
+    db_url_override: Optional[str] = None,
+    start_pg_if_stopped: bool = False,
+    actor: str = "cli",
+) -> tuple[int, dict]:
+    """Inspect existing installation, PostgreSQL cluster, Alembic schema state, disk space, and license parity."""
+    app_version, build_number = _resolve_app_version_metadata()
+    heads, all_known_revs, ordered_asc = _get_alembic_script_info(backend_dir)
+
+    installed_version = None
+    bootstrap_marker = data_root / ".bootstrap_complete"
+    if bootstrap_marker.is_file():
+        try:
+            marker_data = json.loads(bootstrap_marker.read_text(encoding="utf-8"))
+            if isinstance(marker_data, dict):
+                installed_version = marker_data.get("version") or marker_data.get("app_version")
+        except Exception:
+            pass
+    version_file = app_root / "VERSION"
+    if not installed_version and version_file.is_file():
+        try:
+            installed_version = version_file.read_text(encoding="utf-8").strip() or None
+        except Exception:
+            pass
+
+    data_dir = data_root / "data"
+    has_pg_cluster = (data_dir / "PG_VERSION").is_file()
+    pg_cluster_major = (data_dir / "PG_VERSION").read_text(encoding="utf-8").strip() if has_pg_cluster else None
+
+    env_path = data_root / ".env"
+    if not env_path.is_file() and (app_root / ".env").is_file():
+        env_path = app_root / ".env"
+    env_vars = _load_env_file(env_path)
+
+    disk_target = data_root if data_root.exists() else app_root
+    usage = shutil.disk_usage(str(disk_target))
+    free_mb = int(usage.free // (1024 * 1024))
+
+    db_url = (db_url_override or env_vars.get("DATABASE_URL") or "").strip()
+    if not db_url and env_vars.get("POSTGRES_PORT"):
+        db_pw = env_vars.get("POSTGRES_PASSWORD") or "postgres"
+        db_url = f"postgresql+asyncpg://postgres:{db_pw}@127.0.0.1:{env_vars['POSTGRES_PORT']}/prashant_academy"
+
+    started_pg_proc = None
+    db_state: dict = {"reachable": False, "current_revisions": [], "unknown_revisions": [], "license": {}}
+    db_error = ""
+
+    if not db_url and not has_pg_cluster:
+        recommendation = "FRESH_INSTALL"
+        reason = "No existing database cluster or runtime environment found; safe for clean installation."
+        exit_code = 0
+    else:
+        if start_pg_if_stopped and has_pg_cluster and not db_url_override:
+            try:
+                probe_port = int(env_vars.get("POSTGRES_PORT") or "5433")
+                if not _is_port_in_use(probe_port):
+                    started_pg_proc, probe_port = _start_embedded_postgres(app_root, backend_dir, data_root=data_root)
+                    db_pw = env_vars.get("POSTGRES_PASSWORD") or "postgres"
+                    db_url = f"postgresql+asyncpg://postgres:{db_pw}@127.0.0.1:{probe_port}/prashant_academy"
+            except Exception as exc:
+                db_error = str(exc)
+
+        try:
+            if db_url:
+                db_state = asyncio.run(_inspect_database_state(db_url, all_known_revs))
+        except Exception as exc:
+            db_error = str(exc)
+        finally:
+            if started_pg_proc is not None:
+                _stop_postgres_graceful(app_root, started_pg_proc, data_root)
+
+        current_revs = db_state.get("current_revisions", [])
+        unknown_revs = db_state.get("unknown_revisions", [])
+        pending_revs = _compute_pending_revisions(current_revs, heads, ordered_asc) if db_state.get("reachable") else []
+
+        if not db_state.get("reachable"):
+            recommendation = "MANUAL_INTERVENTION"
+            reason = f"Existing installation detected, but PostgreSQL database could not be inspected: {db_error or 'connection unavailable'}."
+            exit_code = 2
+        elif unknown_revs:
+            recommendation = "MANUAL_INTERVENTION"
+            reason = f"Unrecognized or conflicting Alembic revision(s) in database: {', '.join(unknown_revs)}."
+            exit_code = 2
+        elif not db_state.get("has_institutions_table") and bootstrap_marker.is_file():
+            recommendation = "RECOVERY_REQUIRED"
+            reason = "Database is reachable, but core 'institutions' table is missing despite previous bootstrap marker."
+            exit_code = 3
+        elif pending_revs:
+            recommendation = "UPGRADE_WITH_MIGRATION"
+            reason = f"Database is healthy at {current_revs or ['uninitialized']} and requires {len(pending_revs)} Alembic migration(s) to reach head {heads}."
+            exit_code = 0
+        elif installed_version and installed_version != app_version:
+            recommendation = "UPGRADE_STANDARD"
+            reason = f"Database schema is already at head {heads}; upgrading runtime from {installed_version} to {app_version}."
+            exit_code = 0
+        else:
+            recommendation = "UP_TO_DATE"
+            reason = f"Installed schema matches target head {heads} and version {app_version}."
+            exit_code = 0
+
+    try:
+        from app.core.hardware import get_machine_hardware_fingerprint
+
+        machine_fp = get_machine_hardware_fingerprint()
+    except Exception:
+        machine_fp = "UNKNOWN"
+
+    lic_info = db_state.get("license") or {}
+    registered_hw = lic_info.get("installation_id")
+    hardware_match = None
+    if registered_hw:
+        hardware_match = registered_hw.strip().upper() == machine_fp.strip().upper()
+
+    pending_revs_out = (
+        _compute_pending_revisions(db_state.get("current_revisions", []), heads, ordered_asc)
+        if db_state.get("reachable")
+        else []
+    )
+    report = {
+        "recommendation": recommendation,
+        "reason": reason,
+        "target_version": app_version,
+        "target_build": build_number,
+        "installed_version": installed_version,
+        "app_root": str(app_root),
+        "data_root": str(data_root),
+        "has_pg_cluster": has_pg_cluster,
+        "pg_cluster_major": pg_cluster_major,
+        "free_disk_mb": free_mb,
+        "db_reachable": bool(db_state.get("reachable")),
+        "postgres_version": db_state.get("postgres_version"),
+        "schema_current": db_state.get("current_revisions", []),
+        "schema_target": heads,
+        "pending_migrations": pending_revs_out,
+        "pending_count": len(pending_revs_out),
+        "institutions_count": db_state.get("institutions_count", 0),
+        "students_count": db_state.get("students_count", 0),
+        "license_present": bool(lic_info.get("has_artifact") or lic_info.get("serial_number")),
+        "license_serial": lic_info.get("serial_number"),
+        "license_registered_hardware": registered_hw,
+        "machine_hardware_fingerprint": machine_fp,
+        "hardware_match": hardware_match,
+        "checked_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    }
+
+    if _is_dir_writable(data_root):
+        try:
+            _append_upgrade_audit_event(
+                data_root,
+                {
+                    "actor": actor,
+                    "operation": "preflight_check",
+                    "app_version": app_version,
+                    "build_number": build_number,
+                    "schema_before": report["schema_current"],
+                    "schema_after": report["schema_current"],
+                    "pending_migrations": pending_revs_out,
+                    "recommendation": recommendation,
+                    "outcome": "ok" if exit_code == 0 else "blocked",
+                    "reason": reason,
+                },
+            )
+        except Exception:
+            pass
+
+    if json_out is not None:
+        json_out.parent.mkdir(parents=True, exist_ok=True)
+        json_out.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    return exit_code, report
+
+
+def run_migrate_only(
+    app_root: Path,
+    backend_dir: Path,
+    data_root: Path,
+    backup_path: Optional[str] = None,
+    actor: str = "installer",
+    db_url_override: Optional[str] = None,
+    start_pg: bool = True,
+) -> tuple[int, dict]:
+    """Execute Alembic migrations forward to head, verify resulting revision, and record an audit trail."""
+    app_version, build_number = _resolve_app_version_metadata()
+    heads, all_known_revs, ordered_asc = _get_alembic_script_info(backend_dir)
+
+    env_path = data_root / ".env"
+    if not env_path.is_file() and (app_root / ".env").is_file():
+        env_path = app_root / ".env"
+    env_vars = _load_env_file(env_path)
+    if env_path.is_file():
+        os.environ["PRATHAM_ENV_FILE"] = str(env_path)
+        for k, v in env_vars.items():
+            os.environ.setdefault(k, v)
+
+    started_pg_proc = None
+    db_url = (db_url_override or os.environ.get("DATABASE_URL") or env_vars.get("DATABASE_URL") or "").strip()
+    if start_pg and not db_url_override and (app_root / "pgsql" / "bin" / "postgres.exe").is_file():
+        started_pg_proc, pg_port = _start_embedded_postgres(app_root, backend_dir, data_root=data_root)
+        db_pw = env_vars.get("POSTGRES_PASSWORD") or os.environ.get("POSTGRES_PASSWORD") or "postgres"
+        db_url = f"postgresql+asyncpg://postgres:{db_pw}@127.0.0.1:{pg_port}/prashant_academy"
+        os.environ["POSTGRES_PORT"] = str(pg_port)
+
+    if not db_url:
+        reason = "No DATABASE_URL or embedded PostgreSQL configuration found for migration."
+        _append_upgrade_audit_event(
+            data_root,
+            {
+                "actor": actor,
+                "operation": "migrate_only",
+                "app_version": app_version,
+                "build_number": build_number,
+                "backup_path": backup_path,
+                "outcome": "failed",
+                "reason": reason,
+            },
+        )
+        return 1, {"outcome": "failed", "reason": reason}
+
+    os.environ["DATABASE_URL"] = db_url
+    schema_before: list[str] = []
+    schema_after: list[str] = []
+    pending_revs: list[str] = []
+    try:
+        before_state = asyncio.run(_inspect_database_state(db_url, all_known_revs))
+        schema_before = before_state.get("current_revisions", [])
+        pending_revs = _compute_pending_revisions(schema_before, heads, ordered_asc)
+
+        alembic_ini = backend_dir / "alembic.ini"
+        if not alembic_ini.is_file():
+            raise RuntimeError(f"Missing Alembic configuration: {alembic_ini}")
+
+        from alembic import command
+        from alembic.config import Config
+
+        alembic_cfg = Config(str(alembic_ini))
+        alembic_cfg.set_main_option("script_location", str(backend_dir / "alembic"))
+        command.upgrade(alembic_cfg, "head")
+
+        after_state = asyncio.run(_inspect_database_state(db_url, all_known_revs))
+        schema_after = after_state.get("current_revisions", [])
+        if heads and set(schema_after) != set(heads):
+            raise RuntimeError(
+                f"Post-migration schema verification failed: expected head {heads}, got {schema_after}."
+            )
+
+        marker = data_root / ".bootstrap_complete"
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(
+            json.dumps(
+                {
+                    "version": app_version,
+                    "build_number": build_number,
+                    "schema_revisions": schema_after,
+                    "updated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        result = {
+            "outcome": "success",
+            "app_version": app_version,
+            "schema_before": schema_before,
+            "schema_after": schema_after,
+            "applied_migrations": pending_revs,
+            "backup_path": backup_path,
+        }
+        _append_upgrade_audit_event(
+            data_root,
+            {
+                **result,
+                "actor": actor,
+                "operation": "migrate_only",
+                "build_number": build_number,
+                "pending_migrations": pending_revs,
+                "reason": "Verified forward Alembic migration to head.",
+            },
+        )
+        return 0, result
+    except Exception as exc:
+        recovery_note = f"Restore from pre-upgrade backup: {backup_path}" if backup_path else "Review logs/upgrade_audit.jsonl and restore verified pre-upgrade pg_dump."
+        reason = f"Migration failed without automatic downgrade ({exc}). {recovery_note}"
+        _append_upgrade_audit_event(
+            data_root,
+            {
+                "actor": actor,
+                "operation": "migrate_only",
+                "app_version": app_version,
+                "build_number": build_number,
+                "schema_before": schema_before,
+                "schema_after": schema_after,
+                "pending_migrations": pending_revs,
+                "backup_path": backup_path,
+                "outcome": "failed",
+                "reason": reason,
+            },
+        )
+        return 1, {"outcome": "failed", "reason": reason, "schema_before": schema_before}
+    finally:
+        if started_pg_proc is not None:
+            _stop_postgres_graceful(app_root, started_pg_proc, data_root)
+
+
 def _verify_pyd_integrity() -> None:
     """Verify compiled app/core and app/services .pyd binaries against the embedded release manifest."""
     exe_name = Path(sys.executable).name.lower()
@@ -1197,6 +1669,11 @@ def main():
     parser.add_argument("--generate-ssl", action="store_true", help="Generate local SSL certificates and exit")
     parser.add_argument("--configure-domains", action="store_true", help="Configure local hosts and portproxy and exit")
     parser.add_argument("--healthcheck-smoke", action="store_true", help="Verify app import, .pyd extensions, and OpenAPI schema")
+    parser.add_argument("--preflight-check", action="store_true", help="Inspect installation, DB schema, disk space, and license parity cleanly")
+    parser.add_argument("--migrate-only", action="store_true", help="Execute forward Alembic migrations to head with schema verification and exit")
+    parser.add_argument("--json-out", default="", help="Optional JSON output file path for --preflight-check / --migrate-only")
+    parser.add_argument("--backup-path", default="", help="Verified pre-upgrade backup path recorded in upgrade_audit.jsonl")
+    parser.add_argument("--actor", default="cli", help="Actor label for upgrade_audit.jsonl")
     args = parser.parse_args()
 
     if args.generate_ssl:
@@ -1221,6 +1698,39 @@ def main():
             raise RuntimeError(f"Unexpectedly small OpenAPI schema path count: {paths_count}")
         print(f"SMOKE_OK paths={paths_count}")
         return
+
+    if args.preflight_check:
+        _verify_pyd_integrity()
+        json_out = Path(args.json_out) if args.json_out.strip() else None
+        code, report = run_preflight_check(
+            APP_ROOT,
+            BACKEND_DIR,
+            DATA_ROOT,
+            json_out=json_out,
+            start_pg_if_stopped=True,
+            actor=args.actor or "cli",
+        )
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        sys.exit(code)
+
+    if args.migrate_only:
+        _verify_pyd_integrity()
+        backend_log_path = DATA_ROOT / "logs" / "backend_server.log"
+        _configure_rotating_logging(backend_log_path)
+        code, result = run_migrate_only(
+            APP_ROOT,
+            BACKEND_DIR,
+            DATA_ROOT,
+            backup_path=args.backup_path.strip() or None,
+            actor=args.actor or "installer",
+            start_pg=True,
+        )
+        if args.json_out.strip():
+            out_path = Path(args.json_out.strip())
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        sys.exit(code)
 
     backend_log_path = DATA_ROOT / "logs" / "backend_server.log"
     _clean_stray_root_logs(APP_ROOT, DATA_ROOT)

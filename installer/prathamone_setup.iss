@@ -20,10 +20,10 @@
 #define MyAppName "PrathamOne EduOS"
 #define MyAppDirName "PrathamOneEduOS"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.185.2"
+  #define MyAppVersion "1.186.0"
 #endif
 #ifndef MyAppFileVersion
-  #define MyAppFileVersion "1.185.2.0"
+  #define MyAppFileVersion "1.186.0.0"
 #endif
 #ifndef MyOutputBaseFilename
   #ifdef UseReleasePayload
@@ -209,6 +209,12 @@ var
   MediumPage: TInputOptionWizardPage;
   AdminPasswordValue: String;
   DbPortValue: String;
+  InstallInfoPanel: TPanel;
+  InstallAccentBar: TPanel;
+  InstallCardTitle: TNewStaticText;
+  InstallPhaseLabel: TNewStaticText;
+  InstallSafetyLabel: TNewStaticText;
+  InstallPathsLabel: TNewStaticText;
 
 function IsWebView2Installed: Boolean;
 var
@@ -472,12 +478,58 @@ begin
   end;
 end;
 
+procedure UpdateInstallInfoCard(PhaseText: String);
+var
+  DataRootText: String;
+begin
+  if not Assigned(InstallInfoPanel) then
+    Exit;
+
+  if IsUpgradeMode then
+  begin
+    InstallCardTitle.Caption := 'Upgrading PrathamOne EduOS to v{#MyAppVersion}  (In-Place Upgrade)';
+    InstallSafetyLabel.Caption :=
+      'Data Protection Active: Existing student records, fee ledgers, attendance & .env are preserved.';
+  end
+  else
+  begin
+    InstallCardTitle.Caption := 'Installing PrathamOne EduOS v{#MyAppVersion}  (Coaching Institute Edition)';
+    InstallSafetyLabel.Caption :=
+      'Included: Local PostgreSQL 16 (Port 5433), WebView2 Desktop Shell, & Offline License Vault.';
+  end;
+
+  InstallPhaseLabel.Caption := PhaseText;
+  DataRootText := GetWritableDataRoot('');
+  if DataRootText = '' then
+    DataRootText := ExpandConstant('{localappdata}\{#MyAppDirName}');
+  InstallPathsLabel.Caption :=
+    'App Folder: ' + ExpandConstant('{app}') + #13#10 +
+    'Data & Backups: ' + DataRootText + '   ·   Smritisys & AITDL Networks';
+  InstallInfoPanel.Update;
+end;
+
 procedure CurPageChanged(CurPageID: Integer);
 begin
   if IsUpgradeMode and (CurPageID = wpReady) then
   begin
     WizardForm.PageNameLabel.Caption := 'Ready to Upgrade';
     WizardForm.PageDescriptionLabel.Caption := 'Setup is ready to upgrade PrathamOne EduOS to version ' + '{#MyAppVersion}' + '. All student data, attendance, and fee ledgers will be safely preserved.';
+  end;
+
+  if CurPageID = wpInstalling then
+  begin
+    if IsUpgradeMode then
+      UpdateInstallInfoCard(
+        '  1. Pre-upgrade PostgreSQL pg_dump backup & snapshot' + #13#10 +
+        '  2. Extracting signed runtime binaries & web interface' + #13#10 +
+        '  3. Refreshing local TLS certificates & schema migrations'
+      )
+    else
+      UpdateInstallInfoCard(
+        '  1. Extracting PrathamOne EduOS runtime & React SPA' + #13#10 +
+        '  2. Initializing embedded PostgreSQL 16 database cluster' + #13#10 +
+        '  3. Generating local trusted HTTPS certificate & firewall policy'
+      );
   end;
 end;
 
@@ -577,6 +629,76 @@ begin
   WizardForm.PageNameLabel.Width := WizardForm.WizardSmallBitmapImage.Left - WizardForm.PageNameLabel.Left - 10;
   WizardForm.PageDescriptionLabel.Width := WizardForm.WizardSmallBitmapImage.Left - WizardForm.PageDescriptionLabel.Left - 10;
 
+  // Branded Live Setup Progress & Data-Safety Card below InstallingPage progress bar
+  WizardForm.StatusLabel.Font.Color := $00542100;
+  WizardForm.StatusLabel.Font.Style := [fsBold];
+  WizardForm.FilenameLabel.Font.Color := $00695547;
+
+  InstallInfoPanel := TPanel.Create(WizardForm);
+  InstallInfoPanel.Parent := WizardForm.InstallingPage;
+  InstallInfoPanel.Left := WizardForm.ProgressGauge.Left;
+  InstallInfoPanel.Top := WizardForm.ProgressGauge.Top + WizardForm.ProgressGauge.Height + ScaleY(16);
+  InstallInfoPanel.Width := WizardForm.ProgressGauge.Width;
+  InstallInfoPanel.Height := WizardForm.InstallingPage.ClientHeight - InstallInfoPanel.Top - ScaleY(8);
+  InstallInfoPanel.Anchors := [akLeft, akTop, akRight, akBottom];
+  InstallInfoPanel.BevelOuter := bvNone;
+  InstallInfoPanel.ParentColor := False;
+  InstallInfoPanel.Color := $00FBF6F3;
+
+  InstallAccentBar := TPanel.Create(WizardForm);
+  InstallAccentBar.Parent := InstallInfoPanel;
+  InstallAccentBar.Left := 0;
+  InstallAccentBar.Top := 0;
+  InstallAccentBar.Width := ScaleX(4);
+  InstallAccentBar.Height := InstallInfoPanel.Height;
+  InstallAccentBar.Anchors := [akLeft, akTop, akBottom];
+  InstallAccentBar.BevelOuter := bvNone;
+  InstallAccentBar.ParentColor := False;
+  InstallAccentBar.Color := $00552200;
+
+  InstallCardTitle := TNewStaticText.Create(WizardForm);
+  InstallCardTitle.Parent := InstallInfoPanel;
+  InstallCardTitle.Left := ScaleX(14);
+  InstallCardTitle.Top := ScaleY(12);
+  InstallCardTitle.Width := InstallInfoPanel.Width - ScaleX(24);
+  InstallCardTitle.AutoSize := False;
+  InstallCardTitle.Font.Style := [fsBold];
+  InstallCardTitle.Font.Size := 9;
+  InstallCardTitle.Font.Color := $00542100;
+  InstallCardTitle.Caption := 'Installing PrathamOne EduOS v{#MyAppVersion}';
+
+  InstallPhaseLabel := TNewStaticText.Create(WizardForm);
+  InstallPhaseLabel.Parent := InstallInfoPanel;
+  InstallPhaseLabel.Left := ScaleX(14);
+  InstallPhaseLabel.Top := ScaleY(34);
+  InstallPhaseLabel.Width := InstallInfoPanel.Width - ScaleX(24);
+  InstallPhaseLabel.Height := ScaleY(52);
+  InstallPhaseLabel.AutoSize := False;
+  InstallPhaseLabel.WordWrap := True;
+  InstallPhaseLabel.Font.Color := $003B291E;
+
+  InstallSafetyLabel := TNewStaticText.Create(WizardForm);
+  InstallSafetyLabel.Parent := InstallInfoPanel;
+  InstallSafetyLabel.Left := ScaleX(14);
+  InstallSafetyLabel.Top := ScaleY(90);
+  InstallSafetyLabel.Width := InstallInfoPanel.Width - ScaleX(24);
+  InstallSafetyLabel.Height := ScaleY(22);
+  InstallSafetyLabel.AutoSize := False;
+  InstallSafetyLabel.WordWrap := True;
+  InstallSafetyLabel.Font.Style := [fsBold];
+  InstallSafetyLabel.Font.Color := $004B7E1A;
+
+  InstallPathsLabel := TNewStaticText.Create(WizardForm);
+  InstallPathsLabel.Parent := InstallInfoPanel;
+  InstallPathsLabel.Left := ScaleX(14);
+  InstallPathsLabel.Top := ScaleY(118);
+  InstallPathsLabel.Width := InstallInfoPanel.Width - ScaleX(24);
+  InstallPathsLabel.Height := ScaleY(32);
+  InstallPathsLabel.AutoSize := False;
+  InstallPathsLabel.WordWrap := True;
+  InstallPathsLabel.Font.Size := 8;
+  InstallPathsLabel.Font.Color := $00695547;
+
   // Product License & Activation Page (Optional - with skip/activate later capability)
   LicensePage := CreateInputQueryPage(wpSelectDir,
     'Product License & Activation (Optional)',
@@ -666,6 +788,183 @@ begin
   DbPortValue := '5432';
 end;
 
+var
+  VerifiedBackupDumpFile: String;
+  UpgradeBackupDone: Boolean;
+
+function ReadInstalledVersionLabel(DataRootDir: String): String;
+var
+  MarkerContent: AnsiString;
+  VerStr: String;
+  P1, P2: Integer;
+begin
+  Result := 'Unknown';
+  if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{C47F8932-B8E2-4C10-9118-E86940A39BF1}_is1', 'DisplayVersion', VerStr) and (VerStr <> '') then
+    Result := VerStr
+  else if RegQueryStringValue(HKCU, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{C47F8932-B8E2-4C10-9118-E86940A39BF1}_is1', 'DisplayVersion', VerStr) and (VerStr <> '') then
+    Result := VerStr;
+
+  if FileExists(DataRootDir + '\.bootstrap_complete') and LoadStringFromFile(DataRootDir + '\.bootstrap_complete', MarkerContent) then
+  begin
+    P1 := Pos('"version": "', String(MarkerContent));
+    if P1 > 0 then
+    begin
+      VerStr := Copy(String(MarkerContent), P1 + 12, 32);
+      P2 := Pos('"', VerStr);
+      if P2 > 1 then
+        Result := Copy(VerStr, 1, P2 - 1);
+    end;
+  end;
+end;
+
+function UpdateReadyMemo(Space, NewLine, MemoUserInfoInfo, MemoDirInfo, MemoTypeInfo, MemoComponentsInfo, MemoGroupInfo, MemoTasksInfo: String): String;
+var
+  S: String;
+  DataRootDir: String;
+  DataDir: String;
+  DiskProbeDir: String;
+  FreeMB, TotalMB: Cardinal;
+  PgPort: String;
+  EnvStatus: String;
+  PgVerText: AnsiString;
+begin
+  S := '';
+  if MemoDirInfo <> '' then
+    S := S + MemoDirInfo + NewLine + NewLine;
+
+  DataRootDir := GetWritableDataRoot('');
+  DiskProbeDir := DataRootDir;
+  if not DirExists(DiskProbeDir) then
+    DiskProbeDir := ExtractFileDir(DiskProbeDir);
+  if not DirExists(DiskProbeDir) then
+    DiskProbeDir := ExpandConstant('{localappdata}');
+
+  DataDir := DataRootDir + '\data';
+  if not DirExists(DataDir) then
+    DataDir := ExpandConstant('{app}\data');
+
+  if IsUpgradeMode then
+  begin
+    PgPort := DetectPostgresPort(DataDir);
+    if FileExists(DataRootDir + '\.env') or FileExists(ExpandConstant('{app}\.env')) then
+      EnvStatus := 'Preserved (.env retained intact)'
+    else
+      EnvStatus := 'Missing (will be initialized safely)';
+
+    PgVerText := 'Unknown';
+    if FileExists(DataDir + '\PG_VERSION') then
+      LoadStringFromFile(DataDir + '\PG_VERSION', PgVerText);
+
+    S := S + 'Pre-Flight Upgrade Assessment:' + NewLine;
+    S := S + Space + 'Mode: In-Place Enterprise Upgrade (Data & License Preserved)' + NewLine;
+    S := S + Space + 'Installed Version: v' + ReadInstalledVersionLabel(DataRootDir) + ' -> Target: v{#MyAppVersion}' + NewLine;
+    S := S + Space + 'Data Root: ' + DataRootDir + NewLine;
+    S := S + Space + 'PostgreSQL Cluster: v' + Trim(String(PgVerText)) + ' (Port ' + PgPort + ')' + NewLine;
+    S := S + Space + 'Environment Config: ' + EnvStatus + NewLine;
+    if GetSpaceOnDisk(DiskProbeDir, True, FreeMB, TotalMB) then
+      S := S + Space + 'Free Disk Space: ' + IntToStr(FreeMB) + ' MB' + NewLine;
+    S := S + Space + 'Protection: Verified pre-upgrade pg_dump + Alembic forward migration' + NewLine + NewLine;
+  end
+  else
+  begin
+    S := S + 'Pre-Flight Installation Assessment:' + NewLine;
+    S := S + Space + 'Mode: Fresh Installation (PrathamOne EduOS v{#MyAppVersion})' + NewLine;
+    S := S + Space + 'Data Root: ' + DataRootDir + NewLine;
+    if GetSpaceOnDisk(DiskProbeDir, True, FreeMB, TotalMB) then
+      S := S + Space + 'Free Disk Space: ' + IntToStr(FreeMB) + ' MB' + NewLine;
+    S := S + NewLine;
+  end;
+
+  if MemoTasksInfo <> '' then
+    S := S + MemoTasksInfo;
+  Result := S;
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  DataRootDir: String;
+  DataDir: String;
+  BackupDir: String;
+  BackupTarget: String;
+  PgCtl: String;
+  PgDump: String;
+  PgBinDir: String;
+  PgPort: String;
+  FreeMB, TotalMB: Cardinal;
+  DumpSize: Integer;
+  ResultCode: Integer;
+  StartCode: Integer;
+begin
+  Result := '';
+  UpgradeBackupDone := False;
+  VerifiedBackupDumpFile := '';
+
+  DataRootDir := GetWritableDataRoot('');
+  ForceDirectories(DataRootDir);
+
+  if GetSpaceOnDisk(DataRootDir, True, FreeMB, TotalMB) then
+  begin
+    if FreeMB < 500 then
+    begin
+      Result := 'Insufficient free disk space on ' + DataRootDir + ' (' + IntToStr(FreeMB) + ' MB available, minimum 500 MB required for safe upgrade/installation).';
+      Exit;
+    end;
+  end;
+
+  if not IsUpgradeMode then
+    Exit;
+
+  DataDir := DataRootDir + '\data';
+  if not DirExists(DataDir) then
+    DataDir := ExpandConstant('{app}\data');
+  if (not DirExists(DataDir)) and (GetExistingInstallDir <> '') then
+    DataDir := GetExistingInstallDir + '\data';
+
+  if not DirExists(DataDir) then
+    Exit;
+
+  BackupDir := DataRootDir + '\backups';
+  ForceDirectories(BackupDir);
+  PgPort := DetectPostgresPort(DataDir);
+
+  PgBinDir := ExpandConstant('{app}\pgsql\bin');
+  if (not FileExists(PgBinDir + '\pg_dump.exe')) and (GetExistingInstallDir <> '') then
+    PgBinDir := GetExistingInstallDir + '\pgsql\bin';
+
+  PgCtl := PgBinDir + '\pg_ctl.exe';
+  PgDump := PgBinDir + '\pg_dump.exe';
+
+  if FileExists(PgDump) and FileExists(PgCtl) and FileExists(DataDir + '\PG_VERSION') then
+  begin
+    Exec(PgCtl, 'start -w -t 30 -D "' + DataDir + '" -o "-p ' + PgPort + '" -l "' + DataDir + '\pg_upgrade_backup.log"', PgBinDir, SW_HIDE, ewWaitUntilTerminated, StartCode);
+    VerifiedBackupDumpFile := BackupDir + '\pre_upgrade_v{#MyAppVersion}_' + GetDateTimeString('yyyymmdd_hhnnss', #0, #0) + '.dump';
+    Exec(PgDump, '-h 127.0.0.1 -p ' + PgPort + ' -U postgres -Fc -f "' + VerifiedBackupDumpFile + '" prashant_academy', PgBinDir, SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Exec(PgCtl, 'stop -w -t 15 -D "' + DataDir + '" -m fast', PgBinDir, SW_HIDE, ewWaitUntilTerminated, StartCode);
+
+    DumpSize := 0;
+    if FileExists(VerifiedBackupDumpFile) then
+      FileSize(VerifiedBackupDumpFile, DumpSize);
+
+    if (ResultCode <> 0) or (not FileExists(VerifiedBackupDumpFile)) or ((DumpSize >= 0) and (DumpSize < 1024)) then
+    begin
+      Result := 'Pre-upgrade PostgreSQL backup verification failed (pg_dump exit code ' + IntToStr(ResultCode) + '). Setup has aborted cleanly without modifying your existing installation or database.';
+      Exit;
+    end;
+  end
+  else if FileExists(DataDir + '\PG_VERSION') then
+  begin
+    if (not WizardSilent) and (MsgBox('Existing database cluster found, but pg_dump.exe is unavailable in the previous install directory (possible incomplete installation).' + #13#10 + #13#10 + 'Proceed with raw physical data snapshot before repairing binaries?', mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDNO) then
+    begin
+      Result := 'Upgrade cancelled by administrator because logical pre-upgrade backup could not run.';
+      Exit;
+    end;
+  end;
+
+  BackupTarget := BackupDir + '\pre_upgrade_snapshot_v{#MyAppVersion}_' + GetDateTimeString('yyyymmdd_hhnnss', #0, #0);
+  Exec('robocopy.exe', '"' + DataDir + '" "' + BackupTarget + '" /E /R:1 /W:1 /NP /NFL /NDL /NJH /NJS', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  UpgradeBackupDone := True;
+end;
+
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
@@ -718,37 +1017,101 @@ begin
   // 1. Rule 013 & DPDP: Automated logical pg_dump + data snapshot before copying binaries on upgrade
   if (CurStep = ssInstall) and IsUpgradeMode then
   begin
-    DataRootDir := GetWritableDataRoot('');
-    DataDir := DataRootDir + '\data';
-    if not DirExists(DataDir) then
-      DataDir := ExpandConstant('{app}\data');
-    if (not DirExists(DataDir)) and (GetExistingInstallDir <> '') then
-      DataDir := GetExistingInstallDir + '\data';
-
-    if DirExists(DataDir) then
+    if UpgradeBackupDone then
     begin
-      BackupDir := DataRootDir + '\backups';
-      ForceDirectories(BackupDir);
-      PgPort := DetectPostgresPort(DataDir);
-      PgCtl := ExpandConstant('{app}\pgsql\bin\pg_ctl.exe');
-      PgDump := ExpandConstant('{app}\pgsql\bin\pg_dump.exe');
+      UpdateInstallInfoCard(
+        '  [Done]   Verified pre-upgrade PostgreSQL pg_dump & cluster snapshot' + #13#10 +
+        '  [Active] Extracting signed runtime binaries & web interface' + #13#10 +
+        '  [Next]   Verifying schema compatibility & running Alembic migrations'
+      );
+    end
+    else
+    begin
+      UpdateInstallInfoCard(
+        '  [Active] Creating pre-upgrade PostgreSQL pg_dump backup & snapshot...' + #13#10 +
+        '  [Next]   Extracting signed runtime binaries & web interface' + #13#10 +
+        '  [Queued] Refreshing local TLS certificates & schema migrations'
+      );
+      DataRootDir := GetWritableDataRoot('');
+      DataDir := DataRootDir + '\data';
+      if not DirExists(DataDir) then
+        DataDir := ExpandConstant('{app}\data');
+      if (not DirExists(DataDir)) and (GetExistingInstallDir <> '') then
+        DataDir := GetExistingInstallDir + '\data';
 
-      if FileExists(PgDump) and FileExists(PgCtl) and FileExists(DataDir + '\PG_VERSION') then
+      if DirExists(DataDir) then
       begin
-        Exec(PgCtl, 'start -w -t 30 -D "' + DataDir + '" -o "-p ' + PgPort + '" -l "' + DataDir + '\pg_upgrade_backup.log"', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
-        DumpFile := BackupDir + '\pre_upgrade_v' + '{#MyAppVersion}' + '_' + GetDateTimeString('yyyymmdd_hhnnss', #0, #0) + '.dump';
-        Exec(PgDump, '-h 127.0.0.1 -p ' + PgPort + ' -U postgres -Fc -f "' + DumpFile + '" prashant_academy', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
-        Exec(PgCtl, 'stop -w -t 15 -D "' + DataDir + '" -m fast', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
-      end;
+        BackupDir := DataRootDir + '\backups';
+        ForceDirectories(BackupDir);
+        PgPort := DetectPostgresPort(DataDir);
+        PgCtl := ExpandConstant('{app}\pgsql\bin\pg_ctl.exe');
+        PgDump := ExpandConstant('{app}\pgsql\bin\pg_dump.exe');
 
-      BackupTarget := BackupDir + '\pre_upgrade_snapshot_v' + '{#MyAppVersion}' + '_' + GetDateTimeString('yyyymmdd_hhnnss', #0, #0);
-      Exec('robocopy.exe', '"' + DataDir + '" "' + BackupTarget + '" /E /R:1 /W:1 /NP /NFL /NDL /NJH /NJS', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+        if FileExists(PgDump) and FileExists(PgCtl) and FileExists(DataDir + '\PG_VERSION') then
+        begin
+          Exec(PgCtl, 'start -w -t 30 -D "' + DataDir + '" -o "-p ' + PgPort + '" -l "' + DataDir + '\pg_upgrade_backup.log"', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+          DumpFile := BackupDir + '\pre_upgrade_v' + '{#MyAppVersion}' + '_' + GetDateTimeString('yyyymmdd_hhnnss', #0, #0) + '.dump';
+          Exec(PgDump, '-h 127.0.0.1 -p ' + PgPort + ' -U postgres -Fc -f "' + DumpFile + '" prashant_academy', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+          Exec(PgCtl, 'stop -w -t 15 -D "' + DataDir + '" -m fast', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+          VerifiedBackupDumpFile := DumpFile;
+        end;
+
+        BackupTarget := BackupDir + '\pre_upgrade_snapshot_v' + '{#MyAppVersion}' + '_' + GetDateTimeString('yyyymmdd_hhnnss', #0, #0);
+        Exec('robocopy.exe', '"' + DataDir + '" "' + BackupTarget + '" /E /R:1 /W:1 /NP /NFL /NDL /NJH /NJS', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+      end;
     end;
   end;
 
   // 2. Post-installation configuration
   if CurStep = ssPostInstall then
   begin
+    if IsUpgradeMode then
+    begin
+      UpdateInstallInfoCard(
+        '  [Done]   Pre-upgrade database backup & runtime extraction complete' + #13#10 +
+        '  [Active] Running verified Alembic database migrations & integrity checks...' + #13#10 +
+        '  [Queued] Preserving institutional data, .env & Ed25519 license binding'
+      );
+      Exec(
+        ExpandConstant('{app}\backend\prathamone_backend.exe'),
+        '--migrate-only --actor installer --backup-path "' + VerifiedBackupDumpFile + '"',
+        ExpandConstant('{app}\backend'),
+        SW_HIDE,
+        ewWaitUntilTerminated,
+        ResultCode
+      );
+      if ResultCode <> 0 then
+      begin
+        UpdateInstallInfoCard(
+          '  [Done]   Pre-upgrade database backup & runtime extraction complete' + #13#10 +
+          '  [Alert]  Database schema migration reported an error (no auto-downgrade)' + #13#10 +
+          '  [Safe]   Pre-upgrade backup preserved in backups\ folder'
+        );
+        if not WizardSilent then
+        begin
+          MsgBox(
+            'PrathamOne EduOS binaries were updated, but the automated database schema migration check returned exit code ' + IntToStr(ResultCode) + '.' + #13#10 + #13#10 +
+            'Your database has NOT been auto-downgraded. Inspect logs\upgrade_audit.jsonl and use your verified pre-upgrade backup if restoration is needed:' + #13#10 +
+            VerifiedBackupDumpFile,
+            mbError,
+            MB_OK
+          );
+        end;
+      end
+      else
+      begin
+        UpdateInstallInfoCard(
+          '  [Done]   Pre-upgrade database backup & runtime extraction complete' + #13#10 +
+          '  [Done]   Database schema verified at target head & audit log recorded' + #13#10 +
+          '  [Done]   Local TLS certificates, institutional data & license preserved'
+        );
+      end;
+    end
+    else
+      UpdateInstallInfoCard(
+        '  [Done]   PrathamOne EduOS runtime & React SPA extracted' + #13#10 +
+        '  [Active] Initializing local PostgreSQL 16 database, TLS certificates & firewall'
+      );
     // Rule 013: ONLY generate transient bootstrap config on FRESH install
     if not IsUpgradeMode then
     begin

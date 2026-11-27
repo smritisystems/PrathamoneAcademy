@@ -40,8 +40,8 @@ using Microsoft.Web.WebView2.WinForms;
 [assembly: AssemblyCompany("Smritisys & AITDL Networks")]
 [assembly: AssemblyProduct("PrathamOne EduOS")]
 [assembly: AssemblyCopyright("Copyright (c) 2026 PrathamOne EduOS")]
-[assembly: AssemblyVersion("1.185.2.0")]
-[assembly: AssemblyFileVersion("1.185.2.0")]
+[assembly: AssemblyVersion("1.186.0.0")]
+[assembly: AssemblyFileVersion("1.186.0.0")]
 
 namespace PrathamOne
 {
@@ -462,7 +462,7 @@ namespace PrathamOne
 
             // Footer Label
             lblSplashFooter = new Label();
-            lblSplashFooter.Text = "Smritisys & AITDL Networks  •  Version 1.185.2";
+            lblSplashFooter.Text = "Smritisys & AITDL Networks  •  Version 1.186.0";
             lblSplashFooter.Font = new Font("Segoe UI", 8.5F, FontStyle.Regular);
             lblSplashFooter.ForeColor = Color.FromArgb(148, 163, 184);
             lblSplashFooter.TextAlign = ContentAlignment.MiddleCenter;

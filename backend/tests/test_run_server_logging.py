@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-26
-#  * @updated     2026-11-26
+#  * @updated     2026-11-27
 #  *
 #  * @description Unit tests validating standalone backend rotating logging (5 MB x 5), stdio redirection, Uvicorn dictConfig, and stray root log consolidation.
 #  */
@@ -121,3 +121,175 @@ def test_build_uvicorn_log_config_uses_callable_rotating_handler(tmp_path):
     assert cfg["handlers"]["rotating_file"]["()"] is run_server._create_uvicorn_handler
     assert cfg["loggers"]["uvicorn.error"]["handlers"] == ["rotating_file"]
     assert cfg["loggers"]["uvicorn.error"]["propagate"] is False
+
+
+def test_preflight_check_detects_fresh_install_and_writes_audit_log(tmp_path):
+    app_root = tmp_path / "app"
+    data_root = tmp_path / "data_root"
+    app_root.mkdir(parents=True)
+    data_root.mkdir(parents=True)
+    backend_dir = Path(__file__).resolve().parents[1]
+    json_out = tmp_path / "preflight.json"
+
+    code, report = run_server.run_preflight_check(
+        app_root,
+        backend_dir,
+        data_root,
+        json_out=json_out,
+        actor="pytest",
+    )
+
+    assert code == 0
+    assert report["recommendation"] == "FRESH_INSTALL"
+    assert report["pending_count"] == 0
+    assert json_out.is_file()
+
+    audit_file = data_root / "logs" / "upgrade_audit.jsonl"
+    assert audit_file.is_file()
+    entries = audit_file.read_text(encoding="utf-8").strip().splitlines()
+    assert len(entries) == 1
+    assert '"operation": "preflight_check"' in entries[0]
+    assert '"recommendation": "FRESH_INSTALL"' in entries[0]
+
+
+def test_preflight_check_detects_pending_migration_and_hardware_mismatch(tmp_path, monkeypatch):
+    app_root = tmp_path / "app"
+    data_root = tmp_path / "data_root"
+    (data_root / "data").mkdir(parents=True)
+    (data_root / "data" / "PG_VERSION").write_text("16\n", encoding="utf-8")
+    (data_root / ".env").write_text(
+        "POSTGRES_PORT=5433\nDATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:5433/prashant_academy\n",
+        encoding="utf-8",
+    )
+    app_root.mkdir(parents=True)
+    backend_dir = Path(__file__).resolve().parents[1]
+
+    heads, _all_revs, ordered = run_server._get_alembic_script_info(backend_dir)
+    assert len(heads) == 1
+    assert len(ordered) >= 2
+    previous_rev = ordered[-2]
+
+    async def _fake_inspect(_db_url, _known):
+        return {
+            "reachable": True,
+            "postgres_version": "16.6",
+            "has_alembic_version": True,
+            "current_revisions": [previous_rev],
+            "unknown_revisions": [],
+            "has_institutions_table": True,
+            "institutions_count": 1,
+            "students_count": 25,
+            "license": {
+                "has_artifact": True,
+                "serial_number": "263835371",
+                "installation_id": "PRATHAM-B347-9CFE-842B-E65C",
+                "tier": "COMMERCIAL",
+                "status": "ACTIVE",
+            },
+        }
+
+    monkeypatch.setattr(run_server, "_inspect_database_state", _fake_inspect)
+    monkeypatch.setattr(
+        "app.core.hardware.get_machine_hardware_fingerprint",
+        lambda: "PRATHAM-B347-9CFE-842B-E65C",
+    )
+
+    code, report = run_server.run_preflight_check(
+        app_root,
+        backend_dir,
+        data_root,
+        start_pg_if_stopped=False,
+        actor="pytest",
+    )
+
+    assert code == 0
+    assert report["recommendation"] == "UPGRADE_WITH_MIGRATION"
+    assert report["pending_migrations"] == [heads[0]]
+    assert report["hardware_match"] is True
+    assert report["license_present"] is True
+    assert report["students_count"] == 25
+
+
+def test_preflight_check_blocks_unknown_alembic_revision(tmp_path, monkeypatch):
+    app_root = tmp_path / "app"
+    data_root = tmp_path / "data_root"
+    (data_root / "data").mkdir(parents=True)
+    (data_root / "data" / "PG_VERSION").write_text("16\n", encoding="utf-8")
+    (data_root / ".env").write_text(
+        "DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:5433/prashant_academy\n",
+        encoding="utf-8",
+    )
+    app_root.mkdir(parents=True)
+    backend_dir = Path(__file__).resolve().parents[1]
+
+    async def _fake_inspect(_db_url, _known):
+        return {
+            "reachable": True,
+            "postgres_version": "16.6",
+            "has_alembic_version": True,
+            "current_revisions": ["999_unknown_custom_revision"],
+            "unknown_revisions": ["999_unknown_custom_revision"],
+            "has_institutions_table": True,
+            "institutions_count": 1,
+            "students_count": 0,
+            "license": {},
+        }
+
+    monkeypatch.setattr(run_server, "_inspect_database_state", _fake_inspect)
+
+    code, report = run_server.run_preflight_check(
+        app_root,
+        backend_dir,
+        data_root,
+        start_pg_if_stopped=False,
+    )
+
+    assert code == 2
+    assert report["recommendation"] == "MANUAL_INTERVENTION"
+
+
+def test_migrate_only_verifies_head_and_records_audit_without_downgrade(tmp_path, monkeypatch):
+    app_root = tmp_path / "app"
+    data_root = tmp_path / "data_root"
+    app_root.mkdir(parents=True)
+    data_root.mkdir(parents=True)
+    (data_root / ".env").write_text(
+        "DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:5433/prashant_academy\n",
+        encoding="utf-8",
+    )
+    backend_dir = Path(__file__).resolve().parents[1]
+    heads, _known, ordered = run_server._get_alembic_script_info(backend_dir)
+
+    calls = iter([
+        {"reachable": True, "current_revisions": [ordered[-2]], "unknown_revisions": []},
+        {"reachable": True, "current_revisions": [heads[0]], "unknown_revisions": []},
+    ])
+
+    async def _fake_inspect(_db_url, _known):
+        return next(calls)
+
+    monkeypatch.setattr(run_server, "_inspect_database_state", _fake_inspect)
+
+    from alembic import command
+
+    upgraded = []
+    monkeypatch.setattr(command, "upgrade", lambda _cfg, rev: upgraded.append(rev))
+
+    code, result = run_server.run_migrate_only(
+        app_root,
+        backend_dir,
+        data_root,
+        backup_path="C:/backups/pre_upgrade.dump",
+        actor="installer",
+        start_pg=False,
+    )
+
+    assert code == 0
+    assert upgraded == ["head"]
+    assert result["outcome"] == "success"
+    assert result["schema_after"] == [heads[0]]
+    assert (data_root / ".bootstrap_complete").is_file()
+    audit_text = (data_root / "logs" / "upgrade_audit.jsonl").read_text(encoding="utf-8")
+    assert '"operation": "migrate_only"' in audit_text
+    assert '"outcome": "success"' in audit_text
+    assert "postgres:postgres@" not in audit_text
