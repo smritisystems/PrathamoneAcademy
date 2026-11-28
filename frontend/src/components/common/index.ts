@@ -84,6 +84,9 @@ export type { CoachingLoginBackgroundProps } from './CoachingLoginBackground'
 export { default as DeepSpaceLoginBackground, splitInstituteTitle } from './DeepSpaceLoginBackground'
 export type { DeepSpaceLoginBackgroundProps } from './DeepSpaceLoginBackground'
 
+export { default as IndiaNetworkLoginBackground } from './IndiaNetworkLoginBackground'
+export type { IndiaNetworkLoginBackgroundProps } from './IndiaNetworkLoginBackground'
+
 export { CampusNoticeboardDrawer } from './CampusNoticeboardDrawer'
 export type { CampusNotice, TimetableSlot } from './CampusNoticeboardDrawer'
 

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-27
-#  * @updated     2026-11-27
+#  * @updated     2026-11-28
 #  *
 #  * @description Single Source of Truth validation, SVG/logo sanitization, completeness scoring,
 #  */
@@ -316,6 +316,52 @@ def validate_hex_color(color: Optional[str], field_label: str) -> Optional[str]:
     if not _HEX_COLOR_RE.fullmatch(cleaned):
         raise HTTPException(status_code=422, detail=f"{field_label} must be a 6-digit hex code (e.g., #0B2D6B).")
     return cleaned.upper()
+
+
+def sanitize_login_custom_svg(svg_text: Optional[str], strict: bool = False, max_bytes: int = 512 * 1024) -> str:
+    """Strip executable SVG vectors (<script>, <foreignObject>, on* handlers, javascript: URIs) and cap payload size."""
+    raw = (svg_text or "").strip()
+    if not raw:
+        return ""
+    if strict and len(raw.encode("utf-8")) > max_bytes:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Custom SVG exceeds the maximum {max_bytes // 1024} KB limit.",
+        )
+    cleaned = re.sub(r"<script\b[^>]*>[\s\S]*?</script>", "", raw, flags=re.IGNORECASE)
+    cleaned = re.sub(r"<foreignobject\b[^>]*>[\s\S]*?</foreignobject>", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"<(?:script|foreignobject)\b[^>]*/?>", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s+on[a-z]+\s*=\s*(?:\"[^\"]*\"|'[^']*'|[^\s>]+)", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"javascript\s*:", "blocked:", cleaned, flags=re.IGNORECASE)
+    if strict and "<svg" not in cleaned.lower():
+        raise HTTPException(
+            status_code=422,
+            detail="Custom SVG must contain a valid <svg> root element.",
+        )
+    return cleaned
+
+
+def validate_login_background_payload(key: str, val: str, max_bytes: int = 512 * 1024) -> str:
+    """Validate and sanitize custom login background assets uploaded or pasted via settings."""
+    if key == "login_bg_custom_svg":
+        return sanitize_login_custom_svg(val, strict=True, max_bytes=max_bytes)
+    if key == "login_bg_custom_html":
+        raw = (val or "").strip()
+        if raw and len(raw.encode("utf-8")) > max_bytes:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Custom HTML background exceeds the maximum {max_bytes // 1024} KB limit.",
+            )
+        return raw
+    if key == "login_bg_image_url":
+        raw = (val or "").strip()
+        if raw.lower().startswith("data:") and len(raw.encode("utf-8")) > 2_800_000:
+            raise HTTPException(
+                status_code=422,
+                detail="Custom login background image exceeds the maximum 2 MB limit.",
+            )
+        return raw
+    return val
 
 
 def derive_monogram(name: Optional[str], short_name: Optional[str] = None) -> str:

@@ -35,6 +35,7 @@ from app.services.institution_profile_service import (
     derive_monogram,
     ensure_unique_branch_and_save,
     record_audit_change,
+    sanitize_login_custom_svg,
     serialize_branch,
     serialize_institution_profile,
 )
@@ -298,7 +299,7 @@ async def get_public_institution_branding(
         "onboarding_completed": completeness["onboarding_completed"],
         "is_placeholder_profile": completeness["is_placeholder_profile"],
         "background": {
-            "mode": b_settings.get("login_bg_mode", "waves"),
+            "mode": b_settings.get("login_bg_mode", "india_network"),
             "image_url": b_settings.get("login_bg_image_url", ""),
             "fit": b_settings.get("login_bg_fit", "cover"),
             "overlay_opacity": _safe_int(b_settings.get("login_bg_overlay_opacity"), 60),
@@ -306,6 +307,8 @@ async def get_public_institution_branding(
             "pattern": b_settings.get("login_bg_pattern", "geometric"),
             "video_url": b_settings.get("login_bg_video_url", ""),
             "video_type": b_settings.get("login_bg_video_type", "mp4"),
+            "custom_svg": sanitize_login_custom_svg(b_settings.get("login_bg_custom_svg", ""), strict=False),
+            "custom_html": b_settings.get("login_bg_custom_html", ""),
         },
     }
 

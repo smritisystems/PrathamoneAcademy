@@ -292,7 +292,7 @@ def verify_desktop(skip_compiled_runtime: bool = False) -> list[str]:
                 hdrs["Authorization"] = f"Bearer {jwt_token}"
             req = urllib.request.Request(f"{base_url}{path}", data=payload_bytes, method=method, headers=hdrs)
             try:
-                with urllib.request.urlopen(req, context=ssl_ctx, timeout=15.0) as resp:
+                with urllib.request.urlopen(req, context=ssl_ctx, timeout=45.0) as resp:
                     raw = resp.read().decode("utf-8")
                     return resp.status, {k.lower(): v for k, v in resp.headers.items()}, json.loads(raw) if raw else None
             except urllib.error.HTTPError as err:

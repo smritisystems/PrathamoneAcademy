@@ -124,7 +124,7 @@ export const BRANDING_CONFIG = {
   monogram: 'YC' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.28-REV-348-v1.191.4-F435244B',
+  buildNumber: '2026.11.28-REV-349-v1.192.0-0456090A',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-28',
@@ -269,8 +269,18 @@ export const BRANDING_CONFIG = {
 }
 
 export interface LoginBackgroundConfig {
-  mode: 'waves' | 'image' | 'svg_pattern' | 'video'
+  mode:
+    | 'india_network'
+    | 'deep_space'
+    | 'waves'
+    | 'image'
+    | 'svg_pattern'
+    | 'custom_svg'
+    | 'custom_html'
+    | 'video'
   imageUrl?: string
+  customSvg?: string
+  customHtml?: string
   fit: 'cover' | 'contain' | 'stretch' | 'tile'
   overlayOpacity: number // 0 to 100
   blur: number // 0 to 20 px
@@ -484,8 +494,10 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
         } catch {}
       }
       return {
-        mode: (activeInstitution as any)?.background?.mode || cachedBg?.mode || 'waves',
+        mode: (activeInstitution as any)?.background?.mode || cachedBg?.mode || 'india_network',
         imageUrl: (activeInstitution as any)?.background?.image_url || cachedBg?.imageUrl || '',
+        customSvg: (activeInstitution as any)?.background?.custom_svg || cachedBg?.customSvg || '',
+        customHtml: (activeInstitution as any)?.background?.custom_html || cachedBg?.customHtml || '',
         fit: (activeInstitution as any)?.background?.fit || cachedBg?.fit || 'cover',
         overlayOpacity: typeof (activeInstitution as any)?.background?.overlay_opacity === 'number'
           ? (activeInstitution as any).background.overlay_opacity

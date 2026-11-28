@@ -49,9 +49,18 @@ import {
   Info,
   AlertCircle,
   CheckCircle2,
+  Layers,
+  RotateCcw,
 } from 'lucide-react'
 import Modal from '../components/Modal'
-import { NepRoadmapModal, DeepSpaceLoginBackground, CampusNoticeboardDrawer, SoftwareBrandLogo } from '../components/common'
+import {
+  NepRoadmapModal,
+  IndiaNetworkLoginBackground,
+  DeepSpaceLoginBackground,
+  CoachingLoginBackground,
+  CampusNoticeboardDrawer,
+  SoftwareBrandLogo,
+} from '../components/common'
 import { authApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useBranding } from '../config/branding'
@@ -114,6 +123,38 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+const LOGIN_BG_PREVIEW_KEY = 'pratham_login_bg_preview'
+
+type LoginBgPresetMode =
+  | 'india_network'
+  | 'deep_space'
+  | 'waves'
+  | 'image'
+  | 'svg_pattern'
+  | 'custom_svg'
+  | 'custom_html'
+  | 'video'
+
+function sanitizeLoginSvgMarkup(rawSvg?: string): string {
+  if (!rawSvg) return ''
+  return rawSvg
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<foreignobject\b[^>]*>[\s\S]*?<\/foreignobject>/gi, '')
+    .replace(/<(?:script|foreignobject)\b[^>]*\/?>/gi, '')
+    .replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    .replace(/javascript\s*:/gi, 'blocked:')
+}
+
+function getYouTubeEmbedUrl(rawUrl?: string): string | null {
+  if (!rawUrl) return null
+  const trimmed = rawUrl.trim()
+  if (!trimmed) return null
+  const idMatch = trimmed.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{6,})/) || (/^[A-Za-z0-9_-]{8,15}$/.test(trimmed) ? [trimmed, trimmed] : null)
+  const vid = idMatch?.[1]
+  if (!vid) return null
+  return `https://www.youtube.com/embed/${vid}?autoplay=1&mute=1&loop=1&playlist=${vid}&controls=0&showinfo=0&rel=0`
+}
+
 export default function LoginPage() {
   const navigate = useNavigate()
   const { login, token, user } = useAuthStore()
@@ -127,6 +168,63 @@ export default function LoginPage() {
   const [showNepModal, setShowNepModal] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [logoLoadFailed, setLogoLoadFailed] = useState(false)
+
+  // Multi-background Switcher State (preserves Institute Default from Settings; session switch stays non-destructive)
+  const configuredDefaultMode: LoginBgPresetMode =
+    (branding.background?.mode as LoginBgPresetMode) || 'india_network'
+
+  const customAssetMode: LoginBgPresetMode | null = (() => {
+    const bg = branding.background
+    if (!bg) return null
+    if (bg.mode === 'custom_html' && bg.customHtml) return 'custom_html'
+    if (bg.mode === 'custom_svg' && bg.customSvg) return 'custom_svg'
+    if (bg.mode === 'image' && bg.imageUrl) return 'image'
+    if (bg.mode === 'svg_pattern') return 'svg_pattern'
+    if (bg.mode === 'video' && bg.videoUrl) return 'video'
+    if (bg.customHtml) return 'custom_html'
+    if (bg.customSvg) return 'custom_svg'
+    if (bg.imageUrl) return 'image'
+    if (bg.videoUrl) return 'video'
+    return null
+  })()
+
+  const [selectedPreviewMode, setSelectedPreviewMode] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const saved = localStorage.getItem(LOGIN_BG_PREVIEW_KEY)
+      return saved || null
+    } catch {
+      return null
+    }
+  })
+
+  const handleSwitchLoginBackground = (nextMode: string | null) => {
+    setSelectedPreviewMode(nextMode)
+    if (typeof window !== 'undefined') {
+      try {
+        if (nextMode) {
+          localStorage.setItem(LOGIN_BG_PREVIEW_KEY, nextMode)
+        } else {
+          localStorage.removeItem(LOGIN_BG_PREVIEW_KEY)
+        }
+      } catch {}
+    }
+  }
+
+  const effectiveBgMode: LoginBgPresetMode = (() => {
+    if (!selectedPreviewMode) return configuredDefaultMode
+    if (selectedPreviewMode === 'custom') return customAssetMode || configuredDefaultMode
+    if (
+      ['india_network', 'deep_space', 'waves', 'image', 'svg_pattern', 'custom_svg', 'custom_html', 'video'].includes(
+        selectedPreviewMode
+      )
+    ) {
+      return selectedPreviewMode as LoginBgPresetMode
+    }
+    return configuredDefaultMode
+  })()
+
+  const sanitizedCustomSvg = sanitizeLoginSvgMarkup(branding.background?.customSvg)
 
   // Live Monospace Clock for Left Command Panel
   const [currentClock, setCurrentClock] = useState(() => {
@@ -328,12 +426,13 @@ export default function LoginPage() {
       `}</style>
 
       {/* =========================================================================
-          LEFT PANEL: DEEP-SPACE COSMIC INSTITUTIONAL CANVAS
-          Featuring Animated Cosmic Backdrop, Real Institute/Classes Mapping & Curved Wave Edge
+          LEFT PANEL: SWITCHABLE INSTITUTIONAL CANVAS (DEFAULT: INDIA NETWORK HUB)
+          Supports Pan-India Network (Default), Deep Space, Aurora Waves & Custom Uploads
+          while strictly locking the top bar, classes ribbon, and EduOS branding footer above it.
           ========================================================================= */}
       <div
         className="relative w-full lg:w-[54%] xl:w-[56%] shrink-0 text-white flex flex-col justify-between p-6 pt-10 sm:p-8 sm:pt-11 lg:p-10 lg:pt-11 xl:p-14 xl:pt-12 pb-14 sm:pb-14 lg:pr-24 xl:pr-32 overflow-hidden min-h-[500px] lg:min-h-screen z-10 order-2 lg:order-1"
-        style={{ background: '#030719' }}
+        style={{ background: '#050816' }}
       >
         {/* Organic Curved Wave Divider (SVG edge facing the right side on desktop) */}
         <div className="hidden lg:block absolute top-0 bottom-0 -right-1 w-20 xl:w-28 h-full pointer-events-none select-none z-20">
@@ -347,15 +446,193 @@ export default function LoginPage() {
           </svg>
         </div>
 
-        {/* Deep-Space Interactive Cosmic Field mapped dynamically to active Institute, Boards, Classes & Subjects */}
-        <DeepSpaceLoginBackground
-          instituteName={branding.academyName}
-          instituteCity={branding.city}
-          instituteState={branding.state}
-          boards={branding.boards}
-          classes={branding.classes}
-          subjects={branding.subjects}
-        />
+        {/* Backdrop Renderer Layer (strictly pointer-events-none z-0 so foreground branding footer never gets hidden) */}
+        {effectiveBgMode === 'india_network' && (
+          <IndiaNetworkLoginBackground
+            instituteName={branding.academyName}
+            instituteCity={branding.city}
+            instituteState={branding.state}
+            boards={branding.boards}
+            classes={branding.classes}
+            subjects={branding.subjects}
+          />
+        )}
+
+        {effectiveBgMode === 'deep_space' && (
+          <DeepSpaceLoginBackground
+            instituteName={branding.academyName}
+            instituteCity={branding.city}
+            instituteState={branding.state}
+            boards={branding.boards}
+            classes={branding.classes}
+            subjects={branding.subjects}
+          />
+        )}
+
+        {effectiveBgMode === 'waves' && (
+          <div
+            className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
+            style={{
+              background:
+                'radial-gradient(circle at 22% 28%, rgba(56, 189, 248, 0.22) 0%, transparent 45%), radial-gradient(circle at 75% 70%, rgba(245, 124, 0, 0.16) 0%, transparent 48%), linear-gradient(135deg, #071430 0%, #0b2454 55%, #050816 100%)',
+            }}
+          >
+            <CoachingLoginBackground
+              layout="panel"
+              background="transparent"
+              instituteName={branding.academyName}
+              instituteState={branding.state}
+              logoUrl={branding.assets?.academyLogoUrl}
+              intensity={1.5}
+              logoOpacity={0.28}
+              parallax
+            />
+          </div>
+        )}
+
+        {effectiveBgMode === 'svg_pattern' && (
+          <div
+            className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
+            style={{
+              backgroundColor: '#050816',
+              backgroundImage:
+                branding.background?.pattern === 'dots'
+                  ? 'radial-gradient(rgba(125,211,252,0.22) 1.25px, transparent 1.25px)'
+                  : branding.background?.pattern === 'blueprint'
+                  ? 'linear-gradient(rgba(56,189,248,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(56,189,248,0.12) 1px, transparent 1px)'
+                  : 'linear-gradient(135deg, rgba(125,211,252,0.08) 25%, transparent 25%), linear-gradient(225deg, rgba(245,158,11,0.06) 25%, transparent 25%)',
+              backgroundSize: branding.background?.pattern === 'dots' ? '20px 20px' : '32px 32px',
+            }}
+          >
+            <CoachingLoginBackground
+              layout="panel"
+              background="transparent"
+              instituteName={branding.academyName}
+              instituteState={branding.state}
+              logoUrl={branding.assets?.academyLogoUrl}
+              intensity={1.2}
+              logoOpacity={0.22}
+              parallax
+            />
+          </div>
+        )}
+
+        {effectiveBgMode === 'image' && (
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" data-testid="login-bg-custom-image">
+            {branding.background?.imageUrl && (
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `url("${branding.background.imageUrl}")`,
+                  backgroundSize:
+                    branding.background.fit === 'contain'
+                      ? 'contain'
+                      : branding.background.fit === 'stretch'
+                      ? '100% 100%'
+                      : branding.background.fit === 'tile'
+                      ? '240px auto'
+                      : 'cover',
+                  backgroundRepeat: branding.background.fit === 'tile' ? 'repeat' : 'no-repeat',
+                  backgroundPosition: 'center',
+                  filter: `blur(${branding.background.blur ?? 4}px)`,
+                  transform: 'scale(1.04)',
+                }}
+              />
+            )}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `rgba(5, 8, 22, ${Math.min(0.92, Math.max(0.2, (branding.background?.overlayOpacity ?? 60) / 100))})`,
+              }}
+            />
+          </div>
+        )}
+
+        {effectiveBgMode === 'custom_svg' && (
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" data-testid="login-bg-custom-svg">
+            {sanitizedCustomSvg ? (
+              <div
+                className="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover"
+                dangerouslySetInnerHTML={{ __html: sanitizedCustomSvg }}
+              />
+            ) : (
+              <IndiaNetworkLoginBackground
+                instituteName={branding.academyName}
+                instituteCity={branding.city}
+                instituteState={branding.state}
+                boards={branding.boards}
+                classes={branding.classes}
+                subjects={branding.subjects}
+              />
+            )}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(180deg, rgba(3,7,25,0.48) 0%, rgba(3,7,25,0.12) 28%, rgba(3,7,25,0.16) 62%, rgba(3,7,25,0.78) 100%)',
+              }}
+            />
+          </div>
+        )}
+
+        {effectiveBgMode === 'custom_html' && (
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" data-testid="login-bg-custom-html">
+            {branding.background?.customHtml ? (
+              <iframe
+                title="Custom Institutional Login Background"
+                sandbox="allow-scripts"
+                srcDoc={branding.background.customHtml}
+                className="absolute inset-0 w-full h-full border-0 pointer-events-none"
+              />
+            ) : (
+              <IndiaNetworkLoginBackground
+                instituteName={branding.academyName}
+                instituteCity={branding.city}
+                instituteState={branding.state}
+                boards={branding.boards}
+                classes={branding.classes}
+                subjects={branding.subjects}
+              />
+            )}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(180deg, rgba(3,7,25,0.38) 0%, transparent 24%, transparent 66%, rgba(3,7,25,0.76) 100%)',
+              }}
+            />
+          </div>
+        )}
+
+        {effectiveBgMode === 'video' && (
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" data-testid="login-bg-custom-video">
+            {branding.background?.videoType === 'youtube' && getYouTubeEmbedUrl(branding.background?.videoUrl) ? (
+              <iframe
+                title="Institutional Login Ambient Video"
+                src={getYouTubeEmbedUrl(branding.background.videoUrl) || undefined}
+                allow="autoplay; encrypted-media"
+                className="absolute inset-0 w-full h-full border-0 pointer-events-none"
+                style={{ filter: `blur(${branding.background.blur ?? 0}px)` }}
+              />
+            ) : branding.background?.videoUrl ? (
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                src={branding.background.videoUrl}
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ filter: `blur(${branding.background.blur ?? 0}px)` }}
+              />
+            ) : null}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `rgba(5, 8, 22, ${Math.min(0.92, Math.max(0.2, (branding.background?.overlayOpacity ?? 45) / 100))})`,
+              }}
+            />
+          </div>
+        )}
 
         {/* TOP STATUS BAR: Operational Session, Notice Ticker & Helpdesk Ribbons */}
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-2.5 w-full">
@@ -471,10 +748,89 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Minimalist Bottom Footer Attribution */}
-        <div className="relative z-10 pt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-blue-200/70 font-mono tracking-wider border-t border-white/10 select-none">
-          <span>{branding.suiteName || 'PRATHAMONE EduOS'} • COACHING INSTITUTE EDITION</span>
-          <span>{branding.versionDisplay}</span>
+        {/* Interactive Canvas Switcher + Locked Bottom Footer Attribution */}
+        <div className="relative z-10 pt-2 space-y-2 select-none">
+          <div
+            className="flex flex-wrap items-center justify-between gap-2"
+            aria-label="Login Background Switcher"
+          >
+            <div className="inline-flex flex-wrap items-center gap-1 px-2 py-1 rounded-full bg-slate-950/65 border border-white/15 backdrop-blur-md">
+              <span className="inline-flex items-center gap-1 px-1.5 text-[10px] font-mono text-slate-300">
+                <Layers className="w-3 h-3 text-cyan-300" />
+                <span>Canvas:</span>
+              </span>
+              {[
+                { id: 'india_network', label: 'India Network' },
+                { id: 'deep_space', label: 'Deep Space' },
+                { id: 'waves', label: 'Waves' },
+                ...(customAssetMode
+                  ? [
+                      {
+                        id: customAssetMode,
+                        label:
+                          customAssetMode === 'custom_html'
+                            ? 'Custom HTML'
+                            : customAssetMode === 'custom_svg'
+                            ? 'Custom SVG'
+                            : customAssetMode === 'image'
+                            ? 'Custom Image'
+                            : customAssetMode === 'video'
+                            ? 'Ambient Video'
+                            : 'SVG Pattern',
+                      },
+                    ]
+                  : []),
+              ].map((opt) => {
+                const isActive = effectiveBgMode === opt.id
+                const isInstDefault = configuredDefaultMode === opt.id
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() =>
+                      handleSwitchLoginBackground(opt.id === configuredDefaultMode ? null : opt.id)
+                    }
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-cyan-400/20 text-cyan-100 border border-cyan-300/45 font-semibold'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10 border border-transparent'
+                    }`}
+                    title={
+                      isInstDefault
+                        ? `${opt.label} (Institute Default)`
+                        : `Preview ${opt.label} background (change Institute Default inside Settings -> Branding)`
+                    }
+                  >
+                    <span>{opt.label}</span>
+                    {isInstDefault && (
+                      <span className="text-[8.5px] uppercase tracking-wider text-amber-300/95">
+                        • Default
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+              {selectedPreviewMode && effectiveBgMode !== configuredDefaultMode && (
+                <button
+                  type="button"
+                  onClick={() => handleSwitchLoginBackground(null)}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono text-amber-200 hover:bg-amber-400/15 transition cursor-pointer"
+                  title="Reset to Institute Default background"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                  <span>Reset</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div
+            data-testid="login-footer-branding"
+            className="pt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-blue-200/80 font-mono tracking-wider border-t border-white/15"
+          >
+            <span>{branding.suiteName || 'PRATHAMONE EduOS'} • COACHING INSTITUTE EDITION</span>
+            <span>{branding.versionDisplay}</span>
+          </div>
         </div>
       </div>
 

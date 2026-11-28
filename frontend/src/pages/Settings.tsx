@@ -448,8 +448,10 @@ export default function Settings() {
               logoUrl: res.data.profile.logo_url || cached.assets?.logoUrl,
             },
             background: {
-              mode: bgData.login_bg_mode || 'waves',
+              mode: bgData.login_bg_mode || 'india_network',
               imageUrl: bgData.login_bg_image_url || '',
+              customSvg: bgData.login_bg_custom_svg || '',
+              customHtml: bgData.login_bg_custom_html || '',
               fit: bgData.login_bg_fit || 'cover',
               overlayOpacity: parseInt(bgData.login_bg_overlay_opacity || '60', 10),
               blur: parseInt(bgData.login_bg_blur || '4', 10),
@@ -1936,34 +1938,43 @@ export default function Settings() {
                               <div>
                                 <h3 className="text-sm font-bold text-gray-900">Login Page Canvas & Background Engine</h3>
                                 <p className="text-[11px] text-gray-500">
-                                  Choose custom campus imagery, scaling fit, SVG patterns, or video for the authentication portal
+                                  Set the Institute Default background preset or upload custom images, SVG art, or HTML canvas. Bottom EduOS branding &amp; footer remain locked.
                                 </p>
                               </div>
                             </div>
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 border border-primary-200">
-                              Active: {(allSettings.branding?.login_bg_mode || 'waves').toUpperCase()}
+                              Default: {(allSettings.branding?.login_bg_mode || 'india_network').replace(/_/g, ' ').toUpperCase()}
                             </span>
                           </div>
 
-                          {/* Mode Selector 4-Card Grid */}
+                          {/* Mode Selector 8-Card Grid */}
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             {[
+                              { id: 'india_network', title: 'India Network', desc: 'Pan-India Hub (Default)', icon: '🗺️' },
+                              { id: 'deep_space', title: 'Deep Space', desc: 'Cosmic Academy Field', icon: '🌌' },
                               { id: 'waves', title: 'Dynamic Waves', desc: 'Brand Aurora Glow', icon: '🎨' },
-                              { id: 'image', title: 'Custom Image', desc: 'Campus & Classes', icon: '🖼️' },
                               { id: 'svg_pattern', title: 'SVG Pattern', desc: 'Blueprint & Lattice', icon: '📐' },
+                              { id: 'image', title: 'Custom Image', desc: 'Upload Photo / URL', icon: '🖼️' },
+                              { id: 'custom_svg', title: 'Custom SVG', desc: 'Upload / Paste SVG', icon: '✨' },
+                              { id: 'custom_html', title: 'Custom HTML', desc: 'Sandboxed HTML Canvas', icon: '🌐' },
                               { id: 'video', title: 'Ambient Video', desc: 'MP4 / YouTube', icon: '🎬' },
                             ].map((m) => {
-                              const isSelected = (allSettings.branding?.login_bg_mode || 'waves') === m.id
+                              const isSelected = (allSettings.branding?.login_bg_mode || 'india_network') === m.id
                               return (
                                 <button
                                   key={m.id}
                                   type="button"
                                   onClick={() => handleSettingChange('branding', 'login_bg_mode', m.id)}
-                                  className={`p-3 rounded-xl border text-left transition-all ${isSelected
+                                  className={`p-3 rounded-xl border text-left transition-all relative ${isSelected
                                     ? 'border-primary-600 ring-2 ring-primary-500 bg-primary-50/20 shadow-xs'
                                     : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
                                     }`}
                                 >
+                                  {isSelected && (
+                                    <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary-600 text-white">
+                                      Default
+                                    </span>
+                                  )}
                                   <div className="text-xl mb-1">{m.icon}</div>
                                   <div className="text-xs font-bold text-gray-900">{m.title}</div>
                                   <div className="text-[10px] text-gray-500">{m.desc}</div>
@@ -1972,21 +1983,76 @@ export default function Settings() {
                             })}
                           </div>
 
+                          {/* MODE: INTERACTIVE INSTITUTIONAL PRESETS (INDIA NETWORK / DEEP SPACE / WAVES) */}
+                          {['india_network', 'deep_space', 'waves'].includes(allSettings.branding?.login_bg_mode || 'india_network') && (
+                            <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 text-[11px] text-slate-700 flex items-start gap-2.5">
+                              <Sparkles className="w-4 h-4 text-primary-600 shrink-0 mt-0.5" />
+                              <div>
+                                <span className="font-bold text-slate-900">
+                                  {(allSettings.branding?.login_bg_mode || 'india_network') === 'india_network'
+                                    ? 'India Network Hub Active as Institute Default:'
+                                    : (allSettings.branding?.login_bg_mode === 'deep_space'
+                                      ? 'Deep Space Cosmic Canvas Active as Institute Default:'
+                                      : 'Dynamic Brand Aurora Waves Active as Institute Default:')}
+                                </span>{' '}
+                                Automatically displays your active Institute Name, City/State, Boards, Classes, and Subjects on the left login pane. Users can also temporarily toggle between presets using the on-screen switcher without changing your Institute Default.
+                              </div>
+                            </div>
+                          )}
+
                           {/* MODE: CUSTOM IMAGE CONFIGURATION */}
                           {(allSettings.branding?.login_bg_mode === 'image') && (
                             <div className="space-y-4 p-4 rounded-xl bg-slate-50/80 border border-slate-200">
                               <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">
-                                  Background Image URL
-                                </label>
+                                <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                                  <label className="block text-xs font-bold text-slate-700">
+                                    Background Image URL or Local Upload (PNG / JPG / WEBP, max 2 MB)
+                                  </label>
+                                  <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-300 text-[11px] font-semibold text-slate-700 cursor-pointer transition">
+                                    <Upload className="w-3.5 h-3.5 text-primary-600" />
+                                    <span>Upload Image</span>
+                                    <input
+                                      type="file"
+                                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0]
+                                        if (!file) return
+                                        if (file.size > 2 * 1024 * 1024) {
+                                          showNotification('error', 'Background image must be 2 MB or smaller.')
+                                          e.target.value = ''
+                                          return
+                                        }
+                                        const reader = new FileReader()
+                                        reader.onload = () => {
+                                          if (typeof reader.result === 'string') {
+                                            handleSettingChange('branding', 'login_bg_image_url', reader.result)
+                                            showNotification('success', `Loaded "${file.name}". Click Save Settings to apply as Institute Default.`)
+                                          }
+                                        }
+                                        reader.readAsDataURL(file)
+                                        e.target.value = ''
+                                      }}
+                                    />
+                                  </label>
+                                </div>
                                 <div className="flex gap-2">
                                   <input
                                     type="text"
-                                    placeholder="https://... or /media/backgrounds/campus.jpg"
+                                    placeholder="https://... or /media/backgrounds/campus.jpg (or upload image above)"
                                     value={allSettings.branding?.login_bg_image_url || ''}
                                     onChange={(e) => handleSettingChange('branding', 'login_bg_image_url', e.target.value)}
                                     className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 bg-white"
                                   />
+                                  {allSettings.branding?.login_bg_image_url && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSettingChange('branding', 'login_bg_image_url', '')}
+                                      className="px-2.5 py-1.5 text-xs font-medium bg-white hover:bg-rose-50 text-rose-600 border border-slate-300 rounded-lg"
+                                    >
+                                      Clear
+                                    </button>
+                                  )}
                                 </div>
                                 {/* Quick Image Presets */}
                                 <div className="flex items-center gap-1.5 mt-2 flex-wrap">
@@ -2165,6 +2231,130 @@ export default function Settings() {
                                 <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                                 <span>
                                   Video backgrounds are automatically muted and looped. Mobile devices conserve data with an automatic fallback poster.
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* MODE: CUSTOM SVG CONFIGURATION */}
+                          {(allSettings.branding?.login_bg_mode === 'custom_svg') && (
+                            <div className="space-y-3 p-4 rounded-xl bg-slate-50/80 border border-slate-200">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <label className="block text-xs font-bold text-slate-700">
+                                  Custom Vector Backdrop (.svg, max 512 KB)
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-300 text-[11px] font-semibold text-slate-700 cursor-pointer transition">
+                                    <Upload className="w-3.5 h-3.5 text-primary-600" />
+                                    <span>Upload .svg</span>
+                                    <input
+                                      type="file"
+                                      accept=".svg,image/svg+xml"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0]
+                                        if (!file) return
+                                        if (file.size > 512 * 1024) {
+                                          showNotification('error', 'Custom SVG file must be 512 KB or smaller.')
+                                          e.target.value = ''
+                                          return
+                                        }
+                                        const reader = new FileReader()
+                                        reader.onload = () => {
+                                          if (typeof reader.result === 'string') {
+                                            handleSettingChange('branding', 'login_bg_custom_svg', reader.result)
+                                            showNotification('success', `Loaded "${file.name}". Click Save Settings to apply.`)
+                                          }
+                                        }
+                                        reader.readAsText(file)
+                                        e.target.value = ''
+                                      }}
+                                    />
+                                  </label>
+                                  {allSettings.branding?.login_bg_custom_svg && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSettingChange('branding', 'login_bg_custom_svg', '')}
+                                      className="px-2.5 py-1 text-[11px] font-medium bg-white hover:bg-rose-50 text-rose-600 border border-slate-300 rounded-lg"
+                                    >
+                                      Clear
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <textarea
+                                rows={5}
+                                placeholder='<svg viewBox="0 0 800 900" xmlns="http://www.w3.org/2000/svg">...</svg>'
+                                value={allSettings.branding?.login_bg_custom_svg || ''}
+                                onChange={(e) => handleSettingChange('branding', 'login_bg_custom_svg', e.target.value)}
+                                className="w-full px-3 py-2 text-[11px] font-mono border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-primary-500"
+                              />
+                              <div className="p-2.5 bg-blue-50 rounded-lg border border-blue-200 text-[11px] text-blue-800 flex items-start gap-2">
+                                <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                                <span>
+                                  All scripts and inline event handlers are stripped automatically for safety. The PrathamOne EduOS branding footer and version stamp stay locked cleanly on top.
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* MODE: CUSTOM HTML CONFIGURATION */}
+                          {(allSettings.branding?.login_bg_mode === 'custom_html') && (
+                            <div className="space-y-3 p-4 rounded-xl bg-slate-50/80 border border-slate-200">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <label className="block text-xs font-bold text-slate-700">
+                                  Custom HTML / Canvas Scene (.html / .htm, max 512 KB)
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-300 text-[11px] font-semibold text-slate-700 cursor-pointer transition">
+                                    <Upload className="w-3.5 h-3.5 text-primary-600" />
+                                    <span>Upload .html / .htm</span>
+                                    <input
+                                      type="file"
+                                      accept=".html,.htm,text/html"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0]
+                                        if (!file) return
+                                        if (file.size > 512 * 1024) {
+                                          showNotification('error', 'Custom HTML file must be 512 KB or smaller.')
+                                          e.target.value = ''
+                                          return
+                                        }
+                                        const reader = new FileReader()
+                                        reader.onload = () => {
+                                          if (typeof reader.result === 'string') {
+                                            handleSettingChange('branding', 'login_bg_custom_html', reader.result)
+                                            showNotification('success', `Loaded "${file.name}". Click Save Settings to apply.`)
+                                          }
+                                        }
+                                        reader.readAsText(file)
+                                        e.target.value = ''
+                                      }}
+                                    />
+                                  </label>
+                                  {allSettings.branding?.login_bg_custom_html && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSettingChange('branding', 'login_bg_custom_html', '')}
+                                      className="px-2.5 py-1 text-[11px] font-medium bg-white hover:bg-rose-50 text-rose-600 border border-slate-300 rounded-lg"
+                                    >
+                                      Clear
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <textarea
+                                rows={6}
+                                placeholder="<!DOCTYPE html><html><body style='margin:0;background:#050816'>...</body></html>"
+                                value={allSettings.branding?.login_bg_custom_html || ''}
+                                onChange={(e) => handleSettingChange('branding', 'login_bg_custom_html', e.target.value)}
+                                className="w-full px-3 py-2 text-[11px] font-mono border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-primary-500"
+                              />
+                              <div className="p-2.5 bg-blue-50 rounded-lg border border-blue-200 text-[11px] text-blue-800 flex items-start gap-2">
+                                <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                                <span>
+                                  Renders inside an isolated backdrop iframe (`sandbox=&quot;allow-scripts&quot;`, `pointer-events: none`) behind the login overlays—your footer attribution, version, and curriculum badges remain protected and always visible.
                                 </span>
                               </div>
                             </div>

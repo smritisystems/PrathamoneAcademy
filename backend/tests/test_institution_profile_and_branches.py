@@ -237,3 +237,45 @@ async def test_public_branding_maps_active_boards_classes_and_subjects(client, d
     assert any(b["code"] == f"MSB-{tag}" for b in payload["boards"])
     assert f"Class X ({tag})" in payload["classes"]
     assert f"Physics {tag}" in payload["subjects"]
+    assert payload["background"]["mode"] == "india_network"
+
+
+@pytest.mark.asyncio
+async def test_public_branding_supports_switchable_presets_and_sanitizes_custom_svg(
+    client: AsyncClient, profile_admin, test_institution: Institution
+):
+    _, headers = profile_admin
+
+    unsafe_svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" onload="alert(1)">'
+        "<script>alert(2)</script>"
+        "<foreignObject><body onclick=\"alert(3)\">hi</body></foreignObject>"
+        '<a href="javascript:alert(4)"><circle cx="50" cy="50" r="40" fill="#38bdf8" /></a>'
+        "</svg>"
+    )
+    sample_html = "<!DOCTYPE html><html><body style='margin:0;background:#050816'><canvas id='c'></canvas></body></html>"
+
+    save_res = await client.put(
+        f"/api/v1/settings/batch?institution_id={test_institution.id}",
+        headers=headers,
+        json={
+            "category": "branding",
+            "settings": {
+                "login_bg_mode": "custom_svg",
+                "login_bg_custom_svg": unsafe_svg,
+                "login_bg_custom_html": sample_html,
+            },
+        },
+    )
+    assert save_res.status_code == 200
+
+    res = await client.get(f"/api/v1/institutions/public/branding?institution_id={test_institution.id}")
+    assert res.status_code == 200
+    bg = res.json()["background"]
+    assert bg["mode"] == "custom_svg"
+    assert "<script" not in bg["custom_svg"].lower()
+    assert "<foreignobject" not in bg["custom_svg"].lower()
+    assert "onload" not in bg["custom_svg"].lower()
+    assert "javascript:" not in bg["custom_svg"].lower()
+    assert "<circle" in bg["custom_svg"].lower()
+    assert bg["custom_html"] == sample_html

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-27
+#  * @updated     2026-11-28
 #  *
 #  * @description API endpoints for institute settings workspace, profile branding, general lookups, and audit history.
 #  */
@@ -35,6 +35,7 @@ from app.models.user import User
 from app.services.institution_profile_service import (
     apply_validated_profile_updates,
     serialize_institution_profile,
+    validate_login_background_payload,
 )
 
 router = APIRouter()
@@ -75,7 +76,10 @@ DEFAULT_SETTINGS: Dict[str, Dict[str, Any]] = {
         "theme_preset": "Pratham Navy & Saffron",
         "logo_url": "/logo.svg",
         "favicon_url": PRODUCT_APP_ICON_URL,
-        "login_bg_style": "wave_gradient",
+        "login_bg_mode": "india_network",
+        "login_bg_style": "india_network",
+        "login_bg_custom_svg": "",
+        "login_bg_custom_html": "",
         "document_monogram": "PA",
         "custom_css": "",
     },
@@ -463,6 +467,9 @@ async def update_settings_batch(
             serialized_val = json.dumps(v)
         else:
             serialized_val = str(v) if v is not None else ""
+
+        if category == "branding" and k in ("login_bg_custom_svg", "login_bg_custom_html", "login_bg_image_url"):
+            serialized_val = validate_login_background_payload(k, serialized_val)
 
         # Fetch existing setting
         stmt = select(InstitutionSetting).where(
