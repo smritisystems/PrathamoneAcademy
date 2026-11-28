@@ -140,8 +140,8 @@ export default function Housekeeping() {
   const isHousekeepingRole = ['superadmin', 'super_admin', 'sysadmin', 'admin'].includes(
     (user?.role || '').toLowerCase()
   )
-  const canManage = isUserSysAdmin(user)
-  const canCreateBackup = canManage || (user?.role || '').toLowerCase() === 'admin'
+  const canManage = isHousekeepingRole
+  const canCreateBackup = canManage
 
   // Core state
   const [loading, setLoading] = useState(true)
@@ -380,7 +380,7 @@ export default function Housekeeping() {
   const handleSaveDestination = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!canManage) {
-      toast.error('SysAdmin privilege required to configure backup destinations.')
+      toast.error('Admin or SysAdmin privilege required to configure backup destinations.')
       return
     }
     setSavingDestination(true)
@@ -399,7 +399,7 @@ export default function Housekeeping() {
 
   const handleDeleteDestination = async (dest: BackupDestination) => {
     if (!canManage) {
-      toast.error('SysAdmin privilege required to remove backup destinations.')
+      toast.error('Admin or SysAdmin privilege required to remove backup destinations.')
       return
     }
     if (!window.confirm(`Are you sure you want to remove the destination "${dest.name}"? Historical archives on the target will be preserved.`)) {
@@ -429,7 +429,7 @@ export default function Housekeeping() {
 
   const handleDispatchToDestinations = async () => {
     if (!canManage) {
-      toast.error('SysAdmin privilege required to dispatch backups.')
+      toast.error('Admin or SysAdmin privilege required to dispatch backups.')
       return
     }
     const latest = backups.find((b) => b.source === 'backups') || backups[0]
@@ -1754,7 +1754,7 @@ export default function Housekeeping() {
                                 type="button"
                                 onClick={() => handleDownloadBackup(b)}
                                 disabled={!canManage}
-                                title={canManage ? 'Download backup archive' : 'SysAdmin only'}
+                                title={canManage ? 'Download backup archive' : 'Admin or SysAdmin only'}
                                 className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-50"
                               >
                                 <Download className="w-3 h-3" />

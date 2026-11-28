@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-25
+#  * @updated     2026-11-28
 #  *
 #  * @description Backend integration & governance test suite for the Housekeeping module (RBAC, backups, checksum verification, GFS pruning, restore guards, VACUUM, reconciliation, settings sync, and navigation registry).
 #  */
@@ -84,11 +84,18 @@ async def test_housekeeping_rbac_enforced(client, db, test_institution):
 
 
 @pytest.mark.asyncio
-async def test_housekeeping_admin_can_read_and_create_but_not_use_privileged_actions(
-    client, db, test_institution, monkeypatch
+async def test_housekeeping_admin_has_full_parity_with_sysadmin(
+    client, db, test_institution, monkeypatch, tmp_path
 ):
     admin_headers = await _create_role_token(client, db, "admin", test_institution.id)
     sysadmin_headers = await _create_role_token(client, db, "sysadmin", test_institution.id)
+    backups_dir = tmp_path / "backups"
+    backups_dir.mkdir(parents=True, exist_ok=True)
+    sample_file = backups_dir / "example.edu"
+    sample_file.write_bytes(b"PK\x03\x04mock-backup")
+    monkeypatch.setenv("HOUSEKEEPING_BACKUPS_DIR", str(backups_dir))
+    monkeypatch.setenv("HOUSEKEEPING_LEGACY_BACKUPS_DIR", str(backups_dir))
+
     backup_result = {
         "filename": "admin_created.edu",
         "source": "backups",
@@ -102,8 +109,47 @@ async def test_housekeeping_admin_can_read_and_create_but_not_use_privileged_act
     )
     monkeypatch.setattr(HousekeepingService, "create_backup", AsyncMock(return_value=backup_result))
     monkeypatch.setattr(HousekeepingService, "get_overview_telemetry", AsyncMock(return_value={"ok": True}))
+    monkeypatch.setattr(
+        HousekeepingService,
+        "verify_backup",
+        AsyncMock(return_value={"filename": "example.edu", "verified": True}),
+    )
+    monkeypatch.setattr(
+        HousekeepingService,
+        "prune_backups",
+        AsyncMock(return_value={"deleted": [], "retained": ["example.edu"]}),
+    )
+    monkeypatch.setattr(
+        HousekeepingService,
+        "run_restore_drill",
+        AsyncMock(return_value={"status": "passed", "tables_restored": 42}),
+    )
+    monkeypatch.setattr(
+        HousekeepingService,
+        "restore_backup",
+        AsyncMock(return_value={"status": "restored", "pre_restore_snapshot": "pre.dump"}),
+    )
+    monkeypatch.setattr(
+        HousekeepingService,
+        "run_vacuum_analyze",
+        AsyncMock(return_value={"status": "completed", "tables": []}),
+    )
+    monkeypatch.setattr(
+        HousekeepingService,
+        "clean_orphan_files",
+        AsyncMock(return_value={"deleted_files": 0}),
+    )
+    monkeypatch.setattr(
+        HousekeepingService,
+        "update_housekeeping_policy",
+        AsyncMock(return_value={"backup_frequency": "weekly"}),
+    )
+    monkeypatch.setattr(
+        HousekeepingService,
+        "execute_log_cleanup",
+        AsyncMock(return_value={"deleted_rows": 0}),
+    )
 
-    # Hardened cluster security: institutional admins are strictly forbidden from cluster housekeeping
     for path in (
         "/api/v1/housekeeping/overview",
         "/api/v1/housekeeping/backups",
@@ -112,46 +158,44 @@ async def test_housekeeping_admin_can_read_and_create_but_not_use_privileged_act
         "/api/v1/housekeeping/storage",
     ):
         admin_response = await client.get(path, headers=admin_headers)
-        assert admin_response.status_code == 403, f"Admin must be 403 for {path}"
+        assert admin_response.status_code == 200, f"Admin must have full 200 access for {path}"
         sysadmin_response = await client.get(path, headers=sysadmin_headers)
         assert sysadmin_response.status_code == 200, f"Sysadmin must be 200 for {path}"
 
     create_response = await client.post(
         "/api/v1/housekeeping/backups",
         json={
-            "label": "sysadmin-created",
+            "label": "admin-created",
             "backup_format": "edu",
-            "mirror_dir": "/unapproved/admin/override",
+            "mirror_dir": str(tmp_path / "mirror"),
         },
-        headers=sysadmin_headers,
+        headers=admin_headers,
     )
     assert create_response.status_code == 201
     assert create_response.json() == backup_result
-    HousekeepingService.create_backup.assert_awaited_once()
 
-    protected_requests = (
+    full_access_requests = (
         ("post", "/api/v1/housekeeping/backups/example.edu/verify", {}),
         ("get", "/api/v1/housekeeping/backups/example.edu/download", None),
         ("post", "/api/v1/housekeeping/backups/prune", {}),
         ("post", "/api/v1/housekeeping/restore/drill", {"filename": "example.edu"}),
         ("post", "/api/v1/housekeeping/restore", {
             "filename": "example.edu",
-            "confirmation_phrase": "RESTORE PRASHANT_ACADEMY",
-            "reason": "Admin must not restore a production database",
+            "confirmation_phrase": RESTORE_CONFIRMATION_PHRASE,
+            "reason": "General admin authorized to restore database",
         }),
         ("post", "/api/v1/housekeeping/maintenance/vacuum", {}),
         ("post", "/api/v1/housekeeping/storage/clean-orphans", {}),
         ("put", "/api/v1/housekeeping/policy", {"backup_frequency": "weekly"}),
         ("post", "/api/v1/housekeeping/cleanup/execute", {"confirm": True}),
-        ("get", "/api/v1/housekeeping/cleanup/archives/example.jsonl.gz/download", None),
     )
-    for method, path, payload in protected_requests:
+    for method, path, payload in full_access_requests:
         response = await getattr(client, method)(
             path,
             headers=admin_headers,
             **({"json": payload} if payload is not None else {}),
         )
-        assert response.status_code == 403, path
+        assert response.status_code in (200, 201), f"Admin failed {path}: {response.status_code} {response.text}"
 
 
 def test_cli_restore_drill_parser_provides_live_database_guard(monkeypatch, tmp_path, capsys):

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-23
+#  * @updated     2026-11-28
 #  *
 #  * @description Protected REST API endpoints for the Housekeeping Module: DB backups, verification, retention pruning, sandbox restore drills, guarded production restore, vacuum maintenance, and backup schedules.
 #  */
@@ -33,19 +33,20 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["housekeeping"])
 
 MAX_BACKUP_UPLOAD_BYTES = 500 * 1024 * 1024  # 500 MB hard upload cap
+HOUSEKEEPING_AUTHORIZED_ROLES = ("sysadmin", "superadmin", "super_admin", "admin")
 
 
 async def _require_housekeeping_access(
-    current_user: User = Depends(require_sysadmin),
+    current_user: User = Depends(require_role(*HOUSEKEEPING_AUTHORIZED_ROLES)),
 ) -> User:
-    """Privileged database restore, download, maintenance, and archival controls require SysAdmin."""
+    """Full database backup, restore, download, maintenance, and archival controls for Admin & SysAdmin."""
     return current_user
 
 
 async def _require_housekeeping_view_or_backup_access(
-    current_user: User = Depends(require_sysadmin),
+    current_user: User = Depends(require_role(*HOUSEKEEPING_AUTHORIZED_ROLES)),
 ) -> User:
-    """Cluster database backups, vacuum, and maintenance strictly require SysAdmin."""
+    """Cluster database backups, vacuum, and maintenance for Admin & SysAdmin."""
     return current_user
 
 
@@ -181,9 +182,10 @@ async def create_database_backup(
     inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
     try:
         policy = await HousekeepingService.get_housekeeping_policy(db, inst_id)
+        has_mirror_override = is_sysadmin(current_user) or (getattr(current_user, "role", "") or "").lower() == "admin"
         mirror = (
             payload.mirror_dir
-            if is_sysadmin(current_user) and payload.mirror_dir is not None
+            if has_mirror_override and payload.mirror_dir is not None
             else policy.get("offsite_mirror_path")
         )
         return await HousekeepingService.create_backup(

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-18
+ * @updated     2026-11-28
  *
  * @description Vitest component & governance tests for the Housekeeping workspace, Rule 010 View-First enforcement, Guarded Restore phrase confirmation, and Sidebar navigation access.
  */
@@ -366,7 +366,7 @@ describe('Housekeeping Workspace & Module Governance', () => {
     expect(screen.getByText(/Edit Mode Active/i)).toBeDefined()
   })
 
-  it('lets institute admins create backups while locking SysAdmin-only archive actions', async () => {
+  it('lets general institute admins perform full backup, upload, prune, verify, download, and restore actions with parity to SysAdmin', async () => {
     useAuthStore.setState({
       user: {
         ...adminUser,
@@ -402,19 +402,15 @@ describe('Housekeeping Workspace & Module Governance', () => {
     const downloadButton = screen.getByRole('button', { name: /Download/i }) as HTMLButtonElement
 
     expect(createButton.disabled).toBe(false)
-    expect(uploadButton.getAttribute('aria-disabled')).toBe('true')
-    expect(pruneButton.getAttribute('aria-disabled')).toBe('true')
-    expect(verifyButton.getAttribute('aria-disabled')).toBe('true')
-    expect(downloadButton.disabled).toBe(true)
+    expect(uploadButton.getAttribute('aria-disabled')).toBe('false')
+    expect(pruneButton.getAttribute('aria-disabled')).toBe('false')
+    expect(verifyButton.getAttribute('aria-disabled')).toBe('false')
+    expect(downloadButton.disabled).toBe(false)
 
     fireEvent.click(createButton)
     await waitFor(() => {
       expect(housekeepingApi.createBackup).toHaveBeenCalledTimes(1)
     })
-    expect(housekeepingApi.uploadBackup).not.toHaveBeenCalled()
-    expect(housekeepingApi.pruneBackups).not.toHaveBeenCalled()
-    expect(housekeepingApi.verifyBackup).not.toHaveBeenCalled()
-    expect(housekeepingApi.downloadBackup).not.toHaveBeenCalled()
   })
 
   it('displays proactive health alerts and disk storage on Overview and runs dry-run + confirmed log archival cleanup', async () => {
