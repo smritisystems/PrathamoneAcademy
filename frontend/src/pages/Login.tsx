@@ -519,7 +519,7 @@ export default function LoginPage() {
 
         {effectiveBgMode === 'image' && (
           <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" data-testid="login-bg-custom-image">
-            {branding.background?.imageUrl && (
+            {branding.background?.imageUrl ? (
               <div
                 className="absolute inset-0"
                 style={{
@@ -537,6 +537,15 @@ export default function LoginPage() {
                   filter: `blur(${branding.background.blur ?? 4}px)`,
                   transform: 'scale(1.04)',
                 }}
+              />
+            ) : (
+              <IndiaNetworkLoginBackground
+                instituteName={branding.academyName}
+                instituteCity={branding.city}
+                instituteState={branding.state}
+                boards={branding.boards}
+                classes={branding.classes}
+                subjects={branding.subjects}
               />
             )}
             <div
@@ -604,35 +613,49 @@ export default function LoginPage() {
           </div>
         )}
 
-        {effectiveBgMode === 'video' && (
-          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" data-testid="login-bg-custom-video">
-            {branding.background?.videoType === 'youtube' && getYouTubeEmbedUrl(branding.background?.videoUrl) ? (
-              <iframe
-                title="Institutional Login Ambient Video"
-                src={getYouTubeEmbedUrl(branding.background.videoUrl) || undefined}
-                allow="autoplay; encrypted-media"
-                className="absolute inset-0 w-full h-full border-0 pointer-events-none"
-                style={{ filter: `blur(${branding.background.blur ?? 0}px)` }}
+        {effectiveBgMode === 'video' && (() => {
+          const rawVideoUrl = branding.background?.videoUrl?.trim() || ''
+          const ytEmbedUrl = getYouTubeEmbedUrl(rawVideoUrl)
+          const isYouTube = branding.background?.videoType === 'youtube' || Boolean(ytEmbedUrl)
+          return (
+            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" data-testid="login-bg-custom-video">
+              {/* Guaranteed instant visual backdrop under streaming video */}
+              <IndiaNetworkLoginBackground
+                instituteName={branding.academyName}
+                instituteCity={branding.city}
+                instituteState={branding.state}
+                boards={branding.boards}
+                classes={branding.classes}
+                subjects={branding.subjects}
               />
-            ) : branding.background?.videoUrl ? (
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                src={branding.background.videoUrl}
-                className="absolute inset-0 w-full h-full object-cover"
-                style={{ filter: `blur(${branding.background.blur ?? 0}px)` }}
+              {isYouTube && ytEmbedUrl ? (
+                <iframe
+                  title="Institutional Login Ambient Video"
+                  src={ytEmbedUrl}
+                  allow="autoplay; encrypted-media"
+                  className="absolute inset-0 w-full h-full border-0 pointer-events-none"
+                  style={{ filter: `blur(${branding.background.blur ?? 0}px)` }}
+                />
+              ) : rawVideoUrl ? (
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  src={rawVideoUrl}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ filter: `blur(${branding.background.blur ?? 0}px)` }}
+                />
+              ) : null}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: `rgba(5, 8, 22, ${Math.min(0.92, Math.max(0.2, (branding.background?.overlayOpacity ?? 45) / 100))})`,
+                }}
               />
-            ) : null}
-            <div
-              className="absolute inset-0"
-              style={{
-                background: `rgba(5, 8, 22, ${Math.min(0.92, Math.max(0.2, (branding.background?.overlayOpacity ?? 45) / 100))})`,
-              }}
-            />
-          </div>
-        )}
+            </div>
+          )
+        })()}
 
         {/* TOP STATUS BAR: Operational Session, Notice Ticker & Helpdesk Ribbons */}
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-2.5 w-full">

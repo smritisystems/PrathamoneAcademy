@@ -20,10 +20,10 @@
 #define MyAppName "PrathamOne EduOS"
 #define MyAppDirName "PrathamOneEduOS"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.192.0"
+  #define MyAppVersion "1.193.0"
 #endif
 #ifndef MyAppFileVersion
-  #define MyAppFileVersion "1.192.0.0"
+  #define MyAppFileVersion "1.193.0.0"
 #endif
 #ifndef MyOutputBaseFilename
   #ifdef UseReleasePayload

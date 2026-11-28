@@ -156,4 +156,19 @@ describe('IndiaNetworkLoginBackground & Login Switcher', () => {
     expect(iframe?.getAttribute('sandbox')).toBe('allow-scripts')
     expect(screen.getByTestId('login-footer-branding').textContent).toContain('COACHING INSTITUTE EDITION')
   })
+
+  it('auto-detects YouTube video URLs and keeps India Network fallback beneath video mode', () => {
+    mockedBackgroundOverride = {
+      mode: 'video',
+      videoType: 'mp4',
+      videoUrl: 'https://youtu.be/5dq8MLddu-w?si=test',
+    }
+
+    const { container } = renderLogin()
+    const videoWrap = screen.getByTestId('login-bg-custom-video')
+    const iframe = videoWrap.querySelector('iframe')
+    expect(iframe).not.toBeNull()
+    expect(iframe?.getAttribute('src')).toContain('youtube.com/embed/5dq8MLddu-w')
+    expect(container.querySelector('.inb-root')).not.toBeNull()
+  })
 })

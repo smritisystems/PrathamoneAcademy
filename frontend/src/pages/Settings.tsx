@@ -2183,7 +2183,13 @@ export default function Settings() {
                                     type="text"
                                     placeholder={allSettings.branding?.login_bg_video_type === 'youtube' ? 'e.g. dQw4w9WgXcQ or https://youtube.com/watch?v=...' : 'https://prathamone.com/ambient-loop.mp4'}
                                     value={allSettings.branding?.login_bg_video_url || ''}
-                                    onChange={(e) => handleSettingChange('branding', 'login_bg_video_url', e.target.value)}
+                                    onChange={(e) => {
+                                      const val = e.target.value
+                                      handleSettingChange('branding', 'login_bg_video_url', val)
+                                      if (/youtu\.be\/|youtube\.com\//i.test(val)) {
+                                        handleSettingChange('branding', 'login_bg_video_type', 'youtube')
+                                      }
+                                    }}
                                     className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
                                   />
                                 </div>
