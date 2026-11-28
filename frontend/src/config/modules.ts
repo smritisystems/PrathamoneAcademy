@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-27
+ * @updated     2026-11-28
  *
  * @description Canonical Module Registry (SSOT) defining all application workspaces, icons, routes, and permissions.
  */
@@ -61,6 +61,7 @@ export interface ModuleDefinition {
   iconName: string
   description: string
   requiredPermission?: string | null
+  allowedRoles?: string[]
   sysadminOnly?: boolean
   subItems: NavigationSubItem[]
   badge?: string
@@ -194,6 +195,7 @@ export const CANONICAL_MODULE_REGISTRY: ModuleDefinition[] = [
     defaultPath: '/finance/budgets',
     icon: TrendingUp,
     iconName: 'TrendingUp',
+    allowedRoles: ['admin', 'principal', 'accountant'],
     description: 'Annual financial plans, live Budget-vs-Actual variance matrix, expense guardrails, and 3-driver cashflow forecasting.',
     subItems: [
       { id: 'budgeting_plans', label: 'Budgets & Allocations', to: '/finance/budgets' },
@@ -544,6 +546,8 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   Settings,
   Terminal,
   HardDrive,
+  Wallet,
+  TrendingUp,
 }
 
 export function getAuthorizedModules(user: User | null): ModuleDefinition[] {
@@ -554,6 +558,10 @@ export function getAuthorizedModules(user: User | null): ModuleDefinition[] {
 
   return CANONICAL_MODULE_REGISTRY.filter((mod) => {
     if (mod.sysadminOnly && !isSys) return false
+
+    if (mod.allowedRoles && !isSys && !mod.allowedRoles.includes(role)) {
+      return false
+    }
 
     if (mod.requiredPermission && !isSys && role !== 'admin' && role !== 'principal') {
       if (!perms.includes(mod.requiredPermission) && !perms.includes('*:*')) {

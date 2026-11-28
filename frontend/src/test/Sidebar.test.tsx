@@ -475,6 +475,8 @@ describe('Layout Integration & Mobile Drawer', () => {
       'attendance',
       'examinations',
       'fees',
+      'expenses',
+      'budgeting',
       'homework',
       'planning',
       'eduboard',
@@ -499,6 +501,32 @@ describe('Layout Integration & Mobile Drawer', () => {
       expect(mod?.defaultPath).toBeTruthy()
       expect(mod?.icon).toBeDefined()
     }
+  })
+
+  it('renders Budgeting & Forecasting accordion and sub-menus for finance/admin roles and hides it from teachers', () => {
+    renderWithProviders(<Sidebar />, '/finance/budgets')
+
+    const budgetToggle = screen.getByRole('button', { name: /Toggle Budgeting & Forecasting Submenu/i })
+    expect(budgetToggle).toBeDefined()
+    expect(budgetToggle.getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByText('Budgets & Allocations')).toBeDefined()
+    expect(screen.getByText('Variance Matrix')).toBeDefined()
+    expect(screen.getByText('Cashflow Forecast')).toBeDefined()
+
+    act(() => {
+      useAuthStore.setState({
+        user: {
+          id: 9,
+          username: 'teacher1',
+          email: 'teacher@prashantacademy.in',
+          role: 'teacher',
+          first_name: 'Demo',
+          last_name: 'Teacher',
+        },
+        token: 'fake-jwt-token',
+      })
+    })
+    expect(screen.queryByRole('button', { name: /Toggle Budgeting & Forecasting Submenu/i })).toBeNull()
   })
 
   it('switches Sidebar platform logo between navy-ink in Light Mode and white-ink in Dark Mode', async () => {

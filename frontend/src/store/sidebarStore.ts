@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-17
+ * @updated     2026-11-28
  *
  * @description Zustand state store managing responsive sidebar layout state, collapsed rails, and mobile drawer.
  */
@@ -27,6 +27,7 @@ interface SidebarStore {
   academicOpen: boolean
   crmOpen: boolean
   feesOpen: boolean
+  budgetingOpen: boolean
   examinationsOpen: boolean
   attendanceOpen: boolean
   teachersOpen: boolean
@@ -49,6 +50,8 @@ interface SidebarStore {
   toggleCrmOpen: () => void
   setFeesOpen: (open: boolean | ((prev: boolean) => boolean)) => void
   toggleFeesOpen: () => void
+  setBudgetingOpen: (open: boolean | ((prev: boolean) => boolean)) => void
+  toggleBudgetingOpen: () => void
   setExaminationsOpen: (open: boolean | ((prev: boolean) => boolean)) => void
   toggleExaminationsOpen: () => void
   setAttendanceOpen: (open: boolean | ((prev: boolean) => boolean)) => void
@@ -93,6 +96,7 @@ export const useSidebarStore = create<SidebarStore>()(
       academicOpen: true,
       crmOpen: false,
       feesOpen: false,
+      budgetingOpen: false,
       examinationsOpen: false,
       attendanceOpen: false,
       teachersOpen: false,
@@ -146,6 +150,14 @@ export const useSidebarStore = create<SidebarStore>()(
 
       toggleFeesOpen: () =>
         set((state) => ({ feesOpen: !state.feesOpen })),
+
+      setBudgetingOpen: (updater) =>
+        set((state) => ({
+          budgetingOpen: typeof updater === 'function' ? updater(state.budgetingOpen) : updater,
+        })),
+
+      toggleBudgetingOpen: () =>
+        set((state) => ({ budgetingOpen: !state.budgetingOpen })),
 
       setExaminationsOpen: (updater) =>
         set((state) => ({
@@ -226,6 +238,7 @@ export const useSidebarStore = create<SidebarStore>()(
         academicOpen: state.academicOpen,
         crmOpen: state.crmOpen,
         feesOpen: state.feesOpen,
+        budgetingOpen: state.budgetingOpen,
         examinationsOpen: state.examinationsOpen,
         attendanceOpen: state.attendanceOpen,
         teachersOpen: state.teachersOpen,

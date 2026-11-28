@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-27
+#  * @updated     2026-11-28
 #  *
 #  * @description Domain service for user-defined menus, role-based navigation defaults, usage telemetry, and intelligent recommendations.
 #  */
@@ -172,6 +172,7 @@ CANONICAL_MODULES: List[Dict[str, Any]] = [
         "default_path": "/finance/budgets",
         "icon": "TrendingUp",
         "required_permission": None,
+        "allowed_roles": ["admin", "principal", "accountant"],
         "sysadmin_only": False,
         "sub_items": [
             {"id": "budgeting_plans", "label": "Budgets & Allocations", "to": "/finance/budgets"},
@@ -402,19 +403,19 @@ CANONICAL_MODULES: List[Dict[str, Any]] = [
 # Baseline Role-Based Navigation Defaults (SSOT)
 ROLE_DEFAULT_MENUS: Dict[str, List[str]] = {
     "sysadmin": [
-        "dashboard", "academic", "homework", "crm", "students", "fees", "attendance",
+        "dashboard", "academic", "homework", "crm", "students", "fees", "budgeting", "attendance",
         "examinations", "teachers", "staff", "reports", "users", "settings", "housekeeping", "help", "sysadmin"
     ],
     "admin": [
-        "dashboard", "fees", "students", "crm", "academic", "homework", "teachers",
+        "dashboard", "fees", "budgeting", "students", "crm", "academic", "homework", "teachers",
         "attendance", "reports", "forms", "users", "settings", "housekeeping", "help"
     ],
     "principal": [
-        "dashboard", "fees", "students", "teachers", "academic", "homework",
+        "dashboard", "fees", "budgeting", "students", "teachers", "academic", "homework",
         "attendance", "examinations", "reports", "settings", "help"
     ],
     "accountant": [
-        "dashboard", "fees", "fees_collection", "fees_invoicing",
+        "dashboard", "fees", "budgeting", "fees_collection", "fees_invoicing",
         "fees_defaulters", "fees_reports", "reports", "help"
     ],
     "teacher": [
@@ -429,6 +430,8 @@ ROLE_DEFAULT_MENUS: Dict[str, List[str]] = {
         "dashboard", "students", "attendance", "forms", "communication", "help"
     ],
 }
+ROLE_DEFAULT_MENUS["superadmin"] = ROLE_DEFAULT_MENUS["sysadmin"]
+ROLE_DEFAULT_MENUS["super_admin"] = ROLE_DEFAULT_MENUS["sysadmin"]
 
 DEFAULT_NAVIGATION_POLICY: Dict[str, Any] = {
     "enable_user_customization": True,
@@ -457,6 +460,10 @@ class NavigationService:
         authorized = []
         for mod in CANONICAL_MODULES:
             if mod["sysadmin_only"] and not is_sys:
+                continue
+
+            allowed_roles = mod.get("allowed_roles")
+            if allowed_roles and not is_sys and user_role not in allowed_roles:
                 continue
 
             req_perm = mod["required_permission"]

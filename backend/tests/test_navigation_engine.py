@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-16
+#  * @updated     2026-11-28
 #  *
 #  * @description Test suite for User-Defined Menu & Intelligent Adaptive Navigation Engine.
 #  */
@@ -37,6 +37,8 @@ class TestNavigationEngine:
         assert "role_defaults" in data
         assert "authorized_modules" in data
         assert len(data["authorized_modules"]) > 0
+        assert any(m["id"] == "budgeting" for m in data["authorized_modules"])
+        assert "budgeting" in data["role_defaults"]
 
     @pytest.mark.asyncio
     async def test_update_and_reset_user_preferences(

@@ -23,7 +23,7 @@ import {
   BookOpen, BarChart2, Shield, LogOut, GraduationCap, ChevronDown, ChevronRight,
   Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer, Download,
   Briefcase, Terminal, MessageSquare, GitBranch, DollarSign, Layers, FlaskConical,
-  Search, Sliders, Pin, RotateCcw, Folder, Compass, Star, Eye, Plus, FileCheck, HardDrive, HelpCircle, Presentation, KeyRound
+  Search, Sliders, Pin, RotateCcw, Folder, Compass, Star, Eye, Plus, FileCheck, HardDrive, HelpCircle, Presentation, KeyRound, TrendingUp
 } from 'lucide-react'
 import { useAuthStore, isUserSysAdmin, isUserAdmin, hasPermission } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
@@ -54,6 +54,7 @@ const academicSubItems = getSubItemsForModule('academic')
 const crmSubItems = getSubItemsForModule('crm')
 const feesSubItems = getSubItemsForModule('fees')
 const expensesSubItems = getSubItemsForModule('expenses')
+const budgetingSubItems = getSubItemsForModule('budgeting')
 const examSubItems = getSubItemsForModule('examinations')
 const attendanceSubItems = getSubItemsForModule('attendance')
 const teachersSubItems = getSubItemsForModule('teachers')
@@ -73,6 +74,7 @@ const SECONDARY_MODULE_IDS = [
   'examinations',
   'fees',
   'expenses',
+  'budgeting',
   'homework',
   'planning',
   'eduboard',
@@ -114,6 +116,8 @@ export default function Sidebar() {
     setCrmOpen,
     feesOpen,
     setFeesOpen,
+    budgetingOpen,
+    setBudgetingOpen,
     examinationsOpen,
     setExaminationsOpen,
     attendanceOpen,
@@ -129,6 +133,7 @@ export default function Sidebar() {
     toggleAcademicOpen,
     toggleCrmOpen,
     toggleFeesOpen,
+    toggleBudgetingOpen,
     toggleExaminationsOpen,
     toggleAttendanceOpen,
     toggleTeachersOpen,
@@ -396,6 +401,14 @@ const isStaffActive = location.pathname.startsWith('/staff')
     )
   }
 
+  const isBudgetingActive =
+    location.pathname.startsWith('/finance/budgets') ||
+    location.pathname.startsWith('/finance/variance') ||
+    location.pathname.startsWith('/finance/forecasts')
+
+  const isBudgetingSubActive = (subTo: string) =>
+    location.pathname === subTo || location.pathname.startsWith(`${subTo}/`)
+
   const isCrmActive =
     location.pathname.startsWith('/leads') ||
     location.pathname.startsWith('/crm')
@@ -441,6 +454,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
     if (isAttendanceActive) setAttendanceOpen(true)
     if (isExaminationsActive) setExaminationsOpen(true)
     if (isFeesActive) setFeesOpen(true)
+    if (isBudgetingActive) setBudgetingOpen(true)
     if (isCoursesActive) setCoursesOpen(true)
     if (isCommunicationActive) setCommunicationOpen(true)
     if (isFormsActive) setFormsOpen(true)
@@ -454,6 +468,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
     isAttendanceActive,
     isExaminationsActive,
     isFeesActive,
+    isBudgetingActive,
     isCoursesActive,
     isCommunicationActive,
     isFormsActive,
@@ -466,6 +481,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
     setAttendanceOpen,
     setExaminationsOpen,
     setFeesOpen,
+    setBudgetingOpen,
     setCoursesOpen,
     setCommunicationOpen,
     setFormsOpen,
@@ -2064,6 +2080,120 @@ if (item.to === '/staff') {
                         <div className="pl-3 pr-1 pt-1.5 space-y-1">
                           {feesSubItems.map((sub) => {
                             const isSubActive = isFeesSubActive(sub.to)
+                            return (
+                              <NavLink
+                                key={sub.to}
+                                to={sub.to}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                                  isSubActive
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F16906]'
+                                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                                }`}
+                              >
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-400'}`} />
+                                <span className="truncate">{sub.label}</span>
+                              </NavLink>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
+            if (item.to === '/finance/budgets') {
+              return (
+                <div key={item.to} className={`relative group ${isCollapsed ? 'w-full flex justify-center' : 'pt-0.5'}`}>
+                  {isCollapsed ? (
+                    <div className="relative group w-full flex justify-center">
+                      <NavLink
+                        to="/finance/budgets"
+                        aria-label="Budgeting & Forecasting"
+                        className={() =>
+                          `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                            isBudgetingActive
+                              ? 'text-white shadow-md'
+                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                          }`
+                        }
+                      >
+                        <TrendingUp className="w-5 h-5" />
+                      </NavLink>
+
+                      <div
+                        role="tooltip"
+                        className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-xl border border-slate-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                      >
+                        Budgeting &amp; Forecasting
+                      </div>
+
+                      <div
+                        role="group"
+                        aria-label="Budgeting & Forecasting Menu"
+                        className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-56 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
+                      >
+                        <div className="px-3 py-1.5 border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                          Budgeting &amp; Forecasting
+                        </div>
+                        <div className="mt-1 space-y-0.5 max-h-72 overflow-y-auto custom-scrollbar">
+                          {budgetingSubItems.map((sub) => {
+                            const isSubActive = isBudgetingSubActive(sub.to)
+                            return (
+                              <NavLink
+                                key={sub.to}
+                                to={sub.to}
+                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
+                                  isSubActive
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F16906]'
+                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                }`}
+                              >
+                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-400'}`} />
+                                <span className="truncate">{sub.label}</span>
+                              </NavLink>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div
+                        className={`w-full flex items-center justify-between rounded-xl font-medium transition-all ${
+                          isBudgetingActive
+                            ? 'bg-white/10 text-white shadow-sm font-semibold border-l-4 border-[#F16906]'
+                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                        }`}
+                      >
+                        <NavLink
+                          to="/finance/budgets"
+                          aria-label="Budgeting & Forecasting"
+                          className="flex-1 flex items-center gap-3 px-3 py-2 min-w-0 focus:outline-none"
+                        >
+                          <TrendingUp className={`w-4 h-4 flex-shrink-0 ${isBudgetingActive ? 'text-[#F16906]' : 'text-emerald-400'}`} />
+                          <span className="truncate text-xs font-semibold">Budgeting &amp; Forecasting</span>
+                        </NavLink>
+                        <button
+                          type="button"
+                          onClick={toggleBudgetingOpen}
+                          aria-expanded={budgetingOpen}
+                          aria-label="Toggle Budgeting & Forecasting Submenu"
+                          className="px-2.5 py-2 hover:bg-white/10 rounded-r-xl transition-colors focus:outline-none"
+                        >
+                          {budgetingOpen ? (
+                            <ChevronDown className={`w-4 h-4 flex-shrink-0 ${isBudgetingActive ? 'text-white' : 'text-slate-400'}`} />
+                          ) : (
+                            <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isBudgetingActive ? 'text-white' : 'text-slate-400'}`} />
+                          )}
+                        </button>
+                      </div>
+
+                      {budgetingOpen && (
+                        <div className="pl-3 pr-1 pt-1.5 space-y-1">
+                          {budgetingSubItems.map((sub) => {
+                            const isSubActive = isBudgetingSubActive(sub.to)
                             return (
                               <NavLink
                                 key={sub.to}
