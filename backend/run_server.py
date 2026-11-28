@@ -711,6 +711,7 @@ def _run_inprocess_bootstrap(root_dir: Path, backend_dir: Path, pg_port: int, da
 
         alembic_cfg = Config(str(alembic_ini))
         alembic_cfg.set_main_option("script_location", str(backend_dir / "alembic"))
+        alembic_cfg.attributes["database_url"] = db_url
         try:
             command.upgrade(alembic_cfg, "head")
         except Exception:
@@ -811,7 +812,12 @@ class _PgCtlProcessHandle:
         self._stopped = True
 
 
-def _start_embedded_postgres(root_dir: Path, backend_dir: Path, data_root: Optional[Path] = None) -> tuple[Optional[Any], int]:
+def _start_embedded_postgres(
+    root_dir: Path,
+    backend_dir: Path,
+    data_root: Optional[Path] = None,
+    run_bootstrap: bool = True,
+) -> tuple[Optional[Any], int]:
     """Start embedded PostgreSQL if present in app_root/pgsql, returning (proc_handle, pg_port)."""
     effective_root = data_root or root_dir
     pgsql_dir = root_dir / "pgsql"
@@ -909,23 +915,24 @@ def _start_embedded_postgres(root_dir: Path, backend_dir: Path, data_root: Optio
                     break
                 time.sleep(0.5)
 
-    # Check if bootstrap/alembic stamp needs execution
-    bootstrap_marker = data_dir / ".bootstrap_complete"
-    alembic_dir = backend_dir / "alembic" / "versions"
-    stamp_src = b"standalone"
-    if alembic_dir.exists():
-        stamp_src += "|".join(sorted(p.name for p in alembic_dir.iterdir())).encode("utf-8")
-    current_stamp = hashlib.sha256(stamp_src).hexdigest()
-    needs_bootstrap = (
-        not (effective_root / ".env").exists()
-        or (effective_root / "setup_config.json").exists()
-        or (root_dir / "setup_config.json").exists()
-        or not bootstrap_marker.exists()
-        or bootstrap_marker.read_text(encoding="utf-8").strip() != current_stamp
-    )
-    if needs_bootstrap:
-        _run_inprocess_bootstrap(root_dir, backend_dir, pg_port, data_root=effective_root)
-        bootstrap_marker.write_text(current_stamp, encoding="utf-8")
+    if run_bootstrap:
+        # Check if bootstrap/alembic stamp needs execution
+        bootstrap_marker = data_dir / ".bootstrap_complete"
+        alembic_dir = backend_dir / "alembic" / "versions"
+        stamp_src = b"standalone"
+        if alembic_dir.exists():
+            stamp_src += "|".join(sorted(p.name for p in alembic_dir.iterdir())).encode("utf-8")
+        current_stamp = hashlib.sha256(stamp_src).hexdigest()
+        needs_bootstrap = (
+            not (effective_root / ".env").exists()
+            or (effective_root / "setup_config.json").exists()
+            or (root_dir / "setup_config.json").exists()
+            or not bootstrap_marker.exists()
+            or bootstrap_marker.read_text(encoding="utf-8").strip() != current_stamp
+        )
+        if needs_bootstrap:
+            _run_inprocess_bootstrap(root_dir, backend_dir, pg_port, data_root=effective_root)
+            bootstrap_marker.write_text(current_stamp, encoding="utf-8")
 
     return pg_proc, pg_port
 
@@ -1271,21 +1278,52 @@ def _create_progressive_asgi_app(shutdown_callback=None):
 _EXPECTED_PYD_MANIFEST: Optional[dict[str, str]] = None
 
 
+def _preload_data_root_env(app_root: Path, data_root: Path) -> tuple[Optional[Path], dict[str, str]]:
+    """Load <data_root>/.env (or <app_root>/.env) into os.environ before importing app.core.config."""
+    env_path = data_root / ".env"
+    if not env_path.is_file() and (app_root / ".env").is_file():
+        env_path = app_root / ".env"
+    env_vars = _load_env_file(env_path)
+    if env_path.is_file():
+        os.environ.setdefault("PRATHAM_ENV_FILE", str(env_path))
+        for k, v in env_vars.items():
+            os.environ.setdefault(k, v)
+    if len(os.environ.get("SECRET_KEY", "").strip()) < 32:
+        os.environ["SECRET_KEY"] = secrets.token_hex(32)
+    return (env_path if env_path.is_file() else None), env_vars
+
+
 def _resolve_app_version_metadata() -> tuple[str, str]:
-    """Return (VERSION, BUILD_NUMBER) without exposing secrets or requiring live DB config."""
+    """Return (VERSION, BUILD_NUMBER) without exposing secrets or failing when .env has not initialized."""
+    manifest_file = BACKEND_DIR / "app" / "release_manifest.json"
+    if manifest_file.is_file():
+        try:
+            manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+            ver = str(manifest.get("version") or "").strip()
+            bld = str(manifest.get("build_number") or "").strip()
+            if ver:
+                return ver, bld or ver
+        except Exception:
+            pass
+
     had_db_url = "DATABASE_URL" in os.environ
+    had_secret = "SECRET_KEY" in os.environ
     if not had_db_url:
         os.environ["DATABASE_URL"] = "postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/prashant_academy"
+    if not had_secret:
+        os.environ["SECRET_KEY"] = "metadata_probe_secret_key_for_version_inspection_only_1234567890ab"
     try:
         from app.core.config import Settings
 
         cfg = Settings()
         return str(cfg.VERSION), str(cfg.BUILD_NUMBER)
     except Exception:
-        return "1.185.2", "unknown"
+        return "1.194.1", "unknown"
     finally:
         if not had_db_url:
             os.environ.pop("DATABASE_URL", None)
+        if not had_secret:
+            os.environ.pop("SECRET_KEY", None)
 
 
 def _append_upgrade_audit_event(data_root: Path, event: dict) -> Path:
@@ -1427,6 +1465,7 @@ def run_preflight_check(
     actor: str = "cli",
 ) -> tuple[int, dict]:
     """Inspect existing installation, PostgreSQL cluster, Alembic schema state, disk space, and license parity."""
+    _env_path, env_vars = _preload_data_root_env(app_root, data_root)
     app_version, build_number = _resolve_app_version_metadata()
     heads, all_known_revs, ordered_asc = _get_alembic_script_info(backend_dir)
 
@@ -1603,17 +1642,9 @@ def run_migrate_only(
     start_pg: bool = True,
 ) -> tuple[int, dict]:
     """Execute Alembic migrations forward to head, verify resulting revision, and record an audit trail."""
+    _env_path, env_vars = _preload_data_root_env(app_root, data_root)
     app_version, build_number = _resolve_app_version_metadata()
     heads, all_known_revs, ordered_asc = _get_alembic_script_info(backend_dir)
-
-    env_path = data_root / ".env"
-    if not env_path.is_file() and (app_root / ".env").is_file():
-        env_path = app_root / ".env"
-    env_vars = _load_env_file(env_path)
-    if env_path.is_file():
-        os.environ["PRATHAM_ENV_FILE"] = str(env_path)
-        for k, v in env_vars.items():
-            os.environ.setdefault(k, v)
 
     started_pg_proc = None
     schema_before: list[str] = []
@@ -1626,7 +1657,12 @@ def run_migrate_only(
                 raise RuntimeError(
                     f"Existing PostgreSQL cluster PG_VERSION not found at {data_root / 'data'}; aborting migration without initdb."
                 )
-            started_pg_proc, pg_port = _start_embedded_postgres(app_root, backend_dir, data_root=data_root)
+            started_pg_proc, pg_port = _start_embedded_postgres(
+                app_root,
+                backend_dir,
+                data_root=data_root,
+                run_bootstrap=False,
+            )
             db_pw = env_vars.get("POSTGRES_PASSWORD") or os.environ.get("POSTGRES_PASSWORD") or "postgres"
             db_url = f"postgresql+asyncpg://postgres:{db_pw}@127.0.0.1:{pg_port}/prashant_academy"
             os.environ["POSTGRES_PORT"] = str(pg_port)
@@ -1648,6 +1684,8 @@ def run_migrate_only(
 
         alembic_cfg = Config(str(alembic_ini))
         alembic_cfg.set_main_option("script_location", str(backend_dir / "alembic"))
+        alembic_cfg.set_main_option("sqlalchemy.url", db_url.replace("%", "%%"))
+        alembic_cfg.attributes["database_url"] = db_url
         command.upgrade(alembic_cfg, "head")
 
         after_state = asyncio.run(_inspect_database_state(db_url, all_known_revs))
@@ -1749,7 +1787,12 @@ def run_cli_backup(
                 except Exception:
                     pass
             if not already_up:
-                started_pg_proc, pg_port = _start_embedded_postgres(app_root, backend_dir, data_root=data_root)
+                started_pg_proc, pg_port = _start_embedded_postgres(
+                app_root,
+                backend_dir,
+                data_root=data_root,
+                run_bootstrap=False,
+            )
             db_pw = env_vars.get("POSTGRES_PASSWORD") or os.environ.get("POSTGRES_PASSWORD") or "postgres"
             os.environ["POSTGRES_PORT"] = str(pg_port)
             os.environ["DATABASE_URL"] = f"postgresql+asyncpg://postgres:{db_pw}@127.0.0.1:{pg_port}/prashant_academy"

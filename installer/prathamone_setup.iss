@@ -20,10 +20,10 @@
 #define MyAppName "PrathamOne EduOS"
 #define MyAppDirName "PrathamOneEduOS"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.194.1"
+  #define MyAppVersion "1.194.2"
 #endif
 #ifndef MyAppFileVersion
-  #define MyAppFileVersion "1.194.1.0"
+  #define MyAppFileVersion "1.194.2.0"
 #endif
 #ifndef MyOutputBaseFilename
   #ifdef UseReleasePayload
@@ -1132,6 +1132,34 @@ begin
   begin
     if IsUpgradeMode then
     begin
+      if (VerifiedBackupDumpFile = '') then
+      begin
+        DataRootDir := GetWritableDataRoot('');
+        DataDir := DataRootDir + '\data';
+        if not DirExists(DataDir) then
+          DataDir := ExpandConstant('{app}\data');
+        if DirExists(DataDir) and FileExists(DataDir + '\PG_VERSION') then
+        begin
+          BackupDir := DataRootDir + '\backups';
+          ForceDirectories(BackupDir);
+          PgPort := DetectPostgresPort(DataDir);
+          PgCtl := ExpandConstant('{app}\pgsql\bin\pg_ctl.exe');
+          PgDump := ExpandConstant('{app}\pgsql\bin\pg_dump.exe');
+          if FileExists(PgDump) and FileExists(PgCtl) then
+          begin
+            ForceDirectories(DataRootDir + '\logs');
+            if FileExists(DataDir + '\pg_upgrade_backup.log') then
+              DeleteFile(DataDir + '\pg_upgrade_backup.log');
+            Exec(PgCtl, 'start -w -t 90 -D "' + DataDir + '" -o "-p ' + PgPort + '" -l "' + DataRootDir + '\logs\pg_upgrade_backup.log"', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+            DumpFile := BackupDir + '\pre_upgrade_v' + '{#MyAppVersion}' + '_' + GetDateTimeString('yyyymmdd_hhnnss', #0, #0) + '.dump';
+            Exec(PgDump, '-h 127.0.0.1 -p ' + PgPort + ' -U postgres -Fc -f "' + DumpFile + '" prashant_academy', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+            Exec(PgCtl, 'stop -w -t 20 -D "' + DataDir + '" -m fast', ExpandConstant('{app}\pgsql\bin'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
+            if FileExists(DumpFile) then
+              VerifiedBackupDumpFile := DumpFile;
+          end;
+        end;
+      end;
+
       UpdateInstallInfoCard(
         '  [Done]   Pre-upgrade database backup & runtime extraction complete' + #13#10 +
         '  [Active] Running verified Alembic database migrations & integrity checks...' + #13#10 +
@@ -1154,10 +1182,14 @@ begin
         );
         if not WizardSilent then
         begin
+          if VerifiedBackupDumpFile <> '' then
+            DumpFile := VerifiedBackupDumpFile
+          else
+            DumpFile := GetWritableDataRoot('') + '\backups';
           MsgBox(
             'PrathamOne EduOS binaries were updated, but the automated database schema migration check returned exit code ' + IntToStr(ResultCode) + '.' + #13#10 + #13#10 +
             'Your database has NOT been auto-downgraded. Inspect logs\upgrade_audit.jsonl and use your verified pre-upgrade backup if restoration is needed:' + #13#10 +
-            VerifiedBackupDumpFile,
+            DumpFile,
             mbError,
             MB_OK
           );
