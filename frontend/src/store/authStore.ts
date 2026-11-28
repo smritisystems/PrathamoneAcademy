@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-21
+ * @updated     2026-11-28
  *
  * @description Zustand state store managing user authentication token, logged-in profile, and active institute ID.
  */
@@ -26,6 +26,7 @@ interface AuthState {
   selectedInstitutionId: number | null
   selectedAcademicYearId: number | null
   login: (token: string, user: User) => void
+  updateUser: (user: User) => void
   logout: () => void
   clearMustChangePassword: () => void
   setSelectedInstitution: (id: number) => void
@@ -46,6 +47,7 @@ export const useAuthStore = create<AuthState>()(
           selectedInstitutionId: user.institution_id || 1,
           selectedAcademicYearId: 1,
         }),
+      updateUser: (user) => set({ user }),
       logout: () => {
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('prashant-logout'))

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-27
+ * @updated     2026-11-28
  *
  * @description Master application shell component providing header navigation, collapsible sidebar, and main view outlet.
  */
@@ -34,7 +34,7 @@ import InitialLaunchActivationModal from './InitialLaunchActivationModal'
 import InstitutionOnboardingWizard from './InstitutionOnboardingWizard'
 import ForcePasswordChangeModal from './ForcePasswordChangeModal'
 import { useEditModeStore } from '../store/editModeStore'
-import { institutionsApi, academicYearsApi, licenseApi, settingsApi } from '../api/endpoints'
+import { institutionsApi, academicYearsApi, licenseApi, settingsApi, authApi } from '../api/endpoints'
 import { usePWA } from '../hooks/usePWA'
 import { useBranding } from '../config/branding'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
@@ -118,6 +118,23 @@ export default function Layout() {
   useEffect(() => {
     useEditModeStore.getState().resetAll()
   }, [location.pathname, location.search])
+
+  // Sync live user permissions from DB on shell mount so in-place upgrades unlock newly repaired grants immediately
+  useEffect(() => {
+    let active = true
+    if (typeof authApi?.getMe !== 'function') return
+    authApi
+      .getMe()
+      .then((res) => {
+        if (active && res?.data?.id) {
+          useAuthStore.getState().updateUser?.(res.data)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
 
   const token = useAuthStore((s) => s.token)
   const { data: institutions = [] } = useQuery({

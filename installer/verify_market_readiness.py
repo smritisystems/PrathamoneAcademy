@@ -371,6 +371,18 @@ def verify_desktop(skip_compiled_runtime: bool = False) -> list[str]:
             raise RuntimeError(f"Compiled desktop housekeeping backup check failed: status={st_bk}, body={bk_data}")
         print(f"  [PASS] DESKTOP-PGDUMP-BACKUP: Verified {bk_data['filename']} ({bk_data['toc_entries']} TOC entries) created & verified via bundled pgsql/bin")
 
+        for rbac_path in (
+            "/api/v1/planning/activities?start=2026-11-01&end=2026-12-12&institution_id=1",
+            "/api/v1/planning/tasks/summary?institution_id=1",
+            "/api/v1/reports/books/templates?institution_id=1",
+            "/api/v1/fees/concessions/applications",
+            "/api/v1/auth/me",
+        ):
+            st_r, _hr, _br = api_call("GET", rbac_path, jwt_token=jwt_token)
+            if st_r != 200:
+                raise RuntimeError(f"Compiled desktop admin RBAC check failed on {rbac_path}: status={st_r}")
+        print("  [PASS] DESKTOP-BOOTSTRAP-PERMS: Verified bootstrap admin has live baseline permissions across planning, concessions, reports, and auth/me")
+
         api_call("POST", "/_desktop/shutdown", {}, jwt_token=jwt_token)
         proc.wait(timeout=15)
     except Exception as exc:

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-21
+#  * @updated     2026-11-28
 #  *
 #  * @description API endpoints for user authentication, password verification, and JWT session issuance.
 #  */
@@ -186,6 +186,31 @@ async def login(
             "must_change_password": is_default_password,
             "permissions": [f"{r}:{a}" for r, a in await get_user_permissions(db, user)],
         },
+    }
+
+
+@router.get("/me")
+async def get_authenticated_me(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return current authenticated user profile and live DB-backed permissions."""
+    is_default_password = (
+        verify_password("admin123", current_user.hashed_password)
+        or verify_password("PrathamOne2026!Admin", current_user.hashed_password)
+        or verify_password("Admin@2026!", current_user.hashed_password)
+        or verify_password("account123", current_user.hashed_password)
+    )
+    return {
+        "id": current_user.id,
+        "username": current_user.username,
+        "email": current_user.email,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "role": current_user.role,
+        "institution_id": current_user.institution_id,
+        "must_change_password": is_default_password,
+        "permissions": [f"{r}:{a}" for r, a in await get_user_permissions(db, current_user)],
     }
 
 

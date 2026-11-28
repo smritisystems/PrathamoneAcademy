@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.2.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-27
+#  * @updated     2026-11-28
 #  *
 #  * @description Comprehensive master database seeder initializing administrator security credentials, all Indian educational boards (CBSE, ICSE, MSBSHSE, GSEB, State Boards, Competitive Streams), instruction mediums, canonical subjects catalogue (SSOT), curriculum applicability mappings, standards 1-12, and batches.
 #  */
@@ -258,15 +258,10 @@ async def seed(bootstrap_only: bool = False):
                 institution.onboarding_completed = bool(env_inst_name)
                 await session.flush()
 
-        # 3. Roles Master
-        roles_data = [
-            {"name": "superadmin", "description": "Super Administrator"},
-            {"name": "admin", "description": "Administrator"},
-            {"name": "principal", "description": "Principal"},
-            {"name": "accountant", "description": "Accountant"},
-            {"name": "teacher", "description": "Teacher"},
-            {"name": "staff", "description": "Staff Member"},
-        ]
+        # 3. Roles Master & Canonical Baseline Role Permissions (SSOT)
+        from app.core.permissions_seed import STANDARD_ROLES, ensure_baseline_role_permissions
+
+        roles_data = [{"name": rname, "description": desc} for rname, desc in STANDARD_ROLES]
         roles = {}
         for r in roles_data:
             existing_role = (await session.execute(select(Role).where(Role.name == r["name"]))).scalar_one_or_none()
@@ -277,6 +272,8 @@ async def seed(bootstrap_only: bool = False):
                 roles[r["name"]] = role
             else:
                 roles[r["name"]] = existing_role
+
+        await ensure_baseline_role_permissions(session)
 
         # 4. Administrator User
         if not existing_admin:

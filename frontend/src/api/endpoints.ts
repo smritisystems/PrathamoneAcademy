@@ -125,6 +125,7 @@ export const authApi = {
     })
   },
   logout: () => apiClient.post<{ message: string }>('/auth/logout'),
+  getMe: () => apiClient.get<User>('/auth/me'),
   changePassword: (current_password: string, new_password: string) =>
     apiClient.post<{ message: string }>('/auth/change-password', {
       current_password,
