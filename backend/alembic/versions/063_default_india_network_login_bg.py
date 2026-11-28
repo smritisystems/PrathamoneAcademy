@@ -53,8 +53,8 @@ def upgrade() -> None:
     conn.execute(
         sa.text(
             """
-            INSERT INTO institution_settings (institution_id, category, key, value, data_type, is_encrypted, created_at, updated_at)
-            SELECT i.id, 'branding', 'login_bg_mode', 'india_network', 'string', FALSE, NOW(), NOW()
+            INSERT INTO institution_settings (institution_id, category, key, value, data_type, is_secret, scope, created_at, updated_at)
+            SELECT i.id, 'branding', 'login_bg_mode', 'india_network', 'string', FALSE, 'institute', NOW(), NOW()
             FROM institutions i
             WHERE NOT EXISTS (
                 SELECT 1
@@ -70,8 +70,8 @@ def upgrade() -> None:
     conn.execute(
         sa.text(
             """
-            INSERT INTO institution_settings (institution_id, category, key, value, data_type, is_encrypted, created_at, updated_at)
-            SELECT s.institution_id, 'branding', 'login_bg_video_type', 'youtube', 'string', FALSE, NOW(), NOW()
+            INSERT INTO institution_settings (institution_id, category, key, value, data_type, is_secret, scope, created_at, updated_at)
+            SELECT s.institution_id, 'branding', 'login_bg_video_type', 'youtube', 'string', FALSE, 'institute', NOW(), NOW()
             FROM institution_settings s
             WHERE s.key = 'login_bg_video_url'
               AND (LOWER(s.value) LIKE '%youtu.be/%' OR LOWER(s.value) LIKE '%youtube.com/%')
