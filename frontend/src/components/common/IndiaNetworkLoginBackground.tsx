@@ -18,6 +18,10 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
+  BRAND_MARK_RATIO,
+  BRAND_MARK_SVG,
+  BRAND_MARK_TINTS,
+  CLUSTER_CITIES,
   GLYPH_COLORS,
   INDIA_AMBIENT_WORDS,
   INDIA_CITY_HUBS,
@@ -360,7 +364,7 @@ export default function IndiaNetworkLoginBackground({
       parts.push(instituteState.trim())
     }
     if (parts.length === 0) {
-      return 'Gorakhpur ✦ Mumbai ✦ Pan-India'
+      return 'Pan-India'
     }
     return `${parts.join(' ✦ ')} ✦ Pan-India`
   }, [instituteCity, instituteState])
@@ -395,7 +399,15 @@ export default function IndiaNetworkLoginBackground({
     let stars: Array<{ x: number; y: number; z: number; tw: number }> = []
     let words: Array<{ t: string; x: number; y: number; z: number; vx: number; vy: number; ph: number; fs: number }> = []
     const cityProj: Array<{ name: string; tier: number; x: number; y: number }> = []
-    let arcs: Array<{ a: { x: number; y: number }; b: { x: number; y: number }; cx: number; cy: number; sp: number; ph: number; h: number }> = []
+    let arcs: Array<{
+      a: { x: number; y: number }
+      b: { tier: number; x: number; y: number }
+      cx: number
+      cy: number
+      sp: number
+      ph: number
+      h: number
+    }> = []
     const glyphs: Array<{
       live: boolean
       x: number
@@ -414,9 +426,65 @@ export default function IndiaNetworkLoginBackground({
     let tx = 0
     let ty = 0
     let lastMove = -9
+    let narrow = false
+    const Z = { s: 1, x: 0, y: 0 }
+    let hov: { c: (typeof cityProj)[number]; t: number } | null = null
+    let curT = 0
     let shoot: { x: number; y: number; l: number } | null = null
     let rafId = 0
     let last = 0
+
+    // Glowing brand watermark sprite (academy-india-network-v4)
+    const brandImg = typeof Image !== 'undefined' ? new Image() : null
+    let brandOk = false
+    let marks: Array<{ x: number; y: number; w: number; t0: number; d: number; tint: [string, string] }> = []
+    let nextMark = 1.2
+    if (brandImg) {
+      brandImg.onload = () => {
+        brandOk = true
+      }
+      brandImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(BRAND_MARK_SVG)
+    }
+
+    function spawnMark(t: number): boolean {
+      const w = sy * rnd(5.5, 8) * (narrow ? 0.85 : 1)
+      const h = w * BRAND_MARK_RATIO
+      for (let k = 0; k < 260; k++) {
+        const x = cx + rnd(-17, 17) * sx
+        const y = cy + rnd(-18, 16) * sy
+        if (!inside(x, y) || !inside(x - w / 2, y) || !inside(x + w / 2, y)) continue
+        let ok = true
+        const L = x - w / 2 - 5
+        const R = x + w / 2 + 5
+        const T = y - h / 2 - 5
+        const B = y + h / 2 + 5
+        for (let i = 0; i < cityProj.length; i++) {
+          const c = cityProj[i]
+          const lw = c.tier < 4 ? c.name.length * sy * 0.36 + 8 : 0
+          const x1 = LEFT_ALIGNED_CITIES[c.name] ? c.x - lw - 6 : c.x - 6
+          const x2 = LEFT_ALIGNED_CITIES[c.name] ? c.x + 6 : c.x + lw + 6
+          if (x2 > L && x1 < R && c.y + 9 > T && c.y - 9 < B) {
+            ok = false
+            break
+          }
+        }
+        for (let j = 0; ok && j < marks.length; j++) {
+          if (Math.abs(marks[j].x - x) < w * 1.2 && Math.abs(marks[j].y - y) < h * 4) ok = false
+        }
+        if (ok) {
+          marks.push({
+            x,
+            y,
+            w,
+            t0: t,
+            d: rnd(4.5, 7),
+            tint: BRAND_MARK_TINTS[(Math.random() * BRAND_MARK_TINTS.length) | 0],
+          })
+          return true
+        }
+      }
+      return false
+    }
 
     function proj(lon: number, lat: number): [number, number] {
       return [cx + (lon - 79.1) * sx, cy + (18.2 - lat) * sy]
@@ -477,11 +545,12 @@ export default function IndiaNetworkLoginBackground({
       cv.height = H * dpr
 
       const wide = W >= 540
+      narrow = W < 640
       setIsCompact(!wide)
-      sy = wide ? Math.min((H * 0.72) / 38.2, (W * 0.54) / (36.6 * 0.9)) : Math.min((H * 0.56) / 38.2, (W * 0.92) / (36.6 * 0.9))
+      sy = wide ? Math.min((H * 0.72) / 38.2, (W * 0.56) / (36.6 * 0.9)) : Math.min((H * 0.6) / 33, (W * 0.94) / (29.8 * 0.9))
       sx = sy * 0.9
-      cx = wide ? W * 0.68 : W / 2
-      cy = wide ? H * 0.47 : H * 0.6
+      cx = wide ? W * 0.68 : W / 2 - 3.65 * sx
+      cy = wide ? H * 0.48 : H * 0.62
 
       PR = INDIA_RINGS.map((r) => r.map((p) => proj(p[0], p[1])))
       const o = document.createElement('canvas')
@@ -541,6 +610,7 @@ export default function IndiaNetworkLoginBackground({
         })
       }
       dots = o
+      marks = []
 
       cityProj.length = 0
       INDIA_CITY_HUBS.forEach((c) => {
@@ -551,7 +621,7 @@ export default function IndiaNetworkLoginBackground({
       arcs = []
       ;[0, 1].forEach((h) => {
         cityProj.forEach((c, i) => {
-          if (i === h || (h === 1 && i === 0)) return
+          if (i === h || (h === 1 && i === 0) || c.tier > 3) return
           const a = cityProj[h]
           const dx = c.x - a.x
           const dy = c.y - a.y
@@ -662,6 +732,7 @@ export default function IndiaNetworkLoginBackground({
 
     function draw(t: number, dt: number) {
       if (!ctx) return
+      curT = t
       const auto = t - lastMove > 3
       if (auto) {
         tx = Math.sin(t * 0.25) * 0.6
@@ -716,13 +787,15 @@ export default function IndiaNetworkLoginBackground({
 
       if (dots) {
         ctx.save()
-        ctx.translate(mx * 14, my * 10)
+        ctx.translate(mx * 14 + Z.x, my * 10 + Z.y)
+        ctx.scale(Z.s, Z.s)
         ctx.drawImage(dots, 0, 0, W, H)
         ctx.restore()
       }
 
       ctx.save()
-      ctx.translate(mx * 14, my * 10)
+      ctx.translate(mx * 14 + Z.x, my * 10 + Z.y)
+      ctx.scale(Z.s, Z.s)
       ctx.font = `600 ${Math.max(8, sy * 0.3)}px ${FONT}`
       ctx.textAlign = 'center'
       ctx.fillStyle = 'rgba(180,200,240,.28)'
@@ -732,6 +805,7 @@ export default function IndiaNetworkLoginBackground({
       })
       ctx.lineWidth = 1
       arcs.forEach((r) => {
+        if (narrow && r.b.tier > 2) return
         const col = r.h ? '80,225,255' : '255,160,70'
         ctx.strokeStyle = `rgba(${col},.16)`
         ctx.beginPath()
@@ -750,11 +824,37 @@ export default function IndiaNetworkLoginBackground({
           ctx.fill()
         }
       })
+
+      // Glowing PrathamOne watermark marks drifting across India map grid (v4)
+      if (brandOk && brandImg && !reduce) {
+        nextMark -= dt
+        if (nextMark <= 0 && marks.length < 2) {
+          nextMark = spawnMark(t) ? rnd(4.2, 5.8) : 0.3
+        }
+        marks = marks.filter((m) => t - m.t0 < m.d)
+        marks.forEach((m) => {
+          const u = (t - m.t0) / m.d
+          const a = Math.pow(Math.sin(u * 3.1416), 1.6)
+          const w = m.w * (1 + 0.05 * Math.sin(u * 6.3))
+          const h = w * BRAND_MARK_RATIO
+          ctx.save()
+          ctx.shadowColor = `rgba(${m.tint[0]},.95)`
+          ctx.shadowBlur = 30 * dpr
+          ctx.globalAlpha = 0.62 * a
+          ctx.drawImage(brandImg, m.x - w / 2, m.y - h / 2, w, h)
+          ctx.shadowColor = `rgba(${m.tint[1]},.9)`
+          ctx.shadowBlur = 12 * dpr
+          ctx.globalAlpha = 0.45 * a
+          ctx.drawImage(brandImg, m.x - w / 2, m.y - h / 2, w, h)
+          ctx.restore()
+        })
+      }
+
       cityProj.forEach((c, i) => {
         const hub = c.tier < 2
         const col = c.tier === 0 ? '255,150,60' : '90,225,255'
         const pulse = (t * 0.5 + i * 0.37) % 1
-        const r = c.tier === 0 ? 7 : c.tier === 1 ? 3.2 : c.tier === 2 ? 3.6 : 2.6
+        const r = c.tier === 0 ? 7 : c.tier === 1 ? 3.2 : c.tier === 2 ? 3.6 : c.tier === 3 ? 2.6 : 1.9
         const rg = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, r * 5)
         rg.addColorStop(0, `rgba(${col},.55)`)
         rg.addColorStop(1, `rgba(${col},0)`)
@@ -778,7 +878,7 @@ export default function IndiaNetworkLoginBackground({
         ctx.arc(c.x, c.y, r * 0.45, 0, 6.3)
         ctx.fill()
 
-        const fs = [Math.max(16, sy * 0.72), Math.max(8, sy * 0.3), Math.max(10, sy * 0.38), Math.max(8, sy * 0.3)][c.tier]
+        const fs = [Math.max(16, sy * 0.76), Math.max(8, sy * 0.3), Math.max(10, sy * 0.38), Math.max(8, sy * 0.3), Math.max(8, sy * 0.3)][c.tier]
         ctx.font = `${c.tier < 3 ? '700 ' : '600 '}${fs}px ${FONT}`
         ctx.fillStyle = c.tier === 1 ? 'rgba(190,240,255,.8)' : `rgba(255,255,255,${c.tier === 0 ? 1 : c.tier === 2 ? 0.9 : 0.6})`
         const alignLeft = Boolean(LEFT_ALIGNED_CITIES[c.name])
@@ -787,11 +887,53 @@ export default function IndiaNetworkLoginBackground({
           ctx.shadowColor = '#ff8a30'
           ctx.shadowBlur = 14
         }
-        if (c.tier < 3 || sy >= 15) {
+        if (!CLUSTER_CITIES[c.name] && (c.tier < 3 || (c.tier === 3 && sy >= 15))) {
           ctx.fillText(c.name.toUpperCase(), alignLeft ? c.x - r - 5 : c.x + r + 5, c.y - r * 0.4)
         }
         ctx.shadowBlur = 0
       })
+
+      // Interactive hovered/tapped city halo pill (v4)
+      if (hov) {
+        const age = curT - hov.t
+        if (age > 2.4) {
+          hov = null
+        } else {
+          const hc = hov.c
+          const hf = Math.max(11, sy * 0.5) * (narrow ? 1.1 : 1)
+          const ht = hc.name.toUpperCase()
+          ctx.save()
+          ctx.globalAlpha = Math.min(1, (2.4 - age) * 2)
+          ctx.strokeStyle = 'rgba(255,255,255,.9)'
+          ctx.lineWidth = 1.6
+          ctx.beginPath()
+          ctx.arc(hc.x, hc.y, 9, 0, 6.3)
+          ctx.stroke()
+          ctx.font = `700 ${hf}px ${FONT}`
+          ctx.textAlign = 'left'
+          const hw = ctx.measureText(ht).width + 18
+          const hh = hf + 10
+          const bx = hc.x - hw / 2
+          const by = hc.y - hh - 13
+          const rr = hh / 2
+          ctx.beginPath()
+          ctx.moveTo(bx + rr, by)
+          ctx.lineTo(bx + hw - rr, by)
+          ctx.arc(bx + hw - rr, by + rr, rr, -1.5708, 1.5708)
+          ctx.lineTo(bx + rr, by + hh)
+          ctx.arc(bx + rr, by + rr, rr, 1.5708, 4.7124)
+          ctx.closePath()
+          ctx.fillStyle = 'rgba(6,10,32,.88)'
+          ctx.fill()
+          ctx.strokeStyle = 'rgba(120,220,255,.9)'
+          ctx.lineWidth = 1.2
+          ctx.stroke()
+          ctx.fillStyle = '#fff'
+          ctx.textBaseline = 'middle'
+          ctx.fillText(ht, bx + 9, by + hh / 2 + 1)
+          ctx.restore()
+        }
+      }
       ctx.restore()
 
       words.forEach((w) => {
@@ -828,7 +970,23 @@ export default function IndiaNetworkLoginBackground({
       rafId = requestAnimationFrame(loop)
     }
 
-    function move(clientX: number, clientY: number) {
+    function pickCity(px: number, py: number) {
+      const mxp = (px - mx * 14 - Z.x) / Z.s
+      const myp = (py - my * 10 - Z.y) / Z.s
+      let best: (typeof cityProj)[number] | null = null
+      let bd = 1e9
+      const rad = (narrow ? 22 : 15) / Z.s
+      cityProj.forEach((c) => {
+        const d = Math.hypot(c.x - mxp, c.y - myp)
+        if (d < rad && d < bd) {
+          bd = d
+          best = c
+        }
+      })
+      return best
+    }
+
+    function move(clientX: number, clientY: number, isHoverPointer = false) {
       if (!root) return
       const rect = root.getBoundingClientRect()
       const relX = clientX - rect.left
@@ -836,9 +994,23 @@ export default function IndiaNetworkLoginBackground({
       tx = (relX / Math.max(1, W) - 0.5) * 2
       ty = (relY / Math.max(1, H) - 0.5) * 2
       lastMove = last
+      if (isHoverPointer && relX >= 0 && relX <= W && relY >= 0 && relY <= H) {
+        const c = pickCity(relX, relY)
+        if (c) hov = { c, t: curT }
+      }
     }
 
-    const onPointer = (e: PointerEvent) => move(e.clientX, e.clientY)
+    const onPointer = (e: PointerEvent) => move(e.clientX, e.clientY, e.pointerType === 'mouse')
+    const onPointerDown = (e: PointerEvent) => {
+      if (!root) return
+      const rect = root.getBoundingClientRect()
+      const relX = e.clientX - rect.left
+      const relY = e.clientY - rect.top
+      if (relX >= 0 && relX <= W && relY >= 0 && relY <= H) {
+        const c = pickCity(relX, relY)
+        if (c) hov = { c, t: curT }
+      }
+    }
     const onTouch = (e: TouchEvent) => {
       const p = e.touches[0]
       if (p) move(p.clientX, p.clientY)
@@ -854,6 +1026,7 @@ export default function IndiaNetworkLoginBackground({
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(build) : null
     ro?.observe(root)
     window.addEventListener('pointermove', onPointer)
+    window.addEventListener('pointerdown', onPointerDown)
     window.addEventListener('touchmove', onTouch, { passive: true })
     window.addEventListener('resize', build)
 
@@ -861,6 +1034,7 @@ export default function IndiaNetworkLoginBackground({
       if (rafId) cancelAnimationFrame(rafId)
       ro?.disconnect()
       window.removeEventListener('pointermove', onPointer)
+      window.removeEventListener('pointerdown', onPointerDown)
       window.removeEventListener('touchmove', onTouch)
       window.removeEventListener('resize', build)
     }
