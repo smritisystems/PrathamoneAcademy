@@ -20,10 +20,10 @@
 #define MyAppName "PrathamOne EduOS"
 #define MyAppDirName "PrathamOneEduOS"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.194.0"
+  #define MyAppVersion "1.194.1"
 #endif
 #ifndef MyAppFileVersion
-  #define MyAppFileVersion "1.194.0.0"
+  #define MyAppFileVersion "1.194.1.0"
 #endif
 #ifndef MyOutputBaseFilename
   #ifdef UseReleasePayload
@@ -385,7 +385,15 @@ begin
     end;
   end;
   if InstallBase = '' then
-    InstallBase := ExpandConstant('{app}');
+    InstallBase := GetExistingInstallDir;
+  if InstallBase = '' then
+  begin
+    try
+      InstallBase := ExpandConstant('{app}');
+    except
+      InstallBase := '';
+    end;
+  end;
 
   ProgFiles := Lowercase(ExpandConstant('{autopf}'));
   InProgramFiles := (ProgFiles <> '') and (Pos(ProgFiles, Lowercase(InstallBase)) = 1);
@@ -612,10 +620,15 @@ begin
   Exec('taskkill.exe', '/F /IM PrathamOne.exe /IM prathamone_backend.exe /IM pythonw.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   ExistingDir := GetExistingInstallDir;
   PgCtl := '';
+  // Never expand {app} during InitializeSetup (before WizardDir initialization — Inno throws internal error)
   if (ExistingDir <> '') and FileExists(ExistingDir + '\pgsql\bin\pg_ctl.exe') then
     PgCtl := ExistingDir + '\pgsql\bin\pg_ctl.exe'
-  else if FileExists(ExpandConstant('{app}\pgsql\bin\pg_ctl.exe')) then
-    PgCtl := ExpandConstant('{app}\pgsql\bin\pg_ctl.exe');
+  else if FileExists('D:\{#MyAppDirName}\pgsql\bin\pg_ctl.exe') then
+    PgCtl := 'D:\{#MyAppDirName}\pgsql\bin\pg_ctl.exe'
+  else if FileExists(ExpandConstant('{autopf}\{#MyAppName}\pgsql\bin\pg_ctl.exe')) then
+    PgCtl := ExpandConstant('{autopf}\{#MyAppName}\pgsql\bin\pg_ctl.exe')
+  else if FileExists(ExpandConstant('{autopf}\{#MyAppDirName}\pgsql\bin\pg_ctl.exe')) then
+    PgCtl := ExpandConstant('{autopf}\{#MyAppDirName}\pgsql\bin\pg_ctl.exe');
 
   LocalDataDir := ExpandConstant('{localappdata}\{#MyAppDirName}\data');
   if (PgCtl <> '') and FileExists(LocalDataDir + '\postmaster.pid') then
