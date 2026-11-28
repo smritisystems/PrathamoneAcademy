@@ -1858,7 +1858,7 @@ class HousekeepingService:
             try:
                 await cls._run_alembic_upgrade(sandbox_url)
             except Exception as exc_alb:
-                raise RuntimeError(f"Sandbox alembic upgrade check failed: {exc_alb}") from exc
+                raise RuntimeError(f"Sandbox alembic upgrade check failed: {exc_alb}") from exc_alb
 
             sb_engine = create_async_engine(sandbox_url, echo=False, poolclass=NullPool)
             sb_session_factory = async_sessionmaker(sb_engine, expire_on_commit=False, class_=AsyncSession)

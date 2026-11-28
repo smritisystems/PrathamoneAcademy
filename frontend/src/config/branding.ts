@@ -124,7 +124,7 @@ export const BRANDING_CONFIG = {
   monogram: 'YC' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.28-REV-344-v1.191.0-11C4F43F',
+  buildNumber: '2026.11.28-REV-345-v1.191.1-E56850D3',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-28',
