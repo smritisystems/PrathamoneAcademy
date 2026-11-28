@@ -161,10 +161,11 @@ async def get_housekeeping_overview(
 
 @router.get("/backups")
 async def list_database_backups(
+    refresh: bool = Query(default=False),
     _current_user: User = Depends(_require_housekeeping_view_or_backup_access),
 ):
     try:
-        return {"backups": HousekeepingService.list_backups()}
+        return {"backups": HousekeepingService.list_backups(force_refresh=refresh)}
     except Exception as e:
         logger.exception("Failed to list database backups: %s", e)
         return {"backups": [], "error": str(e)}

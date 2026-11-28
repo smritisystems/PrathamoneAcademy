@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-22
+#  * @updated     2026-11-28
 #  *
 #  * @description Domain service for database backup, SHA-256 verification, GFS retention pruning,
 #  */
@@ -25,12 +25,14 @@ import os
 import re
 import secrets
 import shutil
+import subprocess
+import sys
 import tempfile
 import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-from urllib.parse import unquote, urlparse
+from urllib.parse import quote, unquote, urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +76,46 @@ DEFAULT_HOUSEKEEPING_POLICY: Dict[str, Any] = {
 }
 
 
+def _is_compiled_backend() -> bool:
+    exe_name = Path(sys.executable).name.lower()
+    return bool(getattr(sys, "frozen", False)) or exe_name.startswith("prathamone_backend")
+
+
+def _resolve_runtime_app_root() -> Path:
+    explicit_root = os.getenv("PRATHAM_APP_ROOT", "").strip()
+    if explicit_root:
+        return Path(explicit_root)
+    if Path("/app/app/main.py").exists():
+        return Path("/app")
+    if _is_compiled_backend():
+        return Path(sys.executable).resolve().parent.parent
+    return Path(__file__).resolve().parents[3]
+
+
+def _resolve_runtime_data_root() -> Path:
+    explicit_data = os.getenv("PRATHAM_DATA_ROOT", "").strip()
+    if explicit_data:
+        return Path(explicit_data)
+    app_root = _resolve_runtime_app_root()
+    if Path("/app/app/main.py").exists():
+        return Path("/app")
+    prog_files = {
+        p.lower()
+        for p in (
+            os.environ.get("ProgramFiles", ""),
+            os.environ.get("ProgramFiles(x86)", ""),
+            os.environ.get("ProgramW6432", ""),
+        )
+        if p
+    }
+    in_program_files = any(str(app_root).lower().startswith(pf) for pf in prog_files)
+    if _is_compiled_backend() and (in_program_files or not (app_root / "data" / "PG_VERSION").is_file()):
+        local_app_data = os.environ.get("LOCALAPPDATA")
+        if local_app_data:
+            return Path(local_app_data) / "PrathamOneEduOS"
+    return app_root
+
+
 def resolve_backups_dir() -> Path:
     env_override = os.getenv("HOUSEKEEPING_BACKUPS_DIR")
     if env_override:
@@ -83,10 +125,10 @@ def resolve_backups_dir() -> Path:
         except Exception:
             pass
         return p
-    if Path("/app/app/main.py").exists():
+    if Path("/app/app/main.py").exists() and not os.getenv("PRATHAM_DATA_ROOT"):
         p = Path("/app/backups")
     else:
-        p = Path(__file__).resolve().parents[3] / "backups"
+        p = _resolve_runtime_data_root() / "backups"
     try:
         p.mkdir(parents=True, exist_ok=True)
     except Exception:
@@ -103,10 +145,10 @@ def resolve_legacy_backups_dir() -> Path:
         except Exception:
             pass
         return p
-    if Path("/app/app/main.py").exists():
+    if Path("/app/app/main.py").exists() and not os.getenv("PRATHAM_DATA_ROOT"):
         p = Path("/app/data/backups")
     else:
-        p = Path(__file__).resolve().parents[3] / "data" / "backups"
+        p = _resolve_runtime_data_root() / "data" / "backups"
     try:
         p.mkdir(parents=True, exist_ok=True)
     except Exception:
@@ -192,18 +234,116 @@ def _extract_edu_payload(edu_path: Path, dest_dir: Path) -> Tuple[Path, bool, Di
         return extracted_payload, internal_sha_ok, manifest
 
 
+_PG_CLI_TOOLS = {"pg_dump", "pg_restore", "psql", "pg_ctl", "pg_isready"}
+
+
+def _resolve_pg_binary(tool: str) -> str:
+    """
+    Resolve PostgreSQL CLI executables across Docker containers, bundled Desktop installations
+    ({app}/pgsql/bin), dev staging directories, and Windows/Linux system PATH.
+    """
+    raw = (tool or "").strip()
+    if not raw:
+        return raw
+    candidate_direct = Path(raw)
+    if candidate_direct.is_file():
+        return str(candidate_direct)
+
+    stem = Path(raw).stem if raw.lower().endswith(".exe") else raw
+    exe_names = (f"{stem}.exe", stem) if sys.platform == "win32" else (stem,)
+
+    bin_dirs: List[Path] = []
+    for env_key in ("HOUSEKEEPING_PG_BIN_DIR", "PG_BIN_DIR"):
+        env_val = os.getenv(env_key, "").strip()
+        if env_val:
+            bin_dirs.append(Path(env_val))
+
+    app_root = _resolve_runtime_app_root()
+    exe_dir = Path(sys.executable).resolve().parent
+    src_root = Path(__file__).resolve().parents[3]
+
+    bin_dirs.extend([
+        app_root / "pgsql" / "bin",
+        exe_dir / "pgsql" / "bin",
+        exe_dir.parent / "pgsql" / "bin",
+        src_root / "pgsql" / "bin",
+        src_root / "installer" / "build_staging" / "pgsql" / "bin",
+        Path.cwd() / "pgsql" / "bin",
+        Path.cwd().parent / "pgsql" / "bin",
+    ])
+
+    for bdir in bin_dirs:
+        for exe_name in exe_names:
+            cand = bdir / exe_name
+            try:
+                if cand.is_file():
+                    return str(cand)
+            except OSError:
+                pass
+
+    for exe_name in exe_names:
+        found = shutil.which(exe_name)
+        if found:
+            return found
+
+    if sys.platform == "win32":
+        pg_roots = []
+        for pf_var in ("ProgramFiles", "ProgramW6432", "ProgramFiles(x86)"):
+            pf_val = os.environ.get(pf_var, "").strip()
+            if pf_val:
+                pg_roots.append(Path(pf_val) / "PostgreSQL")
+        for pg_root in pg_roots:
+            if not pg_root.is_dir():
+                continue
+            try:
+                ver_dirs = sorted((d for d in pg_root.iterdir() if d.is_dir()), reverse=True)
+            except OSError:
+                ver_dirs = []
+            for vdir in ver_dirs:
+                for exe_name in exe_names:
+                    cand = vdir / "bin" / exe_name
+                    if cand.is_file():
+                        return str(cand)
+
+    return raw
+
+
 async def _run_subprocess(cmd: List[str], env_extra: Optional[Dict[str, str]] = None, timeout: int = 300) -> Tuple[int, str, str]:
     env = os.environ.copy()
     if env_extra:
         env.update(env_extra)
+
+    exec_cmd = list(cmd)
+    if exec_cmd:
+        tool_stem = Path(exec_cmd[0]).stem.lower()
+        if tool_stem in _PG_CLI_TOOLS:
+            resolved = _resolve_pg_binary(exec_cmd[0])
+            exec_cmd[0] = resolved
+            resolved_path = Path(resolved)
+            if resolved_path.is_file():
+                bin_parent = str(resolved_path.parent)
+                cur_path = env.get("PATH", "")
+                if bin_parent not in cur_path.split(os.pathsep):
+                    env["PATH"] = f"{bin_parent}{os.pathsep}{cur_path}" if cur_path else bin_parent
+
+    popen_kwargs: Dict[str, Any] = {}
+    if sys.platform == "win32":
+        popen_kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+
     try:
         proc = await asyncio.create_subprocess_exec(
-            *cmd,
+            *exec_cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             env=env,
+            **popen_kwargs,
         )
     except FileNotFoundError as exc:
+        if settings.runtime_target == "desktop" or sys.platform == "win32":
+            raise RuntimeError(
+                f"Required PostgreSQL CLI binary '{cmd[0]}' was not found in the bundled 'pgsql/bin' folder or system PATH. "
+                "Verify your installation files or configure HOUSEKEEPING_PG_BIN_DIR."
+            ) from exc
         raise RuntimeError(
             f"Required PostgreSQL CLI binary '{cmd[0]}' is missing inside this container/host. "
             "Rebuild the backend image with postgresql-client installed or run scripts/db_backup.py on the host."
@@ -1533,22 +1673,43 @@ class HousekeepingService:
             f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
             f"WHERE datname = '{target_db}' AND pid <> pg_backend_pid();"
         )
+
+        async def _terminate_sessions() -> None:
+            rc_t, _, err_t = await _run_subprocess(
+                ["psql", "-h", pg["host"], "-p", pg["port"], "-U", pg["user"], "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", terminate_sql],
+                env_extra=env,
+                timeout=60,
+            )
+            if rc_t != 0:
+                raise RuntimeError(f"Failed terminating active sessions on '{target_db}': {err_t.strip()}")
+
+        await _terminate_sessions()
+
+        drop_stmt = f'DROP DATABASE IF EXISTS "{target_db}";'
         rc, _, err = await _run_subprocess(
-            ["psql", "-h", pg["host"], "-p", pg["port"], "-U", pg["user"], "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", terminate_sql],
+            ["psql", "-h", pg["host"], "-p", pg["port"], "-U", pg["user"], "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", drop_stmt],
+            env_extra=env,
+            timeout=60,
+        )
+        if rc != 0 and "being accessed by other users" in err.lower():
+            await asyncio.sleep(0.5)
+            await _terminate_sessions()
+            rc, _, err = await _run_subprocess(
+                ["psql", "-h", pg["host"], "-p", pg["port"], "-U", pg["user"], "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", drop_stmt],
+                env_extra=env,
+                timeout=60,
+            )
+        if rc != 0:
+            raise RuntimeError(f"Failed preparing target database '{target_db}': {err.strip()}")
+
+        create_stmt = f'CREATE DATABASE "{target_db}" OWNER "{pg["user"]}";'
+        rc, _, err = await _run_subprocess(
+            ["psql", "-h", pg["host"], "-p", pg["port"], "-U", pg["user"], "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", create_stmt],
             env_extra=env,
             timeout=60,
         )
         if rc != 0:
-            raise RuntimeError(f"Failed terminating active sessions on '{target_db}': {err.strip()}")
-
-        for stmt in (f'DROP DATABASE IF EXISTS "{target_db}";', f'CREATE DATABASE "{target_db}" OWNER "{pg["user"]}";'):
-            rc, _, err = await _run_subprocess(
-                ["psql", "-h", pg["host"], "-p", pg["port"], "-U", pg["user"], "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", stmt],
-                env_extra=env,
-                timeout=60,
-            )
-            if rc != 0:
-                raise RuntimeError(f"Failed preparing target database '{target_db}': {err.strip()}")
+            raise RuntimeError(f"Failed preparing target database '{target_db}': {err.strip()}")
 
         if backup_path.suffix == ".edu":
             with tempfile.TemporaryDirectory(prefix="poedu_restore_") as tmp_dir:
@@ -1630,6 +1791,45 @@ class HousekeepingService:
             raise RuntimeError(f"Failed dropping restore drill database '{target_db}': {err.strip()}")
 
     @classmethod
+    async def _run_alembic_upgrade(cls, target_db_url: Optional[str] = None) -> None:
+        """
+        Execute Alembic forward migrations (`upgrade head`) across both container CLI environments
+        and compiled Desktop executables (in-process worker thread).
+        """
+        container_ini = Path("/app/alembic.ini")
+        if container_ini.is_file() and shutil.which("alembic"):
+            env_extra = {"DATABASE_URL": target_db_url} if target_db_url else None
+            rc_alb, _, err_alb = await _run_subprocess(
+                ["alembic", "upgrade", "head"],
+                env_extra=env_extra,
+                timeout=180,
+            )
+            if rc_alb != 0:
+                raise RuntimeError(f"Alembic upgrade head failed: {err_alb.strip()}")
+            return
+
+        candidate_dirs = [
+            Path(sys.executable).resolve().parent,
+            Path(__file__).resolve().parents[2],
+            _resolve_runtime_app_root() / "backend",
+        ]
+        alembic_ini = next((d / "alembic.ini" for d in candidate_dirs if (d / "alembic.ini").is_file()), None)
+        if alembic_ini is None:
+            return
+
+        def _upgrade_sync() -> None:
+            from alembic import command
+            from alembic.config import Config
+
+            cfg = Config(str(alembic_ini))
+            cfg.set_main_option("script_location", str(alembic_ini.parent / "alembic"))
+            if target_db_url:
+                cfg.attributes["database_url"] = target_db_url
+            command.upgrade(cfg, "head")
+
+        await asyncio.to_thread(_upgrade_sync)
+
+    @classmethod
     async def run_restore_drill(cls, filename: str, source: str, user: User) -> Dict[str, Any]:
         """Restore into a uniquely named temporary database and always attempt to drop it."""
         pg = parse_pg_connection()
@@ -1652,15 +1852,13 @@ class HousekeepingService:
         try:
             await cls._recreate_and_restore_pg_db(pg, sandbox_db, backup_path)
 
-            sandbox_url = f"postgresql+asyncpg://{pg['user']}:{pg['password']}@{pg['host']}:{pg['port']}/{sandbox_db}"
-            alembic_cwd = "/app" if Path("/app/alembic.ini").exists() else str(Path(__file__).resolve().parents[2])
-            rc_alb, _, err_alb = await _run_subprocess(
-                ["alembic", "upgrade", "head"],
-                env_extra={"DATABASE_URL": sandbox_url},
-                timeout=180,
-            ) if alembic_cwd == "/app" else (0, "Host drill skipped alembic cwd", "")
-            if rc_alb != 0:
-                raise RuntimeError(f"Sandbox alembic upgrade check failed: {err_alb.strip()}")
+            safe_user = quote(pg["user"], safe="")
+            safe_pass = quote(pg["password"], safe="")
+            sandbox_url = f"postgresql+asyncpg://{safe_user}:{safe_pass}@{pg['host']}:{pg['port']}/{sandbox_db}"
+            try:
+                await cls._run_alembic_upgrade(sandbox_url)
+            except Exception as exc_alb:
+                raise RuntimeError(f"Sandbox alembic upgrade check failed: {exc_alb}") from exc
 
             sb_engine = create_async_engine(sandbox_url, echo=False, poolclass=NullPool)
             sb_session_factory = async_sessionmaker(sb_engine, expire_on_commit=False, class_=AsyncSession)
@@ -1742,6 +1940,7 @@ class HousekeepingService:
             label="pre_restore",
             backup_format="edu",
             notes=f"Auto safety snapshot before restoring {filename} ({source}): {reason.strip()}",
+            institution_id=user.institution_id or 1,
         )
 
         pg = parse_pg_connection()
@@ -1756,13 +1955,14 @@ class HousekeepingService:
         await cls._recreate_and_restore_pg_db(pg, pg["dbname"], backup_path)
 
         # 4. Run Alembic upgrade head so restored older snapshots migrate cleanly to active code schema
-        if Path("/app/alembic.ini").exists():
-            rc_alb, _, err_alb = await _run_subprocess(["alembic", "upgrade", "head"], timeout=180)
-            if rc_alb != 0:
-                raise RuntimeError(f"Post-restore Alembic migration failed: {err_alb.strip()}")
+        try:
+            await cls._run_alembic_upgrade()
+        except Exception as exc_alb:
+            raise RuntimeError(f"Post-restore Alembic migration failed: {exc_alb}") from exc_alb
 
         # 5. Re-open fresh pool session to log audit & run SSOT financial reconciliation
         from app.core.database import AsyncSessionLocal
+        inst_id = user.institution_id or 1
         async with AsyncSessionLocal() as post_db:
             post_db.add(AuditLog(
                 user_id=user.id,
@@ -1776,7 +1976,7 @@ class HousekeepingService:
             ))
             await post_db.commit()
             rec = await FinancialGovernanceService.reconcile_financial_ledgers(
-                post_db, FinancialFilter(institution_id=1, is_demo=False)
+                post_db, FinancialFilter(institution_id=inst_id, is_demo=False)
             )
 
         _append_history_event({
@@ -1930,17 +2130,37 @@ class HousekeepingService:
             "policy": policy,
             "storage": storage,
             "alerts_summary": alerts_summary,
-            "scheduler_commands": {
-                "windows_task_scheduler": (
-                    f'schtasks /Create /TN "PrathamOne_Nightly_DB_Backup" '
-                    f'/TR "python F:\\PrashantAcademy\\scripts\\db_backup.py backup --prune" '
-                    f'/SC DAILY /ST {policy.get("backup_time", "02:00")} /F'
-                ),
-                "linux_cron": (
-                    f'0 {str(policy.get("backup_time", "02:00")).split(":")[0].lstrip("0") or "2"} * * * '
-                    f'cd /opt/prashantacademy && python3 scripts/db_backup.py backup --prune >> backups/cron.log 2>&1'
-                ),
-            },
+            "scheduler_commands": cls._build_scheduler_commands(policy),
+        }
+
+    @classmethod
+    def _build_scheduler_commands(cls, policy: Dict[str, Any]) -> Dict[str, str]:
+        raw_time = str(policy.get("backup_time") or "02:00").strip()
+        time_match = re.match(r"^(\d{1,2}):(\d{2})$", raw_time)
+        hour = int(time_match.group(1)) if time_match else 2
+        minute = int(time_match.group(2)) if time_match else 0
+        hour = max(0, min(23, hour))
+        minute = max(0, min(59, minute))
+        hhmm = f"{hour:02d}:{minute:02d}"
+
+        app_root = _resolve_runtime_app_root()
+        data_root = _resolve_runtime_data_root()
+        if _is_compiled_backend() or settings.runtime_target == "desktop":
+            backend_exe = Path(sys.executable).resolve() if _is_compiled_backend() else (app_root / "backend" / "prathamone_backend.exe")
+            win_task_tr = f'\\"{backend_exe}\\" --backup-now --prune --data-root \\"{data_root}\\"'
+        else:
+            win_task_tr = f"python {app_root / 'scripts' / 'db_backup.py'} backup --prune"
+
+        return {
+            "windows_task_scheduler": (
+                f'schtasks /Create /TN "PrathamOne_Nightly_DB_Backup" '
+                f'/TR "{win_task_tr}" '
+                f'/SC DAILY /ST {hhmm} /F'
+            ),
+            "linux_cron": (
+                f"{minute} {hour} * * * "
+                f"cd {app_root if str(app_root).startswith('/') else '/opt/prathamone'} && python3 scripts/db_backup.py backup --prune >> backups/cron.log 2>&1"
+            ),
         }
 
     # ─── Storage Inspection, Orphan Sidecar Cleanup, Log Archival & Health Alerts ───

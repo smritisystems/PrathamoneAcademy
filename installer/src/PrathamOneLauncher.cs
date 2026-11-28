@@ -40,8 +40,8 @@ using Microsoft.Web.WebView2.WinForms;
 [assembly: AssemblyCompany("Smritisys & AITDL Networks")]
 [assembly: AssemblyProduct("PrathamOne EduOS")]
 [assembly: AssemblyCopyright("Copyright (c) 2026 PrathamOne EduOS")]
-[assembly: AssemblyVersion("1.190.1.0")]
-[assembly: AssemblyFileVersion("1.190.1.0")]
+[assembly: AssemblyVersion("1.191.0.0")]
+[assembly: AssemblyFileVersion("1.191.0.0")]
 
 namespace PrathamOne
 {
@@ -462,7 +462,7 @@ namespace PrathamOne
 
             // Footer Label
             lblSplashFooter = new Label();
-            lblSplashFooter.Text = "Smritisys & AITDL Networks  •  Version 1.190.1";
+            lblSplashFooter.Text = "Smritisys & AITDL Networks  •  Version 1.191.0";
             lblSplashFooter.Font = new Font("Segoe UI", 8.5F, FontStyle.Regular);
             lblSplashFooter.ForeColor = Color.FromArgb(148, 163, 184);
             lblSplashFooter.TextAlign = ContentAlignment.MiddleCenter;
@@ -824,8 +824,21 @@ namespace PrathamOne
                     psi.CreateNoWindow = true;
                     psi.UseShellExecute = false;
                     psi.WindowStyle = ProcessWindowStyle.Hidden;
+                    psi.EnvironmentVariables["PRATHAM_APP_ROOT"] = appDir;
                     psi.EnvironmentVariables["PRATHAM_DATA_ROOT"] = dataRoot;
                     psi.EnvironmentVariables["PRATHAM_ENV_FILE"] = Path.Combine(dataRoot, ".env");
+                    psi.EnvironmentVariables["HOUSEKEEPING_BACKUPS_DIR"] = Path.Combine(dataRoot, "backups");
+                    psi.EnvironmentVariables["HOUSEKEEPING_LEGACY_BACKUPS_DIR"] = Path.Combine(dataRoot, "data", "backups");
+                    string pgsqlBinDir = Path.Combine(appDir, @"pgsql\bin");
+                    if (Directory.Exists(pgsqlBinDir))
+                    {
+                        psi.EnvironmentVariables["HOUSEKEEPING_PG_BIN_DIR"] = pgsqlBinDir;
+                        string curPath = psi.EnvironmentVariables.ContainsKey("PATH") ? psi.EnvironmentVariables["PATH"] : (Environment.GetEnvironmentVariable("PATH") ?? "");
+                        if (curPath.IndexOf(pgsqlBinDir, StringComparison.OrdinalIgnoreCase) < 0)
+                        {
+                            psi.EnvironmentVariables["PATH"] = string.IsNullOrEmpty(curPath) ? pgsqlBinDir : (pgsqlBinDir + ";" + curPath);
+                        }
+                    }
                     if (!string.IsNullOrEmpty(desktopToken))
                     {
                         psi.EnvironmentVariables["PRATHAM_DESKTOP_TOKEN"] = desktopToken;

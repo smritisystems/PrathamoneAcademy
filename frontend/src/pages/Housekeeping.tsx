@@ -61,7 +61,7 @@ import toast from 'react-hot-toast'
 import { housekeepingApi } from '../api/endpoints'
 import { EditModeBar, LockedButton, ContextualHelpButton, ElementHelpTip } from '../components/common'
 import { useEditModeStore } from '../store/editModeStore'
-import { useAuthStore, isUserSysAdmin } from '../store/authStore'
+import { useAuthStore } from '../store/authStore'
 import type {
   BackupDestination,
   BackupDispatchResult,
@@ -250,7 +250,7 @@ export default function Housekeeping() {
     try {
       const [ovRes, bkRes, histRes, storRes, destRes] = await Promise.all([
         housekeepingApi.getOverview(),
-        housekeepingApi.listBackups(),
+        housekeepingApi.listBackups(true),
         housekeepingApi.getHistory(40),
         housekeepingApi.getStorage?.().catch(() => null),
         housekeepingApi.getDestinations().catch(() => ({ data: { destinations: [] } })),
@@ -310,10 +310,10 @@ export default function Housekeeping() {
 
   const handleOpenAddDestination = (presetType: 'local_path' | 'network_share' | 'gdrive_sync' | 's3_compatible' = 'local_path') => {
     const presets: Record<string, { name: string; path?: string; endpoint?: string; bucket?: string }> = {
-      local_path: { name: 'Secondary USB / HDD Storage', path: 'D:\\PrashantAcademy_Backups' },
+      local_path: { name: 'Secondary USB / HDD Storage', path: 'D:\\PrathamOne_Backups' },
       network_share: { name: 'Office Network Share / NAS', path: '\\\\192.168.1.150\\Backups\\POeduOS' },
       gdrive_sync: { name: 'Institute Google Drive Sync', path: 'G:\\My Drive\\PrathamOne_Backups' },
-      s3_compatible: { name: 'Cloudflare R2 Cold Storage Vault', endpoint: 'https://<account-id>.r2.cloudflarestorage.com', bucket: 'prashant-academy-vault' },
+      s3_compatible: { name: 'Cloudflare R2 Cold Storage Vault', endpoint: 'https://<account-id>.r2.cloudflarestorage.com', bucket: 'prathamone-academy-vault' },
     }
     const def = presets[presetType]
     setDestForm({
@@ -786,8 +786,7 @@ export default function Housekeeping() {
           <div>
             <h2 className="text-base font-bold text-amber-900">Housekeeping Access Restricted</h2>
             <p className="text-sm text-amber-800 mt-1">
-              Housekeeping telemetry and backup creation are available to Admins; privileged archive, restore, and
-              maintenance actions require SysAdmin access.
+              Housekeeping telemetry, database backups, restores, and maintenance operations require Admin or SysAdmin access.
             </p>
           </div>
         </div>
@@ -1209,7 +1208,7 @@ export default function Housekeeping() {
                     value={mirrorDirOverride}
                     onChange={(e) => setMirrorDirOverride(e.target.value)}
                     disabled={!isEditMode || !canManage}
-                    placeholder="Optional container/mounted mirror path"
+                    placeholder="Optional approved mirror/ sub-folder (or configure Multi-Path below)"
                     className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
@@ -2529,9 +2528,8 @@ export default function Housekeeping() {
                 <span>Automated CLI & OS Task Scheduler Commands</span>
               </div>
               <p className="text-xs text-slate-300">
-                Both the UI and CLI share the exact <code className="text-emerald-300">backups/</code> catalog and{' '}
-                <code className="text-emerald-300">.sha256</code> verification format via{' '}
-                <code className="text-emerald-300">scripts/db_backup.py</code>.
+                Both the UI and OS scheduler write to the exact same <code className="text-emerald-300">backups/</code>{' '}
+                catalog and <code className="text-emerald-300">.sha256</code> verification format.
               </p>
 
               <div className="space-y-3 text-xs">
@@ -2792,10 +2790,10 @@ export default function Housekeeping() {
                         type="button"
                         onClick={() => {
                           const hints: Record<string, { name: string; path?: string; endpoint?: string; bucket?: string }> = {
-                            local_path: { name: 'Secondary Storage Drive', path: 'D:\\PrashantAcademy_Backups' },
+                            local_path: { name: 'Secondary Storage Drive', path: 'D:\\PrathamOne_Backups' },
                             network_share: { name: 'Office Synology NAS', path: '\\\\192.168.1.150\\Backups\\POeduOS' },
                             gdrive_sync: { name: 'Institute Google Drive (Cloud)', path: 'G:\\My Drive\\PrathamOne_Backups' },
-                            s3_compatible: { name: 'Cloudflare R2 Cold Storage', endpoint: 'https://<account-id>.r2.cloudflarestorage.com', bucket: 'prashant-academy-vault' },
+                            s3_compatible: { name: 'Cloudflare R2 Cold Storage', endpoint: 'https://<account-id>.r2.cloudflarestorage.com', bucket: 'prathamone-academy-vault' },
                           }
                           const h = hints[p.id]
                           setDestForm({
@@ -2852,7 +2850,7 @@ export default function Housekeeping() {
                     onChange={(e) => setDestForm({ ...destForm, path: e.target.value })}
                     placeholder={
                       destForm.type === 'local_path'
-                        ? 'D:\\PrashantAcademy_Backups or E:\\USB_Archive'
+                        ? 'D:\\PrathamOne_Backups or E:\\USB_Archive'
                         : destForm.type === 'network_share'
                         ? '\\\\192.168.1.150\\Backups\\POeduOS'
                         : 'G:\\My Drive\\PrathamOne_Backups'

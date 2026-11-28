@@ -2123,8 +2123,10 @@ export const housekeepingApi = {
       params: institutionId ? { institution_id: institutionId } : undefined,
     }),
 
-  listBackups: () =>
-    apiClient.get<{ backups: HousekeepingBackupItem[] }>('/housekeeping/backups'),
+  listBackups: (refresh = false) =>
+    apiClient.get<{ backups: HousekeepingBackupItem[] }>('/housekeeping/backups', {
+      params: refresh ? { refresh: true } : undefined,
+    }),
 
   createBackup: (data: {
     label?: string

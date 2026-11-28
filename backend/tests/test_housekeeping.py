@@ -1095,3 +1095,45 @@ async def test_dispatch_to_destinations_fan_out(tmp_path):
     assert results[1]["dest_path"] == "s3://cloud-vault/POeduOS_test.edu"
 
 
+def test_housekeeping_resolves_bundled_pg_binaries_and_data_root_paths(monkeypatch, tmp_path):
+    """Verify bundled pgsql/bin executables and PRATHAM_DATA_ROOT backup directories resolve when PATH is empty."""
+    app_root = tmp_path / "AppInstall"
+    pg_bin = app_root / "pgsql" / "bin"
+    pg_bin.mkdir(parents=True, exist_ok=True)
+    exe_name = "pg_dump.exe" if housekeeping_service_module.sys.platform == "win32" else "pg_dump"
+    bundled_dump = pg_bin / exe_name
+    bundled_dump.write_bytes(b"stub")
+
+    data_root = tmp_path / "UserDataRoot"
+    monkeypatch.delenv("HOUSEKEEPING_BACKUPS_DIR", raising=False)
+    monkeypatch.delenv("HOUSEKEEPING_LEGACY_BACKUPS_DIR", raising=False)
+    monkeypatch.delenv("HOUSEKEEPING_PG_BIN_DIR", raising=False)
+    monkeypatch.delenv("PG_BIN_DIR", raising=False)
+    monkeypatch.setenv("PRATHAM_APP_ROOT", str(app_root))
+    monkeypatch.setenv("PRATHAM_DATA_ROOT", str(data_root))
+    monkeypatch.setenv("PATH", "")
+
+    assert housekeeping_service_module._resolve_pg_binary("pg_dump") == str(bundled_dump)
+    assert housekeeping_service_module.resolve_backups_dir() == data_root / "backups"
+    assert housekeeping_service_module.resolve_legacy_backups_dir() == data_root / "data" / "backups"
+
+
+def test_housekeeping_scheduler_commands_neutral_and_handles_midnight(monkeypatch, tmp_path):
+    """Verify scheduler commands avoid hardcoded developer paths and format midnight (00:xx) cron cleanly."""
+    app_root = tmp_path / "PrathamOneInstall"
+    data_root = tmp_path / "PrathamOneData"
+    monkeypatch.setenv("PRATHAM_APP_ROOT", str(app_root))
+    monkeypatch.setenv("PRATHAM_DATA_ROOT", str(data_root))
+
+    cmds = HousekeepingService._build_scheduler_commands({"backup_time": "00:15"})
+    assert "F:\\PrashantAcademy" not in cmds["windows_task_scheduler"]
+    assert "/ST 00:15" in cmds["windows_task_scheduler"]
+    assert cmds["linux_cron"].startswith("15 0 * * * ")
+
+    monkeypatch.setattr(housekeeping_service_module.settings, "APP_RUNTIME_TARGET", "desktop")
+    desktop_cmds = HousekeepingService._build_scheduler_commands({"backup_time": "03:45"})
+    assert "--backup-now --prune" in desktop_cmds["windows_task_scheduler"]
+    assert "/ST 03:45" in desktop_cmds["windows_task_scheduler"]
+
+
+

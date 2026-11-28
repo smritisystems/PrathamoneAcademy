@@ -12,7 +12,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-26
-#  * @updated     2026-11-27
+#  * @updated     2026-11-28
 #  *
 #  * @description Dual-target release readiness verifier validating both --target hosted (API latency, zero 423 leaks, frontend build) and --target desktop (compiled .exe POST->GET parity, port 5433 DB isolation, Authenticode signatures) from unified VERSION.
 #  */
@@ -360,6 +360,16 @@ def verify_desktop(skip_compiled_runtime: bool = False) -> list[str]:
         if "Aarohi:DesktopCheck" not in psql_out:
             raise RuntimeError(f"Expected DB row on port {isolated_pg_port}, got {psql_out!r}")
         print(f"  [PASS] DESKTOP-POST-GET-5433: Verified stu_id={stu_id} persisted on isolated port {isolated_pg_port} with no-store headers")
+
+        st_bk, _h_bk, bk_data = api_call(
+            "POST",
+            "/api/v1/housekeeping/backups",
+            {"label": "desktop_readiness", "backup_format": "edu", "notes": "Verify embedded pg_dump"},
+            jwt_token=jwt_token,
+        )
+        if st_bk != 201 or not bk_data or not bk_data.get("verified") or int(bk_data.get("toc_entries", 0)) <= 0:
+            raise RuntimeError(f"Compiled desktop housekeeping backup check failed: status={st_bk}, body={bk_data}")
+        print(f"  [PASS] DESKTOP-PGDUMP-BACKUP: Verified {bk_data['filename']} ({bk_data['toc_entries']} TOC entries) created & verified via bundled pgsql/bin")
 
         api_call("POST", "/_desktop/shutdown", {}, jwt_token=jwt_token)
         proc.wait(timeout=15)

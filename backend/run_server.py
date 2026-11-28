@@ -124,6 +124,16 @@ def _resolve_data_root(app_root: Path) -> Path:
 
 BACKEND_DIR, APP_ROOT = _resolve_dirs()
 DATA_ROOT = _resolve_data_root(APP_ROOT)
+os.environ.setdefault("PRATHAM_APP_ROOT", str(APP_ROOT))
+os.environ.setdefault("PRATHAM_DATA_ROOT", str(DATA_ROOT))
+os.environ.setdefault("HOUSEKEEPING_BACKUPS_DIR", str(DATA_ROOT / "backups"))
+os.environ.setdefault("HOUSEKEEPING_LEGACY_BACKUPS_DIR", str(DATA_ROOT / "data" / "backups"))
+_EMBEDDED_PG_BIN_DIR = APP_ROOT / "pgsql" / "bin"
+if _EMBEDDED_PG_BIN_DIR.is_dir():
+    os.environ.setdefault("HOUSEKEEPING_PG_BIN_DIR", str(_EMBEDDED_PG_BIN_DIR))
+    _cur_path = os.environ.get("PATH", "")
+    if str(_EMBEDDED_PG_BIN_DIR) not in _cur_path.split(os.pathsep):
+        os.environ["PATH"] = f"{_EMBEDDED_PG_BIN_DIR}{os.pathsep}{_cur_path}" if _cur_path else str(_EMBEDDED_PG_BIN_DIR)
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 os.chdir(str(BACKEND_DIR))
@@ -1706,6 +1716,96 @@ def run_migrate_only(
             _stop_postgres_graceful(app_root, started_pg_proc, data_root)
 
 
+def run_cli_backup(
+    app_root: Path,
+    backend_dir: Path,
+    data_root: Path,
+    prune: bool = False,
+) -> tuple[int, dict]:
+    """Execute a headless verified Housekeeping backup (and optional GFS prune) for Windows Task Scheduler."""
+    env_path = data_root / ".env"
+    if not env_path.is_file() and (app_root / ".env").is_file():
+        env_path = app_root / ".env"
+    env_vars = _load_env_file(env_path)
+    if env_path.is_file():
+        os.environ["PRATHAM_ENV_FILE"] = str(env_path)
+        for k, v in env_vars.items():
+            os.environ.setdefault(k, v)
+
+    started_pg_proc = None
+    try:
+        pg_port = int(env_vars.get("POSTGRES_PORT") or os.environ.get("POSTGRES_PORT") or "5432")
+        if (app_root / "pgsql" / "bin" / "postgres.exe").is_file():
+            own_pid = data_root / "data" / "postmaster.pid"
+            already_up = False
+            if own_pid.is_file():
+                try:
+                    lines = own_pid.read_text(encoding="utf-8", errors="ignore").splitlines()
+                    if len(lines) >= 4 and lines[3].strip().isdigit():
+                        cand_port = int(lines[3].strip())
+                        if _is_port_in_use(cand_port):
+                            pg_port = cand_port
+                            already_up = True
+                except Exception:
+                    pass
+            if not already_up:
+                started_pg_proc, pg_port = _start_embedded_postgres(app_root, backend_dir, data_root=data_root)
+            db_pw = env_vars.get("POSTGRES_PASSWORD") or os.environ.get("POSTGRES_PASSWORD") or "postgres"
+            os.environ["POSTGRES_PORT"] = str(pg_port)
+            os.environ["DATABASE_URL"] = f"postgresql+asyncpg://postgres:{db_pw}@127.0.0.1:{pg_port}/prashant_academy"
+
+        async def _exec_backup() -> dict:
+            from sqlalchemy import select
+            from app.core.database import AsyncSessionLocal, engine
+            from app.models.user import User
+            from app.services.housekeeping_service import HousekeepingService
+
+            try:
+                async with AsyncSessionLocal() as db:
+                    actor_user = (
+                        await db.execute(select(User).order_by(User.id.asc()).limit(1))
+                    ).scalar_one_or_none()
+                    if actor_user is None:
+                        raise RuntimeError("No active database user found for scheduled backup audit.")
+                    policy = await HousekeepingService.get_housekeeping_policy(
+                        db, actor_user.institution_id or 1
+                    )
+                    fmt = str(policy.get("backup_format") or "edu")
+                    if fmt not in ("edu", "edu_sql", "custom", "plain_sql"):
+                        fmt = "edu"
+                    mirror = (policy.get("offsite_mirror_path") or "").strip() or None
+                    created = await HousekeepingService.create_backup(
+                        db=db,
+                        user=actor_user,
+                        label="scheduled",
+                        backup_format=fmt,
+                        notes="Automated OS scheduler backup",
+                        mirror_dir=mirror,
+                        institution_id=actor_user.institution_id or 1,
+                    )
+                    pruned = None
+                    if prune:
+                        pruned = await HousekeepingService.prune_backups(
+                            db=db,
+                            user=actor_user,
+                            retain_daily=int(policy.get("retain_daily", 7) or 7),
+                            retain_weekly=int(policy.get("retain_weekly", 4) or 4),
+                            retain_monthly=int(policy.get("retain_monthly", 6) or 6),
+                        )
+                    return {"outcome": "success", "backup": created, "pruned": pruned}
+            finally:
+                await engine.dispose()
+
+        result = asyncio.run(_exec_backup())
+        return 0, result
+    except Exception as exc:
+        logging.getLogger("app").exception("Scheduled CLI backup failed")
+        return 1, {"outcome": "failed", "error": str(exc)}
+    finally:
+        if started_pg_proc is not None:
+            _stop_postgres_graceful(app_root, started_pg_proc, data_root)
+
+
 def _verify_pyd_integrity() -> None:
     """Verify compiled app/core and app/services .pyd binaries against the embedded release manifest."""
     exe_name = Path(sys.executable).name.lower()
@@ -1747,6 +1847,8 @@ def main():
     parser.add_argument("--healthcheck-smoke", action="store_true", help="Verify app import, .pyd extensions, and OpenAPI schema")
     parser.add_argument("--preflight-check", action="store_true", help="Inspect installation, DB schema, disk space, and license parity cleanly")
     parser.add_argument("--migrate-only", action="store_true", help="Execute forward Alembic migrations to head with schema verification and exit")
+    parser.add_argument("--backup-now", action="store_true", help="Run a headless verified PostgreSQL backup and exit")
+    parser.add_argument("--prune", action="store_true", help="Apply GFS retention pruning alongside --backup-now")
     parser.add_argument("--data-root", default="", help="Explicit user-writable data root override for data/, logs/, backups/, and .env")
     parser.add_argument("--json-out", default="", help="Optional JSON output file path for --preflight-check / --migrate-only")
     parser.add_argument("--backup-path", default="", help="Verified pre-upgrade backup path recorded in upgrade_audit.jsonl")
@@ -1802,6 +1904,18 @@ def main():
             actor=args.actor or "installer",
             start_pg=True,
         )
+        if args.json_out.strip():
+            out_path = Path(args.json_out.strip())
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        sys.exit(code)
+
+    if args.backup_now:
+        _verify_pyd_integrity()
+        backend_log_path = DATA_ROOT / "logs" / "backend_server.log"
+        _configure_rotating_logging(backend_log_path)
+        code, result = run_cli_backup(APP_ROOT, BACKEND_DIR, DATA_ROOT, prune=args.prune)
         if args.json_out.strip():
             out_path = Path(args.json_out.strip())
             out_path.parent.mkdir(parents=True, exist_ok=True)

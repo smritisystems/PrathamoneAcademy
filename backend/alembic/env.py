@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-28
 #  *
 #  * @description Alembic runtime environment script configuring database connections and migration execution context.
 #  */
@@ -27,7 +27,7 @@ from app.core.config import settings as app_settings
 config = context.config
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # Import ALL models so Alembic can detect them
 from app.core.database import Base  # noqa
@@ -36,8 +36,13 @@ from app.models import *  # noqa
 target_metadata = Base.metadata
 
 
+def _resolve_target_url() -> str:
+    explicit_url = config.attributes.get("database_url") if hasattr(config, "attributes") else None
+    return explicit_url or app_settings.DATABASE_URL or config.get_main_option("sqlalchemy.url")
+
+
 def run_migrations_offline() -> None:
-    url = app_settings.DATABASE_URL or config.get_main_option("sqlalchemy.url")
+    url = _resolve_target_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -59,7 +64,7 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     configuration = config.get_section(config.config_ini_section, {}).copy()
-    configuration["sqlalchemy.url"] = app_settings.DATABASE_URL
+    configuration["sqlalchemy.url"] = _resolve_target_url()
     connectable = async_engine_from_config(
         configuration,
         prefix="sqlalchemy.",
