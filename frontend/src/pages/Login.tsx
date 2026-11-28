@@ -51,7 +51,7 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import Modal from '../components/Modal'
-import { NepRoadmapModal, CoachingLoginBackground, CampusNoticeboardDrawer, SoftwareBrandLogo } from '../components/common'
+import { NepRoadmapModal, DeepSpaceLoginBackground, CampusNoticeboardDrawer, SoftwareBrandLogo } from '../components/common'
 import { authApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useBranding } from '../config/branding'
@@ -328,13 +328,12 @@ export default function LoginPage() {
       `}</style>
 
       {/* =========================================================================
-          LEFT PANEL: DIGNIFIED INSTITUTIONAL EDITORIAL CANVAS
-          Featuring Organic Curved Wave Edge and App Original Navy Blue Gradient
+          LEFT PANEL: DEEP-SPACE COSMIC INSTITUTIONAL CANVAS
+          Featuring Animated Cosmic Backdrop, Real Institute/Classes Mapping & Curved Wave Edge
           ========================================================================= */}
-      <div className="relative w-full lg:w-[54%] xl:w-[56%] shrink-0 text-white flex flex-col justify-between p-6 sm:p-8 lg:p-10 xl:p-14 lg:pr-24 xl:pr-32 overflow-hidden min-h-[460px] lg:min-h-screen z-10 order-2 lg:order-1"
-        style={{
-          background: `radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.22), transparent 60%), linear-gradient(135deg, #0a1228 0%, ${secondaryBrandColor} 52%, ${primaryBrandColor} 100%)`,
-        }}
+      <div
+        className="relative w-full lg:w-[54%] xl:w-[56%] shrink-0 text-white flex flex-col justify-between p-6 pt-10 sm:p-8 sm:pt-11 lg:p-10 lg:pt-11 xl:p-14 xl:pt-12 pb-14 sm:pb-14 lg:pr-24 xl:pr-32 overflow-hidden min-h-[500px] lg:min-h-screen z-10 order-2 lg:order-1"
+        style={{ background: '#030719' }}
       >
         {/* Organic Curved Wave Divider (SVG edge facing the right side on desktop) */}
         <div className="hidden lg:block absolute top-0 bottom-0 -right-1 w-20 xl:w-28 h-full pointer-events-none select-none z-20">
@@ -348,35 +347,26 @@ export default function LoginPage() {
           </svg>
         </div>
 
-        {/* Ambient Subtle Radial Glow Circles */}
-        <div className="absolute top-1/4 left-1/3 w-[36rem] h-[36rem] rounded-full blur-[140px] pointer-events-none opacity-25"
-          style={{
-            background: 'radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, rgba(11, 45, 107, 0.1) 60%, transparent 80%)',
-          }}
-        />
-
-        {/* Full Interactive Coaching Ambient Field with Dynamic Institute Watermark & Highlighted Home State */}
-        <CoachingLoginBackground
-          layout="panel"
+        {/* Deep-Space Interactive Cosmic Field mapped dynamically to active Institute, Boards, Classes & Subjects */}
+        <DeepSpaceLoginBackground
           instituteName={branding.academyName}
-          instituteState={branding.state || 'Maharashtra'}
-          logoUrl={branding.assets.logoUrl}
-          background="transparent"
-          intensity={1.6}
-          logoOpacity={0.28}
-          parallax={true}
+          instituteCity={branding.city}
+          instituteState={branding.state}
+          boards={branding.boards}
+          classes={branding.classes}
+          subjects={branding.subjects}
         />
 
         {/* TOP STATUS BAR: Operational Session, Notice Ticker & Helpdesk Ribbons */}
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-2.5 w-full">
           {/* Live Academic Session & Time Monospace Chip */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/10 backdrop-blur-md shadow-xs select-none shrink-0">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/15 backdrop-blur-md shadow-xs select-none shrink-0">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[11px] font-mono tracking-wide text-slate-200 font-medium">
-              Academic Session 2026–27
+            <span className="text-[11px] font-mono tracking-wide text-slate-100 font-medium">
+              {branding.academicSession || 'Academic Session 2026–27'}
             </span>
-            <span className="text-white/20">•</span>
-            <span className="text-[11px] font-mono text-cyan-300/80">
+            <span className="text-white/25">•</span>
+            <span className="text-[11px] font-mono text-cyan-300/90">
               {currentClock}
             </span>
           </div>
@@ -385,11 +375,11 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => setShowNoticeDrawer(true)}
-            className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 hover:bg-blue-500/20 border border-blue-400/20 hover:border-cyan-400/40 backdrop-blur-md transition-all duration-200 text-left cursor-pointer max-w-[270px] sm:max-w-[320px] xl:max-w-[360px] select-none"
+            className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/15 hover:bg-blue-500/25 border border-blue-400/25 hover:border-cyan-400/45 backdrop-blur-md transition-all duration-200 text-left cursor-pointer max-w-[270px] sm:max-w-[320px] xl:max-w-[360px] select-none"
             title="Click to open Campus Noticeboard & Batch Timetables"
           >
             <span className="w-2 h-2 rounded-full bg-amber-400 group-hover:scale-125 transition-transform shrink-0" />
-            <span className="text-[11px] text-slate-200 group-hover:text-white transition-colors truncate font-sans">
+            <span className="text-[11px] text-slate-100 group-hover:text-white transition-colors truncate font-sans">
               {TICKER_ITEMS[activeTickerIndex]}
             </span>
             <span className="text-[10.5px] font-mono text-cyan-300 group-hover:translate-x-0.5 transition-transform flex items-center shrink-0 font-medium">
@@ -399,8 +389,8 @@ export default function LoginPage() {
 
           {/* Campus Node / Helpdesk Micro-Pill */}
           <a
-            href="mailto:support@prashantacademy.com"
-            className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.09] border border-white/10 backdrop-blur-md text-[11px] font-mono text-slate-300 hover:text-white transition-all duration-200 select-none shrink-0"
+            href={`mailto:${branding.institutionEmail || branding.salesSupport.email}`}
+            className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 backdrop-blur-md text-[11px] font-mono text-slate-200 hover:text-white transition-all duration-200 select-none shrink-0"
             title="Institutional Support Desk"
           >
             <Headphones className="w-3.5 h-3.5 text-cyan-400" />
@@ -408,69 +398,81 @@ export default function LoginPage() {
           </a>
         </div>
 
-        {/* LOWER SECTION: Cultural Shloka & Institutional Telemetry */}
-        <div className="relative z-10 mt-auto pt-6 pb-2 space-y-3.5 max-w-xl">
+        {/* LOWER SECTION: Cultural Shloka & Live Mapped Classes / Boards Telemetry */}
+        <div className="relative z-10 mt-auto pt-6 pb-2 space-y-3 max-w-xl">
           {/* Sanskrit Educational Mantra */}
-          <div className="border-l-2 border-amber-400/60 pl-3.5 py-0.5">
-            <p className="text-sm font-serif tracking-wider text-amber-200/95 font-medium">
+          <div className="border-l-2 border-amber-400/70 pl-3.5 py-0.5">
+            <p className="text-sm font-serif tracking-wider text-amber-200 font-medium">
               "सा विद्या या विमुक्तये"
             </p>
-            <p className="text-[11.5px] text-slate-300/80 font-sans tracking-normal mt-0.5">
+            <p className="text-[11.5px] text-slate-200/85 font-sans tracking-normal mt-0.5">
               Knowledge is that which liberates the intellect and empowers character.
             </p>
           </div>
 
-          {/* ACCREDITED BOARDS & ENTRANCE WINGS RIBBON (ABOVE FOOTER) */}
-          <div className="pt-2 border-t border-white/10 select-none">
-            <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-cyan-300/80 mb-2">
+          {/* ACCREDITED BOARDS & ACTUAL INSTITUTION CLASSES RIBBON */}
+          <div className="pt-2 border-t border-white/15 select-none space-y-2">
+            <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-cyan-300/90">
               <span className="flex items-center gap-1.5 font-semibold">
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                Accredited Curriculum & Target Wings
+                Accredited Curriculum &amp; Active Classes
               </span>
-              <span className="text-slate-400/90 font-mono text-[9.5px]">Comprehensive K-12</span>
+              <span className="text-slate-300/90 font-mono text-[9.5px]">
+                {branding.classes.length > 0 ? `${branding.classes.length} Active Classes` : 'Comprehensive K-12'}
+              </span>
             </div>
+
             <div className="flex flex-wrap items-center gap-1.5">
-              {/* Maharashtra State Board (Priority Home State) */}
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/15 border border-amber-400/35 text-amber-300 font-mono text-[10px] font-bold tracking-wide shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                STATE BOARD (HSC • SSC)
-              </span>
-              {/* CBSE */}
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-200 font-mono text-[10px] font-medium transition-colors">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                CBSE
-              </span>
-              {/* ICSE • ISC */}
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-200 font-mono text-[10px] font-medium transition-colors">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                ICSE • ISC
-              </span>
-              {/* MHT-CET */}
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-200 font-mono text-[10px] font-medium transition-colors">
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-                MHT-CET
-              </span>
-              {/* NEET-UG */}
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-200 font-mono text-[10px] font-medium transition-colors">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                NEET-UG
-              </span>
-              {/* JEE ADVANCED */}
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-200 font-mono text-[10px] font-medium transition-colors">
-                <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
-                JEE ADVANCED
-              </span>
-              {/* FOUNDATION & OLYMPIADS */}
-              <span className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-200 font-mono text-[10px] font-medium transition-colors">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-                OLYMPIADS • NTSE
-              </span>
+              {(branding.boards.length > 0
+                ? branding.boards.slice(0, 6).map((b, idx) => ({
+                    label: b.code || b.name,
+                    primary: idx === 0,
+                  }))
+                : [
+                    { label: 'STATE BOARD (HSC • SSC)', primary: true },
+                    { label: 'CBSE', primary: false },
+                    { label: 'ICSE • ISC', primary: false },
+                    { label: 'MHT-CET', primary: false },
+                    { label: 'NEET-UG', primary: false },
+                    { label: 'JEE ADVANCED', primary: false },
+                  ]
+              ).map((board) => (
+                <span
+                  key={board.label}
+                  className={
+                    board.primary
+                      ? 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-amber-500/20 border border-amber-400/40 text-amber-200 font-mono text-[10px] font-bold tracking-wide shadow-xs backdrop-blur-xs'
+                      : 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/[0.06] border border-white/15 text-slate-100 font-mono text-[10px] font-medium backdrop-blur-xs'
+                  }
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${board.primary ? 'bg-amber-400 animate-pulse' : 'bg-cyan-400'}`} />
+                  {board.label}
+                </span>
+              ))}
             </div>
+
+            {branding.classes.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                {branding.classes.slice(0, 12).map((cls) => (
+                  <span
+                    key={cls}
+                    className="inline-flex items-center px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-400/25 text-cyan-100 font-mono text-[9.5px] font-medium backdrop-blur-xs"
+                  >
+                    {cls}
+                  </span>
+                ))}
+                {branding.classes.length > 12 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded bg-white/10 text-slate-200 font-mono text-[9.5px]">
+                    +{branding.classes.length - 12} more
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Minimalist Bottom Footer Attribution */}
-        <div className="relative z-10 pt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-blue-200/50 font-mono tracking-wider border-t border-white/10 select-none">
+        <div className="relative z-10 pt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-blue-200/70 font-mono tracking-wider border-t border-white/10 select-none">
           <span>{branding.suiteName || 'PRATHAMONE EduOS'} • COACHING INSTITUTE EDITION</span>
           <span>{branding.versionDisplay}</span>
         </div>

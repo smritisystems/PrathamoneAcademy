@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-27
+#  * @updated     2026-11-28
 #  *
 #  * @description API endpoints for multi-branch institute profile configuration and campus metadata.
 #  */
@@ -25,6 +25,9 @@ from app.core.database import get_db
 from app.core.deps import get_current_active_user, require_role, is_sysadmin, check_institution_access
 from app.models.institution import Institution, InstitutionBranch
 from app.models.academic_year import AcademicYear
+from app.models.board import Board
+from app.models.standard import Standard
+from app.models.subject import CanonicalSubject
 from app.models.settings import InstitutionSetting
 from app.services.institution_profile_service import (
     apply_validated_profile_updates,
@@ -235,6 +238,31 @@ async def get_public_institution_branding(
         except (ValueError, TypeError):
             return default
 
+    boards_res = await db.execute(
+        select(Board)
+        .where(Board.institution_id == inst.id, Board.is_active == True)
+        .order_by(Board.id.asc())
+    )
+    active_boards = [
+        {"name": b.name, "code": b.code}
+        for b in boards_res.scalars().all()
+    ]
+
+    classes_res = await db.execute(
+        select(Standard)
+        .where(Standard.institution_id == inst.id, Standard.is_active == True)
+        .order_by(Standard.level.asc(), Standard.id.asc())
+    )
+    active_classes = [s.name for s in classes_res.scalars().all()]
+
+    subjects_res = await db.execute(
+        select(CanonicalSubject.name)
+        .where(CanonicalSubject.institution_id == inst.id, CanonicalSubject.is_active == True)
+        .order_by(CanonicalSubject.id.asc())
+        .limit(30)
+    )
+    active_subjects = [name for name in subjects_res.scalars().all() if name]
+
     completeness = compute_profile_completeness(inst)
     return {
         "id": inst.id,
@@ -243,6 +271,9 @@ async def get_public_institution_branding(
         "short_name": derive_monogram(inst.name, inst.short_name),
         "tagline": inst.tagline or "COACHING MANAGEMENT. SIMPLIFIED.",
         "academic_session": academic_session,
+        "boards": active_boards,
+        "classes": active_classes,
+        "subjects": active_subjects,
         "branch_id": selected_branch.id if selected_branch else None,
         "branch_name": selected_branch.branch_name if selected_branch else (inst.city or "Main Branch"),
         "institute_type": inst.institute_type or "Coaching Institute",

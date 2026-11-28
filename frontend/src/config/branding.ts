@@ -124,7 +124,7 @@ export const BRANDING_CONFIG = {
   monogram: 'YC' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.28-REV-347-v1.191.3-84548208',
+  buildNumber: '2026.11.28-REV-348-v1.191.4-F435244B',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-28',
@@ -316,6 +316,9 @@ export interface ResolvedBranding {
   establishmentYear: number
   city?: string
   state?: string
+  boards: Array<{ name: string; code: string }>
+  classes: string[]
+  subjects: string[]
   background: LoginBackgroundConfig
 }
 
@@ -392,6 +395,15 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
   const establishmentYear = (activeInstitution as any)?.establishment_year || cached?.establishmentYear || 2018
   const city = activeInstitution?.city?.trim() || cached?.city || ''
   const state = activeInstitution?.state?.trim() || cached?.state || ''
+  const boards = Array.isArray((activeInstitution as any)?.boards)
+    ? (activeInstitution as any).boards
+    : (Array.isArray(cached?.boards) ? cached.boards : [])
+  const classes = Array.isArray((activeInstitution as any)?.classes)
+    ? (activeInstitution as any).classes
+    : (Array.isArray(cached?.classes) ? cached.classes : [])
+  const subjects = Array.isArray((activeInstitution as any)?.subjects)
+    ? (activeInstitution as any).subjects
+    : (Array.isArray(cached?.subjects) ? cached.subjects : [])
 
   let resolvedLogo = ''
   if (activeInstitution?.logo_url && activeInstitution.logo_url !== '/logo.svg') {
@@ -418,6 +430,9 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
     establishmentYear,
     city,
     state,
+    boards,
+    classes,
+    subjects,
     tagline,
     motto: BRANDING_CONFIG.motto,
     monogram,

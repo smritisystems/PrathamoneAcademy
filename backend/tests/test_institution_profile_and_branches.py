@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-27
-#  * @updated     2026-11-27
+#  * @updated     2026-11-28
 #  *
 #  * @description Tests for institution profile setup, neutral defaults (zero dummy leakage), validation, logo sanitization, and multi-branch CRUD.
 #  */
@@ -214,3 +214,26 @@ async def test_multi_branch_crud_duplicate_and_main_branch_guards(
         )
     ).scalars().all()
     assert len(audits) >= 2
+
+
+@pytest.mark.asyncio
+async def test_public_branding_maps_active_boards_classes_and_subjects(client, db, test_institution):
+    from uuid import uuid4
+    from app.models.board import Board
+    from app.models.standard import Standard
+    from app.models.subject import CanonicalSubject
+
+    tag = uuid4().hex[:6]
+    board = Board(institution_id=test_institution.id, name="Maharashtra State Board", code=f"MSB-{tag}", is_active=True)
+    cls = Standard(institution_id=test_institution.id, name=f"Class X ({tag})", level=900 + int(tag[:2], 16) % 99, is_active=True)
+    subj = CanonicalSubject(institution_id=test_institution.id, name=f"Physics {tag}", code=f"PHY{tag}", is_active=True)
+    db.add_all([board, cls, subj])
+    await db.commit()
+
+    res = await client.get(f"/api/v1/institutions/public/branding?institution_id={test_institution.id}")
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["name"] == test_institution.name
+    assert any(b["code"] == f"MSB-{tag}" for b in payload["boards"])
+    assert f"Class X ({tag})" in payload["classes"]
+    assert f"Physics {tag}" in payload["subjects"]

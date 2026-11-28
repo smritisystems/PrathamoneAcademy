@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-27
+ * @updated     2026-11-28
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -154,6 +154,9 @@ export interface Institution {
   accent_color?: string | null
   onboarding_completed?: boolean
   is_placeholder_profile?: boolean
+  boards?: Array<{ name: string; code: string }>
+  classes?: string[]
+  subjects?: string[]
 }
 
 export interface AcademicYear {
