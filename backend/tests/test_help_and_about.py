@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-16
+#  * @updated     2026-11-28
 #  *
 #  * @description Automated backend tests for Help & About Centre: seeding completeness, exclusion enforcement, search, contextual routing, support ticketing, RBAC, and CMS governance.
 #  */
@@ -83,7 +83,7 @@ class TestHelpAndAboutCentre:
             by_section.setdefault(item["section"], []).append(item)
 
         assert len(by_section.get("getting_started", [])) == 9
-        assert len(by_section.get("module_guide", [])) == 20
+        assert len(by_section.get("module_guide", [])) == 31
         assert len(by_section.get("tutorial", [])) == 14
         assert len(by_section.get("faq", [])) == 12
         assert len(by_section.get("legal", [])) == 7
@@ -167,6 +167,18 @@ class TestHelpAndAboutCentre:
             ("/import-export", "guide-import-export"),
             ("/fees/import", "guide-import-export"),
             ("/training", "guide-training"),
+            ("/leads", "guide-crm"),
+            ("/crm", "guide-crm"),
+            ("/expenses", "guide-expenses"),
+            ("/finance/budgets", "guide-budgeting"),
+            ("/planning", "guide-planning"),
+            ("/catalogue", "guide-catalogue"),
+            ("/users", "guide-users"),
+            ("/housekeeping", "guide-housekeeping"),
+            ("/license-activation", "guide-licensing"),
+            ("/releases", "guide-releases"),
+            ("/codex", "guide-codex"),
+            ("/sysadmin", "guide-sysadmin"),
         ]
         for route_path, expected_slug in ctx_cases:
             c_res = await client.get("/api/v1/help/contextual", params={"route": route_path}, headers=auth_headers)
@@ -184,7 +196,7 @@ class TestHelpAndAboutCentre:
 
         assert data["about_product"]["product_name"] == settings.PRODUCT_NAME
         assert data["about_product"]["product_category"] == "Education Management Operating System"
-        assert len(data["about_product"]["available_modules"]) == 20
+        assert len(data["about_product"]["available_modules"]) == 31
 
         company = data["about_company"]
         assert company["smriti_systems"]["company_name"] == "SmritiSys"
@@ -216,7 +228,7 @@ class TestHelpAndAboutCentre:
         body = admin_res.json()
         assert body["application_health"]["status"] in ("Healthy", "Degraded")
         assert body["database_connectivity"]["status"] == "Connected"
-        assert len(body["module_availability"]) == 20
+        assert len(body["module_availability"]) == 31
         assert "last_successful_backup" in body
         assert "deployment_information" in body
 

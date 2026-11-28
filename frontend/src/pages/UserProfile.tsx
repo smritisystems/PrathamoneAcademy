@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-28
  *
  * @description Dedicated user profile management workspace for inspecting activity logs, scopes, and passwords.
  */
@@ -28,7 +28,7 @@ import {
 import { usersApi, standardsApi, divisionsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, ContextualHelpButton } from '../components/common'
 import { Lock } from 'lucide-react'
 import Modal from '../components/Modal'
 import type {
@@ -396,6 +396,7 @@ export default function UserProfilePage() {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-2 self-start lg:self-center">
+            <ContextualHelpButton moduleKey="users" variant="pill" label="Profile Help" />
             {/* Edit User Button */}
             <button
               onClick={handleOpenEdit}

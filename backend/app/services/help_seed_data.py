@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-16
+#  * @updated     2026-11-28
 #  *
 #  * @description Verified customer-facing seed catalog and content-exclusion guardrails for PrathamOne EduOS Help & About Centre.
 #  */
@@ -47,12 +47,13 @@ def validate_customer_safe_content(text: Optional[str]) -> List[str]:
 
 
 def sanitize_release_text(text: Optional[str]) -> str:
-    """Strips internal commit hashes and developer-only tags from release titles/notes."""
+    """Strips internal commit hashes and developer/credential terms from release titles/notes."""
     if not text:
         return ""
     cleaned = re.sub(r"\(\s*\[?[0-9a-f]{6,12}\]?\s*\)", "", text, flags=re.IGNORECASE)
     cleaned = re.sub(r"\[[0-9a-f]{6,12}\]", "", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r"(-REV-\d+-v[\d.]+)-[0-9a-f]{6,12}\b", r"\1", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\b(?:password|secret_key|hashed_password|pg_dump|psql|pg_ctl|uvicorn|pytest|vitest|alembic|docker)\b", "system", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r"\s{2,}", " ", cleaned).strip()
     return cleaned
 
@@ -69,19 +70,20 @@ def sanitize_changelog_markdown(markdown_text: Optional[str]) -> str:
     if not markdown_text:
         return "Release notes are managed centrally and contain customer-safe capability updates."
     internal_line_re = re.compile(
-        r"(?:github|git\s+|commit|alembic|docker|container|pytest|vitest|backend/|frontend/|"
-        r"migration\b|tsconfig|package\.json|requirements\.txt|seed\.py|selectinload|"
+        r"(?:github|git\s+|commit|alembic|docker|container|pytest|vitest|uvicorn|pg_dump|pg_ctl|psql|backend/|frontend/|"
+        r"migration\b|tsconfig|package\.json|requirements\.txt|seed\.py|selectinload|password|secret_key|"
         r"files modified|change metrics|sync build|sync manifest|visual capture|test suite|reindex)",
         re.IGNORECASE,
     )
     safe_lines: List[str] = []
     for raw_line in markdown_text.splitlines():
+        raw_clean = re.sub(r"\[\s*[0-9a-f]{6,12}\s*\]", "", raw_line, flags=re.IGNORECASE)
+        if validate_customer_safe_content(raw_clean) or internal_line_re.search(raw_clean):
+            continue
         line = sanitize_release_text(raw_line)
         if not line:
             if safe_lines and safe_lines[-1] != "":
                 safe_lines.append("")
-            continue
-        if internal_line_re.search(line):
             continue
         safe_lines.append(line)
     # Remove trailing empty headings if all bullets under a heading were filtered out
@@ -1412,6 +1414,497 @@ Follow this verification checklist when preparing PrathamOne EduOS for live acad
             troubleshooting=[
                 "If real students or recent live receipts appear missing, check the top banner to confirm you are not still inside Training Mode.",
                 "If sample records in Training Mode become cluttered after workshops, ask an administrator to trigger a sandbox reset on `/training`.",
+            ],
+        ),
+    },
+    {
+        "slug": "guide-crm",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "crm",
+        "title": "Lead Management & CRM Module User Guide",
+        "summary": "Capture prospective student enquiries, track Kanban pipeline stages, schedule counselling and demo classes, run campaigns, and convert qualified leads to Admissions.",
+        "tags": ["crm", "leads", "enquiries", "pipeline", "follow-ups", "counselling", "campaigns"],
+        "required_permissions": ["Admin / Principal / SuperAdmin", "Staff with leads:read / leads:update / leads:create"],
+        "related_routes": ["/leads", "/leads/all", "/leads/pipeline", "/leads/follow-ups", "/leads/counselling", "/leads/sources", "/leads/campaigns", "/leads/reports", "/leads/settings"],
+        "related_slugs": ["guide-admissions", "guide-students", "tutorial-student-admission"],
+        "sort_order": 29,
+        "content_markdown": _module_guide_markdown(
+            title="Lead Management & CRM Module User Guide",
+            intro="The Lead Management & CRM workspace unifies prospective student enquiry capture, counsellor assignment, follow-up reminders, demo class scheduling, campaign ROI tracking, and conversion into formal Admissions.",
+            purpose="Prevent prospective student leakage across walk-ins, phone enquiries, and campaigns by organizing every prospect cleanly inside a visual Kanban pipeline and dedicated follow-up queues.",
+            operations=[
+                "Overview Dashboard (`/leads`, `/leads/overview`): Review conversion funnels, monthly enquiry velocity, and active counsellor workload.",
+                "All Leads Register (`/leads/all`): Filter leads by stage, priority (Hot/Warm/Cold), source, standard, or counsellor, and export CSV lists.",
+                "Kanban Pipeline (`/leads/pipeline`): Advance prospects visually across stages (New, Contacted, Demo Scheduled, Counselling, Enrolled, Lost).",
+                "Follow-up Centre & Counselling (`/leads/follow-ups`, `/leads/counselling`): Log call notes, overdue callbacks, and demo class attendance.",
+                "Sources, Campaigns, Reports & Settings (`/leads/sources`, `/leads/campaigns`, `/leads/reports`, `/leads/settings`): Measure source ROI and configure stage defaults.",
+            ],
+            steps=[
+                "Open Lead Management & CRM (`/leads`) from the sidebar and review current funnel metrics in View Mode.",
+                "Enable Edit Mode on the CRM governance bar before registering a New Enquiry or updating stages.",
+                "Click a prospect row or card to open the Lead Dossier Drawer and log calls, follow-up dates, or demo session attendance.",
+                "Use Convert to Admission when a prospect commits, creating a canonical student admission and batch allocation automatically.",
+            ],
+            permissions=[
+                "Admin / Principal / SuperAdmin — Full CRM pipeline access, analytics, and admission conversion.",
+                "Counsellor / Staff — Requires `leads:read`, `leads:create`, and `leads:update`; conversion requires admission authorization.",
+            ],
+            workflows=[
+                "New Enquiry -> Counsellor Assignment -> Follow-Up Calls -> Demo Class -> Admission Conversion -> Fee Structure & Receipt.",
+            ],
+            mistakes=[
+                "Creating duplicate student entries manually instead of using Convert to Admission from an active lead dossier.",
+                "Leaving overdue follow-ups unlogged without updating next callback date or outcome notes.",
+            ],
+            troubleshooting=[
+                "If action buttons such as New Lead or stage updates appear locked, activate Edit Mode in the header governance bar.",
+                "If a counsellor cannot see CRM or convert leads, verify their role or explicit `leads:read` / `students:admission` grants in User Management.",
+            ],
+        ),
+    },
+    {
+        "slug": "guide-expenses",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "expenses",
+        "title": "Expenses & Daily Cash Register User Guide",
+        "summary": "Record day-to-day operational vouchers, track cash inflows and outflows, count currency denominations, and reconcile daily cashbook closings.",
+        "tags": ["expenses", "cash register", "cashbook", "vouchers", "denomination", "finance"],
+        "required_permissions": ["Admin / Principal / Accountant", "Staff with Finance Desk access"],
+        "related_routes": ["/expenses", "/expenses/register", "/expenses/daily", "/expenses/cash-register", "/cashbook"],
+        "related_slugs": ["guide-fees", "guide-budgeting", "guide-reports"],
+        "sort_order": 30,
+        "content_markdown": _module_guide_markdown(
+            title="Expenses & Daily Cash Register User Guide",
+            intro="The Institute Expenses & Cash Register workspace centralizes daily expense vouchers, vendor payments, petty cash tracking, denomination-wise physical cash counts, and end-of-day cashbook reconciliation.",
+            purpose="Ensure complete daily cash accountability by tying Fee Collection cash receipts cleanly with approved operational expenses and signed closing denomination sheets.",
+            operations=[
+                "Business Date Picker: Inspect or post vouchers and register totals for any calendar date.",
+                "New Expense Entry: Log operational expenses by category, payment mode (Cash, UPI, Bank, Cheque), vendor, and voucher reference.",
+                "Daily Cash Closing & Denomination Counter: Count physical notes and coins against system expected cash balance.",
+                "Cashbook Ledger: Audit opening balance, fee cash inflows, expense outflows, and closing variance.",
+            ],
+            steps=[
+                "Select the target Business Date in the top command bar of `/expenses`.",
+                "Enable Edit Mode when creating, approving, voiding expenses, or closing the daily cash register.",
+                "Click New Expense to enter payee, category, amount, mode, and remarks.",
+                "At day end, open Daily Cash Closing, enter physical currency note counts, review any short/excess variance, and lock the register.",
+            ],
+            permissions=[
+                "Accountant / Admin / Principal — Create vouchers, verify categories, and finalize daily cash register closings.",
+                "View-Only Staff — Read-only access to daily registers without voucher mutation.",
+            ],
+            workflows=[
+                "Cash Fee Collection + Expense Vouchers -> Denomination Physical Count -> Variance Check -> Locked Daily Closing.",
+            ],
+            mistakes=[
+                "Posting expenses under the wrong payment mode (for example choosing Cash when paid via bank transfer), causing register mismatch.",
+                "Forgetting to review prior day closing balance before starting the next day cashbook.",
+            ],
+            troubleshooting=[
+                "If expected closing cash differs from physical count, verify all same-day Cash expense vouchers and fee cash receipts on the Cashbook tab.",
+                "If totals appear read-only, confirm Edit Mode is enabled and you are within an unlocked financial period.",
+            ],
+        ),
+    },
+    {
+        "slug": "guide-budgeting",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "budgeting",
+        "title": "Budgeting & Cashflow Forecasting User Guide",
+        "summary": "Build institutional financial budgets, monitor live Budget-vs-Actual variance alerts, and model 3-driver liquidity and cashflow scenarios.",
+        "tags": ["budgeting", "forecasting", "variance", "cashflow", "liquidity"],
+        "required_permissions": ["Admin / Principal / Accountant", "Finance Viewers (Read-Only)"],
+        "related_routes": ["/finance/budgets", "/finance/variance", "/finance/forecasts"],
+        "related_slugs": ["guide-expenses", "guide-fees", "guide-reports"],
+        "sort_order": 31,
+        "content_markdown": _module_guide_markdown(
+            title="Budgeting & Cashflow Forecasting User Guide",
+            intro="The Budgeting & Cashflow Forecasting workspace combines annual or term budget planning, real-time Budget-vs-Actual variance telemetry against Fees and Expenses, and 3-driver cashflow runway projections.",
+            purpose="Empower institute management and accountants to prevent cost overruns early, stress-test enrollment/collection scenarios, and lock approved baseline financial plans.",
+            operations=[
+                "Budgets Tab (`/finance/budgets`): Create draft plans, define revenue and expense category allocations, submit, approve, and lock baseline versions.",
+                "Variance Tab (`/finance/variance`): Compare planned targets dynamically against live fee collections and recorded expenses with overrun alerts.",
+                "Forecasts Tab (`/finance/forecasts`): Simulate Best, Base, and Conservative cashflow horizons across fee collection rate, enrollment growth, and payroll/expense drivers.",
+            ],
+            steps=[
+                "Navigate to Budgeting & Forecasting (`/finance/budgets`) and choose the desired workspace tab (Budgets, Variance, or Forecasts).",
+                "Enable Edit Mode when drafting a new budget plan, editing category amounts, or running forecast scenario updates.",
+                "Submit and approve a budget version once departmental allocations are finalized, then Lock it to prevent accidental edits.",
+                "Review the Variance tab regularly to spot warning or overrun categories before month-end.",
+            ],
+            permissions=[
+                "Admin / Principal / Accountant — Author budgets, adjust forecasts, approve, and lock financial versions.",
+                "Non-Finance Roles — Restricted from budgeting workspace access.",
+            ],
+            workflows=[
+                "Create Budget Draft -> Allocate Revenue & Expense Lines -> Approve & Lock -> Monitor Live Variance -> Model Cashflow Forecasts.",
+            ],
+            mistakes=[
+                "Editing allocations after baseline approval instead of creating a clean versioned revision.",
+                "Interpreting forecast stress scenarios without verifying live Fee Collection and Expense actuals first.",
+            ],
+            troubleshooting=[
+                "If actuals look unchanged on Variance, refresh after new Fee Receipts or Expenses are posted to the active academic year.",
+                "If mutation buttons are hidden or locked, check both active Edit Mode and plan lock status.",
+            ],
+        ),
+    },
+    {
+        "slug": "guide-planning",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "planning",
+        "title": "Tasks & Institutional Planning Center User Guide",
+        "summary": "Coordinate institutional activities across Kanban, Calendar, Agenda, and Timeline views with automated cross-module task synchronization.",
+        "tags": ["planning", "tasks", "kanban", "calendar", "agenda", "timeline", "sync"],
+        "required_permissions": ["Authenticated Staff (Scoped View)", "Admin / Principal / Authorized Leads for Publishing"],
+        "related_routes": ["/planning", "/tasks", "/tasks/kanban", "/tasks/calendar", "/tasks/agenda", "/tasks/timeline"],
+        "related_slugs": ["guide-dashboard", "guide-homework", "guide-timetable"],
+        "sort_order": 32,
+        "content_markdown": _module_guide_markdown(
+            title="Tasks & Institutional Planning Center User Guide",
+            intro="The Tasks & Planning Center organizes institutional deadlines, administrative checklists, academic milestones, and staff assignments in a unified multi-view workspace.",
+            purpose="Provide transparent coordination across teams with Kanban boards, calendar schedules, chronological timelines, and automated reminders generated from Fee, Homework, Timetable, and Attendance activity.",
+            operations=[
+                "View Switcher (`Kanban`, `Calendar`, `Agenda`, `Timeline`): Inspect tasks by workflow status or target completion dates.",
+                "Sync All Tasks: Automatically surface actionable follow-ups across Fees, Homework, Timetable, and Attendance.",
+                "New Activity & Assignees: Create tasks scoped to selected users or departments with institutional or assignee-only visibility.",
+                "Publish Control: Publish institution-wide academic and event milestones for all eligible staff.",
+            ],
+            steps=[
+                "Open Tasks & Planning (`/planning`) and switch between Kanban, Calendar, Agenda, and Timeline tabs as needed.",
+                "Enable Edit Mode in the command bar before creating, dragging, syncing, or completing activities.",
+                "Click Sync All Tasks to refresh system-generated operational action items across modules.",
+                "Use New Activity to set title, due date/time, visibility, and assignees.",
+            ],
+            permissions=[
+                "Staff / Teachers — View assigned and published institutional tasks; update allowed work items.",
+                "Admin / Principal — Create/sync cross-department plans and publish institution-wide items.",
+            ],
+            workflows=[
+                "Sync Automated Tasks or Create Activity -> Assign Users/Departments -> Track Progress on Kanban -> Complete.",
+            ],
+            mistakes=[
+                "Attempting to drag Kanban cards or click Sync All Tasks while Edit Mode is disabled.",
+                "Setting assignee-only visibility for an institution-wide exam or holiday announcement.",
+            ],
+            troubleshooting=[
+                "If Publish checkbox is disabled, verify the user role or `planning:publish` permission grant.",
+                "If tasks from another date seem missing, clear search and filter chips above the workspace grid.",
+            ],
+        ),
+    },
+    {
+        "slug": "guide-catalogue",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "catalogue",
+        "title": "Master Catalogues & Data Governance Hub User Guide",
+        "summary": "Manage Single Source of Truth master records for Boards, Standards, Subjects, Divisions, and Onboarding integrity checks without record duplication.",
+        "tags": ["catalogue", "mdm", "subjects", "boards", "standards", "ssot", "deduplication"],
+        "required_permissions": ["Admin / Principal / Academic Coordinator", "SuperAdmin"],
+        "related_routes": ["/catalogue", "/catalogue/overview", "/subjects", "/academic"],
+        "related_slugs": ["branch-class-and-division-setup", "guide-students", "guide-settings"],
+        "sort_order": 33,
+        "content_markdown": _module_guide_markdown(
+            title="Master Catalogues & Data Governance Hub User Guide",
+            intro="The Master Catalogues & MDM Hub enforces Single Source of Truth governance across canonical institutional masters—Education Boards, Academic Standards/Classes, Subjects, Divisions/Batches, and Fee Categories.",
+            purpose="Prevent duplicate master rows across multiple standards or curricula by registering each canonical subject or category once and linking it cleanly via mappings.",
+            operations=[
+                "Canonical Master Tables (`/catalogue`, `/subjects`): Review verified Boards, Classes, Subjects, Batches, and Academic Years.",
+                "Subject-to-Standard Mappings: Reuse one canonical Subject (for example Physics or Mathematics) across Classes 9, 10, 11, and 12 and multiple boards.",
+                "SSOT Integrity & Readiness Auditor: Detect unmapped standards, missing subjects, or setup gaps before onboarding students.",
+            ],
+            steps=[
+                "Open Master Catalogues Hub (`/catalogue`) or Academic Subjects (`/subjects`) in View Mode.",
+                "Turn on Edit Mode before adding a new canonical Subject, Standard, Board, or mapping.",
+                "Search the canonical catalogue first before creating any entry to avoid duplicates.",
+                "Run or inspect the Integrity & Onboarding readiness tabs to verify every active class has valid mappings.",
+            ],
+            permissions=[
+                "Admin / Principal / SuperAdmin — Register canonical masters and update board/standard mappings.",
+                "Faculty / Staff — Read-only inspection of mapped curriculum masters.",
+            ],
+            workflows=[
+                "Verify Canonical Board & Class -> Register Subject Once -> Map Subject to Multiple Standards -> Confirm Readiness.",
+            ],
+            mistakes=[
+                "Creating separate subjects like 'Physics 11' and 'Physics 12' instead of mapping one canonical 'Physics' subject across both classes.",
+                "Deleting a mapped master entity that already holds student enrollments or exam scores.",
+            ],
+            troubleshooting=[
+                "If a subject does not appear inside timetable or marks entry for a batch, add the mapping under Subjects or Master Catalogues.",
+                "Use Inactive/Archive status instead of hard deletion when retiring legacy curricula.",
+            ],
+        ),
+    },
+    {
+        "slug": "guide-users",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "users",
+        "title": "User Accounts & Access Control (RBAC) User Guide",
+        "summary": "Create staff, teacher, accountant, and student login accounts, assign institutional roles, configure granular permissions, and reset passwords safely.",
+        "tags": ["users", "rbac", "roles", "permissions", "passwords", "access control"],
+        "required_permissions": ["Admin / Principal / SuperAdmin"],
+        "related_routes": ["/users"],
+        "related_slugs": ["user-management-setup", "roles-and-permissions-guide", "faq-user-permissions"],
+        "sort_order": 34,
+        "content_markdown": _module_guide_markdown(
+            title="User Accounts & Access Control (RBAC) User Guide",
+            intro="The User Management & System Access workspace governs login credentials, role assignments (`admin`, `principal`, `accountant`, `teacher`, `staff`, `student`), direct permission grants, and account activation across the institution.",
+            purpose="Enforce least-privilege security while keeping teacher, staff, and student records linked cleanly to one canonical user identity.",
+            operations=[
+                "Live User Directory (`/users`): Filter accounts by role, active status, and linked student/teacher/staff identity.",
+                "Add User Account & Profile Editing: Issue new credentials and assign primary role + institution scope.",
+                "Granular Permissions Matrix: Grant or revoke specialized privileges (such as editing posted payments or publishing tasks).",
+                "User Profile (`/users/:id`): Reset passwords, unlock accounts, inspect audit trail, and update profile contact info.",
+            ],
+            steps=[
+                "Open User Management (`/users`) from Administration in View Mode.",
+                "Enable Edit Mode before creating accounts, toggling active status, or modifying roles/permissions.",
+                "Click Add User Account or select an existing user to open their User Profile & Permissions configuration.",
+                "Have newly created users change any default temporary password on their first login.",
+            ],
+            permissions=[
+                "Admin / Principal / SuperAdmin — Manage users and institutional roles within authorized tenant boundaries.",
+                "Staff / Teacher / Student — Restricted from opening `/users`; may view their own profile only.",
+            ],
+            workflows=[
+                "Create Staff/Teacher Record -> Link Login Account -> Assign Role & Scoped Permissions -> Verify Login.",
+            ],
+            mistakes=[
+                "Creating a duplicate user login for an existing teacher instead of linking through Teacher Management.",
+                "Granting wildcard or posted-payment edit privileges without finance approval.",
+            ],
+            troubleshooting=[
+                "If a user sees Access Denied on CRM or another module, review their assigned role and explicit permissions on `/users`.",
+                "Ask the user to sign out and sign back in after permission changes so fresh session claims load.",
+            ],
+        ),
+    },
+    {
+        "slug": "guide-housekeeping",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "housekeeping",
+        "title": "Housekeeping & Database Governance User Guide",
+        "summary": "Create compressed database backups, verify SHA-256 backup checksums, manage retention schedules, run non-destructive sandbox drills, and monitor alerts.",
+        "tags": ["housekeeping", "backups", "restore", "checksum", "retention", "audit"],
+        "required_permissions": ["Admin / SuperAdmin"],
+        "related_routes": ["/housekeeping"],
+        "related_slugs": ["guide-settings", "faq-common-application-errors"],
+        "sort_order": 35,
+        "content_markdown": _module_guide_markdown(
+            title="Housekeeping & Database Governance User Guide",
+            intro="The Housekeeping & Database Governance workspace gives institutional administrators safe, self-contained visibility and control over database backup snapshots, cryptographic integrity verification, retention cleanup, and ledger parity checks.",
+            purpose="Protect vital student, academic, and financial ledger records against accidental loss and ensure every backup archive is verified before relying on it.",
+            operations=[
+                "Backup Overview & Alerts: Monitor last verified backup status, storage footprint, and alert count.",
+                "Manual Compressed Snapshot: Trigger an immediate database backup prior to major bulk imports or term-end operations.",
+                "Verification & Retention Pruning: Validate SHA-256 archive hashes and apply Grandfather-Father-Son retention policies.",
+                "Sandbox Recovery Drills & Restore Guard: Test snapshot recoverability safely and audit financial ledger parity.",
+            ],
+            steps=[
+                "Open Housekeeping (`/housekeeping`) from Administration and review Backup Status & Active Alerts.",
+                "Activate Edit Mode on the governance bar before initiating a manual backup, pruning run, or recovery drill.",
+                "Verify newly created snapshots show a green Verified status with valid size and timestamp.",
+                "Only perform live restoration after exporting an extra off-machine copy of your most recent backup file.",
+            ],
+            permissions=[
+                "Admin / SuperAdmin — Access Housekeeping telemetry, create/verify backups, run retention, and initiate recovery.",
+                "All Other Roles — Strictly blocked from database housekeeping operations.",
+            ],
+            workflows=[
+                "Run Pre-Operation Snapshot -> Verify SHA-256 Checksum -> Apply Retention Policy -> Review Parity Health.",
+            ],
+            mistakes=[
+                "Running major bulk imports or data cleanup without taking a fresh verified snapshot first.",
+                "Deleting all older retention archives before confirming the latest snapshot verified cleanly.",
+            ],
+            troubleshooting=[
+                "If backup alerts show degraded or overdue status, enable Edit Mode and trigger a fresh manual snapshot, then inspect alert details.",
+                "Contact support with the snapshot timestamp and alert message if storage permissions block local backup writes.",
+            ],
+        ),
+    },
+    {
+        "slug": "guide-licensing",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "licensing",
+        "title": "Software License Activation & Compliance User Guide",
+        "summary": "Inspect trial or active license validity, upload cryptographically signed license files, verify hardware binding, and monitor seat/student quotas.",
+        "tags": ["license", "activation", "trial", "quota", "hardware", "compliance"],
+        "required_permissions": ["Admin / SuperAdmin"],
+        "related_routes": ["/license-activation"],
+        "related_slugs": ["guide-settings", "guide-releases"],
+        "sort_order": 36,
+        "content_markdown": _module_guide_markdown(
+            title="Software License Activation & Compliance User Guide",
+            intro="The Software License workspace (`/license-activation`) displays your institution's current edition, activation state, trial/subscription dates, active student and staff capacity limits, and offline hardware-bound license status.",
+            purpose="Ensure uninterrupted institutional access by allowing authorized administrators to validate machine identifiers and apply signed license keys without exposing data externally.",
+            operations=[
+                "License Summary Card: Inspect product edition, license key ID, expiry date, and verification signature state.",
+                "Capacity Meters: Track enrolled students, staff accounts, and concurrent seat allocations against licensed entitlements.",
+                "License File / Key Activation: Import or paste an authorized signed license file after switching into Edit Mode.",
+            ],
+            steps=[
+                "Navigate to Software License (`/license-activation`) from Administration or the license status badge.",
+                "Review machine/installation reference identifiers and current student/staff quota usage in View Mode.",
+                "Enable Edit Mode, upload or paste your signed institutional license certificate, and submit activation.",
+                "Verify the banner updates cleanly to Licensed / Active with the expected validity end date.",
+            ],
+            permissions=[
+                "Admin — View and activate the license for their assigned institution only.",
+                "SuperAdmin — Inspect and manage institution license snapshots across environments.",
+            ],
+            workflows=[
+                "Check Installation ID -> Request Signed License -> Enable Edit Mode -> Apply License -> Verify Active Quota.",
+            ],
+            mistakes=[
+                "Cloning a database directory onto different hardware after hardware-locked activation.",
+                "Waiting past expiry without applying the renewed license certificate.",
+            ],
+            troubleshooting=[
+                "If activation reports a signature or machine mismatch error, share the exact installation identifier shown on screen with support for re-issuance.",
+                "Note that telemetry and license activation screens stay accessible even when an expired license locks routine write operations.",
+            ],
+        ),
+    },
+    {
+        "slug": "guide-releases",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "releases",
+        "title": "Release Governance & Update Notes User Guide",
+        "summary": "Review installed product version, build number, verified release changelog notes, and pre-upgrade operational readiness across the institute.",
+        "tags": ["releases", "changelog", "version", "updates", "governance"],
+        "required_permissions": ["Admin / Principal / SuperAdmin"],
+        "related_routes": ["/releases", "/admin/releases"],
+        "related_slugs": ["guide-licensing", "guide-housekeeping", "faq-common-application-errors"],
+        "sort_order": 37,
+        "content_markdown": _module_guide_markdown(
+            title="Release Governance & Update Notes User Guide",
+            intro="The Release Governance workspace (`/releases`) displays the currently running PrathamOne EduOS version, build stamp, published feature/fix changelog history, and upgrade audit logs.",
+            purpose="Give institutional administrators complete transparency into what changed between versions and confirm in-place updates preserved institutional records and schemas cleanly.",
+            operations=[
+                "Active Build Banner: Verify current semantic version, environment channel, and build identifier.",
+                "Release Notes Timeline: Inspect functional highlights, financial/academic improvements, and security updates per release.",
+                "Governance Controls: Draft, review, or publish institutional release communications when Edit Mode is unlocked.",
+            ],
+            steps=[
+                "Open Releases (`/releases`) from Administration or Version Info.",
+                "Check the Active Version card in the header to confirm every terminal or browser uses the latest updated bundle.",
+                "Read published release highlights before communicating workflow changes to staff.",
+            ],
+            permissions=[
+                "Admin / Principal — View installed release versions, changelogs, and operational audit notes.",
+                "SuperAdmin — Manage release governance records and publishing workflows.",
+            ],
+            workflows=[
+                "Verify Active Version -> Take Pre-Upgrade Backup -> Run In-Place Upgrade -> Confirm Post-Upgrade Health & Release Notes.",
+            ],
+            mistakes=[
+                "Uninstalling an older desktop build before upgrading instead of running the new setup package directly in-place.",
+                "Caching an outdated browser bookmark page after an upgrade instead of refreshing the active session.",
+            ],
+            troubleshooting=[
+                "If a browser shows stale UI after an update, perform a hard page reload and clear cached site storage if prompted.",
+                "If version numbers differ across workstations, ensure all desktops launch the latest installed shortcut.",
+            ],
+        ),
+    },
+    {
+        "slug": "guide-codex",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "codex",
+        "title": "CodeX Privacy & Display Obfuscation Studio User Guide",
+        "summary": "Protect sensitive on-screen financial totals in public areas using reversible display encoding while keeping authorized staff decoders and ledgers intact.",
+        "tags": ["codex", "privacy", "masking", "obfuscation", "decoder", "security"],
+        "required_permissions": ["Admin / Principal / SuperAdmin"],
+        "related_routes": ["/codex"],
+        "related_slugs": ["guide-settings", "guide-fees", "guide-users"],
+        "sort_order": 38,
+        "content_markdown": _module_guide_markdown(
+            title="CodeX Privacy & Display Obfuscation Studio User Guide",
+            intro="CodeX Studio (`/codex`) manages display-level obfuscation for sensitive financial figures shown on front-desk or shared screens without altering any stored numeric ledger calculations or official printed receipts.",
+            purpose="Prevent casual shoulder-surfing of fee collection totals, concessions, or revenue KPIs at busy reception counters while preserving reversible decoding for authorized personnel.",
+            operations=[
+                "Master Switch (`Active` vs `Disabled`): Enable or disable privacy encoding institute-wide (System Default: Disabled).",
+                "Alphabet / Digit Encoding Rules: Configure custom reversible character substitution tables.",
+                "Scoped Role Rules: Control which roles see masked screen values versus decoded currency numbers.",
+                "On-Demand Decoder: Temporarily decode a masked token right inside CodeX Studio with audit logging.",
+            ],
+            steps=[
+                "Open CodeX Studio (`/codex`) from Administration.",
+                "Enable Edit Mode before toggling the Master Switch, editing symbol maps, or changing role exemptions.",
+                "Use the On-Demand Decoder modal to verify how masked values translate back to true currency amounts.",
+                "Test Dashboard and Fees Desk screens after saving changes to confirm expected masking behavior.",
+            ],
+            permissions=[
+                "Admin / Principal / SuperAdmin — Configure CodeX rules, toggle master masking, and inspect decoder output.",
+                "Unauthorized Roles — Cannot alter encoding tables or bypass active screen masking.",
+            ],
+            workflows=[
+                "Enable Edit Mode -> Configure Encoding Table & Role Scopes -> Activate Master Switch -> Verify Front-Desk Screens.",
+            ],
+            mistakes=[
+                "Assuming CodeX alters database ledger storage or printed PDF receipts—it only masks visual UI display layers.",
+                "Forgetting which roles were excluded from masking when troubleshooting displayed codes.",
+            ],
+            troubleshooting=[
+                "If numbers on Fees or Dashboard appear as letters/symbols unexpectedly, check whether CodeX Master Switch is Active on `/codex`.",
+                "Use the On-Demand Decoder inside `/codex` to inspect any masked amount instantly.",
+            ],
+        ),
+    },
+    {
+        "slug": "guide-sysadmin",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "sysadmin",
+        "title": "System Administrator Governance Workspace User Guide",
+        "summary": "Superuser control panel for multi-institution tenant supervision, global audit logs, system health parameters, and privileged configuration.",
+        "tags": ["sysadmin", "superuser", "tenants", "audit", "governance"],
+        "required_permissions": ["SysAdmin / SuperAdmin Only"],
+        "related_routes": ["/sysadmin"],
+        "related_slugs": ["guide-housekeeping", "guide-licensing", "guide-settings"],
+        "sort_order": 39,
+        "content_markdown": _module_guide_markdown(
+            title="System Administrator Governance Workspace User Guide",
+            intro="The System Administrator Governance workspace (`/sysadmin`) provides superusers with unified oversight over institutional tenants, cross-module telemetry, immutable audit streams, and high-privilege platform settings.",
+            purpose="Isolate destructive or multi-tenant platform controls strictly behind SuperAdmin authorization and scoped Edit Mode protection.",
+            operations=[
+                "System Telemetry & Metrics Refresh: Monitor institution counts, active users, database health, and background services.",
+                "Institution Supervision: Inspect multi-branch tenant configurations safely without cross-contamination.",
+                "Security Audit Explorer: Review security, RBAC, financial override, and configuration audit entries.",
+                "System Parameters: Maintain global platform-level operational thresholds cleanly.",
+            ],
+            steps=[
+                "Sign in with a verified `sysadmin` or `superadmin` account and navigate to `/sysadmin`.",
+                "Inspect Overview telemetry and Security Audit tabs in default View Mode.",
+                "Activate Edit Mode explicitly only when updating system parameters or institutional configurations.",
+                "Click Refresh System Metrics after any change to confirm healthy status.",
+            ],
+            permissions=[
+                "SysAdmin / SuperAdmin — Exclusive workspace access (`sysadminOnly` route guard).",
+                "All Institutional Roles (`admin`, `principal`, `accountant`, `teacher`, `staff`, `student`) — Redirected safely away.",
+            ],
+            workflows=[
+                "Review Audit Stream -> Inspect Tenant Health -> Apply Scoped System Updates -> Verify Operational Parity.",
+            ],
+            mistakes=[
+                "Performing routine branch-level settings changes inside `/sysadmin` when institution `/settings` or `/catalogue` is intended.",
+                "Leaving SuperAdmin Edit Mode active unattended on shared terminals.",
+            ],
+            troubleshooting=[
+                "If an administrator is redirected to `/dashboard` when visiting `/sysadmin`, confirm the logged-in account holds `sysadmin` or `superadmin` role.",
+                "Check Housekeeping and Help System Info if infrastructure telemetry indicates a service degradation.",
             ],
         ),
     },

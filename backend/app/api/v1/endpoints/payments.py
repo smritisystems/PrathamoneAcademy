@@ -11,14 +11,14 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-26
+#  * @updated     2026-11-28
 #  *
 #  * @description API endpoints for payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refund workflows.
 #  */
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response, Request, Header
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, or_, desc, and_
+from sqlalchemy import select, func, or_, desc, and_, inspect as sa_inspect
 from sqlalchemy.orm import selectinload
 from typing import Optional, List, Dict, Any
 from decimal import Decimal
@@ -2244,6 +2244,15 @@ async def reverse_payment(
     return {"message": "Payment reversed successfully", "payment_id": payment_id}
 
 
+def _receipt_load_options():
+    """Authoritative eager-load graph for PaymentReceipt queries to prevent async MissingGreenlet."""
+    return (
+        selectinload(PaymentReceipt.payment).selectinload(Payment.student),
+        selectinload(PaymentReceipt.payment).selectinload(Payment.allocations).selectinload(PaymentAllocation.invoice),
+        selectinload(PaymentReceipt.payment).selectinload(Payment.allocations).selectinload(PaymentAllocation.installment),
+    )
+
+
 async def build_receipt_response(
     db: AsyncSession,
     receipt: PaymentReceipt,
@@ -2255,14 +2264,24 @@ async def build_receipt_response(
     historical successful payments for the same fee obligation, reconciled fee ledger summary,
     and versioning metadata (superseded status, duplicate reprint copy, amendments).
     """
-    if not payment:
+    needs_payment_reload = payment is None
+    if payment is not None:
+        insp = sa_inspect(payment)
+        if "allocations" in insp.unloaded or any(
+            "installment" in sa_inspect(a).unloaded or "invoice" in sa_inspect(a).unloaded
+            for a in (payment.allocations or [])
+        ):
+            needs_payment_reload = True
+
+    if needs_payment_reload:
         pay_res = await db.execute(
             select(Payment)
             .options(
                 selectinload(Payment.allocations).selectinload(PaymentAllocation.invoice),
+                selectinload(Payment.allocations).selectinload(PaymentAllocation.installment),
                 selectinload(Payment.student),
             )
-            .where(Payment.id == receipt.payment_id)
+            .where(Payment.id == (payment.id if payment is not None else receipt.payment_id))
         )
         payment = pay_res.scalar_one_or_none()
 
@@ -2611,13 +2630,13 @@ async def get_receipt(
     current_user=Depends(get_current_active_user),
 ):
     result = await db.execute(
-        select(PaymentReceipt).options(selectinload(PaymentReceipt.payment).selectinload(Payment.student)).where(PaymentReceipt.receipt_number == receipt_number)
+        select(PaymentReceipt).options(*_receipt_load_options()).where(PaymentReceipt.receipt_number == receipt_number)
     )
     receipt = result.scalar_one_or_none()
 
     if not receipt and receipt_number.isdigit():
         result = await db.execute(
-            select(PaymentReceipt).options(selectinload(PaymentReceipt.payment).selectinload(Payment.student)).where(
+            select(PaymentReceipt).options(*_receipt_load_options()).where(
                 PaymentReceipt.payment_id == int(receipt_number),
                 PaymentReceipt.status == "valid",
             )
@@ -2625,7 +2644,7 @@ async def get_receipt(
         receipt = result.scalar_one_or_none()
         if not receipt:
             result = await db.execute(
-                select(PaymentReceipt).options(selectinload(PaymentReceipt.payment).selectinload(Payment.student)).where(PaymentReceipt.payment_id == int(receipt_number))
+                select(PaymentReceipt).options(*_receipt_load_options()).where(PaymentReceipt.payment_id == int(receipt_number))
             )
             receipt = result.scalar_one_or_none()
 
@@ -2767,7 +2786,7 @@ async def get_receipt_pdf(
     """
     result = await db.execute(
         select(PaymentReceipt)
-        .options(selectinload(PaymentReceipt.payment).selectinload(Payment.student))
+        .options(*_receipt_load_options())
         .where(PaymentReceipt.receipt_number == receipt_number)
     )
     receipt = result.scalar_one_or_none()
@@ -2775,7 +2794,7 @@ async def get_receipt_pdf(
     if not receipt and receipt_number.isdigit():
         result = await db.execute(
             select(PaymentReceipt)
-            .options(selectinload(PaymentReceipt.payment).selectinload(Payment.student))
+            .options(*_receipt_load_options())
             .where(
                 PaymentReceipt.payment_id == int(receipt_number),
                 PaymentReceipt.status == "valid",
@@ -2785,7 +2804,7 @@ async def get_receipt_pdf(
         if not receipt:
             result = await db.execute(
                 select(PaymentReceipt)
-                .options(selectinload(PaymentReceipt.payment).selectinload(Payment.student))
+                .options(*_receipt_load_options())
                 .where(PaymentReceipt.payment_id == int(receipt_number))
             )
             receipt = result.scalar_one_or_none()
@@ -2848,7 +2867,7 @@ async def export_bulk_receipts_zip(
     for r_num in payload.receipt_numbers:
         res = await db.execute(
             select(PaymentReceipt)
-            .options(selectinload(PaymentReceipt.payment).selectinload(Payment.student))
+            .options(*_receipt_load_options())
             .where(PaymentReceipt.receipt_number == r_num)
         )
         receipt = res.scalar_one_or_none()

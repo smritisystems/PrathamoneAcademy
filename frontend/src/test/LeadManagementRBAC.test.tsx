@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-18
+ * @updated     2026-11-28
  *
  * @description Comprehensive unit test suite verifying strict separation of CRM Lead operations from Student Admission authorization across Counsellor, Admission Officer, Admin, and Unauthorized roles.
  */
@@ -290,5 +290,29 @@ describe('Lead Management & CRM RBAC Separation Specifications', () => {
     ).toBeDefined()
     expect(screen.queryByText(/View Mode Active/i)).toBeNull()
     expect(screen.queryByRole('button', { name: /New Lead/i })).toBeNull()
+  })
+
+  it('ROLE E (Desktop Admin without seeded permissions rows): Authorized for CRM and Admission Conversion', async () => {
+    useAuthStore.setState({
+      user: {
+        id: 1,
+        username: 'admin',
+        email: 'admin@prathamone.local',
+        role: 'admin',
+        first_name: 'Institute',
+        last_name: 'Admin',
+        permissions: [],
+      },
+      token: 'fake-jwt-token',
+      selectedInstitutionId: 1,
+      selectedAcademicYearId: 1,
+    })
+
+    renderComponent()
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Access Denied/i)).toBeNull()
+      expect(screen.getByRole('heading', { name: /Lead Management & CRM/i })).toBeDefined()
+    })
   })
 })

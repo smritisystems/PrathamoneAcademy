@@ -58,6 +58,7 @@ import {
   DailyCashBookData,
 } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { ContextualHelpButton, ElementHelpTip } from '../components/common'
 import { useBranding } from '../config/branding'
 
 export default function FinanceExpenseWorkspace() {
@@ -339,6 +340,12 @@ export default function FinanceExpenseWorkspace() {
 
         {/* Command Actions */}
         <div className="flex items-center gap-2">
+          <ContextualHelpButton moduleKey="expenses" variant="pill" label="Expenses Help" />
+          <ElementHelpTip
+            title="Daily Expense & Cash Closing"
+            description="Select any Business Date, record payment vouchers, count physical currency notes in Daily Cash Closing, and reconcile ending cashbook variance."
+            moduleKey="expenses"
+          />
           {/* Business Date Picker */}
           <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300">
             <Calendar className="w-3.5 h-3.5 text-slate-400" />

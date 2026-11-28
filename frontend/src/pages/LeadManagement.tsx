@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-23
+ * @updated     2026-11-28
  *
  * @description Complete Lead Management & CRM workspace featuring KPI metrics, Kanban pipeline,
  */
@@ -35,11 +35,11 @@ import type {
   LeadItem, LeadDossierResponse, LeadMetricsSummary,
   LeadKanbanResponse, Standard, Board, User, AcademicYear
 } from '../types'
-import { useAuthStore, hasPermission } from '../store/authStore'
+import { useAuthStore, hasPermission, isUserAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import {
   EditModeBar, LockedButton, LockedIconButton, DeleteConfirmationModal,
-  SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton,
+  SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton, ElementHelpTip,
   EnterpriseDataTable, DataTableColumn
 } from '../components/common'
 import { formatDateIN, fallbackEmpty } from '../utils/formatters'
@@ -54,12 +54,14 @@ export default function LeadManagement() {
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
 
-  // RBAC Permission Gates: CRM is strictly decoupled from student admission authorization
-  const canReadLeads = hasPermission(user, 'leads:read') || hasPermission(user, 'leads:manage_pipeline')
-  const canCreateLeads = hasPermission(user, 'leads:create')
-  const canUpdateLeads = hasPermission(user, 'leads:update')
-  const canDeleteLeads = hasPermission(user, 'leads:delete')
+  // RBAC Permission Gates: Admin/Principal roles align cleanly with backend LEAD_READ/WRITE_ROLES; staff still requires explicit leads:* grants
+  const isAdminRole = isUserAdmin(user)
+  const canReadLeads = isAdminRole || hasPermission(user, 'leads:read') || hasPermission(user, 'leads:manage_pipeline')
+  const canCreateLeads = isAdminRole || hasPermission(user, 'leads:create')
+  const canUpdateLeads = isAdminRole || hasPermission(user, 'leads:update')
+  const canDeleteLeads = isAdminRole || hasPermission(user, 'leads:delete')
   const canConvertAdmission =
+    isAdminRole ||
     hasPermission(user, 'students:admission') ||
     hasPermission(user, 'admissions:create') ||
     hasPermission(user, 'students:manage')
@@ -506,7 +508,12 @@ export default function LeadManagement() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          <ContextualHelpButton moduleKey="admissions" variant="pill" label="Admissions Help" />
+          <ContextualHelpButton moduleKey="crm" variant="pill" label="CRM Help" />
+          <ElementHelpTip
+            title="CRM & Pipeline Controls"
+            description="Activate Edit Mode to add enquiries, drag leads across pipeline stages, record follow-ups, schedule demos, or convert enrolled prospects to Admissions."
+            moduleKey="crm"
+          />
           <LockedButton
             isEditMode={isEditMode}
             onClick={() => setIsNewLeadModalOpen(true)}

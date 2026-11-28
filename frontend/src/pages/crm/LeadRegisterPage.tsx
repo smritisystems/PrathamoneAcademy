@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-22
+ * @updated     2026-11-28
  *
  * @description Master Lead & Enquiry Register workspace featuring multi-tier filters, search, quick presets, batch re-assignment, Excel export, and slide-over dossier inspection.
  */
@@ -32,7 +32,7 @@ import toast from 'react-hot-toast'
 import { leadsApi, standardsApi, boardsApi, usersApi, academicYearsApi } from '../../api/endpoints'
 import { downloadCsvRows } from '../../utils/reportExport'
 import type { LeadItem, LeadDossierResponse, Standard, Board, User, AcademicYear } from '../../types'
-import { useAuthStore, hasPermission } from '../../store/authStore'
+import { useAuthStore, hasPermission, isUserAdmin } from '../../store/authStore'
 import { useEditModeStore } from '../../store/editModeStore'
 import { DeleteConfirmationModal, LockedButton, LockedIconButton } from '../../components/common'
 import CrmHeader from './CrmHeader'
@@ -45,7 +45,7 @@ export default function LeadRegisterPage() {
   const { user } = useAuthStore()
   const editScope = 'crm:leads'
   const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
-  const canDeleteLeads = hasPermission(user, 'leads:delete')
+  const canDeleteLeads = isUserAdmin(user) || hasPermission(user, 'leads:delete')
 
   const [searchParams, setSearchParams] = useSearchParams()
   const initialSource = searchParams.get('source') || 'All Sources'

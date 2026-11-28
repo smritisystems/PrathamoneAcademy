@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-22
+ * @updated     2026-11-28
  *
  * @description Academic Subject Management with Canonical Master Catalogue, Standard/Board Applicability Mappings, and Duplicate Prevention.
  */
@@ -26,7 +26,7 @@ import {
 import { standardsApi, boardsApi, subjectsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, DeleteConfirmationModal } from '../components/common'
+import { EditModeBar, DeleteConfirmationModal, ContextualHelpButton } from '../components/common'
 import Modal from '../components/Modal'
 import toast from 'react-hot-toast'
 import type { CanonicalSubject, SubjectMappingItem, SubjectDuplicateCheckResult } from '../types'
@@ -329,29 +329,32 @@ export default function SubjectsPage() {
         </div>
 
         {/* Action Button */}
-        {isEditMode ? (
-          <button
-            onClick={() => {
-              resetForms()
-              setShowAddModal(true)
-            }}
-            className="btn-primary flex items-center gap-1.5 shadow-sm"
-          >
-            <Plus className="w-4 h-4" /> Add / Map Subject
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() =>
-              toast.error('Locked in View Mode: Please activate Edit Mode above to register or map subjects.')
-            }
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-            title="Locked in View Mode: Enable Edit Mode above to modify subjects"
-          >
-            <Lock className="w-4 h-4 text-slate-400" />
-            <span>Add / Map Subject (Locked)</span>
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <ContextualHelpButton moduleKey="catalogue" variant="pill" label="Subjects Help" />
+          {isEditMode ? (
+            <button
+              onClick={() => {
+                resetForms()
+                setShowAddModal(true)
+              }}
+              className="btn-primary flex items-center gap-1.5 shadow-sm"
+            >
+              <Plus className="w-4 h-4" /> Add / Map Subject
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() =>
+                toast.error('Locked in View Mode: Please activate Edit Mode above to register or map subjects.')
+              }
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+              title="Locked in View Mode: Enable Edit Mode above to modify subjects"
+            >
+              <Lock className="w-4 h-4 text-slate-400" />
+              <span>Add / Map Subject (Locked)</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Dual-View Switcher Tabs */}

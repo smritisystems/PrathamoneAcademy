@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-16
- * @updated     2026-11-22
+ * @updated     2026-11-28
  *
  * @description Unified, responsive planning workspace with calendar, Kanban, agenda, and timeline views.
  */
@@ -55,9 +55,9 @@ import {
   studentsApi,
   subjectsApi,
 } from '../api/endpoints'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, ContextualHelpButton, ElementHelpTip } from '../components/common'
 import Modal from '../components/Modal'
-import { hasPermission, useAuthStore } from '../store/authStore'
+import { hasPermission, isUserAdmin, useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import type { PlanningItem, PlanningPayload, PlanningReference, PlanningStatus } from '../types'
 import {
@@ -1731,6 +1731,12 @@ return (
         <p className="mt-1 text-sm text-slate-500">Universal institutional task management, Kanban board, calendar deadlines, and cross-module activity tracking.</p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
+        <ContextualHelpButton moduleKey="planning" variant="pill" label="Planning Help" />
+        <ElementHelpTip
+          title="Planning & Sync Controls"
+          description="Enable Edit Mode to create activities, sync cross-module operational tasks, drag Kanban cards, or publish milestones institution-wide."
+          moduleKey="planning"
+        />
         <EditModeBar
           scope={editScope}
           title="Tasks & Planning Center"
@@ -1988,7 +1994,7 @@ return (
             <input
               type="checkbox"
               checked={form.is_published}
-              disabled={!hasPermission(user, 'planning:publish')}
+              disabled={!isUserAdmin(user) && !hasPermission(user, 'planning:publish')}
               onChange={(event) => setForm({ ...form, is_published: event.target.checked })}
             />
             Publish to the institution

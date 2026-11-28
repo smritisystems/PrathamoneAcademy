@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-16
+ * @updated     2026-11-28
  *
  * @description Comprehensive administrative CodeX Configuration Studio featuring 11 specialized sections, 0-9 bijective mapping, and interactive testing.
  */
@@ -31,7 +31,7 @@ import type {
 } from '../types'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton } from '../components/common'
+import { EditModeBar, LockedButton, ContextualHelpButton, ElementHelpTip } from '../components/common'
 import { useBranding } from '../config/branding'
 import OrganizationBranding from '../components/OrganizationBranding'
 import QuickDecoderModal from '../components/codex/QuickDecoderModal'
@@ -555,6 +555,12 @@ export default function CodeXStudio() {
           </div>
 
           <div className="flex items-center gap-3">
+            <ContextualHelpButton moduleKey="codex" variant="pill" label="CodeX Help" />
+            <ElementHelpTip
+              title="Display-Only Obfuscation"
+              description="CodeX masks visual totals on screen without altering database ledgers or PDF receipts. Use On-Demand Decoder to inspect masked codes."
+              moduleKey="codex"
+            />
             <button
               onClick={() => setShowQuickDecoder(true)}
               className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all"

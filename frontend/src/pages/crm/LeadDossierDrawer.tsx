@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-16
+ * @updated     2026-11-28
  *
  * @description Slide-over & inline docked Lead Dossier drawer rendering 360-degree enquiry profiles, interactive timelines, communication logs, demo lectures, and admission fast-track conversion.
  */
@@ -29,7 +29,7 @@ import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { leadsApi } from '../../api/endpoints'
 import type { LeadDossierResponse, LeadItem, Standard, AcademicYear } from '../../types'
-import { useAuthStore, hasPermission } from '../../store/authStore'
+import { useAuthStore, hasPermission, isUserAdmin } from '../../store/authStore'
 import { useEditModeStore } from '../../store/editModeStore'
 import { LockedButton, LockedIconButton } from '../../components/common'
 import { getStageBadge, getPriorityBadge } from './CrmModals'
@@ -66,6 +66,7 @@ export default function LeadDossierDrawer({
   const [isSendingComm, setIsSendingComm] = useState(false)
 
   const canConvertAdmission =
+    isUserAdmin(user) ||
     hasPermission(user, 'students:admission') ||
     hasPermission(user, 'admissions:create') ||
     hasPermission(user, 'students:manage')

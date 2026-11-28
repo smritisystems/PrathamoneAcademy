@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-25
+ * @updated     2026-11-28
  *
  * @description Enterprise Release & Change Management workspace governing change tracking, automated release notes, pre-flight validations, approvals, and deployment lifecycles.
  */
@@ -28,7 +28,7 @@ import toast from 'react-hot-toast'
 import { releasesApi } from '../api/endpoints'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, ContextualHelpButton } from '../components/common'
 import { useBranding } from '../config/branding'
 import SystemUpdateModal from '../components/releases/SystemUpdateModal'
 import type {
@@ -353,6 +353,7 @@ export default function Releases() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <ContextualHelpButton moduleKey="releases" variant="pill" label="Release Help" />
             <div className="bg-slate-800/80 backdrop-blur border border-slate-700 rounded-xl px-4 py-2.5 text-right">
               <p className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Active Version</p>
               <div className="flex items-center gap-2 justify-end">

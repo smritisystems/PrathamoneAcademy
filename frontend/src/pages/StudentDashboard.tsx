@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-27
+ * @updated     2026-11-28
  *
  * @description Dedicated student portal dashboard presenting enrolled courses, timetable, and exam results.
  */
@@ -34,6 +34,7 @@ import { StatusBadge } from '../components/Badge'
 import Modal from '../components/Modal'
 import EduBoardCanvas from '../components/eduboard/EduBoardCanvas'
 import NepRoadmapModal from '../components/common/NepRoadmapModal'
+import ContextualHelpButton from '../components/common/ContextualHelpButton'
 import type {
   TimetableSlot,
   StudyMaterialItem,
@@ -498,8 +499,11 @@ export default function StudentDashboardPage() {
           </div>
           <div className="flex flex-wrap md:flex-col items-end gap-2 text-right">
             <span className="text-xs text-primary-200">Academic Year: {active_enrollment?.academic_year || '2024-25'}</span>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur text-xs font-medium text-white border border-white/20">
-              <Clock className="w-3.5 h-3.5 text-primary-200" /> Current Term
+            <div className="flex items-center gap-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur text-xs font-medium text-white border border-white/20">
+                <Clock className="w-3.5 h-3.5 text-primary-200" /> Current Term
+              </div>
+              <ContextualHelpButton routePath="/student-portal" variant="pill" label="Portal Help" />
             </div>
           </div>
         </div>

@@ -11,13 +11,14 @@
  *
  * @version     1.0.0
  * @created     2026-11-14
- * @updated     2026-11-16
+ * @updated     2026-11-28
  *
  * @description Institution Admin entry point for institution-scoped software license activation.
  */
 
 import { KeyRound } from 'lucide-react'
 import EditModeBar from '../components/common/EditModeBar'
+import ContextualHelpButton, { ElementHelpTip } from '../components/common/ContextualHelpButton'
 import LicenseActivationPanel from '../components/LicenseActivationPanel'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 
@@ -42,11 +43,21 @@ export default function LicenseActivation() {
 
   return (
     <div className="space-y-5">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-900">Software License</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Review and activate the license for your institution. Institution Admins can only activate their assigned institution.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Software License</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Review and activate the license for your institution. Institution Admins can only activate their assigned institution.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <ContextualHelpButton moduleKey="licensing" variant="pill" label="Licensing Help" />
+          <ElementHelpTip
+            title="Offline & Signed Activation"
+            description="Licenses are cryptographically signed and bound to your machine hardware ID. Enable Edit Mode to upload or apply a signed key."
+            moduleKey="licensing"
+          />
+        </div>
       </header>
       <EditModeBar scope="license:activation" title="Institution License Activation" />
       <LicenseActivationPanel

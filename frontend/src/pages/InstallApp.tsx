@@ -11,13 +11,14 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-28
  *
  * @description Dedicated Progressive Web App installation portal with platform-specific setup guides and launch actions.
  */
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ContextualHelpButton } from '../components/common';
 import {
   Download,
   CheckCircle2,
@@ -122,7 +123,8 @@ export default function InstallApp() {
           </div>
 
           {/* Action CTAs */}
-          <div className="shrink-0 w-full md:w-auto flex flex-col sm:flex-row gap-3">
+          <div className="shrink-0 w-full md:w-auto flex flex-col sm:flex-row items-center gap-3">
+            <ContextualHelpButton routePath="/install" variant="pill" label="Install Help" />
             {isInstalled || installSuccess ? (
               <button
                 type="button"

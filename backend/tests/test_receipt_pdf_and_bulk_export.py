@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-16
+#  * @updated     2026-11-28
 #  *
 #  * @description Test suite for high-fidelity receipt PDF generation, PyMuPDF vector rendering, bulk ZIP export, and API endpoints.
 #  */
@@ -329,3 +329,55 @@ class TestReceiptPdfEndpoints:
             headers=auth_headers,
         )
         assert resp.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_get_receipt_and_pdf_with_installment_allocation_no_missing_greenlet(
+        self, client, auth_headers, test_fee_invoice, db
+    ):
+        from sqlalchemy import select
+        from app.models.fee import FeeInstallment
+
+        inv = test_fee_invoice["invoice"]
+        student_id = test_fee_invoice["student"].id
+        year_id = test_fee_invoice["academic_year"].id
+
+        inst = (
+            await db.execute(
+                select(FeeInstallment)
+                .where(FeeInstallment.invoice_id == inv.id)
+                .order_by(FeeInstallment.installment_number.asc())
+            )
+        ).scalars().first()
+        assert inst is not None
+
+        pay_resp = await client.post(
+            "/api/v1/payments/",
+            json={
+                "student_id": student_id,
+                "academic_year_id": year_id,
+                "amount": float(inst.amount),
+                "payment_date": "2026-11-09",
+                "payment_method": "cash",
+                "allocations": [{"invoice_id": inv.id, "installment_id": inst.id, "amount": float(inst.amount)}],
+            },
+            headers=auth_headers,
+        )
+        assert pay_resp.status_code == 201
+        receipt_number = pay_resp.json()["receipt_number"]
+
+        rec_resp = await client.get(
+            f"/api/v1/payments/receipts/{receipt_number}",
+            headers=auth_headers,
+        )
+        assert rec_resp.status_code == 200
+        assert rec_resp.json()["allocations"][0]["installment_number"] == inst.installment_number
+        assert "no-store" in rec_resp.headers.get("cache-control", "")
+
+        pdf_resp = await client.get(
+            f"/api/v1/payments/receipts/{receipt_number}/pdf",
+            headers=auth_headers,
+        )
+        assert pdf_resp.status_code == 200
+        assert pdf_resp.headers["content-type"] == "application/pdf"
+        assert pdf_resp.content.startswith(b"%PDF-1.")
+        assert "no-store" in pdf_resp.headers.get("cache-control", "")

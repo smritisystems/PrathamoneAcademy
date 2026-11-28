@@ -52,6 +52,7 @@ import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useBranding } from '../config/branding'
 import EditModeBar from '../components/common/EditModeBar'
+import ContextualHelpButton, { ElementHelpTip } from '../components/common/ContextualHelpButton'
 
 type WorkspaceTab = 'budgets' | 'variance' | 'forecasts'
 
@@ -403,6 +404,12 @@ export default function BudgetingForecastingWorkspace() {
         </div>
 
         <div className="flex items-center gap-2">
+          <ContextualHelpButton moduleKey="budgeting" variant="pill" label="Budgeting Help" />
+          <ElementHelpTip
+            title="Budgets, Variance & Forecasts"
+            description="Budgets lock baseline allocations; Variance tracks real-time fees and expenses against plan; Forecasts model cashflow scenarios across fee collection, enrollment, and payroll."
+            moduleKey="budgeting"
+          />
           <div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-xs font-semibold">
             {(['budgets', 'variance', 'forecasts'] as WorkspaceTab[]).map((tab) => (
               <button

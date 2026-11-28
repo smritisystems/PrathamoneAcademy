@@ -36,7 +36,7 @@ import { useAuthStore, isUserAdmin } from '../store/authStore'
 import toast from 'react-hot-toast'
 import { StatusBadge } from '../components/Badge'
 import type { StudentDocumentItem, AcademicActivityRegisterItem } from '../types'
-import { EditModeBar, DeleteConfirmationModal, LockedButton, LockedIconButton, LockedLinkButton, ConcessionTraceModal } from '../components/common'
+import { EditModeBar, DeleteConfirmationModal, LockedButton, LockedIconButton, LockedLinkButton, ConcessionTraceModal, ContextualHelpButton } from '../components/common'
 import { useEditModeStore } from '../store/editModeStore'
 
 const fmt = (n: number) =>
@@ -583,6 +583,7 @@ export default function StudentDetailPage() {
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
+          <ContextualHelpButton moduleKey="students" variant="pill" label="Profile Help" />
           <button
             type="button"
             onClick={() => setShowIdCardModal(true)}

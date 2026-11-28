@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-27
+ * @updated     2026-11-28
  *
  * @description Source component for Sysadminworkspace in the src.pages module.
  */
@@ -46,7 +46,7 @@ import {
 import { sysadminApi } from '../api/endpoints'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton } from '../components/common'
+import { EditModeBar, LockedButton, ContextualHelpButton } from '../components/common'
 import type { SecurityAuditLogItem, UniversalEditPayload } from '../types'
 import OrganizationBranding from '../components/OrganizationBranding'
 import LicenseActivationPanel from '../components/LicenseActivationPanel'
@@ -244,6 +244,7 @@ export default function SysAdminWorkspace() {
         </div>
 
         <div className="flex items-center gap-3 text-xs font-mono">
+          <ContextualHelpButton moduleKey="sysadmin" variant="pill" label="SysAdmin Help" />
           <div className="px-3 py-1.5 bg-slate-800/80 rounded-lg border border-slate-700 text-slate-300 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>SysAdmin Active: {user?.username}</span>

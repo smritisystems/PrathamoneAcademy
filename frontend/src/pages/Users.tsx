@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-28
  *
  * @description User management dashboard listing system accounts, roles, access scopes, and invitation workflows.
  */
@@ -28,7 +28,7 @@ import {
 import { usersApi, standardsApi, divisionsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { EditModeBar, SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton, ElementHelpTip } from '../components/common'
 import Modal from '../components/Modal'
 import type {
   UserManagementStats, UserListItem, Standard, Division,
@@ -381,6 +381,12 @@ export default function UsersPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <ContextualHelpButton moduleKey="users" variant="pill" label="Users & RBAC Help" />
+            <ElementHelpTip
+              title="Roles & Direct Permissions"
+              description="Assign a base role or grant explicit module permissions per account. Ask users to re-login after permission changes."
+              moduleKey="users"
+            />
             {isEditMode ? (
               <button
                 onClick={() => setCreateModalOpen(true)}

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-24
+ * @updated     2026-11-28
  *
  * @description Student fee collection terminal for recording payments against outstanding installments.
  */
@@ -30,7 +30,7 @@ import { InstallmentStatusBadge } from '../components/Badge';
 import Modal from '../components/Modal';
 import { QrCode, Lock } from 'lucide-react';
 import { useEditModeStore } from '../store/editModeStore';
-import { EditModeBar } from '../components/common';
+import { EditModeBar, ContextualHelpButton, ElementHelpTip } from '../components/common';
 import OnlinePaymentModal from '../components/OnlinePaymentModal';
 import PaymentReceiptView from '../components/PaymentReceiptView';
 import { printReceiptElement } from '../utils/printReceipt';
@@ -231,7 +231,16 @@ export default function FeeCollection() {
         </button>
         <span className="text-gray-300">|</span>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Fee Collection Terminal</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">Fee Collection Terminal</h1>
+            <ContextualHelpButton moduleKey="fees" variant="pill" label="Fee Desk Help" />
+            <ElementHelpTip
+              title="Payment Posting & Receipt"
+              description="Enable Edit Mode, enter the collected amount and payment mode, allocate across open invoices/installments, and generate an official A5/A4 receipt."
+              moduleKey="fees"
+              align="left"
+            />
+          </div>
           {student && (
             <div className="flex flex-wrap items-center gap-2 mt-1">
               <span className="text-sm font-semibold text-gray-800">{studentName}</span>

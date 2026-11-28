@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-28
  *
  * @description Official printable fee receipt voucher page with historical payment details and fee summary.
  */
@@ -20,6 +20,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useParams, Link } from 'react-router-dom'
 import { getPaymentReceipt } from '../api/endpoints'
 import PaymentReceiptView from '../components/PaymentReceiptView'
+import { ContextualHelpButton, ElementHelpTip } from '../components/common'
 
 export default function Receipt() {
   const { paymentId, receiptNumber } = useParams<{ paymentId?: string; receiptNumber?: string }>()
@@ -66,6 +67,14 @@ export default function Receipt() {
           <Link to="/fees" className="text-gray-600 hover:underline text-sm">
             Fees Workspace
           </Link>
+        </div>
+        <div className="flex items-center gap-2">
+          <ContextualHelpButton routePath="/receipt" variant="pill" label="Receipt Help" />
+          <ElementHelpTip
+            title="Print, PDF & Share Actions"
+            description="Switch between A5 Compact and A4 Portrait, print physical vouchers, download PDF receipts, or share receipts directly via WhatsApp."
+            moduleKey="fees"
+          />
         </div>
       </div>
 

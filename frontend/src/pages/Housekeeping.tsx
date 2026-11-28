@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-18
+ * @updated     2026-11-28
  *
  * @description Housekeeping Workspace for automated & on-demand PostgreSQL database backup, SHA-256 verification, GFS pruning, sandbox restore drills, guarded production restoration, VACUUM maintenance, SSOT ledger parity, and scheduler policies.
  */
@@ -59,7 +59,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { housekeepingApi } from '../api/endpoints'
-import { EditModeBar, LockedButton } from '../components/common'
+import { EditModeBar, LockedButton, ContextualHelpButton, ElementHelpTip } from '../components/common'
 import { useEditModeStore } from '../store/editModeStore'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import type {
@@ -846,15 +846,23 @@ export default function Housekeeping() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => loadWorkspaceData()}
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors self-start lg:self-auto"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh Telemetry</span>
-        </button>
+        <div className="flex items-center gap-2 self-start lg:self-auto">
+          <ContextualHelpButton moduleKey="housekeeping" variant="pill" label="Housekeeping Help" />
+          <ElementHelpTip
+            title="Backup & Restore Governance"
+            description="Always enable Edit Mode to create compressed PostgreSQL snapshots, verify SHA-256 hashes, run sandbox drills, or execute retention pruning."
+            moduleKey="housekeeping"
+          />
+          <button
+            type="button"
+            onClick={() => loadWorkspaceData()}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh Telemetry</span>
+          </button>
+        </div>
       </div>
 
       {/* Rule 010 Global View-First EditModeBar */}

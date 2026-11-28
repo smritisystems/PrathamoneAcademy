@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-26
+#  * @updated     2026-11-28
 #  *
 #  * @description REST API router for Communication Center, message templates, universal document sharing, delivery tracking, and automated event notifications.
 #  */
@@ -447,11 +447,15 @@ async def download_shared_document_pdf(
     if shared.document_type == "RECEIPT":
         from app.models.payment import PaymentReceipt, Payment
         from app.services.receipt_pdf_service import ReceiptPdfService, sanitize_receipt_filename
-        from app.api.v1.endpoints.payments import build_receipt_response, get_institution_dict
+        from app.api.v1.endpoints.payments import (
+            _receipt_load_options,
+            build_receipt_response,
+            get_institution_dict,
+        )
 
         res = await db.execute(
             select(PaymentReceipt)
-            .options(selectinload(PaymentReceipt.payment).selectinload(Payment.student))
+            .options(*_receipt_load_options())
             .where(
                 (PaymentReceipt.payment_id == shared.record_id)
                 | (PaymentReceipt.id == shared.record_id)

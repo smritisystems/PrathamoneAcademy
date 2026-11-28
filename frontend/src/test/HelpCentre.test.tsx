@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-16
+ * @updated     2026-11-28
  *
  * @description Comprehensive Vitest suite covering Help & About Centre navigation, unified search, contextual help routing, product/company/version/legal views, admin-only System Info, support ticketing, and Rule 010 EditMode governance.
  */
@@ -20,7 +20,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import HelpCentre from '../pages/HelpCentre'
-import { ContextualHelpButton, resolveContextualHelpPath } from '../components/common'
+import { ContextualHelpButton, ElementHelpTip, resolveContextualHelpPath } from '../components/common'
 import { StructuredMarkdownContent } from '../components/help/HelpArticleView'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
@@ -326,7 +326,24 @@ describe('Help & About Centre Suite', () => {
     expect(resolveContextualHelpPath('/academic/timetable').helpPath).toBe(
       '/help/article/guide-timetable?from=%2Facademic%2Ftimetable',
     )
-    expect(resolveContextualHelpPath('/leads').helpPath).toBe('/help/article/guide-admissions?from=%2Fleads')
+    expect(resolveContextualHelpPath('/leads').helpPath).toBe('/help/article/guide-crm?from=%2Fleads')
+    expect(resolveContextualHelpPath('/crm').helpPath).toBe('/help/article/guide-crm?from=%2Fcrm')
+    expect(resolveContextualHelpPath('/expenses').helpPath).toBe('/help/article/guide-expenses?from=%2Fexpenses')
+    expect(resolveContextualHelpPath('/finance/budgets').helpPath).toBe(
+      '/help/article/guide-budgeting?from=%2Ffinance%2Fbudgets',
+    )
+    expect(resolveContextualHelpPath('/planning').helpPath).toBe('/help/article/guide-planning?from=%2Fplanning')
+    expect(resolveContextualHelpPath('/catalogue').helpPath).toBe('/help/article/guide-catalogue?from=%2Fcatalogue')
+    expect(resolveContextualHelpPath('/users').helpPath).toBe('/help/article/guide-users?from=%2Fusers')
+    expect(resolveContextualHelpPath('/housekeeping').helpPath).toBe(
+      '/help/article/guide-housekeeping?from=%2Fhousekeeping',
+    )
+    expect(resolveContextualHelpPath('/license-activation').helpPath).toBe(
+      '/help/article/guide-licensing?from=%2Flicense-activation',
+    )
+    expect(resolveContextualHelpPath('/releases').helpPath).toBe('/help/article/guide-releases?from=%2Freleases')
+    expect(resolveContextualHelpPath('/codex').helpPath).toBe('/help/article/guide-codex?from=%2Fcodex')
+    expect(resolveContextualHelpPath('/sysadmin').helpPath).toBe('/help/article/guide-sysadmin?from=%2Fsysadmin')
     expect(resolveContextualHelpPath('/attendance').helpPath).toBe('/help/article/guide-attendance?from=%2Fattendance')
     expect(resolveContextualHelpPath('/teachers').helpPath).toBe('/help/article/guide-staff?from=%2Fteachers')
     expect(resolveContextualHelpPath('/communication').helpPath).toBe(
@@ -360,6 +377,19 @@ describe('Help & About Centre Suite', () => {
       expect(screen.getByRole('heading', { name: 'Concessions & Waivers Module User Guide' })).toBeDefined()
       expect(screen.getByText('Back to Module')).toBeDefined()
     })
+
+    cleanup()
+    render(
+      <MemoryRouter initialEntries={['/finance/budgets']}>
+        <ElementHelpTip
+          title="Budgets & Forecast Tip"
+          description="Lock approved budgets and monitor live variance."
+          moduleKey="budgeting"
+        />
+      </MemoryRouter>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Help for Budgets & Forecast Tip' }))
+    expect(screen.getByRole('tooltip').textContent).toContain('Lock approved budgets and monitor live variance.')
   })
 
   it('executes unified Help search and displays matching results and suggestions', async () => {

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-22
- * @updated     2026-11-22
+ * @updated     2026-11-28
  *
  * @description Centralized Master Data Management (MDM) Hub, setup dependency pipeline, relational integrity auditor, and master catalogue studio.
  */
@@ -59,7 +59,7 @@ import {
 import { catalogueApi, boardsApi, standardsApi, divisionsApi, subjectsApi, academicYearsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton } from '../components/common'
+import { EditModeBar, LockedButton, ContextualHelpButton, ElementHelpTip } from '../components/common'
 import type { CatalogueOverviewResponse, CatalogueIntegrityWarning, Board, Standard, Division, CanonicalSubject, AcademicYear } from '../types'
 
 type CatalogueCategory = 'all' | 'academic' | 'people' | 'finance' | 'operations' | 'integrity'
@@ -565,6 +565,12 @@ export default function MasterCataloguesHub() {
           </div>
 
           <div className="flex items-center gap-2">
+            <ContextualHelpButton moduleKey="catalogue" variant="pill" label="Catalogues Help" />
+            <ElementHelpTip
+              title="SSOT & Rule 011 Governance"
+              description="Register shared entities like Subjects once and map them across Boards and Standards cleanly. Duplicate grade-wise records are prevented automatically."
+              moduleKey="catalogue"
+            />
             <button
               onClick={() => refetch()}
               disabled={isFetching}

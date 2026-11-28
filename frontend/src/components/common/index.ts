@@ -47,7 +47,12 @@ export type { TableSortSelectProps, TableSortOption } from './TableSortSelect'
 export { default as EnterpriseDataTable } from './EnterpriseDataTable'
 export type { DataTableColumn, EnterpriseDataTableProps, TableExportConfig } from './EnterpriseDataTable'
 
-export { default as ContextualHelpButton, resolveContextualHelpPath } from './ContextualHelpButton'
+export {
+  default as ContextualHelpButton,
+  ElementHelpTip,
+  resolveContextualHelpPath,
+} from './ContextualHelpButton'
+export type { ElementHelpTipProps } from './ContextualHelpButton'
 
 export { ConcessionTraceModal } from './ConcessionTraceModal'
 

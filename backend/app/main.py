@@ -11,17 +11,20 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-26
+#  * @updated     2026-11-28
 #  *
 #  * @description FastAPI application entry point, CORS middleware, exception handlers, and v1 router mounting.
 #  */
 
 import ipaddress
 import os
+from http.cookies import SimpleCookie
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.datastructures import MutableHeaders
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -52,78 +55,143 @@ app.add_middleware(
 )
 
 
-@app.middleware("http")
-async def add_no_cache_headers_for_api(request: Request, call_next):
-    response = await call_next(request)
-    path = request.url.path or ""
-    if path.startswith("/api/") or path == "/health" or path.startswith("/health/"):
-        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-        response.headers["Pragma"] = "no-cache"
-        response.headers["Expires"] = "0"
-    return response
+class NoCacheApiMiddleware:
+    """Pure ASGI middleware appending strict no-store headers on API and health responses."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        path = scope.get("path") or ""
+        if not (path.startswith("/api/") or path == "/health" or path.startswith("/health/")):
+            await self.app(scope, receive, send)
+            return
+
+        async def send_with_no_cache(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+                headers["Pragma"] = "no-cache"
+                headers["Expires"] = "0"
+            await send(message)
+
+        await self.app(scope, receive, send_with_no_cache)
 
 
-@app.middleware("http")
-async def verify_desktop_ipc_token(request: Request, call_next):
-    desktop_token = os.getenv("PRATHAM_DESKTOP_TOKEN")
-    if not desktop_token:
-        return await call_next(request)
+class DesktopIpcTokenMiddleware:
+    """Pure ASGI middleware enforcing PRATHAM_DESKTOP_TOKEN loopback IPC & LAN rules without BaseHTTPMiddleware TaskGroup wrapping."""
 
-    path = request.url.path
-    if path == "/health" or path.startswith("/health/"):
-        return await call_next(request)
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
 
-    # Determine client host
-    client_host = request.client.host if request.client else "127.0.0.1"
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
-    is_loopback = False
-    is_private_lan = False
-    try:
-        ip_obj = ipaddress.ip_address(client_host)
-        is_loopback = ip_obj.is_loopback
-        is_private_lan = ip_obj.is_private and not ip_obj.is_loopback
-    except ValueError:
-        is_loopback = client_host in ("127.0.0.1", "::1", "localhost")
+        desktop_token = os.getenv("PRATHAM_DESKTOP_TOKEN")
+        if not desktop_token:
+            await self.app(scope, receive, send)
+            return
 
-    if is_loopback:
-        token_hdr = request.headers.get("x-pratham-client-token")
-        cookie_token = request.cookies.get("pratham_client_token")
-        token_valid = (token_hdr == desktop_token) or (cookie_token == desktop_token)
+        path = scope.get("path") or ""
+        if path == "/health" or path.startswith("/health/"):
+            await self.app(scope, receive, send)
+            return
 
-        if not token_valid:
-            return JSONResponse(
-                status_code=403,
-                content={
-                    "detail": "Direct loopback access forbidden. Please launch PrathamOne EduOS via the native desktop application."
-                },
-            )
+        client = scope.get("client")
+        client_host = client[0] if client else "127.0.0.1"
 
-        response = await call_next(request)
-        if token_hdr == desktop_token and cookie_token != desktop_token:
-            response.set_cookie(
-                key="pratham_client_token",
-                value=desktop_token,
-                httponly=True,
-                samesite="lax",
-                path="/",
-                secure=(request.url.scheme == "https"),
-            )
-        return response
+        is_loopback = False
+        is_private_lan = False
+        try:
+            ip_obj = ipaddress.ip_address(client_host)
+            is_loopback = ip_obj.is_loopback
+            is_private_lan = ip_obj.is_private and not ip_obj.is_loopback
+        except ValueError:
+            is_loopback = client_host in ("127.0.0.1", "::1", "localhost")
 
-    allow_lan = os.getenv("PRATHAM_ALLOW_LAN_ACCESS", "true").lower() in ("true", "1", "yes")
-    if is_private_lan:
-        if allow_lan:
-            return await call_next(request)
-        else:
-            return JSONResponse(
+        if is_loopback:
+            raw_headers = scope.get("headers") or []
+            token_hdr = None
+            cookie_header = None
+            for k, v in raw_headers:
+                kl = k.lower()
+                if kl == b"x-pratham-client-token":
+                    token_hdr = v.decode("latin-1")
+                elif kl == b"cookie":
+                    cookie_header = v.decode("latin-1")
+
+            cookie_token = None
+            if cookie_header:
+                try:
+                    jar = SimpleCookie()
+                    jar.load(cookie_header)
+                    if "pratham_client_token" in jar:
+                        cookie_token = jar["pratham_client_token"].value
+                except Exception:
+                    cookie_token = None
+
+            token_valid = (token_hdr == desktop_token) or (cookie_token == desktop_token)
+            if not token_valid:
+                resp = JSONResponse(
+                    status_code=403,
+                    content={
+                        "detail": "Direct loopback access forbidden. Please launch PrathamOne EduOS via the native desktop application."
+                    },
+                )
+                await resp(scope, receive, send)
+                return
+
+            should_set_cookie = (token_hdr == desktop_token) and (cookie_token != desktop_token)
+            if not should_set_cookie:
+                await self.app(scope, receive, send)
+                return
+
+            is_secure = scope.get("scheme", "http") == "https"
+
+            async def send_with_ipc_cookie(message: Message) -> None:
+                if message["type"] == "http.response.start":
+                    headers = MutableHeaders(scope=message)
+                    cookie_parts = [
+                        f"pratham_client_token={desktop_token}",
+                        "HttpOnly",
+                        "Path=/",
+                        "SameSite=lax",
+                    ]
+                    if is_secure:
+                        cookie_parts.append("Secure")
+                    headers.append("Set-Cookie", "; ".join(cookie_parts))
+                await send(message)
+
+            await self.app(scope, receive, send_with_ipc_cookie)
+            return
+
+        allow_lan = os.getenv("PRATHAM_ALLOW_LAN_ACCESS", "true").lower() in ("true", "1", "yes")
+        if is_private_lan:
+            if allow_lan:
+                await self.app(scope, receive, send)
+                return
+            resp = JSONResponse(
                 status_code=403,
                 content={"detail": "LAN network access is disabled by institute administrator."},
             )
+            await resp(scope, receive, send)
+            return
 
-    return JSONResponse(
-        status_code=403,
-        content={"detail": "External untrusted network access forbidden."},
-    )
+        resp = JSONResponse(
+            status_code=403,
+            content={"detail": "External untrusted network access forbidden."},
+        )
+        await resp(scope, receive, send)
+
+
+app.add_middleware(NoCacheApiMiddleware)
+app.add_middleware(DesktopIpcTokenMiddleware)
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(ws_router, prefix="/api/v1")

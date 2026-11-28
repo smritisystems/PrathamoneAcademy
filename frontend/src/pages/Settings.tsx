@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-27
+ * @updated     2026-11-28
  *
  * @description Comprehensive Institute Settings & Configuration Workspace for branding, defaults, lookups, and governance.
  */
@@ -865,7 +865,8 @@ export default function Settings() {
             </div>
 
             {/* View-First & Explicit Edit Mode Governance Bar */}
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
+              <ContextualHelpButton moduleKey="settings" variant="pill" label="Settings Help" />
               <EditModeBar
                 scope={editScope}
                 title={`Institute Settings — ${currentCategoryMeta.title}`}

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-26
+ * @updated     2026-11-28
  *
  * @description Multi-step student admission form capturing personal details, parent info, and initial enrollment.
  */
@@ -22,7 +22,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createStudent, getStandards, getDivisions } from '../api/endpoints';
 import { useAuthStore } from '../store/authStore';
 import { useEditModeStore } from '../store/editModeStore';
-import { EditModeBar } from '../components/common';
+import { EditModeBar, ContextualHelpButton } from '../components/common';
 import { extractApiErrorMessage } from '../utils/errorTaxonomy';
 import { Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -262,9 +262,12 @@ export default function AddStudent() {
       <EditModeBar scope={editScope} title="Student Admission & Registration" isDirty={Boolean(form.full_name || form.phone)} />
 
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Add New Student</h1>
-        <p className="text-sm text-gray-500">Register a student step by step</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Add New Student</h1>
+          <p className="text-sm text-gray-500">Register a student step by step</p>
+        </div>
+        <ContextualHelpButton moduleKey="admissions" variant="pill" label="Admission Help" />
       </div>
 
       {/* Stepper */}

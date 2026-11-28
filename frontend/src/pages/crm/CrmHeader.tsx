@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-16
+ * @updated     2026-11-28
  *
  * @description Unified CRM Workspace Header with 9 dedicated sub-navigation tabs, Training Mode pill indicator, View-First Edit Mode governance, and page-level action triggers.
  */
@@ -25,7 +25,7 @@ import {
 } from 'lucide-react'
 import { useEnvironmentStore } from '../../store/environmentStore'
 import { useEditModeStore } from '../../store/editModeStore'
-import { EditModeBar, LockedButton } from '../../components/common'
+import { EditModeBar, LockedButton, ContextualHelpButton, ElementHelpTip } from '../../components/common'
 
 export interface CrmHeaderProps {
   title: string
@@ -86,6 +86,12 @@ export default function CrmHeader({
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          <ContextualHelpButton moduleKey="crm" variant="pill" label="CRM Help" />
+          <ElementHelpTip
+            title="CRM Workspace Controls"
+            description="Switch across All Leads, Kanban Pipeline, Follow-ups, Counselling & Demos, Sources, Campaigns, Reports, and Settings. Enable Edit Mode above before creating or updating leads."
+            moduleKey="crm"
+          />
           {onRefresh && (
             <button
               onClick={onRefresh}
